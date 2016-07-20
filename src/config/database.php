@@ -6,10 +6,10 @@
  * Time: 下午4:49
  */
 $config['database']['active'] = 'none';
-$config['database']['test']['host'] = '114.55.76.95';
+$config['database']['test']['host'] = '127.0.0.1';
 $config['database']['test']['port'] = 3306;
-$config['database']['test']['user'] = 'youwo';
-$config['database']['test']['password'] = 'youwo_197197';
-$config['database']['test']['dbname'] = 'youwo_school';
+$config['database']['test']['user'] = 'test';
+$config['database']['test']['password'] = 'test_197197';
+$config['database']['test']['dbname'] = 'test_school';
 
 return $config;
