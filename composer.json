@@ -1,0 +1,21 @@
+{
+    "require": {
+        "monolog/monolog": "2.0.x-dev",
+	    "hassankhan/config": "~0.10"
+    },
+    "autoload": {
+        "psr-0": {
+            "Server\\": "src/"
+        },
+        "files": ["src/Server/helpers/Common.php",
+            "src/Server/helpers/RedisCacheDb.php"]
+    },
+    "authors": [
+        {
+            "name": "tmtbe",
+            "email": "896369042@qq.com",
+            "homepage": "https://github.com/tmtbe",
+            "role": "Developer"
+        }
+    ]
+}
