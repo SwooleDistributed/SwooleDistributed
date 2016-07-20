@@ -16,6 +16,7 @@ swoole 分布式通讯框架
   5.可以启动多台swoole server和多台swoole dispatch搭建分布式系统（至少1台LVS,2台swoole server,1台swoole dispatch,1个redis）  
   6.单独启动swoole server可作为单机服务器。  
   7.修改config目录下配置，改为你自己的配置。  
+  8.swoole server与swoole dispatch 必须在同一个网段。swoole dispatch无需配置，swoole server会自动发现  
 # 文档（待完善）
     
 
