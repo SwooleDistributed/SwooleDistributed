@@ -17,6 +17,8 @@ swoole 分布式通讯框架
   6.单独启动swoole server可作为单机服务器。  
   7.修改config目录下配置，改为你自己的配置。  
   8.swoole server与swoole dispatch 必须在同一个网段。swoole dispatch无需配置，swoole server会自动发现  
+# 拓扑图
+  ![image](https://github.com/tmtbe/SwooleDistributed/screenshots/topological-graph.jpg)
 # 文档（待完善）
     
 
