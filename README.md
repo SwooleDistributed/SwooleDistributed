@@ -19,6 +19,7 @@ swoole 分布式通讯框架
   8.swoole server与swoole dispatch 必须在同一个网段。swoole dispatch无需配置，swoole server会自动发现  
   9.swoole server与swoole dispatch 都支持动态弹性部署，随时热插拔。swoole dispatch上线后30秒内被swoole server发现并建立连接  
   10.内置controller，model，task 3大模块  
+  11.swoole server与swoole dispatch都被设计成无状态服务器，所有的信息共享都通过redis  
 # 拓扑图
   ![image](https://github.com/tmtbe/SwooleDistributed/blob/master/screenshots/topological-graph.jpg)
 # 文档（待完善）
