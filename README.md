@@ -11,7 +11,7 @@ swoole 分布式通讯框架
     启动swoole server服务器  
   2.php start_swoole_dispatch.php start  
     启动swoole dispatch服务器  
-  3.单独启动swoole server不具备分布式特性，一台物理机只允许启动一个swoole server 
+  3.单独启动swoole server不具备分布式特性，一台物理机只允许启动一个swoole server   
   4.swoole dispatch服务器可以和swoole server放在一个物理机上，一台物理机只允许启动一个swoole dispatch  
   5.可以启动多台swoole server和多台swoole dispatch搭建分布式系统（至少1台LVS,2台swoole server,1台swoole dispatch,1个redis）  
   6.单独启动swoole server可作为单机服务器。  
