@@ -18,8 +18,8 @@ swoole 分布式通讯框架
   7.修改config目录下配置，改为你自己的配置。  
   8.swoole server与swoole dispatch 必须在同一个网段。swoole dispatch无需配置，swoole server会自动发现  
   9.swoole server与swoole dispatch 都支持动态弹性部署，随时热插拔。swoole dispatch上线后30秒内被swoole server发现并建立连接  
-# 拓扑图
   10.内置controller，model，task 3大模块  
+# 拓扑图
   ![image](https://github.com/tmtbe/SwooleDistributed/blob/master/screenshots/topological-graph.jpg)
 # 文档（待完善）
     
