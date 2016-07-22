@@ -20,7 +20,7 @@ swoole 分布式通讯框架
   9.swoole server与swoole dispatch 都支持动态弹性部署，随时热插拔。swoole dispatch上线后30秒内被swoole server发现并建立连接  
   10.内置controller，model，task 3大模块  
   11.swoole server与swoole dispatch都被设计成无状态服务器，所有的信息共享都通过redis  
-  12.最新版采用了异步redis进行数据存储，通过开启一个新的redis连接池进程，利用addProcess和sendMessage技术进行结果分发，优雅解决异步问题。
+  12.最新版采用了异步redis进行数据存储，通过开启一个新的redis连接池进程，利用addProcess和sendMessage技术进行结果分发，优雅解决异步问题。  
   13.注意taskproxy为单例，不要变成成员变量使用，用到时load
 # 拓扑图
   ![image](https://github.com/tmtbe/SwooleDistributed/blob/master/screenshots/topological-graph.jpg)
