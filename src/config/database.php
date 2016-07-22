@@ -9,7 +9,7 @@ $config['database']['active'] = 'none';
 $config['database']['test']['host'] = '127.0.0.1';
 $config['database']['test']['port'] = 3306;
 $config['database']['test']['user'] = 'test';
-$config['database']['test']['password'] = 'test_197197';
-$config['database']['test']['dbname'] = 'test_school';
+$config['database']['test']['password'] = 'test';
+$config['database']['test']['dbname'] = 'test';
 
 return $config;

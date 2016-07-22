@@ -16,10 +16,9 @@ class TestController extends Controller
      */
     public $testTask;
     public function test(){
-        $this->testTask = $this->loader->task('TestTask');
-        $this->testTask->test(123);
-        $this->testTask->startTask(function ($serv, $task_id, $data) {
-            $this->send(123);
-        });
+        $this->sendToUids([1,2,3,4,5], ['a'=>$this->client_data->data]);
+    }
+    public function bind_uid(){
+        get_instance()->bindUid($this->fd, $this->client_data->data);
     }
 }

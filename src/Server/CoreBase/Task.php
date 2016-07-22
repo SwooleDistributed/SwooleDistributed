@@ -9,9 +9,15 @@ namespace Server\CoreBase;
  */
 class Task extends TaskProxy
 {
+    /**
+     * task只能使用同步redis
+     * @var \Redis
+     */
+    public $redis;
     public function __construct()
     {
         parent::__construct();
+        $this->redis = get_instance()->redis_client;
     }
 
     /**

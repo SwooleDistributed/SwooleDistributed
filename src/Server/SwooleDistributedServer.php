@@ -4,7 +4,9 @@ namespace Server;
 use Noodlehaus\Exception;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Loader;
+use Server\CoreBase\SwooleException;
 use Server\DataBase\DbConnection;
+use Server\DataBase\RedisAsynPool;
 use Server\Pack\IPack;
 use Server\Route\IRoute;
 
@@ -37,6 +39,10 @@ class SwooleDistributedServer extends SwooleServer
      */
     public $redis_client;
     /**
+     * @var RedisAsynPool
+     */
+    public $redis_pool;
+    /**
      * 多少人启用task进行发送
      * @var
      */
@@ -66,13 +72,19 @@ class SwooleDistributedServer extends SwooleServer
     /**
      * @var dispatch 端口
      */
-    public $dispatch_port;
+    protected $dispatch_port;
 
     /**
      * 共享内存表
      * @var \swoole_table
      */
-    public $uid_fd_table;
+    protected $uid_fd_table;
+
+    /**
+     * redis 连接池进程
+     * @var
+     */
+    protected $redis_pool_process;
 
     /**
      * SwooleDistributedServer constructor.
@@ -123,6 +135,12 @@ class SwooleDistributedServer extends SwooleServer
         $this->uid_fd_table = new \swoole_table(65536);
         $this->uid_fd_table->column('fd', \swoole_table::TYPE_INT, 8);
         $this->uid_fd_table->create();
+        //创建redis异步连接池进程
+        $this->redis_pool_process = new \swoole_process(function ($process) {
+            $redisAsnyPool = new RedisAsynPool();
+            $redisAsnyPool->server_init($this->config,$this , $process);
+        }, false, 2);
+        $this->server->addProcess($this->redis_pool_process);
         //创建第二个端口用于连接dispatch
         $this->dispatch_port = $this->server->listen($this->config['server']['socket'], $this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
         $this->dispatch_port->on('connect', function ($serv, $fd) {
@@ -192,6 +210,9 @@ class SwooleDistributedServer extends SwooleServer
             case SwooleMarco::REMOVE_DISPATCH_CLIENT:
                 unset($this->dispatchClientFds[$data['message']]);
                 break;
+            case SwooleMarco::MSG_TYPE_REDIS_MESSAGE:
+                $this->redis_pool->_distribute($data['message']);
+                break;
         }
     }
 
@@ -259,15 +280,21 @@ class SwooleDistributedServer extends SwooleServer
     public function onSwooleWorkerStart($serv, $workerId)
     {
         echo "WorkerId:$workerId Initialization please wait a moment.\n";
-        //同步redis连接，用于存储
-        $this->redis_client = new \Redis();
-        if ($this->redis_client->pconnect($this->config['redis']['ip'], $this->config['redis']['port']) == false) {
-            throw new Exception($this->redis_client->getLastError());
+        if (!$serv->taskworker) {
+            //异步redis连接池
+            $this->redis_pool = new RedisAsynPool();
+            $this->redis_pool->worker_init($this->redis_pool_process,$workerId);
+        } else {
+            //同步redis连接，用于存储
+            $this->redis_client = new \Redis();
+            if ($this->redis_client->pconnect($this->config['redis']['ip'], $this->config['redis']['port']) == false) {
+                throw new SwooleException($this->redis_client->getLastError());
+            }
+            if ($this->redis_client->auth($this->config['redis']['password']) == false) {
+                throw new SwooleException($this->redis_client->getLastError());
+            }
+            $this->redis_client->select($this->config['redis']['select']);
         }
-        if ($this->redis_client->auth($this->config['redis']['password']) == false) {
-            throw new Exception($this->redis_client->getLastError());
-        }
-        $this->redis_client->select($this->config['redis']['select']);
         //db
         if ($this->config->get('database') != null && $this->config['database']['active'] != 'none') {
             $db_config_active = $this->config['database']['active'];
@@ -275,6 +302,7 @@ class SwooleDistributedServer extends SwooleServer
             $this->db = new DbConnection($db_config['host'], $db_config['port'],
                 $db_config['user'], $db_config['password'], $db_config['dbname']);
         }
+        //定时器
         if ($workerId == $this->worker_num - 1) {//最后一个worker处理启动定时器
             $timer_tasks = $this->config->get('timerTask');
             $timer_tasks_used = array();
@@ -383,7 +411,11 @@ class SwooleDistributedServer extends SwooleServer
         $this->server->bind($fd, $uid);
         //建立映射表
         if (!empty($this->USID)) {
-            $this->redis_client->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID);
+            if ($this->redis_client != null) {
+                $this->redis_client->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID);
+            } else {
+                $this->redis_pool->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID, null);
+            }
         }
         //加入共享内存
         $this->uid_fd_table->set($uid, ['fd' => $fd]);
@@ -396,28 +428,42 @@ class SwooleDistributedServer extends SwooleServer
     public function unBindUid($uid)
     {
         //更新映射表
-        $this->redis_client->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
+        if ($this->redis_client != null) {
+            $this->redis_client->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
+        } else {
+            $this->redis_pool->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid, null);
+        }
         //更新共享内存
         $this->uid_fd_table->del($uid);
     }
 
     /**
-     * uid是否在线
+     * uid是否在线(异步时候需要提供callback,task可以直接返回结果)
      * @param $uid
+     * @param $callback
      * @return bool
      */
-    public function uidIsOnline($uid)
+    public function uidIsOnline($uid, $callback)
     {
-        return $this->redis_client->hExists(SwooleMarco::redis_uid_usid_hash_name, $uid);
+        if ($this->redis_client) {
+            return $this->redis_client->hExists(SwooleMarco::redis_uid_usid_hash_name, $uid);
+        } else {
+            $this->redis_pool->hExists(SwooleMarco::redis_uid_usid_hash_name, $uid, $calback);
+        }
     }
 
     /**
-     * 获取在线人数
+     * 获取在线人数(异步时候需要提供callback,task可以直接返回结果)
+     * @param $callback
      * @return int
      */
-    public function countOnline()
+    public function countOnline($callback)
     {
-        return $this->redis_client->hLen(SwooleMarco::redis_uid_usid_hash_name);
+        if ($this->redis_client != null) {
+            return $this->redis_client->hLen(SwooleMarco::redis_uid_usid_hash_name);
+        } else {
+            $this->redis_pool->hLen(SwooleMarco::redis_uid_usid_hash_name, $callback);
+        }
     }
 
     /**
@@ -427,7 +473,11 @@ class SwooleDistributedServer extends SwooleServer
      */
     public function addToGroup($uid, $group_id)
     {
-        $this->redis_client->hSet(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, $uid);
+        if ($this->redis_client != null) {
+            $this->redis_client->hSet(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, $uid);
+        } else {
+            $this->redis_pool->hSet(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, $uid, null);
+        }
     }
 
     /**
@@ -437,7 +487,11 @@ class SwooleDistributedServer extends SwooleServer
      */
     public function removeFromGroup($uid, $group_id)
     {
-        $this->redis_client->hDel(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid);
+        if ($this->redis_client != null) {
+            $this->redis_client->hDel(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid);
+        } else {
+            $this->redis_client->hDel(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, null);
+        }
     }
 
     /**
@@ -446,7 +500,11 @@ class SwooleDistributedServer extends SwooleServer
      */
     public function delGroup($group_id)
     {
-        $this->redis_client->del(SwooleMarco::redis_group_hash_name_prefix . $group_id);
+        if ($this->redis_client != null) {
+            $this->redis_client->del(SwooleMarco::redis_group_hash_name_prefix . $group_id);
+        } else {
+            $this->redis_client->del(SwooleMarco::redis_group_hash_name_prefix . $group_id, null);
+        }
     }
 
     /**
@@ -518,7 +576,7 @@ class SwooleDistributedServer extends SwooleServer
         if ($fromDispatch) return;
         //本机处理不了的发给dispatch
         if (count($uids) > 0) {
-            $dispatch_data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_BATCH, ['data' => $data, 'uids' => $uids]);
+            $dispatch_data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_BATCH, ['data' => $data, 'uids' => array_values($uids)]);
             $this->sendToDispatchMessage($dispatch_data);
         }
     }

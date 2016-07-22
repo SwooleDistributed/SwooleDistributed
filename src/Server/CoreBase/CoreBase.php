@@ -11,6 +11,7 @@ namespace Server\CoreBase;
 
 use Monolog\Logger;
 use Noodlehaus\Config;
+use Server\DataBase\RedisAsynPool;
 use Server\Pack\IPack;
 
 class CoreBase
@@ -51,13 +52,14 @@ class CoreBase
      */
     public $pack;
     /**
-     * @var \Redis
+     * @var RedisAsynPool
      */
-    public $redis;
+    public $redis_pool;
     /**
      * @var \Server\DataBase\DbConnection
      */
     public $db;
+
     /**
      * Task constructor.
      */
@@ -68,23 +70,25 @@ class CoreBase
         $this->server = get_instance()->server;
         $this->config = get_instance()->config;
         $this->pack = get_instance()->pack;
-        $this->redis = get_instance()->redis_client;
         $this->db = get_instance()->db;
+        $this->redis_pool = get_instance()->redis_pool;
     }
 
     /**
      * 加入一个插件
      * @param $child CoreBase
      */
-    public function addChild($child){
+    public function addChild($child)
+    {
         array_push($this->child_list, $child);
     }
 
     /**
      * 销毁，解除引用
      */
-    public function destroy(){
-        foreach ($this->child_list as $core_child){
+    public function destroy()
+    {
+        foreach ($this->child_list as $core_child) {
             $core_child->destroy();
         }
         $this->child_list = [];
@@ -94,7 +98,8 @@ class CoreBase
     /**
      * 对象复用
      */
-    public function reUse(){
+    public function reUse()
+    {
         $this->is_destroy = false;
     }
 }

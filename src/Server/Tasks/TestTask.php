@@ -25,7 +25,7 @@ class TestTask extends Task
 
     public function testTimer()
     {
-        $this->sendToUids([1,2,3,4], 'test');
+        
     }
 
 }

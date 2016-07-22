@@ -5,6 +5,7 @@ use Noodlehaus\Exception;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Loader;
 use Server\DataBase\DbConnection;
+use Server\DataBase\RedisAsynPool;
 use Server\Pack\IPack;
 use Server\Route\IRoute;
 
@@ -24,9 +25,10 @@ class SwooleDispatchClient extends SwooleServer
 
 
     /**
-     * @var \Redis
+     * @var RedisAsynPool
      */
-    protected $redis_client;
+    protected $redis_pool;
+    protected $redis_pool_process;
 
     /**
      * SwooleDispatchClient constructor.
@@ -64,6 +66,12 @@ class SwooleDispatchClient extends SwooleServer
      */
     public function beforeSwooleStart()
     {
+        //创建redis异步连接池进程
+        $this->redis_pool_process = new \swoole_process(function ($process) {
+            $redisAsynPool = new RedisAsynPool();
+            $redisAsynPool->server_init($this->config, $this, $process);
+        }, false, 2);
+        $this->server->addProcess($this->redis_pool_process);
     }
 
     /**
@@ -74,6 +82,25 @@ class SwooleDispatchClient extends SwooleServer
     public function onSwooleStart($serv)
     {
         parent::onSwooleStart($serv);
+    }
+
+    public function onSwooleWorkerStart($serv, $workerId)
+    {
+        parent::onSwooleWorkerStart($serv, $workerId);
+        if (!$serv->taskworker) {
+            //异步redis连接池
+            $this->redis_pool = new RedisAsynPool();
+            $this->redis_pool->worker_init($this->redis_pool_process, $workerId);
+        }
+        //同步redis连接，用于存储
+        $this->redis_client = new \Redis();
+        if ($this->redis_client->pconnect($this->config['redis']['ip'], $this->config['redis']['port']) == false) {
+            throw new SwooleException($this->redis_client->getLastError());
+        }
+        if ($this->redis_client->auth($this->config['redis']['password']) == false) {
+            throw new SwooleException($this->redis_client->getLastError());
+        }
+        $this->redis_client->select($this->config['redis']['select']);
     }
 
     /**
@@ -110,6 +137,9 @@ class SwooleDispatchClient extends SwooleServer
                 $address = $data['message'];
                 $this->addServerClient($address);
                 break;
+            case SwooleMarco::MSG_TYPE_REDIS_MESSAGE:
+                $this->redis_pool->_distribute($data['message']);
+                break;
         }
     }
 
@@ -142,15 +172,6 @@ class SwooleDispatchClient extends SwooleServer
         print_r("connect\n");
         $data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_USID, ip2long($cli->address));
         $cli->send($this->encode($data));
-        //同步redis连接，用于存储
-        $this->redis_client = new \Redis();
-        if ($this->redis_client->pconnect($this->config['redis']['ip'], $this->config['redis']['port']) == false) {
-            throw new Exception($this->redis_client->getLastError());
-        }
-        if ($this->redis_client->auth($this->config['redis']['password']) == false) {
-            throw new Exception($this->redis_client->getLastError());
-        }
-        $this->redis_client->select($this->config['redis']['select']);
     }
 
     /**
@@ -160,7 +181,6 @@ class SwooleDispatchClient extends SwooleServer
      */
     public function onClientReceive($cli, $client_data)
     {
-        print_r("Get Message\n");
         $data = substr($client_data, SwooleMarco::HEADER_LENGTH);
         $unserialize_data = unserialize($data);
         $type = $unserialize_data['type']??'';
@@ -168,29 +188,46 @@ class SwooleDispatchClient extends SwooleServer
         switch ($type) {
             case SwooleMarco::MSG_TYPE_SEND_GROUP://发送群消息
                 //转换为batch
-                $type = SwooleMarco::MSG_TYPE_SEND_BATCH;
-                $uids = $this->redis_client->hGetAll(SwooleMarco::redis_group_hash_name_prefix.$message['groupId']);
-                if($uids!=null&&count($uids)>0){
-                    $message['uids'] = $uids;
-                }else{
-                    break;
-                }
-            case SwooleMarco::MSG_TYPE_SEND_BATCH://发送消息
-                $usids = $this->redis_client->hMGet(SwooleMarco::redis_uid_usid_hash_name, $message['uids']);
-                $temp_dic = [];
-                foreach ($usids as $uid => $usid) {
-                    if(!empty($usid)) {
-                        $temp_dic[$usid][] = $uid;
+                $this->redis_pool->hGetAll(SwooleMarco::redis_group_hash_name_prefix . $message['groupId'], function ($uids) use ($message) {
+                    if ($uids != null && count($uids) > 0) {
+                        $this->redis_pool->hMGet(SwooleMarco::redis_uid_usid_hash_name, $uids, function ($usids) use ($message) {
+                            $temp_dic = [];
+                            foreach ($usids as $uid => $usid) {
+                                if (!empty($usid)) {
+                                    $temp_dic[$usid][] = $uid;
+                                }
+                            }
+                            foreach ($temp_dic as $usid => $uids) {
+                                $client = $this->server_clients[$usid]??null;
+                                if ($client == null) continue;
+                                $client->send($this->encode($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_BATCH, [
+                                    'data' => $message['data'],
+                                    'uids' => $uids
+                                ])));
+                            }
+                        });
                     }
-                }
-                foreach ($temp_dic as $usid => $uids) {
-                    $client = $this->server_clients[$usid]??null;
-                    if ($client == null) continue;
-                    $client->send($this->encode($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_BATCH, [
-                        'data' => $message['data'],
-                        'uids' => $uids
-                    ])));
-                }
+                });
+                break;
+            case SwooleMarco::MSG_TYPE_SEND_BATCH://发送消息
+                $this->redis_pool->hMGet(SwooleMarco::redis_uid_usid_hash_name, $message['uids'], function ($usids) use ($message) {
+                    $temp_dic = [];
+                    foreach ($usids as $uid => $usid) {
+                        if (!empty($usid)) {
+                            $temp_dic[$usid][] = $uid;
+                        }
+                    }
+                    foreach ($temp_dic as $usid => $uids) {
+                        $client = $this->server_clients[$usid]??null;
+                        if ($client == null) {
+                            continue;
+                        }
+                        $client->send($this->encode($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_BATCH, [
+                            'data' => $message['data'],
+                            'uids' => $uids
+                        ])));
+                    }
+                });
                 break;
             case SwooleMarco::MSG_TYPE_SEND_ALL://发送广播
                 foreach ($this->server_clients as $client) {
@@ -198,12 +235,13 @@ class SwooleDispatchClient extends SwooleServer
                 }
                 break;
             case SwooleMarco::MSG_TYPE_SEND://发送给uid
-                $usid = $this->redis_client->hGet(SwooleMarco::redis_uid_usid_hash_name, $message['uid']);
-                if(empty($usid)||!key_exists($usid, $this->server_clients)){
-                    break;
-                }
-                $client = $this->server_clients[$usid];
-                $client->send($client_data);
+                $this->redis_pool->hGet(SwooleMarco::redis_uid_usid_hash_name, $message['uid'], function ($usid) use ($client_data) {
+                    if (empty($usid) || !key_exists($usid, $this->server_clients)) {
+                        return;
+                    }
+                    $client = $this->server_clients[$usid];
+                    $client->send($client_data);
+                });
                 break;
         }
     }
