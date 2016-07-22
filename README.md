@@ -3,7 +3,7 @@ swoole 分布式通讯框架
 # 安装须知
   1.php 7.0  
   2.需要使用最新版的swoole，请通过github下载编译swoole，1.8.7在php7.0下存在bug不建议使用  
-  3.需要redis支持，安装redis扩展  
+  3.需要redis支持，安装redis扩展  swoole编译时选择异步redis选项
   4.需要composer支持，安装composer，运行composer install安装依赖  
   5.如需集群自行搭建LVS  
 # 运行
@@ -20,6 +20,7 @@ swoole 分布式通讯框架
   9.swoole server与swoole dispatch 都支持动态弹性部署，随时热插拔。swoole dispatch上线后30秒内被swoole server发现并建立连接  
   10.内置controller，model，task 3大模块  
   11.swoole server与swoole dispatch都被设计成无状态服务器，所有的信息共享都通过redis  
+  12.最新版采用了异步redis进行数据存储，通过开启一个新的redis连接池进程，利用addProcess和sendMessage技术进行结果分发，优雅解决异步问题。
 # 拓扑图
   ![image](https://github.com/tmtbe/SwooleDistributed/blob/master/screenshots/topological-graph.jpg)
 # 文档（待完善）
