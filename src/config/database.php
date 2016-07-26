@@ -6,9 +6,9 @@
  * Time: 下午4:49
  */
 $config['database']['active'] = 'test';
-$config['database']['test']['host'] = 'rm-bp1x6124228341u40o.mysql.rds.aliyuncs.com';
-$config['database']['test']['user'] = 'youwo';
-$config['database']['test']['password'] = 'youwo_197197';
-$config['database']['test']['database'] = 'youwo_school';
+$config['database']['test']['host'] = '127.0.0.1';
+$config['database']['test']['user'] = 'test';
+$config['database']['test']['password'] = 'test';
+$config['database']['test']['database'] = 'test';
 $config['database']['asyn_max_count'] = 10;
 return $config;
