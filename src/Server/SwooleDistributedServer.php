@@ -141,13 +141,15 @@ class SwooleDistributedServer extends SwooleServer
         $this->uid_fd_table->column('fd', \swoole_table::TYPE_INT, 8);
         $this->uid_fd_table->create();
         //创建redis，mysql异步连接池进程
-        $this->pool_process = new \swoole_process(function ($process) {
-            $this->asnyPoolManager = new AsynPoolManager($process,$this);
-            $this->asnyPoolManager->event_add();
-            $this->asnyPoolManager->registAsyn(new RedisAsynPool());
-            $this->asnyPoolManager->registAsyn(new MysqlAsynPool());
-        }, false, 2);
-        $this->server->addProcess($this->pool_process);
+        if($this->config['asyn_process_enable']) {//代表启动单独进程进行管理
+            $this->pool_process = new \swoole_process(function ($process) {
+                $this->asnyPoolManager = new AsynPoolManager($process, $this);
+                $this->asnyPoolManager->event_add();
+                $this->asnyPoolManager->registAsyn(new RedisAsynPool());
+                $this->asnyPoolManager->registAsyn(new MysqlAsynPool());
+            }, false, 2);
+            $this->server->addProcess($this->pool_process);
+        }
         //创建第二个端口用于连接dispatch
         $this->dispatch_port = $this->server->listen($this->config['server']['socket'], $this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
         $this->dispatch_port->on('connect', function ($serv, $fd) {
@@ -296,6 +298,9 @@ class SwooleDistributedServer extends SwooleServer
             $this->mysql_pool->worker_init($workerId);
             //注册
             $this->asnyPoolManager = new AsynPoolManager($this->pool_process,$this);
+            if(!$this->config['asyn_process_enable']){
+                $this->asnyPoolManager->no_event_add();
+            }
             $this->asnyPoolManager->registAsyn($this->redis_pool);
             $this->asnyPoolManager->registAsyn($this->mysql_pool);
         }else {
