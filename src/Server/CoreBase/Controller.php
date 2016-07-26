@@ -24,13 +24,22 @@ class Controller extends CoreBase
      * @var
      */
     protected $client_data;
-
+    /**
+     * @var \Server\DataBase\RedisAsynPool
+     */
+    public $redis_pool;
+    /**
+     * @var \Server\DataBase\MysqlAsynPool
+     */
+    public $mysql_pool;
     /**
      * Controller constructor.
      */
     public function __construct()
     {
         parent::__construct();
+        $this->redis_pool = get_instance()->redis_pool;
+        $this->mysql_pool = get_instance()->mysql_pool;
     }
 
     /**

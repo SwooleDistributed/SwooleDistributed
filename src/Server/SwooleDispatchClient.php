@@ -4,6 +4,7 @@ namespace Server;
 use Noodlehaus\Exception;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Loader;
+use Server\DataBase\AsynPoolManager;
 use Server\DataBase\DbConnection;
 use Server\DataBase\RedisAsynPool;
 use Server\Pack\IPack;
@@ -28,8 +29,11 @@ class SwooleDispatchClient extends SwooleServer
      * @var RedisAsynPool
      */
     protected $redis_pool;
-    protected $redis_pool_process;
-
+    /**
+     * @var AsynPoolManager
+     */
+    protected $asnyPoolManager;
+    protected $pool_process;
     /**
      * SwooleDispatchClient constructor.
      */
@@ -67,11 +71,12 @@ class SwooleDispatchClient extends SwooleServer
     public function beforeSwooleStart()
     {
         //创建redis异步连接池进程
-        $this->redis_pool_process = new \swoole_process(function ($process) {
-            $redisAsynPool = new RedisAsynPool();
-            $redisAsynPool->server_init($this->config, $this, $process);
+        $this->pool_process = new \swoole_process(function ($process) {
+            $this->asnyPoolManager = new AsynPoolManager($process,$this);
+            $this->asnyPoolManager->event_add();
+            $this->asnyPoolManager->registAsyn(new RedisAsynPool());
         }, false, 2);
-        $this->server->addProcess($this->redis_pool_process);
+        $this->server->addProcess($this->pool_process);
     }
 
     /**
@@ -90,17 +95,11 @@ class SwooleDispatchClient extends SwooleServer
         if (!$serv->taskworker) {
             //异步redis连接池
             $this->redis_pool = new RedisAsynPool();
-            $this->redis_pool->worker_init($this->redis_pool_process, $workerId);
+            $this->redis_pool->worker_init($workerId);
+            //注册
+            $this->asnyPoolManager = new AsynPoolManager($this->pool_process,$this);
+            $this->asnyPoolManager->registAsyn($this->redis_pool);
         }
-        //同步redis连接，用于存储
-        $this->redis_client = new \Redis();
-        if ($this->redis_client->pconnect($this->config['redis']['ip'], $this->config['redis']['port']) == false) {
-            throw new SwooleException($this->redis_client->getLastError());
-        }
-        if ($this->redis_client->auth($this->config['redis']['password']) == false) {
-            throw new SwooleException($this->redis_client->getLastError());
-        }
-        $this->redis_client->select($this->config['redis']['select']);
     }
 
     /**
@@ -138,7 +137,7 @@ class SwooleDispatchClient extends SwooleServer
                 $this->addServerClient($address);
                 break;
             case SwooleMarco::MSG_TYPE_REDIS_MESSAGE:
-                $this->redis_pool->_distribute($data['message']);
+                $this->asnyPoolManager->distribute($data['message']);
                 break;
         }
     }

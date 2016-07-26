@@ -51,14 +51,6 @@ class CoreBase
      * @var IPack
      */
     public $pack;
-    /**
-     * @var RedisAsynPool
-     */
-    public $redis_pool;
-    /**
-     * @var \Server\DataBase\DbConnection
-     */
-    public $db;
 
     /**
      * Task constructor.
@@ -70,8 +62,6 @@ class CoreBase
         $this->server = get_instance()->server;
         $this->config = get_instance()->config;
         $this->pack = get_instance()->pack;
-        $this->db = get_instance()->db;
-        $this->redis_pool = get_instance()->redis_pool;
     }
 
     /**

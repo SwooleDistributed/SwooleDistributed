@@ -39,10 +39,10 @@ class ControllerFactory
      */
     public function getController($controller){
         if(!key_exists($controller, $this->pool)){
-            $this->pool[$controller] = [];
+            $this->pool[$controller] = new \SplQueue();
         }
         if(count($this->pool[$controller])>0){
-            $controller_instance = array_pop($this->pool[$controller]);
+            $controller_instance = $this->pool[$controller]->shift();
             $controller_instance->reUse();
             return $controller_instance;
         }
@@ -64,6 +64,6 @@ class ControllerFactory
         if(!$controller->is_destroy) {
             $controller->destroy();
         }
-        $this->pool[$controller->core_name][] = $controller;
+        $this->pool[$controller->core_name]->push($controller);
     }
 }

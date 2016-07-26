@@ -5,7 +5,8 @@ use Noodlehaus\Exception;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Loader;
 use Server\CoreBase\SwooleException;
-use Server\DataBase\DbConnection;
+use Server\DataBase\AsynPoolManager;
+use Server\DataBase\MysqlAsynPool;
 use Server\DataBase\RedisAsynPool;
 use Server\Pack\IPack;
 use Server\Route\IRoute;
@@ -43,6 +44,14 @@ class SwooleDistributedServer extends SwooleServer
      */
     public $redis_pool;
     /**
+     * @var MysqlAsynPool
+     */
+    public $mysql_pool;
+    /**
+     * @var AsynPoolManager
+     */
+    private $asnyPoolManager;
+    /**
      * 多少人启用task进行发送
      * @var
      */
@@ -64,10 +73,6 @@ class SwooleDistributedServer extends SwooleServer
      * @var IRoute
      */
     public $route;
-    /**
-     * @var DbConnection
-     */
-    public $db;
 
     /**
      * @var dispatch 端口
@@ -81,10 +86,10 @@ class SwooleDistributedServer extends SwooleServer
     protected $uid_fd_table;
 
     /**
-     * redis 连接池进程
+     * 连接池进程
      * @var
      */
-    protected $redis_pool_process;
+    protected $pool_process;
 
     /**
      * SwooleDistributedServer constructor.
@@ -135,12 +140,14 @@ class SwooleDistributedServer extends SwooleServer
         $this->uid_fd_table = new \swoole_table(65536);
         $this->uid_fd_table->column('fd', \swoole_table::TYPE_INT, 8);
         $this->uid_fd_table->create();
-        //创建redis异步连接池进程
-        $this->redis_pool_process = new \swoole_process(function ($process) {
-            $redisAsnyPool = new RedisAsynPool();
-            $redisAsnyPool->server_init($this->config,$this , $process);
+        //创建redis，mysql异步连接池进程
+        $this->pool_process = new \swoole_process(function ($process) {
+            $this->asnyPoolManager = new AsynPoolManager($process,$this);
+            $this->asnyPoolManager->event_add();
+            $this->asnyPoolManager->registAsyn(new RedisAsynPool());
+            $this->asnyPoolManager->registAsyn(new MysqlAsynPool());
         }, false, 2);
-        $this->server->addProcess($this->redis_pool_process);
+        $this->server->addProcess($this->pool_process);
         //创建第二个端口用于连接dispatch
         $this->dispatch_port = $this->server->listen($this->config['server']['socket'], $this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
         $this->dispatch_port->on('connect', function ($serv, $fd) {
@@ -211,7 +218,7 @@ class SwooleDistributedServer extends SwooleServer
                 unset($this->dispatchClientFds[$data['message']]);
                 break;
             case SwooleMarco::MSG_TYPE_REDIS_MESSAGE:
-                $this->redis_pool->_distribute($data['message']);
+                $this->asnyPoolManager->distribute($data['message']);
                 break;
         }
     }
@@ -283,8 +290,15 @@ class SwooleDistributedServer extends SwooleServer
         if (!$serv->taskworker) {
             //异步redis连接池
             $this->redis_pool = new RedisAsynPool();
-            $this->redis_pool->worker_init($this->redis_pool_process,$workerId);
-        } else {
+            $this->redis_pool->worker_init($workerId);
+            //异步mysql连接池
+            $this->mysql_pool = new MysqlAsynPool();
+            $this->mysql_pool->worker_init($workerId);
+            //注册
+            $this->asnyPoolManager = new AsynPoolManager($this->pool_process,$this);
+            $this->asnyPoolManager->registAsyn($this->redis_pool);
+            $this->asnyPoolManager->registAsyn($this->mysql_pool);
+        }else {
             //同步redis连接，用于存储
             $this->redis_client = new \Redis();
             if ($this->redis_client->pconnect($this->config['redis']['ip'], $this->config['redis']['port']) == false) {
@@ -294,13 +308,6 @@ class SwooleDistributedServer extends SwooleServer
                 throw new SwooleException($this->redis_client->getLastError());
             }
             $this->redis_client->select($this->config['redis']['select']);
-        }
-        //db
-        if ($this->config->get('database') != null && $this->config['database']['active'] != 'none') {
-            $db_config_active = $this->config['database']['active'];
-            $db_config = $this->config['database'][$db_config_active];
-            $this->db = new DbConnection($db_config['host'], $db_config['port'],
-                $db_config['user'], $db_config['password'], $db_config['dbname']);
         }
         //定时器
         if ($workerId == $this->worker_num - 1) {//最后一个worker处理启动定时器
@@ -448,7 +455,7 @@ class SwooleDistributedServer extends SwooleServer
         if ($this->redis_client) {
             return $this->redis_client->hExists(SwooleMarco::redis_uid_usid_hash_name, $uid);
         } else {
-            $this->redis_pool->hExists(SwooleMarco::redis_uid_usid_hash_name, $uid, $calback);
+            $this->redis_pool->hExists(SwooleMarco::redis_uid_usid_hash_name, $uid, $callback);
         }
     }
 
@@ -519,7 +526,8 @@ class SwooleDistributedServer extends SwooleServer
             $data = $this->encode($this->pack->pack($data));
         }
         if ($this->uid_fd_table->exist($uid)) {//本机处理
-            $this->server->send($this->uid_fd_table->get($uid)['fd'], $data);
+            $fd = $this->uid_fd_table->get($uid)['fd'];
+            $this->server->send($fd, $data);
         } else {
             if ($fromDispatch) return;
             $this->sendToDispatchMessage($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND, ['data' => $data, 'uid' => $uid]));
@@ -580,7 +588,6 @@ class SwooleDistributedServer extends SwooleServer
             $this->sendToDispatchMessage($dispatch_data);
         }
     }
-
 
     /**
      * 获取实例

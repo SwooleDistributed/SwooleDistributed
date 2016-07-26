@@ -268,7 +268,17 @@ class DbQueryBuilder{
      * @var    string
      */
     public $bind_marker = '?';
-	// --------------------------------------------------------------------
+
+    /**
+     * @var MysqlAsynPool
+     */
+    public $dbDrive;
+
+    public function __construct($dbDirve)
+    {
+        $this->dbDrive = $dbDirve;
+    }
+    // --------------------------------------------------------------------
 
 	/**
 	 * Select
@@ -504,7 +514,6 @@ class DbQueryBuilder{
 				}
 			}
 		}
-
 		return $this;
 	}
 
@@ -1408,7 +1417,7 @@ class DbQueryBuilder{
 	 * @param	bool	$escape	Whether to escape values and identifiers
 	 * @return	bool	TRUE on success, FALSE on failure
 	 */
-	public function insert($table = '', $set = NULL, $escape = NULL)
+	public function insert($callback,$table = '', $set = NULL, $escape = NULL)
 	{
 		if ($set !== NULL)
 		{
@@ -1429,7 +1438,7 @@ class DbQueryBuilder{
 		);
 
 		$this->_reset_write();
-		return $this->query($sql);
+		return $this->query($sql,$callback);
 	}
 
 	// --------------------------------------------------------------------
@@ -1474,7 +1483,7 @@ class DbQueryBuilder{
 	 * @param	array	an associative array of insert values
 	 * @return	bool	TRUE on success, FALSE on failure
 	 */
-	public function replace($table = '', $set = NULL)
+	public function replace($callback,$table = '', $set = NULL)
 	{
 		if ($set !== NULL)
 		{
@@ -1499,7 +1508,7 @@ class DbQueryBuilder{
 		$sql = $this->_replace($this->protect_identifiers($table, TRUE, NULL, FALSE), array_keys($this->qb_set), array_values($this->qb_set));
 
 		$this->_reset_write();
-		return $this->query($sql);
+		return $this->query($sql,$callback);
 	}
 
 	// --------------------------------------------------------------------
@@ -1580,7 +1589,7 @@ class DbQueryBuilder{
 	 * @param	int	$limit
 	 * @return	bool	TRUE on success, FALSE on failure
 	 */
-	public function update($table = '', $set = NULL, $where = NULL, $limit = NULL)
+	public function update($callback,$table = '', $set = NULL, $where = NULL, $limit = NULL)
 	{
 		// Combine any cached components with the current statements
 		$this->_merge_cache();
@@ -1607,7 +1616,7 @@ class DbQueryBuilder{
 
 		$sql = $this->_update($this->qb_from[0], $this->qb_set);
 		$this->_reset_write();
-		return $this->query($sql);
+		return $this->query($sql,$callback);
 	}
 
 	// --------------------------------------------------------------------
@@ -1651,7 +1660,7 @@ class DbQueryBuilder{
 	 * @param	string	the table to empty
 	 * @return	bool	TRUE on success, FALSE on failure
 	 */
-	public function empty_table($table = '')
+	public function empty_table($callback,$table = '')
 	{
 		if ($table === '')
 		{
@@ -1669,7 +1678,7 @@ class DbQueryBuilder{
 
 		$sql = $this->_delete($table);
 		$this->_reset_write();
-		return $this->query($sql);
+		return $this->query($sql,$callback);
 	}
 
 	// --------------------------------------------------------------------
@@ -1684,7 +1693,7 @@ class DbQueryBuilder{
 	 * @param	string	the table to truncate
 	 * @return	bool	TRUE on success, FALSE on failure
 	 */
-	public function truncate($table = '')
+	public function truncate($callback,$table = '')
 	{
 		if ($table === '')
 		{
@@ -1702,7 +1711,7 @@ class DbQueryBuilder{
 
 		$sql = $this->_truncate($table);
 		$this->_reset_write();
-		return $this->query($sql);
+		return $this->query($sql,$callback);
 	}
 
 	// --------------------------------------------------------------------
@@ -1755,7 +1764,7 @@ class DbQueryBuilder{
 	 * @param	bool
 	 * @return	mixed
 	 */
-	public function delete($table = '', $where = '', $limit = NULL, $reset_data = TRUE)
+	public function delete($callback,$table = '', $where = '', $limit = NULL, $reset_data = TRUE)
 	{
 		// Combine any cached components with the current statements
 		$this->_merge_cache();
@@ -1806,7 +1815,7 @@ class DbQueryBuilder{
 			$this->_reset_write();
 		}
 
-		return ($this->return_delete_sql === TRUE) ? $sql : $this->query($sql);
+		return ($this->return_delete_sql === TRUE) ? $sql : $this->query($sql,$callback);
 	}
 
 	// --------------------------------------------------------------------
@@ -2816,7 +2825,7 @@ class DbQueryBuilder{
      * @param	string	the limit clause
      * @param	string	the offset clause
      */
-    public function get($table = '', $limit = NULL, $offset = NULL)
+    public function get($callback,$table = '', $limit = NULL, $offset = NULL)
     {
         if ($table !== '')
         {
@@ -2828,8 +2837,9 @@ class DbQueryBuilder{
         {
             $this->limit($limit, $offset);
         }
+        $this->query($this->_compile_select(),$callback);
         $this->_reset_select();
-        return $this->query($this->_compile_select());
+        return;
     }
     // --------------------------------------------------------------------
 
@@ -2847,7 +2857,7 @@ class DbQueryBuilder{
      * @param    bool $return_object = NULL
      * @return	mixed
      */
-    public function query($sql)
+    public function query($sql,$callback)
     {
         if ($sql === '')
         {
@@ -2859,6 +2869,6 @@ class DbQueryBuilder{
         {
             $sql = preg_replace('/(\W)' . $this->swap_pre . '(\S+?)/', '\\1' . $this->dbprefix . '\\2', $sql);
         }
-        return $sql;
+        $this->dbDrive->query($sql,$callback);
     }
 }

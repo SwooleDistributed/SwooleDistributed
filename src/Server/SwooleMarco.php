@@ -40,6 +40,10 @@ class SwooleMarco
      * REDIS 异步回调消息
      */
     const MSG_TYPE_REDIS_MESSAGE = 6000;
+    /**
+     * MYSQL 异步回调消息
+     */
+    const MSG_TYPE_MYSQL_MESSAGE = 6001;
 
     /**
      * 添加server
