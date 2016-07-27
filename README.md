@@ -21,10 +21,20 @@ swoole 分布式通讯框架 更多信息及联系方式见wiki
   10.内置controller，model，task 3大模块  
   11.swoole server与swoole dispatch都被设计成无状态服务器，所有的信息共享都通过redis  
   12.最新版采用了异步redis进行数据存储，通过开启一个新的redis连接池进程，利用addProcess和sendMessage技术进行结果分发，优雅解决异步问题。  
-  13.注意taskproxy为单例，不要变成成员变量使用，用到时load
+  13.注意taskproxy为单例，不要变成成员变量使用，用到时load  
+  14.dispatch服务器增加使用redis只读服务器的功能，提高跨服务器通讯的效率，建议将dispatch和redis安装在同一台物理机上，并做好redis的主从设置  
 # 拓扑图
   ![image](https://github.com/tmtbe/SwooleDistributed/blob/master/screenshots/topological-graph.jpg)
 # 文档（待完善）
     
-
+# 效率测试
+  环境：2台i3 8G ubuntu服务器  
+  A：serevr+redis（主）+dispatch  
+  B：server+redis（从）+压测工具  
+  结果：不跨服务器通讯 50Wqps  
+        跨服务器通讯 20-25wqps  
+  最优情况是server和dispatch和主redis分开部署，dispath和从redis部署在同一服务器上。压测工具单独部署。
+  理论上这种部署跨服务器通讯可以达到40Wqps以上，性能强劲。
+        
+  
 
