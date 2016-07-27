@@ -10,5 +10,5 @@ $config['redis']['ip'] = '192.168.20.61';
 $config['redis']['port'] = 6379;
 $config['redis']['select'] = 1;
 $config['redis']['password'] = '123456';
-$config['redis']['asyn_max_count'] = 100;
+$config['redis']['asyn_max_count'] = 10;
 return $config;

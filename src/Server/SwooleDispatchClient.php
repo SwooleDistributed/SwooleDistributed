@@ -33,7 +33,12 @@ class SwooleDispatchClient extends SwooleServer
      * @var AsynPoolManager
      */
     protected $asnyPoolManager;
+    /**
+     * 异步进程
+     * @var
+     */
     protected $pool_process;
+
     /**
      * SwooleDispatchClient constructor.
      */
@@ -70,13 +75,15 @@ class SwooleDispatchClient extends SwooleServer
      */
     public function beforeSwooleStart()
     {
-        //创建redis异步连接池进程
-        $this->pool_process = new \swoole_process(function ($process) {
-            $this->asnyPoolManager = new AsynPoolManager($process,$this);
-            $this->asnyPoolManager->event_add();
-            $this->asnyPoolManager->registAsyn(new RedisAsynPool());
-        }, false, 2);
-        $this->server->addProcess($this->pool_process);
+        //创建redis，mysql异步连接池进程
+        if($this->config['asyn_process_enable']) {//代表启动单独进程进行管理
+            $this->pool_process = new \swoole_process(function ($process) {
+                $this->asnyPoolManager = new AsynPoolManager($process, $this);
+                $this->asnyPoolManager->event_add();
+                $this->asnyPoolManager->registAsyn(new RedisAsynPool());
+            }, false, 2);
+            $this->server->addProcess($this->pool_process);
+        }
     }
 
     /**
@@ -94,10 +101,13 @@ class SwooleDispatchClient extends SwooleServer
         parent::onSwooleWorkerStart($serv, $workerId);
         if (!$serv->taskworker) {
             //异步redis连接池
-            $this->redis_pool = new RedisAsynPool();
+            $this->redis_pool = new RedisAsynPool($this->config['dispatch_server']['redis_slave']);
             $this->redis_pool->worker_init($workerId);
             //注册
             $this->asnyPoolManager = new AsynPoolManager($this->pool_process,$this);
+            if(!$this->config['asyn_process_enable']){
+                $this->asnyPoolManager->no_event_add();
+            }
             $this->asnyPoolManager->registAsyn($this->redis_pool);
         }
     }
@@ -169,7 +179,8 @@ class SwooleDispatchClient extends SwooleServer
     public function onClientConnect($cli)
     {
         print_r("connect\n");
-        $data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_USID, ip2long($cli->address));
+        $write_data = ['wid'=>$this->server->worker_id,'usid'=>ip2long($cli->address)];
+        $data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_USID, serialize($write_data));
         $cli->send($this->encode($data));
     }
 

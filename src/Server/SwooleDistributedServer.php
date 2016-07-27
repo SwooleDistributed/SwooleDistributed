@@ -1,6 +1,7 @@
 <?php
 namespace Server;
 
+use Flexihash\Flexihash;
 use Noodlehaus\Exception;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Loader;
@@ -141,7 +142,7 @@ class SwooleDistributedServer extends SwooleServer
         $this->uid_fd_table->column('fd', \swoole_table::TYPE_INT, 8);
         $this->uid_fd_table->create();
         //创建redis，mysql异步连接池进程
-        if($this->config['asyn_process_enable']) {//代表启动单独进程进行管理
+        if ($this->config['asyn_process_enable']) {//代表启动单独进程进行管理
             $this->pool_process = new \swoole_process(function ($process) {
                 $this->asnyPoolManager = new AsynPoolManager($process, $this);
                 $this->asnyPoolManager->event_add();
@@ -152,15 +153,6 @@ class SwooleDistributedServer extends SwooleServer
         }
         //创建第二个端口用于连接dispatch
         $this->dispatch_port = $this->server->listen($this->config['server']['socket'], $this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
-        $this->dispatch_port->on('connect', function ($serv, $fd) {
-            print_r("Find a new dispatcher.\n");
-            for ($i = 0; $i < $this->worker_num + $this->task_num; $i++) {
-                if ($i == $serv->worker_id) continue;
-                $data = $this->packSerevrMessageBody(SwooleMarco::ADD_DISPATCH_CLIENT, $fd);
-                $serv->sendMessage($data, $i);
-            }
-            $this->dispatchClientFds[$fd] = $fd;
-        });
         $this->dispatch_port->on('close', function ($serv, $fd) {
             print_r("Remove a dispatcher.\n");
             for ($i = 0; $i < $this->worker_num + $this->task_num; $i++) {
@@ -168,7 +160,7 @@ class SwooleDistributedServer extends SwooleServer
                 $data = $this->packSerevrMessageBody(SwooleMarco::REMOVE_DISPATCH_CLIENT, $fd);
                 $serv->sendMessage($data, $i);
             }
-            unset($this->dispatchClientFds[$fd]);
+            $this->removeDispatch($fd);
         });
         $this->dispatch_port->on('receive', function ($serv, $fd, $from_id, $data) {
             $data = substr($data, SwooleMarco::HEADER_LENGTH);
@@ -177,13 +169,17 @@ class SwooleDistributedServer extends SwooleServer
             $message = $unserialize_data['message'];
             switch ($type) {
                 case SwooleMarco::MSG_TYPE_USID://获取服务器唯一id
-                    if ($this->USID != $message) {
-                        for ($i = 0; $i < $this->worker_num + $this->task_num; $i++) {
-                            if ($i == $serv->worker_id) continue;
-                            $serv->sendMessage($data, $i);
-                        }
-                        $this->USID = $message;
+                    print_r("Find a new dispatcher.\n");
+                    $uns_data = unserialize($message);
+                    $uns_data['fd'] = $fd;
+                    $fdinfo = $this->server->connection_info($fd);
+                    $uns_data['remote_ip'] = $fdinfo['remote_ip'];
+                    $send_data = $this->packSerevrMessageBody($type, $uns_data);
+                    for ($i = 0; $i < $this->worker_num + $this->task_num; $i++) {
+                        if ($i == $serv->worker_id) continue;
+                        $serv->sendMessage($send_data, $i);
                     }
+                    $this->addDispatch($uns_data);
                     break;
                 case SwooleMarco::MSG_TYPE_SEND://发送消息
                     $this->sendToUid($message['uid'], $message['data'], true);
@@ -199,6 +195,25 @@ class SwooleDistributedServer extends SwooleServer
     }
 
     /**
+     * 添加一个dispatch
+     * @param $data
+     */
+    public function addDispatch($data)
+    {
+        $this->USID = $data['usid'];
+        $this->dispatchClientFds[$data['fd']] = $data['fd'];
+    }
+
+    /**
+     * 移除dispatch
+     * @param $data
+     */
+    public function removeDispatch($fd)
+    {
+        unset($this->dispatchClientFds[$fd]);
+    }
+
+    /**
      * PipeMessage
      * @param $serv
      * @param $from_worker_id
@@ -210,14 +225,10 @@ class SwooleDistributedServer extends SwooleServer
         $data = unserialize($message);
         switch ($data['type']) {
             case SwooleMarco::MSG_TYPE_USID:
-                $this->USID = $data['message'];
-                break;
-            case SwooleMarco::ADD_DISPATCH_CLIENT:
-                $fd = $data['message'];
-                $this->dispatchClientFds[$fd] = $fd;
+                $this->addDispatch($data['message']);
                 break;
             case SwooleMarco::REMOVE_DISPATCH_CLIENT:
-                unset($this->dispatchClientFds[$data['message']]);
+                $this->removeDispatch($data['message']);
                 break;
             case SwooleMarco::MSG_TYPE_REDIS_MESSAGE:
                 $this->asnyPoolManager->distribute($data['message']);
@@ -229,11 +240,12 @@ class SwooleDistributedServer extends SwooleServer
      * 随机选择一个dispatch发送消息
      * @param $data
      */
-    private function sendToDispatchMessage($data)
+    private function sendToDispatchMessage($type, $data)
     {
-        $fd = array_rand($this->dispatchClientFds);
+        $send_data = $this->packSerevrMessageBody($type, $data);
+        $fd = $this->dispatchClientFds[array_rand($this->dispatchClientFds)];
         if ($fd != null) {
-            $this->server->send($fd, $this->encode($data));
+            $this->server->send($fd, $this->encode($send_data));
         }
     }
 
@@ -297,22 +309,12 @@ class SwooleDistributedServer extends SwooleServer
             $this->mysql_pool = new MysqlAsynPool();
             $this->mysql_pool->worker_init($workerId);
             //注册
-            $this->asnyPoolManager = new AsynPoolManager($this->pool_process,$this);
-            if(!$this->config['asyn_process_enable']){
+            $this->asnyPoolManager = new AsynPoolManager($this->pool_process, $this);
+            if (!$this->config['asyn_process_enable']) {
                 $this->asnyPoolManager->no_event_add();
             }
             $this->asnyPoolManager->registAsyn($this->redis_pool);
             $this->asnyPoolManager->registAsyn($this->mysql_pool);
-        }else {
-            //同步redis连接，用于存储
-            $this->redis_client = new \Redis();
-            if ($this->redis_client->pconnect($this->config['redis']['ip'], $this->config['redis']['port']) == false) {
-                throw new SwooleException($this->redis_client->getLastError());
-            }
-            if ($this->redis_client->auth($this->config['redis']['password']) == false) {
-                throw new SwooleException($this->redis_client->getLastError());
-            }
-            $this->redis_client->select($this->config['redis']['select']);
         }
         //定时器
         if ($workerId == $this->worker_num - 1) {//最后一个worker处理启动定时器
@@ -439,11 +441,13 @@ class SwooleDistributedServer extends SwooleServer
      */
     public function unBindUid($uid)
     {
-        //更新映射表
-        if ($this->redis_client != null) {
-            $this->redis_client->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
-        } else {
-            $this->redis_pool->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid, null);
+        if (!empty($this->USID)) {
+            //更新映射表
+            if ($this->redis_client != null) {
+                $this->redis_client->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
+            } else {
+                $this->redis_pool->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid, null);
+            }
         }
         //更新共享内存
         $this->uid_fd_table->del($uid);
@@ -535,7 +539,7 @@ class SwooleDistributedServer extends SwooleServer
             $this->server->send($fd, $data);
         } else {
             if ($fromDispatch) return;
-            $this->sendToDispatchMessage($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND, ['data' => $data, 'uid' => $uid]));
+            $this->sendToDispatchMessage(SwooleMarco::MSG_TYPE_SEND, ['data' => $data, 'uid' => $uid]);
         }
     }
 
@@ -546,7 +550,7 @@ class SwooleDistributedServer extends SwooleServer
     public function sendToAll($data)
     {
         $data = $this->encode($this->pack->pack($data));
-        $this->sendToDispatchMessage($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_ALL, ['data' => $data]));
+        $this->sendToDispatchMessage(SwooleMarco::MSG_TYPE_SEND_ALL, ['data' => $data]);
     }
 
     /**
@@ -557,7 +561,7 @@ class SwooleDistributedServer extends SwooleServer
     public function sendToGroup($groupId, $data)
     {
         $data = $this->encode($this->pack->pack($data));
-        $this->sendToDispatchMessage($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_GROUP, ['data' => $data, 'groupId' => $groupId]));
+        $this->sendToDispatchMessage(SwooleMarco::MSG_TYPE_SEND_GROUP, ['data' => $data, 'groupId' => $groupId]);
     }
 
     /**
@@ -589,9 +593,28 @@ class SwooleDistributedServer extends SwooleServer
         if ($fromDispatch) return;
         //本机处理不了的发给dispatch
         if (count($uids) > 0) {
-            $dispatch_data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_BATCH, ['data' => $data, 'uids' => array_values($uids)]);
-            $this->sendToDispatchMessage($dispatch_data);
+            $this->sendToDispatchMessage(SwooleMarco::MSG_TYPE_SEND_BATCH, ['data' => $data, 'uids' => array_values($uids)]);
         }
+    }
+
+    /**
+     * 获取同步redis
+     * @return \Redis
+     * @throws SwooleException
+     */
+    public function getRedis()
+    {
+        if ($this->redis_client != null) return $this->redis_client;
+        //同步redis连接，给task使用
+        $this->redis_client = new \Redis();
+        if ($this->redis_client->pconnect($this->config['redis']['ip'], $this->config['redis']['port']) == false) {
+            throw new SwooleException($this->redis_client->getLastError());
+        }
+        if ($this->redis_client->auth($this->config['redis']['password']) == false) {
+            throw new SwooleException($this->redis_client->getLastError());
+        }
+        $this->redis_client->select($this->config['redis']['select']);
+        return $this->redis_client;
     }
 
     /**

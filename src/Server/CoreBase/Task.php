@@ -9,15 +9,10 @@ namespace Server\CoreBase;
  */
 class Task extends TaskProxy
 {
-    /**
-     * task只能使用同步redis
-     * @var \Redis
-     */
-    public $redis;
+
     public function __construct()
     {
         parent::__construct();
-        $this->redis = get_instance()->redis_client;
     }
 
     /**
@@ -47,5 +42,14 @@ class Task extends TaskProxy
     protected function sendToAll($data){
         $data = $this->pack->pack($data);
         get_instance()->sendToAll($data);
+    }
+
+    /**
+     * 获取同步redis
+     * @return \Redis
+     * @throws SwooleException
+     */
+    protected function getRedis(){
+        return get_instance()->getRedis();
     }
 }

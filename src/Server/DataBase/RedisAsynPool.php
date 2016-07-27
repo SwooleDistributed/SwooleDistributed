@@ -21,6 +21,17 @@ class RedisAsynPool extends AsynPool
    
     protected $redis_max_count = 0;
     /**
+     * 连接
+     * @var array
+     */
+    public $connect;
+    public function __construct($connect=null)
+    {
+        parent::__construct();
+        $this->connect = $connect;
+    }
+
+    /**
      * 映射redis方法
      * @param $name
      * @param $arguments
@@ -87,7 +98,7 @@ class RedisAsynPool extends AsynPool
             return;
         }
         $client = new \swoole_redis();
-        $client->connect($this->config['redis']['ip'], $this->config['redis']['port'], function ($client, $result) {
+        $callback = function ($client, $result) {
             if (!$result) {
                 throw new SwooleException($client->errMsg);
             }
@@ -105,7 +116,11 @@ class RedisAsynPool extends AsynPool
                     $this->pushToPool($client);
                 });
             });
-        });
+        };
+        if($this->connect==null){
+            $this->connect = [$this->config['redis']['ip'], $this->config['redis']['port']];
+        }
+        $client->connect($this->connect[0],$this->connect[1], $callback);
     }
     /**
      * @return string

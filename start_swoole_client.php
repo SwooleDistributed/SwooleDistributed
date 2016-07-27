@@ -7,7 +7,7 @@
  */
 $worker_num = 100;
 $total_num = 100000;
-$ips = ['192.168.20.60'];
+$ips = ['192.168.20.60','192.168.20.61'];
 $GLOBALS['total_num'] = $total_num;
 $GLOBALS['worker_num'] = $worker_num;
 $GLOBALS['count'] = 0;
@@ -60,7 +60,7 @@ function connect($cli){
     swoole_timer_after(1000,function ()use($cli){
         $GLOBALS['start_time'] = getMillisecond();
         for ($i=0;$i<$cli->total_num;$i++) {
-            $cli->send(encode(json_pack('TestController', 'ansy_redis_test', $GLOBALS['test_count'])));
+            $cli->send(encode(json_pack('TestController', 'efficiency_test', $GLOBALS['test_count'])));
             $GLOBALS['test_count']++;
         }
     });

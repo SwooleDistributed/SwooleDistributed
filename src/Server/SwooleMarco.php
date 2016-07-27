@@ -54,10 +54,7 @@ class SwooleMarco
      * task任务
      */
     const SERVER_TYPE_TASK = 500;
-    /**
-     * 添加dispatch
-     */
-    const ADD_DISPATCH_CLIENT = 2001;
+
     /**
      * 移除dispatch
      */

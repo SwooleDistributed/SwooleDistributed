@@ -38,6 +38,11 @@ $config['dispatch_server']['set'] = [
     'dispatch_mode' => 3,
     'enable_reuse_port' => true,
 ];
+
+//主从redis提高读的速度
+//启动这个服务一定确保dispatch服务器上一定有一个redis只读服务器
+$config['dispatch_server']['redis_slave'] = ['127.0.0.1',6379];
+
 //异步服务是否启动一个新进程（启动后异步效率会降低2倍，但维护连接池只有一个）
 $config['asyn_process_enable'] = false;
 return $config;
