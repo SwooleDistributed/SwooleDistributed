@@ -1,5 +1,7 @@
 # SwooleDistributed
-swoole 分布式通讯框架 更多信息及联系方式见wiki
+swoole 分布式通讯框架  
+开发交流群：569037921  
+更多信息及联系方式见wiki
 # 安装须知
   1.php 7.0  
   2.需要使用最新版的swoole，请通过github下载编译swoole，1.8.7在php7.0下存在bug不建议使用  
