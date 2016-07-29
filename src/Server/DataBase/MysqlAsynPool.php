@@ -1,6 +1,6 @@
 <?php
 /**
- * redis 异步客户端连接池
+ * mysql 异步客户端连接池
  * Created by PhpStorm.
  * User: tmtbe
  * Date: 16-7-22
@@ -19,7 +19,7 @@ class MysqlAsynPool extends AsynPool
 {
     const AsynName = 'mysql';
     /**
-     * @var DbQueryBuilder
+     * @var Miner
      */
     public $dbQueryBuilder;
     protected $mysql_max_count = 0;
@@ -31,16 +31,22 @@ class MysqlAsynPool extends AsynPool
     public function worker_init($worker_id)
     {
         parent::worker_init($worker_id);
-        $this->dbQueryBuilder = new DbQueryBuilder($this);
+        $this->dbQueryBuilder = new Miner();
     }
 
     /**
      * 执行一个sql语句
-     * @param $sql
      * @param $callback
+     * @param $sql
      */
-    public function query($sql,$callback)
+    public function query($callback,$sql=null)
     {
+        if($sql==null){
+            $sql = $this->dbQueryBuilder->getStatement(false);
+        }
+        if (empty($sql)){
+            throw new SwooleException('sql empty');
+        }
         $data = [
             'sql' => $sql
         ];
@@ -62,6 +68,15 @@ class MysqlAsynPool extends AsynPool
             $client = $this->pool->shift();
             $sql = $data['sql'];
             $client->query($sql, function ($client, $result) use ($data) {
+                if ($result === false)
+                {
+                    if($client->errno==2006||$client->errno==2013){//断线重连
+                        $this->reconnect($client);
+                        $this->commands->unshift($data);
+                    }else {
+                        throw new SwooleException("[mysql]:".$client->error);
+                    }
+                }
                 $data['result'] = $result;
                 unset($data['sql']);
                 //给worker发消息
@@ -73,14 +88,13 @@ class MysqlAsynPool extends AsynPool
     }
 
     /**
-     * 准备一个mysql
+     * 重连或者连接
+     * @param null $client
      */
-    public function prepareOne()
-    {
-        if ($this->mysql_max_count > $this->config->get('database.asyn_max_count', 10)) {
-            return;
+    public function reconnect($client=null){
+        if($client==null) {
+            $client = new \swoole_mysql();
         }
-        $client = new \swoole_mysql();
         $set = $this->config['database'][$this->config['database']['active']];
         $client->connect($set, function ($client, $result) {
             if (!$result) {
@@ -90,6 +104,16 @@ class MysqlAsynPool extends AsynPool
                 $this->pushToPool($client);
             }
         });
+    }
+    /**
+     * 准备一个mysql
+     */
+    public function prepareOne()
+    {
+        if ($this->mysql_max_count > $this->config->get('database.asyn_max_count', 10)) {
+            return;
+        }
+        $this->reconnect();
     }
 
     /**

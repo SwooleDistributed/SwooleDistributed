@@ -120,7 +120,7 @@ class RedisAsynPool extends AsynPool
         if($this->connect==null){
             $this->connect = [$this->config['redis']['ip'], $this->config['redis']['port']];
         }
-        $client->connect($this->connect[0],$this->connect[1], $callback);
+        $client->connect($this->connect[0], $this->connect[1], $callback);
     }
     /**
      * @return string

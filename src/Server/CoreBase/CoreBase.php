@@ -14,18 +14,13 @@ use Noodlehaus\Config;
 use Server\DataBase\RedisAsynPool;
 use Server\Pack\IPack;
 
-class CoreBase
+class CoreBase extends Child
 {
     /**
      * 销毁标志
      * @var bool
      */
     public $is_destroy = false;
-    /**
-     * 子集
-     * @var array
-     */
-    public $child_list = [];
     /**
      * 名称
      * @var string
@@ -65,23 +60,11 @@ class CoreBase
     }
 
     /**
-     * 加入一个插件
-     * @param $child CoreBase
-     */
-    public function addChild($child)
-    {
-        array_push($this->child_list, $child);
-    }
-
-    /**
      * 销毁，解除引用
      */
     public function destroy()
     {
-        foreach ($this->child_list as $core_child) {
-            $core_child->destroy();
-        }
-        $this->child_list = [];
+        parent::destroy();
         $this->is_destroy = true;
     }
 

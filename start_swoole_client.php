@@ -7,7 +7,7 @@
  */
 $worker_num = 100;
 $total_num = 100000;
-$ips = ['192.168.20.60','192.168.20.61'];
+$ips = ['192.168.20.61','192.168.20.60'];
 $GLOBALS['total_num'] = $total_num;
 $GLOBALS['worker_num'] = $worker_num;
 $GLOBALS['count'] = 0;

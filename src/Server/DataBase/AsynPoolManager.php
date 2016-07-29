@@ -1,5 +1,6 @@
 <?php
 /**
+ * 异步连接池管理器
  * Created by PhpStorm.
  * User: tmtbe
  * Date: 16-7-25

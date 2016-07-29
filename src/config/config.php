@@ -5,7 +5,15 @@
  * Date: 16-7-14
  * Time: 下午1:58
  */
+/**
+ * http服务器设置
+ */
+$config['http_server']['socket'] = '0.0.0.0';
+$config['http_server']['port'] = 8080;
 
+/**
+ * 服务器设置
+ */
 $config['server']['socket'] = '0.0.0.0';
 $config['server']['port'] = 9093;
 $config['server']['dispatch_port'] = 9991;
@@ -26,6 +34,9 @@ $config['server']['set'] = [
     'enable_reuse_port' => true,
 ];
 
+/**
+ * dispatch服务器设置
+ */
 $config['dispatch_server']['socket'] = '0.0.0.0';
 $config['dispatch_server']['port'] = 60000;
 $config['dispatch_server']['name'] = 'SwooleDispatch';
@@ -41,7 +52,7 @@ $config['dispatch_server']['set'] = [
 
 //主从redis提高读的速度
 //启动这个服务一定确保dispatch服务器上一定有一个redis只读服务器
-$config['dispatch_server']['redis_slave'] = ['127.0.0.1',6379];
+$config['dispatch_server']['redis_slave'] = ['unix:/var/run/redis/redis.sock',0];
 
 //异步服务是否启动一个新进程（启动后异步效率会降低2倍，但维护连接池只有一个）
 $config['asyn_process_enable'] = false;

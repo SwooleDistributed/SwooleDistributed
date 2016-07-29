@@ -3,7 +3,6 @@ namespace Server\Controllers;
 
 use Server\CoreBase\Controller;
 use Server\Tasks\TestTask;
-
 /**
  * Created by PhpStorm.
  * User: tmtbe
@@ -17,12 +16,12 @@ class TestController extends Controller
      */
     public $testTask;
 
-    public function test()
+    public function mysql_test()
     {
-        $this->mysql_pool->dbQueryBuilder->select("*")->where('uid', 10004)->from('account')->get(function ($result) {
+        $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('sex', 1);
+        $this->mysql_pool->query(function ($result) {
             var_dump($result);
         });
-        $this->send('test');
     }
 
     public function bind_uid()
@@ -48,5 +47,13 @@ class TestController extends Controller
         $this->redis_pool->get('test', function ($result) {
             $this->send($this->client_data->data);
         });
+    }
+
+    /**
+     * http测试
+     */
+    public function http_test()
+    {
+        $this->http_output->end('hello');
     }
 }

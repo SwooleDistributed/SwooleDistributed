@@ -1,5 +1,6 @@
 <?php
 /**
+ * 异步连接池基类
  * Created by PhpStorm.
  * User: tmtbe
  * Date: 16-7-25
@@ -37,7 +38,7 @@ abstract class AsynPool implements IAsynPool
         $this->pool = new \SplQueue();
     }
 
-    function addTokenCallback($callback)
+    public function addTokenCallback($callback)
     {
         $token = $this->token;
         $this->callBacks[$token] = $callback;
@@ -51,7 +52,7 @@ abstract class AsynPool implements IAsynPool
      * 分发消息
      * @param $data
      */
-    function distribute($data)
+    public function distribute($data)
     {
         $callback = $this->callBacks[$data['token']];
         unset($this->callBacks[$data['token']]);
@@ -75,7 +76,7 @@ abstract class AsynPool implements IAsynPool
     /**
      * @param $workerid
      */
-    function worker_init($workerid)
+    public function worker_init($workerid)
     {
         $this->worker_id = $workerid;
     }
@@ -83,7 +84,7 @@ abstract class AsynPool implements IAsynPool
     /**
      * @param $client
      */
-    function pushToPool($client)
+    public function pushToPool($client)
     {
         $this->pool->push($client);
         if (count($this->commands) > 0) {//有残留的任务

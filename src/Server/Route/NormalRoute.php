@@ -23,6 +23,22 @@ class NormalRoute implements IRoute
     }
 
     /**
+     * 处理http request
+     * @param $request
+     */
+    public function handleClientRequest($request)
+    {
+        $route = explode('/', $request->server['path_info'], 3);
+        if(count($route) != 3){
+            $this->client_data->controller_name = 'Error';
+            $this->client_data->method_name = 'Error_404';
+        }else {
+            $this->client_data->controller_name = $route[1];
+            $this->client_data->method_name = $route[2];
+        }
+    }
+
+    /**
      * 获取控制器名称
      * @return string
      */

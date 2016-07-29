@@ -1,7 +1,5 @@
 <?php
 namespace Server;
-
-use Flexihash\Flexihash;
 use Noodlehaus\Exception;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Loader;
@@ -18,7 +16,7 @@ use Server\Route\IRoute;
  * Date: 16-7-14
  * Time: 上午9:18
  */
-class SwooleDistributedServer extends SwooleServer
+class SwooleDistributedServer extends SwooleHttpServer
 {
     /**
      * 实例
@@ -111,6 +109,8 @@ class SwooleDistributedServer extends SwooleServer
      */
     public function setConfig()
     {
+        $this->http_socket_name = $this->config['http_server']['socket'];
+        $this->http_port = $this->config['http_server']['port'];
         $this->socket_type = SWOOLE_SOCK_TCP;
         $this->socket_name = $this->config['server']['socket'];
         $this->port = $this->config['server']['port'];
@@ -127,7 +127,7 @@ class SwooleDistributedServer extends SwooleServer
      */
     public function setServerSet()
     {
-        $set = $this->config['server']['set'];
+        $set = $this->config->get('server.set',[]);
         $set = array_merge($set, $this->probuf_set);
         return $set;
     }
@@ -151,8 +151,9 @@ class SwooleDistributedServer extends SwooleServer
             }, false, 2);
             $this->server->addProcess($this->pool_process);
         }
-        //创建第二个端口用于连接dispatch
+        //创建dispatch端口用于连接dispatch
         $this->dispatch_port = $this->server->listen($this->config['server']['socket'], $this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
+        $this->dispatch_port->set($this->setServerSet());
         $this->dispatch_port->on('close', function ($serv, $fd) {
             print_r("Remove a dispatcher.\n");
             for ($i = 0; $i < $this->worker_num + $this->task_num; $i++) {
@@ -392,6 +393,25 @@ class SwooleDistributedServer extends SwooleServer
         if ($controller_instance != null) {
             $uid = $serv->connection_info($fd)['uid']??0;
             $controller_instance->setClientData($uid, $fd, $client_data);
+            $methd_name = $this->route->getMethodName();
+            if (method_exists($controller_instance, $methd_name)) {
+                call_user_func([$controller_instance, $methd_name]);
+            }
+        }
+    }
+
+    /**
+     * http服务器发来消息
+     * @param $request
+     * @param $response
+     */
+    public function onSwooleRequest($request, $response)
+    {
+        $this->route->handleClientRequest($request);
+        $controller_name = $this->route->getControllerName();
+        $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
+        if ($controller_instance != null) {
+            $controller_instance->setRequestResponse($request,$response);
             $methd_name = $this->route->getMethodName();
             if (method_exists($controller_instance, $methd_name)) {
                 call_user_func([$controller_instance, $methd_name]);
