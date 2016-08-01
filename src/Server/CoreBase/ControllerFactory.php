@@ -38,6 +38,7 @@ class ControllerFactory
      * @param $controller string
      */
     public function getController($controller){
+        if($controller==null) return null;
         if(!key_exists($controller, $this->pool)){
             $this->pool[$controller] = new \SplQueue();
         }

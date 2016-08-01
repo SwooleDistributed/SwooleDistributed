@@ -103,4 +103,17 @@ class HttpOutput{
         }
         return;
     }
+
+    /**
+     * 输出文件（会自动销毁）
+     * @param $file_name
+     * @return bool
+     */
+    public function endFile($file_name){
+        $result = swoole_async_readfile(__DIR__.'/../Views/'.$file_name, function($filename, $content) {
+            $this->response->end($content);
+            $this->controller->destroy();
+        });
+        return $result;
+    }
 }

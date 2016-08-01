@@ -407,6 +407,7 @@ class SwooleDistributedServer extends SwooleHttpServer
      */
     public function onSwooleRequest($request, $response)
     {
+        $error_404 = false;
         $this->route->handleClientRequest($request);
         $controller_name = $this->route->getControllerName();
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
@@ -415,7 +416,15 @@ class SwooleDistributedServer extends SwooleHttpServer
             $methd_name = $this->route->getMethodName();
             if (method_exists($controller_instance, $methd_name)) {
                 call_user_func([$controller_instance, $methd_name]);
+            }else{
+                $error_404 = true;
             }
+        }else{
+            $error_404 = true;
+        }
+        if($error_404){
+            $template = $this->loader->view('error_404');
+            $response->end($template->render(['controller'=>$request->server['path_info'],'message'=>'页面不存在！']));
         }
     }
 

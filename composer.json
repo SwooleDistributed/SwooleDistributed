@@ -2,7 +2,8 @@
     "require": {
         "monolog/monolog": "2.0.x-dev",
 	    "hassankhan/config": "~0.10",
-        "voku/anti-xss": "2.0.1"
+        "voku/anti-xss": "2.0.1",
+        "league/plates": "3.*"
     },
     "autoload": {
         "psr-0": {

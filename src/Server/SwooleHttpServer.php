@@ -10,11 +10,18 @@
 namespace Server;
 
 
+use League\Plates\Engine;
+
 abstract class SwooleHttpServer extends SwooleServer
 {
     public $http_socket_name;
     public $http_port;
     public $port;
+    /**
+     * 模板引擎
+     * @var Engine
+     */
+    public $templateEngine;
     public function start()
     {
         if(empty($this->http_socket_name)||empty($this->http_port)){
@@ -45,6 +52,11 @@ abstract class SwooleHttpServer extends SwooleServer
         $this->port->on('Packet',[$this,'onSwoolePacket']);
         $this->beforeSwooleStart();
         $this->server->start();
+    }
+    public function onSwooleWorkerStart($serv, $workerId)
+    {
+        parent::onSwooleWorkerStart($serv, $workerId);
+        $this->templateEngine = new Engine(__DIR__.'/Views');
     }
 
     /**

@@ -68,4 +68,14 @@ class Loader
             return $task_instance;
         }
     }
+
+    /**
+     * view 返回一个模板
+     * @param $template
+     * @return \League\Plates\Template\Template
+     */
+    public function view($template){
+        $template = get_instance()->templateEngine->make($template);
+        return $template;
+    }
 }
