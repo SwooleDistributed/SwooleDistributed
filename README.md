@@ -25,6 +25,9 @@ swoole 分布式通讯框架
   12.最新版采用了异步redis进行数据存储，通过开启一个新的redis连接池进程，利用addProcess和sendMessage技术进行结果分发，优雅解决异步问题。  
   13.注意taskproxy为单例，不要变成成员变量使用，用到时load  
   14.dispatch服务器增加使用redis只读服务器的功能，提高跨服务器通讯的效率，建议将dispatch和redis安装在同一台物理机上，并做好redis的主从设置  
+  15.最新版本已经拥有完整的MVC结构，增加了View模块搭配模版引擎完善http开发  
+  16.同时支持TCP和HTTP方式请求服务器，公用一套路由，可自定义路由规则，通过不同端口访问服务器  
+  17.完善mysql异步连接池，mysql语法构建器，增加对异步事务的支持  
 # 拓扑图
   ![image](https://github.com/tmtbe/SwooleDistributed/blob/master/screenshots/topological-graph.jpg)
 # 文档（待完善）
