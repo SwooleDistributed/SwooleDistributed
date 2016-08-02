@@ -22,7 +22,7 @@ swoole 分布式通讯框架
   9.swoole server与swoole dispatch 都支持动态弹性部署，随时热插拔。swoole dispatch上线后30秒内被swoole server发现并建立连接  
   10.内置controller，model，task 3大模块  
   11.swoole server与swoole dispatch都被设计成无状态服务器，所有的信息共享都通过redis  
-  12.最新版采用了异步redis进行数据存储，通过开启一个新的redis连接池进程，利用addProcess和sendMessage技术进行结果分发，优雅解决异步问题。  
+  12.最新版采用了异步redis进行数据存储，通过开启一个新的redis连接池进程，利用addProcess和sendMessage技术进行结果分发，优雅解决异步问题，这种模式整个服务器只维护一个连接池，由于有2次进程间通讯效率只比同步的高一点点。还有一种模式是每个进程都维护一个连接池，这样简化了进程间的通讯效率最高约是同步的2-3倍，但连接会有点浪费     
   13.注意taskproxy为单例，不要变成成员变量使用，用到时load  
   14.dispatch服务器增加使用redis只读服务器的功能，提高跨服务器通讯的效率，建议将dispatch和redis安装在同一台物理机上，并做好redis的主从设置  
   15.最新版本已经拥有完整的MVC结构，增加了View模块搭配模版引擎完善http开发  
