@@ -41,5 +41,14 @@ swoole 分布式通讯框架
   最优情况是server和dispatch和主redis分开部署，dispath和从redis部署在同一服务器上。压测工具单独部署。
   理论上这种部署跨服务器通讯可以达到40Wqps以上，性能强劲。
         
-  
+# 部署说明
+  1.单机模式  
+    这种模式只需要开启一个swoole_distributed_server即可  
+  2.2-105台机器的集群模式  
+    首先保证所有的机器都处于同一个内网网段  
+    配置好LVS和keeplived用于服务器组的负载均衡，dispatch服务器和从redis安装到同一个物理机上之间使用unixsock进行通讯，server服务单独部署在一台物理机上，主redis单独部署在一台物理机上，一般5台以下的server只需要搭配一个dispatch，5台以上可以搭配2个dispatch，2个dispatch服务器才有必要做redis的主从。注：dispatch服务器只会读redis完全不会写入redis。
+  3.10台以上的集群模式  
+    这种可能性能的瓶颈主要堆积到redis的读上了，主从读写分离这种模式只能一定成程度上提高效率，出现redis瓶颈就需要进行redis集群的搭建了。  
+    
+  建议dispatch服务器要比server服务先启动，否则server寻找dispatch服务器会有30秒的延迟。  
 
