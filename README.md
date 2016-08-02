@@ -4,7 +4,7 @@ swoole 分布式通讯框架
 更多信息及联系方式见wiki
 # 安装须知
   1.php 7.0  
-  2.需要使用最新版的swoole，请通过github下载编译swoole，1.8.7在php7.0下存在bug不建议使用  
+  2.强烈建议使用最新版的swoole，请通过github下载编译。最新版修复了很多php7下的bug  
   3.需要redis支持，安装redis扩展  swoole编译时选择异步redis选项  
   4.需要composer支持，安装composer，运行composer install安装依赖  
   5.如需集群自行搭建LVS  
