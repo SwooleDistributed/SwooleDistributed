@@ -1,7 +1,7 @@
 # SwooleDistributed
 swoole 分布式通讯框架  
 开发交流群：569037921  
-更多信息及联系方式见wiki
+文档 https://tmtbe.gitbooks.io/swooledistributed/content/
 # 安装须知
   1.php 7.0  
   2.强烈建议使用最新版的swoole，请通过github下载编译。最新版修复了很多php7下的bug  
@@ -30,7 +30,8 @@ swoole 分布式通讯框架
   17.完善mysql异步连接池，mysql语法构建器，增加对异步事务的支持  
 # 拓扑图
   ![image](https://github.com/tmtbe/SwooleDistributed/blob/master/screenshots/topological-graph.jpg)
-# 文档（待完善）
+# 文档  
+  https://tmtbe.gitbooks.io/swooledistributed/content/
     
 # 效率测试
   环境：2台i3 8G ubuntu服务器  
