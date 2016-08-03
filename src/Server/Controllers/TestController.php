@@ -3,6 +3,7 @@ namespace Server\Controllers;
 
 use Server\CoreBase\Controller;
 use Server\Tasks\TestTask;
+
 /**
  * Created by PhpStorm.
  * User: tmtbe
@@ -94,16 +95,17 @@ class TestController extends Controller
     /**
      * html测试
      */
-    public function html_test()
+    public function http_html_test()
     {
-        $template = $this->loader->view('error_404');
+        $template = $this->loader->view('server::error_404');
         $this->http_output->end($template->render(['controller'=>'TestController\html_test','message'=>'页面不存在！']));
     }
     /**
      * html测试
      */
-    public function html_file_test()
+    public function http_html_file_test()
     {
-       $this->http_output->endFile('test.html');
+       $this->http_output->endFile(SERVER_DIR,'Views/test.html');
     }
+
 }

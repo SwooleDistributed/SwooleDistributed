@@ -1,5 +1,7 @@
 <?php
 namespace Server\CoreBase;
+use Server\SwooleMarco;
+
 /**
  * Controller 控制器
  * 对象池模式，实例会被反复使用，成员变量缓存数据记得在销毁时清理
@@ -55,6 +57,11 @@ class Controller extends CoreBase
     public $http_output;
 
     /**
+     * 是否来自http的请求不是就是来自tcp
+     * @var string
+     */
+    public $request_type;
+    /**
      * Controller constructor.
      */
     public function __construct()
@@ -77,6 +84,7 @@ class Controller extends CoreBase
         $this->uid = $uid;
         $this->fd = $fd;
         $this->client_data = $client_data;
+        $this->request_type = SwooleMarco::TCP_REQUEST;
     }
 
     /**
@@ -90,6 +98,7 @@ class Controller extends CoreBase
         $this->response = $response;
         $this->http_input->set($request);
         $this->http_output->set($response);
+        $this->request_type = SwooleMarco::HTTP_REQUEST;
     }
 
     /**

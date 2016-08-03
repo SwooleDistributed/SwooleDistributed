@@ -44,8 +44,17 @@ class ModelFactory
             $model_instance->reUse();
             return $model_instance;
         }
-        $class_name = "\\Server\\Models\\$model";
-        $model_instance = new $class_name;
+        $class_name = "\\app\\Models\\$model";
+        if (class_exists($class_name)) {
+            $model_instance = new $class_name;
+        }else {
+            $class_name = "\\Server\\Models\\$model";
+            if (class_exists($class_name)) {
+                $model_instance = new $class_name;
+            }else{
+                throw new SwooleException("class $model is not exist");
+            }
+        }
         $model_instance->core_name = $model;
         return $model_instance;
     }

@@ -56,7 +56,9 @@ abstract class SwooleHttpServer extends SwooleServer
     public function onSwooleWorkerStart($serv, $workerId)
     {
         parent::onSwooleWorkerStart($serv, $workerId);
-        $this->templateEngine = new Engine(__DIR__.'/Views');
+        $this->templateEngine = new Engine();
+        $this->templateEngine->addFolder('server', __DIR__.'/Views');
+        $this->templateEngine->addFolder('app', __DIR__ . '/../app/Views');
     }
 
     /**

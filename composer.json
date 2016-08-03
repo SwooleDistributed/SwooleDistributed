@@ -7,7 +7,8 @@
     },
     "autoload": {
         "psr-0": {
-            "Server\\": "src/"
+            "Server\\": "src/",
+            "app\\": "src/"
         },
         "files": ["src/Server/helpers/Common.php",
             "src/Server/helpers/RedisCacheDb.php"]

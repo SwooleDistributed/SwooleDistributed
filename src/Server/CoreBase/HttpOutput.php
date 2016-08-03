@@ -106,11 +106,12 @@ class HttpOutput{
 
     /**
      * 输出文件（会自动销毁）
+     * @param $root_file
      * @param $file_name
      * @return bool
      */
-    public function endFile($file_name){
-        $result = swoole_async_readfile(__DIR__.'/../Views/'.$file_name, function($filename, $content) {
+    public function endFile($root_file,$file_name){
+        $result = swoole_async_readfile($root_file.'/'.$file_name, function($filename, $content) {
             $this->response->end($content);
             $this->controller->destroy();
         });

@@ -1,5 +1,6 @@
 <?php
 namespace Server;
+
 use Noodlehaus\Exception;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Loader;
@@ -9,7 +10,8 @@ use Server\DataBase\MysqlAsynPool;
 use Server\DataBase\RedisAsynPool;
 use Server\Pack\IPack;
 use Server\Route\IRoute;
-
+define("SERVER_DIR", __DIR__);
+define("APP_DIR", __DIR__ . "/../app");
 /**
  * Created by PhpStorm.
  * User: tmtbe
@@ -98,10 +100,30 @@ class SwooleDistributedServer extends SwooleHttpServer
         self::$instance =& $this;
         parent::__construct();
         $this->loader = new Loader();
-        $pack_class_name = "\\Server\\Pack\\" . $this->config['server']['pack_tool'];
-        $this->pack = new $pack_class_name;
-        $route_class_name = "\\Server\\Route\\" . $this->config['server']['route_tool'];
-        $this->route = new $route_class_name;
+        //pack class
+        $pack_class_name = "\\app\\Pack\\" . $this->config['server']['pack_tool'];
+        if (class_exists($pack_class_name)) {
+            $this->pack = new $pack_class_name;
+        }else{
+            $pack_class_name = "\\Server\\Pack\\" . $this->config['server']['pack_tool'];
+            if (class_exists($pack_class_name)) {
+                $this->pack = new $pack_class_name;
+            }else{
+                throw new SwooleException("class {$this->config['server']['pack_tool']} is not exist.");
+            }
+        }
+        //route class
+        $route_class_name = "\\app\\Route\\" . $this->config['server']['route_tool'];
+        if (class_exists($route_class_name)) {
+            $this->route = new $route_class_name;
+        }else{
+            $route_class_name = "\\Server\\Route\\" . $this->config['server']['route_tool'];
+            if (class_exists($route_class_name)) {
+                $this->route = new $route_class_name;
+            }else{
+                throw new SwooleException("class {$this->config['server']['route_tool']} is not exist.");
+            }
+        }
     }
 
     /**
@@ -127,7 +149,7 @@ class SwooleDistributedServer extends SwooleHttpServer
      */
     public function setServerSet()
     {
-        $set = $this->config->get('server.set',[]);
+        $set = $this->config->get('server.set', []);
         $set = array_merge($set, $this->probuf_set);
         return $set;
     }
@@ -286,7 +308,11 @@ class SwooleDistributedServer extends SwooleHttpServer
                 $task = $this->loader->task($task_name);
                 $task_fuc_name = $message['task_fuc_name'];
                 $task_data = $message['task_fuc_data'];
-                $result = call_user_func_array(array($task, $task_fuc_name), $task_data);
+                if(method_exists($task, $task_fuc_name)) {
+                    $result = call_user_func_array(array($task, $task_fuc_name), $task_data);
+                }else{
+                    throw new SwooleException("method $task_fuc_name not exist in $task_name");
+                }
                 $task->distory();
                 return $result;
             default:
@@ -393,7 +419,7 @@ class SwooleDistributedServer extends SwooleHttpServer
         if ($controller_instance != null) {
             $uid = $serv->connection_info($fd)['uid']??0;
             $controller_instance->setClientData($uid, $fd, $client_data);
-            $methd_name = $this->route->getMethodName();
+            $methd_name = $this->config->get('tcp.method_prefix','').$this->route->getMethodName();
             if (method_exists($controller_instance, $methd_name)) {
                 call_user_func([$controller_instance, $methd_name]);
             }
@@ -412,19 +438,19 @@ class SwooleDistributedServer extends SwooleHttpServer
         $controller_name = $this->route->getControllerName();
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
         if ($controller_instance != null) {
-            $controller_instance->setRequestResponse($request,$response);
-            $methd_name = $this->route->getMethodName();
+            $controller_instance->setRequestResponse($request, $response);
+            $methd_name = $this->config->get('http.method_prefix','').$this->route->getMethodName();
             if (method_exists($controller_instance, $methd_name)) {
                 call_user_func([$controller_instance, $methd_name]);
-            }else{
+            } else {
                 $error_404 = true;
             }
-        }else{
+        } else {
             $error_404 = true;
         }
-        if($error_404){
-            $template = $this->loader->view('error_404');
-            $response->end($template->render(['controller'=>$request->server['path_info'],'message'=>'页面不存在！']));
+        if ($error_404) {
+            $template = $this->loader->view('server::error_404');
+            $response->end($template->render(['controller' => $request->server['path_info'], 'message' => '页面不存在！']));
         }
     }
 

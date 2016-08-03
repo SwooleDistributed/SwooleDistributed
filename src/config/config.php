@@ -10,7 +10,6 @@
  */
 $config['http_server']['socket'] = '0.0.0.0';
 $config['http_server']['port'] = 8080;
-
 /**
  * 服务器设置
  */

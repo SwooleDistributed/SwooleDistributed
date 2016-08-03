@@ -43,16 +43,19 @@ class Loader
     /**
      * 获取一个task
      * @param $task
-     * @return mixed|null
+     * @return TaskProxy
      */
     public function task($task)
     {
         if (empty($task)) {
             return null;
         }
-        $task_class = "\\Server\\Tasks\\" . $task;
+        $task_class = "\\app\\Tasks\\" . $task;
         if (!class_exists($task_class)) {
-            throw new SwooleException("class $task_class not exists");
+            $task_class = "\\Server\\Tasks\\" . $task;
+            if (!class_exists($task_class)) {
+                throw new SwooleException("class task_class not exists");
+            }
         }
         if (!get_instance()->server->taskworker) {//工作进程返回taskproxy
             $this->_task_proxy->core_name = $task;

@@ -1,5 +1,5 @@
 <?php
-namespace Server\Tasks;
+namespace app\Tasks;
 
 use Server\CoreBase\SwooleException;
 use Server\CoreBase\Task;
@@ -12,11 +12,11 @@ use Server\DataBase\DbQueryBuilder;
  * Date: 16-7-15
  * Time: 下午1:06
  */
-class TestTask extends Task
+class AppTask extends Task
 {
-    public function testTimer()
+    public function testTask()
     {
-        print_r("test timer task\n");
+        return "test task\n";
     }
 
 }
