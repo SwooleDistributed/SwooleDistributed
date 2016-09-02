@@ -2,6 +2,7 @@
 namespace Server;
 
 use Noodlehaus\Exception;
+use Server\Client\Client;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Loader;
 use Server\CoreBase\SwooleException;
@@ -92,6 +93,11 @@ class SwooleDistributedServer extends SwooleHttpServer
      */
     protected $pool_process;
 
+    /**
+     * 各种client
+     * @var Client
+     */
+    public $client;
     /**
      * SwooleDistributedServer constructor.
      */
@@ -353,6 +359,8 @@ class SwooleDistributedServer extends SwooleHttpServer
             }
             $this->asnyPoolManager->registAsyn($this->redis_pool);
             $this->asnyPoolManager->registAsyn($this->mysql_pool);
+            //初始化异步Client
+            $this->client = new Client();
         }
         //定时器
         if ($workerId == $this->worker_num - 1) {//最后一个worker处理启动定时器

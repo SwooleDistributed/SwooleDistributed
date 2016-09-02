@@ -62,6 +62,11 @@ class Controller extends CoreBase
      * @var string
      */
     public $request_type;
+    
+    /**
+     * @var \Server\Client\Client
+     */
+    public $client;
     /**
      * Controller constructor.
      */
@@ -72,6 +77,7 @@ class Controller extends CoreBase
         $this->http_output = new HttpOutput($this);
         $this->redis_pool = get_instance()->redis_pool;
         $this->mysql_pool = get_instance()->mysql_pool;
+        $this->client = get_instance()->client;
     }
 
     /**

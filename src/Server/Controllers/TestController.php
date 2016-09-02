@@ -1,5 +1,6 @@
 <?php
 namespace Server\Controllers;
+use Server\Client\HttpClient;
 use Server\CoreBase\Controller;
 use Server\Models\TestModel;
 use Server\Tasks\TestTask;
@@ -133,6 +134,17 @@ class TestController extends Controller
         $task = $this->loader->task('TestTask');
         $task->test();
         $result = yield $task->coroutineSend();
+        $this->http_output->end($result);
+    }
+
+    public function http_test_request(){
+        print_r($this->http_input->get('id'));
+        $this->http_output->end('ok');
+    }
+    public function http_test_httpClient()
+    {
+        $httpClient = yield $this->client->coroutineGetHttpClient('http://localhost:8081');
+        $result = yield $httpClient->coroutineGet("/TestController/test_request",['id'=>123]);
         $this->http_output->end($result);
     }
 }

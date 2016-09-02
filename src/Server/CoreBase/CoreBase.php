@@ -11,6 +11,7 @@ namespace Server\CoreBase;
 
 use Monolog\Logger;
 use Noodlehaus\Config;
+use Server\Client\Client;
 use Server\DataBase\RedisAsynPool;
 use Server\Pack\IPack;
 

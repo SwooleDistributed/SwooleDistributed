@@ -9,6 +9,8 @@
 namespace Server\DataBase;
 
 
+use Server\CoreBase\ICoroutineBase;
+
 class RedisCoroutine implements ICoroutineBase
 {
     /**

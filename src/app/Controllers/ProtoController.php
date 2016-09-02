@@ -26,7 +26,9 @@ class ProtoController extends Controller
         $request = $this->Message->getRequest();
         $method = "getM{$method_name}Request";
         $pamars = call_user_func([$request,$method]);
-        call_user_func([$this,$fuc_name],$pamars);
+        if(!empty($pamars)) {
+            return call_user_func([$this, $fuc_name], $pamars);
+        }
     }
 
     /**

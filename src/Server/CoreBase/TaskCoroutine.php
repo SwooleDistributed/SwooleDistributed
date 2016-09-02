@@ -7,10 +7,6 @@
  */
 
 namespace Server\CoreBase;
-
-
-use Server\DataBase\ICoroutineBase;
-
 class TaskCoroutine implements ICoroutineBase
 {
     public $id;

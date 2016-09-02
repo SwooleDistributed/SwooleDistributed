@@ -9,7 +9,7 @@
 namespace Server\CoreBase;
 
 
-class CoroutineTask
+class CoroutineTask 
 {
     protected $stack;
     protected $routine;
