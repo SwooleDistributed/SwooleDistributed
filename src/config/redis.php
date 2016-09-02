@@ -6,7 +6,7 @@
  * Time: 下午1:58
  */
 
-$config['redis']['ip'] = '192.168.20.61';
+$config['redis']['ip'] = 'localhost';
 $config['redis']['port'] = 6379;
 $config['redis']['select'] = 1;
 $config['redis']['password'] = '123456';

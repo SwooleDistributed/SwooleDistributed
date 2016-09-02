@@ -1,7 +1,7 @@
 <?php
 namespace Server\Controllers;
-
 use Server\CoreBase\Controller;
+use Server\Models\TestModel;
 use Server\Tasks\TestTask;
 
 /**
@@ -17,6 +17,10 @@ class TestController extends Controller
      */
     public $testTask;
 
+    /**
+     * @var TestModel
+     */
+    public $testModel;
     /**
      * mysql 测试
      * @throws \Server\CoreBase\SwooleException
@@ -43,8 +47,8 @@ class TestController extends Controller
         $this->mysql_pool->dbQueryBuilder->update('account')->set('channel','8888')->where('uid', 10004);
         $this->mysql_pool->query(function ($result) {
             print_r($result);
+            $this->mysql_pool->commit($this);
         },$id);
-        $this->mysql_pool->commit($this);
     }
 
     /**
@@ -93,6 +97,22 @@ class TestController extends Controller
     }
 
     /**
+     * 设置协程
+     */
+    public function http_testCoroutine()
+    {
+        $this->testModel = $this->loader->model('TestModel', $this);
+        $result = yield $this->testModel->test_coroutine();
+        $this->http_output->end($result);
+    }
+
+    public function http_testRedis()
+    {
+        $this->redis_pool->get('test',function ($result){
+            $this->http_output->end($result);
+        });
+    }
+    /**
      * html测试
      */
     public function http_html_test()
@@ -108,4 +128,11 @@ class TestController extends Controller
        $this->http_output->endFile(SERVER_DIR,'Views/test.html');
     }
 
+    public function http_test_task()
+    {
+        $task = $this->loader->task('TestTask');
+        $task->test();
+        $result = yield $task->coroutineSend();
+        $this->http_output->end($result);
+    }
 }

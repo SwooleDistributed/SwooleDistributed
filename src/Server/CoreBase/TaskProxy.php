@@ -1,7 +1,6 @@
 <?php
 namespace Server\CoreBase;
 
-use Server\SwooleDistributedServer;
 use Server\SwooleMarco;
 
 /**
@@ -54,6 +53,15 @@ class TaskProxy extends CoreBase
         get_instance()->server->task($this->task_proxy_data, $id, $callback);
     }
 
+    /**
+     * 异步的协程模式
+     * @param int $id
+     * @return TaskCoroutine
+     */
+    public function coroutineSend($id = -1)
+    {
+        return new TaskCoroutine($this->task_proxy_data, $id);
+    }
     /**
      * 开始同步任务
      */

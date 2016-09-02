@@ -49,6 +49,16 @@ class RedisAsynPool extends AsynPool
     }
 
     /**
+     * 协程模式
+     * @param $name
+     * @param $arguments
+     * @return RedisCoroutine
+     */
+    public function coroutineSend($name, ...$arg)
+    {
+        return new RedisCoroutine($this, $name, $arg);
+    }
+    /**
      * 执行redis命令
      * @param $data
      */

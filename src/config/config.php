@@ -9,7 +9,7 @@
  * http服务器设置
  */
 $config['http_server']['socket'] = '0.0.0.0';
-$config['http_server']['port'] = 8080;
+$config['http_server']['port'] = 8081;
 /**
  * 服务器设置
  */
@@ -21,7 +21,7 @@ $config['server']['send_use_task_num'] = 20;
 $config['server']['log_path'] = '/../../';
 $config['server']['log_max_files'] = 15;
 $config['server']['log_level'] = \Monolog\Logger::DEBUG;
-$config['server']['pack_tool'] = 'JsonPack';
+$config['server']['pack_tool'] = 'ProtoPack';
 $config['server']['route_tool'] = 'NormalRoute';
 $config['server']['set'] = [
     'reactor_num' => 2, //reactor thread num

@@ -4,6 +4,7 @@ namespace Server;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Noodlehaus\Config;
+use Server\CoreBase\Coroutine;
 
 /**
  * Created by PhpStorm.
@@ -13,6 +14,12 @@ use Noodlehaus\Config;
  */
 abstract class SwooleServer
 {
+    const version = "1.1";
+    /**
+     * 协程调度器
+     * @var Coroutine
+     */
+    public $coroutine;
     /**
      * The PID of master process.
      *
@@ -202,6 +209,9 @@ abstract class SwooleServer
     public function onSwooleWorkerStart($serv, $workerId)
     {
         file_put_contents(self::$pidFile, ',' . $serv->worker_pid, FILE_APPEND);
+        if (!$serv->taskworker) {//worker进程启动协程调度器
+            $this->coroutine = new Coroutine();
+        }
     }
 
     /**
@@ -211,7 +221,7 @@ abstract class SwooleServer
      */
     public function onSwooleConnect($serv, $fd)
     {
-
+        
     }
 
     /**
@@ -504,7 +514,8 @@ abstract class SwooleServer
      */
     protected static function displayUI()
     {
-        echo "\033[1A\n\033[K--------------------------\033[47;30m SWOOLE \033[0m------------------------------\n\033[0m";
+        echo "\033[1A\n\033[K---------------------\033[47;30m SWOOLE_DISTRIBUTED \033[0m-----------------------\n\033[0m";
+        echo 'SwooleDistributed version:', self::version, "\n";
         echo 'Swoole version:', SWOOLE_VERSION, "          PHP version:", PHP_VERSION, "\n";
         echo "--------------------------\033[47;30m WORKERS \033[0m-----------------------------\n";
         echo "\033[47;30muser\033[0m", str_pad('',

@@ -1,5 +1,7 @@
 <?php
 namespace Server\CoreBase;
+use app\Controllers\Account;
+
 /**
  * 控制器工厂模式
  * Created by PhpStorm.

@@ -71,10 +71,9 @@ class HttpOutput{
      * Set Content-Type Header
      *
      * @param    string $mime_type Extension of the file we're outputting
-     * @param    string $charset Character set (default: NULL)
      * @return    HttpOutPut
      */
-    public function set_content_type($mime_type, $charset = NULL)
+    public function set_content_type($mime_type)
     {
         $this->set_header('Content-Type', $mime_type);
         return $this;

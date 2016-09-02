@@ -1,5 +1,6 @@
 <?php
 namespace Server\CoreBase;
+use app\Protobuf\Message;
 use Server\SwooleMarco;
 
 /**
@@ -37,12 +38,12 @@ class Controller extends CoreBase
     public $mysql_pool;
     /**
      * http response
-     * @var \swoole_request
+     * @var \swoole_http_request
      */
     protected $request;
     /**
      * http response
-     * @var \swoole_response
+     * @var \swoole_http_response
      */
     protected $response;
 

@@ -269,6 +269,8 @@ class SwooleDistributedServer extends SwooleHttpServer
         $fd = $this->dispatchClientFds[array_rand($this->dispatchClientFds)];
         if ($fd != null) {
             $this->server->send($fd, $this->encode($send_data));
+        }else{
+            $this->server->task($send_data);
         }
     }
 
@@ -301,6 +303,15 @@ class SwooleDistributedServer extends SwooleHttpServer
                         continue;
                     }
                     $serv->send($fd, $message['data']);
+                }
+                return null;
+            case SwooleMarco::MSG_TYPE_SEND_GROUP://群组
+                $uids = $this->redis_client->hGetAll(SwooleMarco::redis_group_hash_name_prefix . $message['groupId']);
+                foreach ($uids as $uid){
+                    if ($this->uid_fd_table->exist($uid)) {
+                        $fd = $this->uid_fd_table->get($uid)['fd'];
+                        $this->server->send($fd, $message['data']);
+                    }
                 }
                 return null;
             case SwooleMarco::SERVER_TYPE_TASK://task任务
@@ -420,8 +431,13 @@ class SwooleDistributedServer extends SwooleHttpServer
             $uid = $serv->connection_info($fd)['uid']??0;
             $controller_instance->setClientData($uid, $fd, $client_data);
             $methd_name = $this->config->get('tcp.method_prefix','').$this->route->getMethodName();
-            if (method_exists($controller_instance, $methd_name)) {
-                call_user_func([$controller_instance, $methd_name]);
+            try{
+                $generator = call_user_func([$controller_instance, $methd_name]);
+                if($generator instanceof \Generator){
+                    $this->coroutine->start($generator);
+                }
+            }catch (\Exception $e){
+                
             }
         }
     }
@@ -441,7 +457,10 @@ class SwooleDistributedServer extends SwooleHttpServer
             $controller_instance->setRequestResponse($request, $response);
             $methd_name = $this->config->get('http.method_prefix','').$this->route->getMethodName();
             if (method_exists($controller_instance, $methd_name)) {
-                call_user_func([$controller_instance, $methd_name]);
+                $generator = call_user_func([$controller_instance, $methd_name]);
+                if($generator instanceof \Generator){
+                    $this->coroutine->start($generator);
+                }
             } else {
                 $error_404 = true;
             }

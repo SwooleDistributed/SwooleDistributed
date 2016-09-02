@@ -41,7 +41,7 @@ class MysqlAsynPool extends AsynPool
     public function worker_init($worker_id)
     {
         parent::worker_init($worker_id);
-        $this->dbQueryBuilder = new Miner();
+        $this->dbQueryBuilder = new Miner($this);
     }
 
     /**
@@ -68,7 +68,7 @@ class MysqlAsynPool extends AsynPool
         //写入管道
         $this->asyn_manager->writePipe($this, $data, $this->worker_id);
     }
-
+    
     /**
      * 执行mysql命令
      * @param $data

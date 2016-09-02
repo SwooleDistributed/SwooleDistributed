@@ -18,5 +18,9 @@ class TestTask extends Task
     {
         print_r("test timer task\n");
     }
-
+    public function test()
+    {
+        print_r("test\n");
+        return 123;
+    }
 }
