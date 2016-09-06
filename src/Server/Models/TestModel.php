@@ -25,4 +25,15 @@ class TestModel extends Model
         $result = yield $redisCoroutine;
         return $result;
     }
+    public function test_exception()
+    {
+        throw new \Exception('test');
+    }
+
+    public function test_exceptionII()
+    {
+        $mySqlCoroutine = $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10303)->coroutineSend();
+        $result = yield $mySqlCoroutine;
+        throw new \Exception('test');
+    }
 }

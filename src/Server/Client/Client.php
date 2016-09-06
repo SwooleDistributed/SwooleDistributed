@@ -8,6 +8,11 @@ namespace Server\Client;
  */
 class Client
 {
+    /**
+     * 获取一个http客户端
+     * @param $base_url
+     * @param $callBack
+     */
     public function getHttpClient($base_url,$callBack){
         $data = [];
         $data['url'] = $base_url;

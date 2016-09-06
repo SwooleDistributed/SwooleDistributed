@@ -9,11 +9,10 @@
 namespace Server\CoreBase;
 
 
-class CoroutineTask 
+class CoroutineTask
 {
     protected $stack;
     protected $routine;
-    protected $beforeFirstYield = true;
     public function __construct(\Generator $routine)
     {
         $this->routine = $routine;
@@ -39,23 +38,29 @@ class CoroutineTask
                 $routine = $value;
                 return;
             }
-            $result = $value->getResult();
-            if($result!=null){
-                $routine->send($result);
-            }
-            //嵌套的协程返回
-            if(!$routine->valid() && !$this->stack->isEmpty()) {
-                $result = $routine->getReturn();
-                $routine = $this->stack->pop();
-                $routine->send($result);
+            if($value!=null) {
+                $result = $value->getResult();
+                if ($result != null) {
+                    $routine->send($result);
+                }
+                //嵌套的协程返回
+                if (!$routine->valid() && !$this->stack->isEmpty()) {
+                    $result = $routine->getReturn();
+                    $routine = $this->stack->pop();
+                    $routine->send($result);
+                }
             }
         } catch (\Exception $e) {
-
             if ($this->stack->isEmpty()) {
-                /*
-                    throw the exception
-                */
-                return;
+                if($routine->controller!=null){
+                    call_user_func([$routine->controller,'onExceptionHandle'],$e);
+                    $routine->controller = null;
+                }else {
+                    $routine->throw($e);
+                }
+            }else{
+                $routine = $this->stack->pop();
+                $routine->throw($e);
             }
         }
     }

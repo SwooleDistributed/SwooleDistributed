@@ -442,10 +442,11 @@ class SwooleDistributedServer extends SwooleHttpServer
             try{
                 $generator = call_user_func([$controller_instance, $methd_name]);
                 if($generator instanceof \Generator){
+                    $generator->controller = &$controller_instance;
                     $this->coroutine->start($generator);
                 }
             }catch (\Exception $e){
-                
+                call_user_func([$controller_instance, 'onExceptionHandle'],$e);
             }
         }
     }
@@ -465,9 +466,14 @@ class SwooleDistributedServer extends SwooleHttpServer
             $controller_instance->setRequestResponse($request, $response);
             $methd_name = $this->config->get('http.method_prefix','').$this->route->getMethodName();
             if (method_exists($controller_instance, $methd_name)) {
-                $generator = call_user_func([$controller_instance, $methd_name]);
-                if($generator instanceof \Generator){
-                    $this->coroutine->start($generator);
+                try {
+                    $generator = call_user_func([$controller_instance, $methd_name]);
+                    if($generator instanceof \Generator){
+                        $generator->controller = &$controller_instance;
+                        $this->coroutine->start($generator);
+                    }
+                }catch (\Exception $e){
+                    call_user_func([$controller_instance, 'onExceptionHandle'],$e);
                 }
             } else {
                 $error_404 = true;

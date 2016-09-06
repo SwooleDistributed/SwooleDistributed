@@ -62,7 +62,7 @@ class Controller extends CoreBase
      * @var string
      */
     public $request_type;
-    
+
     /**
      * @var \Server\Client\Client
      */
@@ -210,5 +210,21 @@ class Controller extends CoreBase
         if ($distory) {
             $this->destroy();
         }
+    }
+
+    /**
+     * 异常的回调
+     * @param \Exception $e
+     */
+    public function onExceptionHandle(\Exception $e){
+       switch ($this->request_type)
+       {
+           case SwooleMarco::HTTP_REQUEST:
+               $this->http_output->end($e->getMessage());
+               break;
+           case SwooleMarco::TCP_REQUEST:
+               $this->send($e->getMessage());
+               break;
+       }
     }
 }

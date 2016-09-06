@@ -1,6 +1,6 @@
 <?php
 namespace Server\Controllers;
-use Server\Client\HttpClient;
+
 use Server\CoreBase\Controller;
 use Server\Models\TestModel;
 use Server\Tasks\TestTask;
@@ -22,6 +22,7 @@ class TestController extends Controller
      * @var TestModel
      */
     public $testModel;
+
     /**
      * mysql 测试
      * @throws \Server\CoreBase\SwooleException
@@ -44,12 +45,12 @@ class TestController extends Controller
         $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10004);
         $this->mysql_pool->query(function ($result) {
             print_r($result);
-        },$id);
-        $this->mysql_pool->dbQueryBuilder->update('account')->set('channel','8888')->where('uid', 10004);
+        }, $id);
+        $this->mysql_pool->dbQueryBuilder->update('account')->set('channel', '8888')->where('uid', 10004);
         $this->mysql_pool->query(function ($result) {
             print_r($result);
             $this->mysql_pool->commit($this);
-        },$id);
+        }, $id);
     }
 
     /**
@@ -68,8 +69,9 @@ class TestController extends Controller
     public function efficiency_test()
     {
         $data = $this->client_data->data;
-        $this->sendToUid(mt_rand(1,100), $data);
+        $this->sendToUid(mt_rand(1, 100), $data);
     }
+
     /**
      * 效率测试
      * @throws \Server\CoreBase\SwooleException
@@ -79,6 +81,7 @@ class TestController extends Controller
         $data = $this->client_data->data;
         $this->send($data);
     }
+
     /**
      * 测试redis效率
      */
@@ -98,7 +101,7 @@ class TestController extends Controller
     }
 
     /**
-     * 设置协程
+     * 协程测试
      */
     public function http_testCoroutine()
     {
@@ -107,26 +110,80 @@ class TestController extends Controller
         $this->http_output->end($result);
     }
 
+    /**
+     * 协程的controller可以直接抛出异常
+     * 异常处理测试
+     */
+    public function http_testExceptionHandle()
+    {
+        $this->testModel = $this->loader->model('TestModel', $this);
+        $result = yield $this->testModel->test_coroutine();
+        throw new \Exception('ExceptionHandle');
+    }
+
+    /**
+     * 普通的controller异常测试
+     * @throws \Exception
+     */
+    public function http_testExceptionHandleII()
+    {
+        throw new \Exception('ExceptionHandle');
+    }
+
+    /**
+     * 普通model的异常测试
+     * @throws \Exception
+     */
+    public function http_testExceptionHandleIII()
+    {
+        $this->testModel = $this->loader->model('TestModel', $this);
+        $result = $this->testModel->test_exception();
+    }
+
+    /**
+     * 协程的model报错需要增加try catch捕获，否则无法抛出
+     */
+    public function http_testExceptionHandleIV()
+    {
+        $this->testModel = $this->loader->model('TestModel', $this);
+        try {
+            $result = yield $this->testModel->test_exceptionII();
+        } catch (\Exception $e) {
+            $this->onExceptionHandle($e);
+        }
+    }
+
+    /**
+     * 异常的回调处理函数
+     * @param \Exception $e
+     */
+    public function onExceptionHandle($e)
+    {
+        $this->http_output->end($e->getMessage());
+    }
+
     public function http_testRedis()
     {
-        $this->redis_pool->get('test',function ($result){
+        $this->redis_pool->get('test', function ($result) {
             $this->http_output->end($result);
         });
     }
+
     /**
      * html测试
      */
     public function http_html_test()
     {
         $template = $this->loader->view('server::error_404');
-        $this->http_output->end($template->render(['controller'=>'TestController\html_test','message'=>'页面不存在！']));
+        $this->http_output->end($template->render(['controller' => 'TestController\html_test', 'message' => '页面不存在！']));
     }
+
     /**
      * html测试
      */
     public function http_html_file_test()
     {
-       $this->http_output->endFile(SERVER_DIR,'Views/test.html');
+        $this->http_output->endFile(SERVER_DIR, 'Views/test.html');
     }
 
     public function http_test_task()
@@ -137,14 +194,19 @@ class TestController extends Controller
         $this->http_output->end($result);
     }
 
-    public function http_test_request(){
+    public function http_test_request()
+    {
         print_r($this->http_input->get('id'));
         $this->http_output->end('ok');
     }
+
+    /**
+     * 协程的httpclient测试
+     */
     public function http_test_httpClient()
     {
         $httpClient = yield $this->client->coroutineGetHttpClient('http://localhost:8081');
-        $result = yield $httpClient->coroutineGet("/TestController/test_request",['id'=>123]);
+        $result = yield $httpClient->coroutineGet("/TestController/test_request", ['id' => 123]);
         $this->http_output->end($result);
     }
 }
