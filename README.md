@@ -1,6 +1,7 @@
 # SwooleDistributed v1.2
 swoole 分布式通讯框架  
 开发交流群：569037921  
+
 # 文档
   https://tmtbe.gitbooks.io/swooledistributed/content/
 
