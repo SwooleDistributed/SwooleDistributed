@@ -320,6 +320,9 @@ class Miner
         $this->having = array();
         $this->orderBy = array();
         $this->limit = array();
+        $this->insert = array();
+        $this->replace = array();
+        $this->update = array();
 
         $this->setPlaceholderValues = array();
         $this->wherePlaceholderValues = array();
