@@ -55,7 +55,7 @@ swoole 分布式通讯框架
 
 这种模式只需要开启一个swoole_distributed_server即可  
 
-2. 2-105台机器的集群模式
+2. 2-10台机器的集群模式
 
 首先保证所有的机器都处于同一个内网网段  
 配置好LVS和keeplived用于服务器组的负载均衡，dispatch服务器和从redis安装到同一个物理机上之间使用unixsock进行通讯，server服务单独部署在一台物理机上，主redis单独部署在一台物理机上，一般5台以下的server只需要搭配一个dispatch，5台以上可以搭配2个dispatch，2个dispatch服务器才有必要做redis的主从。注：dispatch服务器只会读redis完全不会写入redis。
