@@ -44,22 +44,28 @@ class CoroutineTask
                     $routine->send($result);
                 }
                 //嵌套的协程返回
-                if (!$routine->valid() && !$this->stack->isEmpty()) {
+                while (!$routine->valid() && !$this->stack->isEmpty()) {
                     $result = $routine->getReturn();
-                    $routine = $this->stack->pop();
-                    $routine->send($result);
-                }
-            }
-        } catch (\Exception $e) {
-            if ($this->stack->isEmpty()) {
-                if($routine->controller!=null){
-                    call_user_func([$routine->controller,'onExceptionHandle'],$e);
-                    $routine->controller = null;
-                }else {
-                    $routine->throw($e);
+                    $this->routine = $this->stack->pop();
+                    $this->routine->send($result);
                 }
             }else{
-                $routine = $this->stack->pop();
+                $routine->next();
+            }
+        } catch (\Exception $e) {
+            while (!$this->stack->isEmpty()){
+                $this->routine = $this->stack->pop();
+                try {
+                    $this->routine->throw($e);
+                    break;
+                }catch (\Exception $e){
+
+                }
+            }
+            if($routine->controller!=null){
+                call_user_func([$routine->controller,'onExceptionHandle'],$e);
+                $routine->controller = null;
+            }else {
                 $routine->throw($e);
             }
         }

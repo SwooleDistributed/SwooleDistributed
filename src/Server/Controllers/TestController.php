@@ -141,16 +141,12 @@ class TestController extends Controller
     }
 
     /**
-     * 协程的model报错需要增加try catch捕获，否则无法抛出
+     * 协程的model报错
      */
     public function http_testExceptionHandleIV()
     {
         $this->testModel = $this->loader->model('TestModel', $this);
-        try {
-            $result = yield $this->testModel->test_exceptionII();
-        } catch (\Exception $e) {
-            $this->onExceptionHandle($e);
-        }
+        $result = yield $this->testModel->test_exceptionII();
     }
 
     /**

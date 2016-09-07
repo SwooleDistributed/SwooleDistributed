@@ -1,6 +1,5 @@
 <?php
 namespace Server\CoreBase;
-use app\Protobuf\Message;
 use Server\SwooleMarco;
 
 /**
