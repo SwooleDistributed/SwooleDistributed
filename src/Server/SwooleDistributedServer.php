@@ -364,8 +364,11 @@ class SwooleDistributedServer extends SwooleHttpServer
         }
         //定时器
         if ($workerId == $this->worker_num - 1) {//最后一个worker处理启动定时器
-            $timer_tasks = $this->config->get('timerTask');
+            //重新读入timerTask配置
+            $timerTaskConfig = $this->config->load(__DIR__ . '/../config/timerTask.php');
+            $timer_tasks = $timerTaskConfig->get('timerTask');
             $timer_tasks_used = array();
+
             foreach ($timer_tasks as $timer_task) {
                 $task_name = $timer_task['task_name'];
                 $method_name = $timer_task['method_name'];
