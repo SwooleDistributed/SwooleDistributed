@@ -7,16 +7,17 @@ swoole 分布式通讯框架
 
 # 特性  
   1.优秀的框架设计,丰富的支持极大加快开发速度  
-  2.全异步支持，异步redis,异步mysql,异步httpclient，效率出众  
-  3.协程模式全支持，异步redis，异步mysql，异步httpclient，异步task，全部都提供了协程模式，业务代码摆脱处处回调的困扰  
+  2.全异步支持，无需手动处理连接池，异步redis,异步mysql,异步httpclient，效率出众  
+  3.协程模式全支持，异步redis，异步mysql，异步httpclient，异步task，全部都提供了协程模式，业务代码摆脱处处回调的困扰（不是swoole2.0，php7同样支持）  
   4.额外提供了protobuf完整RPC实例，轻松使用protobuf  
   5.天然分布式的支持，一台机器不够零配置，零代码修改完成高效分布式系统的搭建  
   6.完善详细的文档，还有实例代码，轻松掌握  
+  7.线上项目打造维护，不断优化与改进  
 
 # 安装须知
-  1.php 7.0  
+  1.php 7.0  5.6的用户需要自己修改源码，将php7的部分语法重写。强烈推荐php7.X搭配最新的swoole1.X系列。
   2.强烈建议使用最新版的swoole，请通过github下载编译。最新版修复了很多php7下的bug  
-  3.需要redis支持，安装redis扩展  swoole编译时选择异步redis选项  
+  3.需要redis支持，安装hredis扩展  swoole编译时选择异步redis选项  
   4.需要composer支持，安装composer，运行composer install安装依赖  
   5.如需集群自行搭建LVS  
 
