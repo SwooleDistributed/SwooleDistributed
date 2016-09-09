@@ -40,7 +40,7 @@ class CoroutineTask
             }
             if($value!=null) {
                 $result = $value->getResult();
-                if ($result != null) {
+                if ($result !== CoroutineNull::getInstance()) {
                     $routine->send($result);
                 }
                 //嵌套的协程返回

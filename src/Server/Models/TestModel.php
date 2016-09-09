@@ -25,6 +25,15 @@ class TestModel extends Model
         $result = yield $redisCoroutine;
         return $result;
     }
+    public function test_coroutineII($callback)
+    {
+        $this->redis_pool->get('test',function ($uid)use($callback){
+            $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', $uid);
+            $this->mysql_pool->query(function ($result)use($callback) {
+                call_user_func($callback,$result);
+            });
+        });
+    }
     public function test_exception()
     {
         throw new \Exception('test');
