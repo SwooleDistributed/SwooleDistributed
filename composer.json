@@ -5,7 +5,8 @@
     "voku/anti-xss": "2.0.1",
     "league/plates": "3.*",
     "protobuf-php/protobuf": "~0.1.2",
-    "protobuf-php/protobuf-plugin": "^0.1.2"
+    "protobuf-php/protobuf-plugin": "^0.1.2",
+    "php": ">=7.0.0"
   },
   "autoload": {
     "psr-4": {
@@ -15,9 +16,6 @@
     "files": [
       "src/Server/helpers/Common.php"
     ]
-  },
-  "require": {
-    "php": ">=7.0.0"
   },
   "authors": [
     {
