@@ -205,4 +205,12 @@ class TestController extends Controller
         $result = yield $httpClient->coroutineGet("/TestController/test_request", ['id' => 123]);
         $this->http_output->end($result);
     }
+
+    public function http_test_coroutineServer()
+    {
+        $result = yield get_instance()->coroutineUidIsOnline(1001);
+        var_dump($result);
+        $result = yield get_instance()->coroutineCountOnline();
+        var_dump($result);
+    }
 }

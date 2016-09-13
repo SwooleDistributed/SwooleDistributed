@@ -23,7 +23,7 @@ class Model extends CoreBase
      * @var \Server\Client\Client
      */
     public $client;
-    
+
     public function __construct()
     {
         parent::__construct();

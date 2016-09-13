@@ -7,6 +7,7 @@
  */
 
 namespace Server\Client;
+
 use Server\CoreBase\CoroutineNull;
 use Server\CoreBase\ICoroutineBase;
 
@@ -18,7 +19,8 @@ class GetHttpClientCoroutine implements ICoroutineBase
     public $client;
     public $base_url;
     public $result;
-    public function __construct($client,$base_url)
+
+    public function __construct($client, $base_url)
     {
         $this->result = CoroutineNull::getInstance();
         $this->base_url = $base_url;

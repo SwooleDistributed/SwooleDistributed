@@ -38,7 +38,7 @@ class HttpClient
      */
     public function get($path, $query, $callback)
     {
-        if(!empty($query)) {
+        if (!empty($query)) {
             $path = $path . "?" . http_build_query($query);
         }
         $this->client->get($path, $callback);
@@ -50,10 +50,11 @@ class HttpClient
      * @param $query
      * @return HttpClientRequestCoroutine
      */
-    public function coroutineGet($path, $query=null)
+    public function coroutineGet($path, $query = null)
     {
-        return new HttpClientRequestCoroutine($this ,'GET' ,$path ,$query);
+        return new HttpClientRequestCoroutine($this, 'GET', $path, $query);
     }
+
     /**
      * @param $path
      * @param $data
@@ -72,6 +73,6 @@ class HttpClient
      */
     public function coroutinePost($path, $data)
     {
-        return new HttpClientRequestCoroutine($this ,'POST' ,$path ,$data);
+        return new HttpClientRequestCoroutine($this, 'POST', $path, $data);
     }
 }

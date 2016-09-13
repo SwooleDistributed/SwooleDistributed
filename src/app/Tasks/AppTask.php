@@ -1,7 +1,6 @@
 <?php
 namespace app\Tasks;
 
-use Server\CoreBase\SwooleException;
 use Server\CoreBase\Task;
 use Server\DataBase\DbConnection;
 use Server\DataBase\DbQueryBuilder;

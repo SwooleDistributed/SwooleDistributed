@@ -18,15 +18,16 @@ class ProtoController extends Controller
      * @var Message
      */
     public $Message;
+
     public function __call($name, $arguments)
     {
-        list($proto,$method_name) = explode('/', $name);
+        list($proto, $method_name) = explode('/', $name);
         $fuc_name = lcfirst($method_name);
         $this->Message = $this->client_data->data;
         $request = $this->Message->getRequest();
         $method = "getM{$method_name}Request";
-        $pamars = call_user_func([$request,$method]);
-        if(!empty($pamars)) {
+        $pamars = call_user_func([$request, $method]);
+        if (!empty($pamars)) {
             return call_user_func([$this, $fuc_name], $pamars);
         }
     }
@@ -41,7 +42,7 @@ class ProtoController extends Controller
         $cmdMethod = $responseMessage->getCmdMethod();
         $cmdService = $responseMessage->getCmdService();
         $method = "setM{$cmdMethod->name()}Response";
-        if(empty($this->Message)){
+        if (empty($this->Message)) {
             $this->Message = new Message();
             $this->Message->setToken(time());
             $this->Message->setResponse(new Response());
@@ -49,11 +50,11 @@ class ProtoController extends Controller
         $this->Message->setCmdMethod($cmdMethod);
         $this->Message->setCmdService($cmdService);
         $response = $this->Message->getResponse();
-        if(empty($response)){
+        if (empty($response)) {
             $response = new Response();
             $this->Message->setResponse($response);
         }
-        call_user_func([$response,$method],$responseMessage);
+        call_user_func([$response, $method], $responseMessage);
         return $this->Message;
     }
 

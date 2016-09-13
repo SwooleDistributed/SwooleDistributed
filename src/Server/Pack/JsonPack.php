@@ -12,7 +12,7 @@ class JsonPack implements IPack
 {
     public function pack($data)
     {
-        return json_encode($data,JSON_UNESCAPED_UNICODE);
+        return json_encode($data, JSON_UNESCAPED_UNICODE);
     }
 
     public function unPack($data)

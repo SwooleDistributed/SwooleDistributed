@@ -142,144 +142,124 @@ class Miner
      * Closing bracket for grouping criteria.
      */
     const BRACKET_CLOSE = ")";
-
+    /**
+     * @var MysqlAsynPool
+     */
+    protected $mysql_pool;
     /**
      * PDO database connection to use in executing the statement.
      *
      * @var PDO|null
      */
     private $PdoConnection;
-
     /**
      * Whether to automatically escape values.
      *
      * @var bool|null
      */
     private $autoQuote;
-
     /**
      * Execution options like DISTINCT and SQL_CALC_FOUND_ROWS.
      *
      * @var array
      */
     private $option;
-
     /**
      * Columns, tables, and expressions to SELECT from.
      *
      * @var array
      */
     private $select;
-
     /**
      * Table to INSERT into.
      *
      * @var string
      */
     private $insert;
-
     /**
      * Table to REPLACE into.
      *
      * @var string
      */
     private $replace;
-
     /**
      * Table to UPDATE.
      *
      * @var string
      */
     private $update;
-
     /**
      * Tables to DELETE from, or true if deleting from the FROM table.
      *
      * @var array|true
      */
     private $delete;
-
     /**
      * Column values to INSERT, UPDATE, or REPLACE.
      *
      * @var array
      */
     private $set;
-
     /**
      * Table to select FROM.
      *
      * @var array
      */
     private $from;
-
     /**
      * JOIN tables and ON criteria.
      *
      * @var array
      */
     private $join;
-
     /**
      * WHERE criteria.
      *
      * @var array
      */
     private $where;
-
     /**
      * Columns to GROUP BY.
      *
      * @var array
      */
     private $groupBy;
-
     /**
      * HAVING criteria.
      *
      * @var array
      */
     private $having;
-
     /**
      * Columns to ORDER BY.
      *
      * @var array
      */
     private $orderBy;
-
     /**
      * Number of rows to return from offset.
      *
      * @var array
      */
     private $limit;
-
     /**
      * SET placeholder values.
      *
      * @var array
      */
     private $setPlaceholderValues;
-
     /**
      * WHERE placeholder values.
      *
      * @var array
      */
     private $wherePlaceholderValues;
-
     /**
      * HAVING placeholder values.
      *
      * @var array
      */
     private $havingPlaceholderValues;
-
-    /**
-     * @var MysqlAsynPool
-     */
-    protected $mysql_pool;
 
     /**
      * Miner constructor.
@@ -307,117 +287,14 @@ class Miner
         $this->setAutoQuote(true);
     }
 
-    public function clear()
-    {
-        $this->option = array();
-        $this->select = array();
-        $this->delete = array();
-        $this->set = array();
-        $this->from = array();
-        $this->join = array();
-        $this->where = array();
-        $this->groupBy = array();
-        $this->having = array();
-        $this->orderBy = array();
-        $this->limit = array();
-        $this->insert = array();
-        $this->replace = array();
-        $this->update = array();
-
-        $this->setPlaceholderValues = array();
-        $this->wherePlaceholderValues = array();
-        $this->havingPlaceholderValues = array();
-    }
-
     /**
-     * Set the PDO database connection to use in executing this statement.
+     * Add SQL_CALC_FOUND_ROWS execution option.
      *
-     * @param  PDO|null $PdoConnection optional PDO database connection
      * @return Miner
      */
-    public function setPdoConnection(\PDO $PdoConnection = null)
+    public function calcFoundRows()
     {
-        $this->PdoConnection = $PdoConnection;
-
-        return $this;
-    }
-
-    /**
-     * Get the PDO database connection to use in executing this statement.
-     *
-     * @return PDO|null
-     */
-    public function getPdoConnection()
-    {
-        return $this->PdoConnection;
-    }
-
-    /**
-     * Set whether to automatically escape values.
-     *
-     * @param  bool|null $autoQuote whether to automatically escape values
-     * @return Miner
-     */
-    public function setAutoQuote($autoQuote)
-    {
-        $this->autoQuote = $autoQuote;
-
-        return $this;
-    }
-
-    /**
-     * Get whether values will be automatically escaped.
-     *
-     * The $override parameter is for convenience in checking if a specific
-     * value should be quoted differently than the rest. 'null' defers to the
-     * global setting.
-     *
-     * @param  bool|null $override value-specific override for convenience
-     * @return bool
-     */
-    public function getAutoQuote($override = null)
-    {
-        return $override === null ? $this->autoQuote : $override;
-    }
-
-    /**
-     * Safely escape a value if auto-quoting is enabled, or do nothing if
-     * disabled.
-     *
-     * The $override parameter is for convenience in checking if a specific
-     * value should be quoted differently than the rest. 'null' defers to the
-     * global setting.
-     *
-     * @param  mixed $value value to escape (or not)
-     * @param  bool|null $override value-specific override for convenience
-     * @return mixed|false value (escaped or original) or false if failed
-     */
-    public function autoQuote($value, $override = null)
-    {
-        return $this->getAutoQuote($override) ? $this->quote($value) : $value;
-    }
-
-    /**
-     * Safely escape a value for use in a statement.
-     *
-     * @param  mixed $value value to escape
-     * @return mixed|false escaped value or false if failed
-     */
-    public function quote($value)
-    {
-        $PdoConnection = $this->getPdoConnection();
-
-        // If a PDO database connection is set, use it to quote the value using
-        // the underlying database. Otherwise, quote it manually.
-        if ($PdoConnection) {
-            return $PdoConnection->quote($value);
-        } elseif (is_numeric($value)) {
-            return $value;
-        } elseif (is_null($value)) {
-            return "NULL";
-        } else {
-            return "'" . addslashes($value) . "'";
-        }
+        return $this->option('SQL_CALC_FOUND_ROWS');
     }
 
     /**
@@ -434,26 +311,495 @@ class Miner
     }
 
     /**
-     * Get the execution options portion of the statement as a string.
+     * Add DISTINCT execution option.
      *
-     * @param  bool $includeTrailingSpace optional include space after options
-     * @return string execution options portion of the statement
+     * @return Miner
      */
-    public function getOptionsString($includeTrailingSpace = false)
+    public function distinct()
     {
-        $statement = "";
+        return $this->option('DISTINCT');
+    }
 
-        if (!$this->option) {
-            return $statement;
+    /**
+     * Add an array of columns => values to INSERT, UPDATE, or REPLACE.
+     *
+     * @param  array $values columns => values
+     * @return Miner
+     */
+    public function values(array $values)
+    {
+        return $this->set($values);
+    }
+
+    /**
+     * Add one or more column values to INSERT, UPDATE, or REPLACE.
+     *
+     * @param  string|array $column column name or array of columns => values
+     * @param  mixed|null $value optional value for single column
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function set($column, $value = null, $quote = null)
+    {
+        if (is_array($column)) {
+            foreach ($column as $columnName => $columnValue) {
+                $this->set($columnName, $columnValue, $quote);
+            }
+        } else {
+            $this->set[] = array('column' => $column,
+                'value' => $value,
+                'quote' => $quote);
         }
 
-        $statement .= implode(' ', $this->option);
+        return $this;
+    }
 
-        if ($includeTrailingSpace) {
-            $statement .= " ";
+    /**
+     * Add an INNER JOIN table with optional ON criteria.
+     *
+     * @param  string $table table name
+     * @param  string|array $criteria optional ON criteria
+     * @param  string $alias optional alias
+     * @return Miner
+     */
+    public function innerJoin($table, $criteria = null, $alias = null)
+    {
+        return $this->join($table, $criteria, self::INNER_JOIN, $alias);
+    }
+
+    /**
+     * Add a JOIN table with optional ON criteria.
+     *
+     * @param  string $table table name
+     * @param  string|array $criteria optional ON criteria
+     * @param  string $type optional type of join, default INNER JOIN
+     * @param  string $alias optional alias
+     * @return Miner
+     */
+    public function join($table, $criteria = null, $type = self::INNER_JOIN, $alias = null)
+    {
+        if (!$this->isJoinUnique($table, $alias)) {
+            return $this;
         }
 
-        return $statement;
+        if (is_string($criteria)) {
+            $criteria = array($criteria);
+        }
+
+        $this->join[] = array('table' => $table,
+            'criteria' => $criteria,
+            'type' => $type,
+            'alias' => $alias);
+
+        return $this;
+    }
+
+    /**
+     * Whether the join table and alias is unique (hasn't already been joined).
+     *
+     * @param  string $table table name
+     * @param  string $alias table alias
+     * @return bool whether the join table and alias is unique
+     */
+    private function isJoinUnique($table, $alias)
+    {
+        foreach ($this->join as $join) {
+            if ($join['table'] == $table && $join['alias'] == $alias) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * Add a LEFT JOIN table with optional ON criteria.
+     *
+     * @param  string $table table name
+     * @param  string|array $criteria optional ON criteria
+     * @param  string $alias optional alias
+     * @return Miner
+     */
+    public function leftJoin($table, $criteria = null, $alias = null)
+    {
+        return $this->join($table, $criteria, self::LEFT_JOIN, $alias);
+    }
+
+    /**
+     * Add a RIGHT JOIN table with optional ON criteria.
+     *
+     * @param  string $table table name
+     * @param  string|array $criteria optional ON criteria
+     * @param  string $alias optional alias
+     * @return Miner
+     */
+    public function rightJoin($table, $criteria = null, $alias = null)
+    {
+        return $this->join($table, $criteria, self::RIGHT_JOIN, $alias);
+    }
+
+    /**
+     * Add an AND WHERE condition.
+     *
+     * @param  string $column colum name
+     * @param  mixed $value value
+     * @param  string $operator optional comparison operator, default =
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function andWhere($column, $value, $operator = self::EQUALS, $quote = null)
+    {
+        return $this->criteria($this->where, $column, $value, $operator, self::LOGICAL_AND, $quote);
+    }
+
+    /**
+     * Add a condition to the specified WHERE or HAVING criteria.
+     *
+     * @param  array $criteria WHERE or HAVING criteria
+     * @param  string $column column name
+     * @param  mixed $value value
+     * @param  string $operator optional comparison operator, default =
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    private function criteria(array &$criteria, $column, $value, $operator = self::EQUALS,
+                              $connector = self::LOGICAL_AND, $quote = null)
+    {
+        $criteria[] = array('column' => $column,
+            'value' => $value,
+            'operator' => $operator,
+            'connector' => $connector,
+            'quote' => $quote);
+
+        return $this;
+    }
+
+    /**
+     * Add an OR WHERE condition.
+     *
+     * @param  string $column colum name
+     * @param  mixed $value value
+     * @param  string $operator optional comparison operator, default =
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function orWhere($column, $value, $operator = self::EQUALS, $quote = null)
+    {
+        return $this->orCriteria($this->where, $column, $value, $operator, self::LOGICAL_OR, $quote);
+    }
+
+    /**
+     * Add an OR condition to the specified WHERE or HAVING criteria.
+     *
+     * @param  array $criteria WHERE or HAVING criteria
+     * @param  string $column column name
+     * @param  mixed $value value
+     * @param  string $operator optional comparison operator, default =
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    private function orCriteria(array &$criteria, $column, $value, $operator = self::EQUALS, $quote = null)
+    {
+        return $this->criteria($criteria, $column, $value, $operator, self::LOGICAL_OR, $quote);
+    }
+
+    /**
+     * Add an IN WHERE condition.
+     *
+     * @param  string $column column name
+     * @param  array $values values
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function whereIn($column, array $values, $connector = self::LOGICAL_AND, $quote = null)
+    {
+        return $this->criteriaIn($this->where, $column, $values, $connector, $quote);
+    }
+
+    /**
+     * Add an IN condition to the specified WHERE or HAVING criteria.
+     *
+     * @param  array $criteria WHERE or HAVING criteria
+     * @param  string $column column name
+     * @param  array $values values
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    private function criteriaIn(array &$criteria, $column, array $values, $connector = self::LOGICAL_AND,
+                                $quote = null)
+    {
+        return $this->criteria($criteria, $column, $values, self::IN, $connector, $quote);
+    }
+
+    /**
+     * Add a NOT IN WHERE condition.
+     *
+     * @param  string $column column name
+     * @param  array $values values
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function whereNotIn($column, array $values, $connector = self::LOGICAL_AND, $quote = null)
+    {
+        return $this->criteriaNotIn($this->where, $column, $values, $connector, $quote);
+    }
+
+    /**
+     * Add a NOT IN condition to the specified WHERE or HAVING criteria.
+     *
+     * @param  array $criteria WHERE or HAVING criteria
+     * @param  string $column column name
+     * @param  array $values values
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    private function criteriaNotIn(array &$criteria, $column, array $values, $connector = self::LOGICAL_AND,
+                                   $quote = null)
+    {
+        return $this->criteria($criteria, $column, $values, self::NOT_IN, $connector, $quote);
+    }
+
+    /**
+     * Add a BETWEEN WHERE condition.
+     *
+     * @param  string $column column name
+     * @param  mixed $min minimum value
+     * @param  mixed $max maximum value
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function whereBetween($column, $min, $max, $connector = self::LOGICAL_AND, $quote = null)
+    {
+        return $this->criteriaBetween($this->where, $column, $min, $max, $connector, $quote);
+    }
+
+    /**
+     * Add a BETWEEN condition to the specified WHERE or HAVING criteria.
+     *
+     * @param  array $criteria WHERE or HAVING criteria
+     * @param  string $column column name
+     * @param  mixed $min minimum value
+     * @param  mixed $max maximum value
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    private function criteriaBetween(array &$criteria, $column, $min, $max, $connector = self::LOGICAL_AND,
+                                     $quote = null)
+    {
+        return $this->criteria($criteria, $column, array($min, $max), self::BETWEEN, $connector, $quote);
+    }
+
+    /**
+     * Add a NOT BETWEEN WHERE condition.
+     *
+     * @param  string $column column name
+     * @param  mixed $min minimum value
+     * @param  mixed $max maximum value
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function whereNotBetween($column, $min, $max, $connector = self::LOGICAL_AND, $quote = null)
+    {
+        return $this->criteriaNotBetween($this->where, $column, $min, $max, $connector, $quote);
+    }
+
+    /**
+     * Add a NOT BETWEEN condition to the specified WHERE or HAVING criteria.
+     *
+     * @param  array $criteria WHERE or HAVING criteria
+     * @param  string $column column name
+     * @param  mixed $min minimum value
+     * @param  mixed $max maximum value
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    private function criteriaNotBetween(array &$criteria, $column, $min, $max, $connector = self::LOGICAL_AND,
+                                        $quote = null)
+    {
+        return $this->criteria($criteria, $column, array($min, $max), self::NOT_BETWEEN, $connector, $quote);
+    }
+
+    /**
+     * Add an AND HAVING condition.
+     *
+     * @param  string $column colum name
+     * @param  mixed $value value
+     * @param  string $operator optional comparison operator, default =
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function andHaving($column, $value, $operator = self::EQUALS, $quote = null)
+    {
+        return $this->criteria($this->having, $column, $value, $operator, self::LOGICAL_AND, $quote);
+    }
+
+    /**
+     * Add an OR HAVING condition.
+     *
+     * @param  string $column colum name
+     * @param  mixed $value value
+     * @param  string $operator optional comparison operator, default =
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function orHaving($column, $value, $operator = self::EQUALS, $quote = null)
+    {
+        return $this->orCriteria($this->having, $column, $value, $operator, self::LOGICAL_OR, $quote);
+    }
+
+    /**
+     * Add an IN WHERE condition.
+     *
+     * @param  string $column column name
+     * @param  array $values values
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function havingIn($column, array $values, $connector = self::LOGICAL_AND, $quote = null)
+    {
+        return $this->criteriaIn($this->having, $column, $values, $connector, $quote);
+    }
+
+    /**
+     * Add a NOT IN HAVING condition.
+     *
+     * @param  string $column column name
+     * @param  array $values values
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function havingNotIn($column, array $values, $connector = self::LOGICAL_AND, $quote = null)
+    {
+        return $this->criteriaNotIn($this->having, $column, $values, $connector, $quote);
+    }
+
+    /**
+     * Add a BETWEEN HAVING condition.
+     *
+     * @param  string $column column name
+     * @param  mixed $min minimum value
+     * @param  mixed $max maximum value
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function havingBetween($column, $min, $max, $connector = self::LOGICAL_AND, $quote = null)
+    {
+        return $this->criteriaBetween($this->having, $column, $min, $max, $connector, $quote);
+    }
+
+    /**
+     * Add a NOT BETWEEN HAVING condition.
+     *
+     * @param  string $column column name
+     * @param  mixed $min minimum value
+     * @param  mixed $max maximum value
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function havingNotBetween($column, $min, $max, $connector = self::LOGICAL_AND, $quote = null)
+    {
+        return $this->criteriaNotBetween($this->having, $column, $min, $max, $connector, $quote);
+    }
+
+    /**
+     * Merge this Miner into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @param  bool $overrideLimit optional override limit, default true
+     * @return Miner
+     */
+    public function mergeInto(Miner $Miner, $overrideLimit = true)
+    {
+        if ($this->isSelect()) {
+            $this->mergeSelectInto($Miner);
+            $this->mergeFromInto($Miner);
+            $this->mergeJoinInto($Miner);
+            $this->mergeWhereInto($Miner);
+            $this->mergeGroupByInto($Miner);
+            $this->mergeHavingInto($Miner);
+            $this->mergeOrderByInto($Miner);
+
+            if ($overrideLimit) {
+                $this->mergeLimitInto($Miner);
+            }
+        } elseif ($this->isInsert()) {
+            $this->mergeInsertInto($Miner);
+            $this->mergeSetInto($Miner);
+        } elseif ($this->isReplace()) {
+            $this->mergeReplaceInto($Miner);
+            $this->mergeSetInto($Miner);
+        } elseif ($this->isUpdate()) {
+            $this->mergeUpdateInto($Miner);
+            $this->mergeJoinInto($Miner);
+            $this->mergeSetInto($Miner);
+            $this->mergeWhereInto($Miner);
+
+            // ORDER BY and LIMIT are only applicable when updating a single table.
+            if (!$this->join) {
+                $this->mergeOrderByInto($Miner);
+
+                if ($overrideLimit) {
+                    $this->mergeLimitInto($Miner);
+                }
+            }
+        } elseif ($this->isDelete()) {
+            $this->mergeDeleteInto($Miner);
+            $this->mergeFromInto($Miner);
+            $this->mergeJoinInto($Miner);
+            $this->mergeWhereInto($Miner);
+
+            // ORDER BY and LIMIT are only applicable when deleting from a single
+            // table.
+            if ($this->isDeleteTableFrom()) {
+                $this->mergeOrderByInto($Miner);
+
+                if ($overrideLimit) {
+                    $this->mergeLimitInto($Miner);
+                }
+            }
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Whether this is a SELECT statement.
+     *
+     * @return bool whether this is a SELECT statement
+     */
+    public function isSelect()
+    {
+        return !empty($this->select);
+    }
+
+    /**
+     * Merge this Miner's SELECT into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeSelectInto(Miner $Miner)
+    {
+        $this->mergeOptionsInto($Miner);
+
+        foreach ($this->select as $column => $alias) {
+            $Miner->select($column, $alias);
+        }
+
+        return $Miner;
     }
 
     /**
@@ -472,26 +818,6 @@ class Miner
     }
 
     /**
-     * Add SQL_CALC_FOUND_ROWS execution option.
-     *
-     * @return Miner
-     */
-    public function calcFoundRows()
-    {
-        return $this->option('SQL_CALC_FOUND_ROWS');
-    }
-
-    /**
-     * Add DISTINCT execution option.
-     *
-     * @return Miner
-     */
-    public function distinct()
-    {
-        return $this->option('DISTINCT');
-    }
-
-    /**
      * Add a SELECT column, table, or expression with optional alias.
      *
      * @param  string $column column name, table name, or expression
@@ -506,20 +832,677 @@ class Miner
     }
 
     /**
-     * Merge this Miner's SELECT into the given Miner.
+     * Merge this Miner's FROM into the given Miner.
      *
      * @param  Miner $Miner to merge into
      * @return Miner
      */
-    public function mergeSelectInto(Miner $Miner)
+    public function mergeFromInto(Miner $Miner)
     {
-        $this->mergeOptionsInto($Miner);
-
-        foreach ($this->select as $column => $alias) {
-            $Miner->select($column, $alias);
+        if ($this->from) {
+            $Miner->from($this->getFrom(), $this->getFromAlias());
         }
 
         return $Miner;
+    }
+
+    /**
+     * Set the FROM table with optional alias.
+     *
+     * @param  string $table table name
+     * @param  string $alias optional alias
+     * @return Miner
+     */
+    public function from($table, $alias = null)
+    {
+        $this->from['table'] = $table;
+        $this->from['alias'] = $alias;
+
+        return $this;
+    }
+
+    /**
+     * Get the FROM table.
+     *
+     * @return string FROM table
+     */
+    public function getFrom()
+    {
+        return $this->from['table'];
+    }
+
+    /**
+     * Get the FROM table alias.
+     *
+     * @return string FROM table alias
+     */
+    public function getFromAlias()
+    {
+        return $this->from['alias'];
+    }
+
+    /**
+     * Merge this Miner's JOINs into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeJoinInto(Miner $Miner)
+    {
+        foreach ($this->join as $join) {
+            $Miner->join($join['table'], $join['criteria'], $join['type'], $join['alias']);
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Merge this Miner's WHERE into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeWhereInto(Miner $Miner)
+    {
+        foreach ($this->where as $where) {
+            // Handle open/close brackets differently than other criteria.
+            if (array_key_exists('bracket', $where)) {
+                if (strcmp($where['bracket'], self::BRACKET_OPEN) == 0) {
+                    $Miner->openWhere($where['connector']);
+                } else {
+                    $Miner->closeWhere();
+                }
+            } else {
+                $Miner->where($where['column'], $where['value'], $where['operator'], $where['connector'], $where['quote']);
+            }
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Add an open bracket for nesting WHERE conditions.
+     *
+     * @param  string $connector optional logical connector, default AND
+     * @return Miner
+     */
+    public function openWhere($connector = self::LOGICAL_AND)
+    {
+        return $this->openCriteria($this->where, $connector);
+    }
+
+    /**
+     * Add an open bracket for nesting conditions to the specified WHERE or
+     * HAVING criteria.
+     *
+     * @param  array $criteria WHERE or HAVING criteria
+     * @param  string $connector optional logical connector, default AND
+     * @return Miner
+     */
+    private function openCriteria(array &$criteria, $connector = self::LOGICAL_AND)
+    {
+        $criteria[] = array('bracket' => self::BRACKET_OPEN,
+            'connector' => $connector);
+
+        return $this;
+    }
+
+    /**
+     * Add a closing bracket for nesting WHERE conditions.
+     *
+     * @return Miner
+     */
+    public function closeWhere()
+    {
+        return $this->closeCriteria($this->where);
+    }
+
+    /**
+     * Add a closing bracket for nesting conditions to the specified WHERE or
+     * HAVING criteria.
+     *
+     * @param  array $criteria WHERE or HAVING criteria
+     * @return Miner
+     */
+    private function closeCriteria(array &$criteria)
+    {
+        $criteria[] = array('bracket' => self::BRACKET_CLOSE,
+            'connector' => null);
+
+        return $this;
+    }
+
+    /**
+     * Add a WHERE condition.
+     *
+     * @param  string $column column name
+     * @param  mixed $value value
+     * @param  string $operator optional comparison operator, default =
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function where($column, $value, $operator = self::EQUALS, $connector = self::LOGICAL_AND, $quote = null)
+    {
+        return $this->criteria($this->where, $column, $value, $operator, $connector, $quote);
+    }
+
+    /**
+     * Merge this Miner's GROUP BY into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeGroupByInto(Miner $Miner)
+    {
+        foreach ($this->groupBy as $groupBy) {
+            $Miner->groupBy($groupBy['column'], $groupBy['order']);
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Add a GROUP BY column.
+     *
+     * @param  string $column column name
+     * @param  string|null $order optional order direction, default none
+     * @return Miner
+     */
+    public function groupBy($column, $order = null)
+    {
+        $this->groupBy[] = array('column' => $column,
+            'order' => $order);
+
+        return $this;
+    }
+
+    /**
+     * Merge this Miner's HAVING into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeHavingInto(Miner $Miner)
+    {
+        foreach ($this->having as $having) {
+            // Handle open/close brackets differently than other criteria.
+            if (array_key_exists('bracket', $having)) {
+                if (strcmp($having['bracket'], self::BRACKET_OPEN) == 0) {
+                    $Miner->openHaving($having['connector']);
+                } else {
+                    $Miner->closeHaving();
+                }
+            } else {
+                $Miner->having($having['column'], $having['value'], $having['operator'],
+                    $having['connector'], $having['quote']);
+            }
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Add an open bracket for nesting HAVING conditions.
+     *
+     * @param  string $connector optional logical connector, default AND
+     * @return Miner
+     */
+    public function openHaving($connector = self::LOGICAL_AND)
+    {
+        return $this->openCriteria($this->having, $connector);
+    }
+
+    /**
+     * Add a closing bracket for nesting HAVING conditions.
+     *
+     * @return Miner
+     */
+    public function closeHaving()
+    {
+        return $this->closeCriteria($this->having);
+    }
+
+    /**
+     * Add a HAVING condition.
+     *
+     * @param  string $column colum name
+     * @param  mixed $value value
+     * @param  string $operator optional comparison operator, default =
+     * @param  string $connector optional logical connector, default AND
+     * @param  bool|null $quote optional auto-escape value, default to global
+     * @return Miner
+     */
+    public function having($column, $value, $operator = self::EQUALS, $connector = self::LOGICAL_AND, $quote = null)
+    {
+        return $this->criteria($this->having, $column, $value, $operator, $connector, $quote);
+    }
+
+    /**
+     * Merge this Miner's ORDER BY into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeOrderByInto(Miner $Miner)
+    {
+        foreach ($this->orderBy as $orderBy) {
+            $Miner->orderBy($orderBy['column'], $orderBy['order']);
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Add a column to ORDER BY.
+     *
+     * @param  string $column column name
+     * @param  string $order optional order direction, default ASC
+     * @return Miner
+     */
+    public function orderBy($column, $order = self::ORDER_BY_ASC)
+    {
+        $this->orderBy[] = array('column' => $column,
+            'order' => $order);
+
+        return $this;
+    }
+
+    /**
+     * Merge this Miner's LIMIT into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeLimitInto(Miner $Miner)
+    {
+        if ($this->limit) {
+            $Miner->limit($this->getLimit(), $this->getLimitOffset());
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Set the LIMIT on number of rows to return with optional offset.
+     *
+     * @param  int|string $limit number of rows to return
+     * @param  int|string $offset optional row number to start at, default 0
+     * @return Miner
+     */
+    public function limit($limit, $offset = 0)
+    {
+        $this->limit['limit'] = $limit;
+        $this->limit['offset'] = $offset;
+
+        return $this;
+    }
+
+    /**
+     * Get the LIMIT on number of rows to return.
+     *
+     * @return int|string LIMIT on number of rows to return
+     */
+    public function getLimit()
+    {
+        return $this->limit['limit'];
+    }
+
+    /**
+     * Get the LIMIT row number to start at.
+     *
+     * @return int|string LIMIT row number to start at
+     */
+    public function getLimitOffset()
+    {
+        return $this->limit['offset'];
+    }
+
+    /**
+     * Whether this is an INSERT statement.
+     *
+     * @return bool whether this is an INSERT statement
+     */
+    public function isInsert()
+    {
+        return !empty($this->insert);
+    }
+
+    /**
+     * Merge this Miner's INSERT into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeInsertInto(Miner $Miner)
+    {
+        $this->mergeOptionsInto($Miner);
+
+        if ($this->insert) {
+            $Miner->insert($this->getInsert());
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Set the INSERT table.
+     *
+     * @param  string $table INSERT table
+     * @return Miner
+     */
+    public function insert($table)
+    {
+        $this->insert = $table;
+
+        return $this;
+    }
+
+    /**
+     * Get the INSERT table.
+     *
+     * @return string INSERT table
+     */
+    public function getInsert()
+    {
+        return $this->insert;
+    }
+
+    /**
+     * Merge this Miner's SET into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeSetInto(Miner $Miner)
+    {
+        foreach ($this->set as $set) {
+            $Miner->set($set['column'], $set['value'], $set['quote']);
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Whether this is a REPLACE statement.
+     *
+     * @return bool whether this is a REPLACE statement
+     */
+    public function isReplace()
+    {
+        return !empty($this->replace);
+    }
+
+    /**
+     * Merge this Miner's REPLACE into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeReplaceInto(Miner $Miner)
+    {
+        $this->mergeOptionsInto($Miner);
+
+        if ($this->replace) {
+            $Miner->replace($this->getReplace());
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Set the REPLACE table.
+     *
+     * @param  string $table REPLACE table
+     * @return Miner
+     */
+    public function replace($table)
+    {
+        $this->replace = $table;
+
+        return $this;
+    }
+
+    /**
+     * Get the REPLACE table.
+     *
+     * @return string REPLACE table
+     */
+    public function getReplace()
+    {
+        return $this->replace;
+    }
+
+    /**
+     * Whether this is an UPDATE statement.
+     *
+     * @return bool whether this is an UPDATE statement
+     */
+    public function isUpdate()
+    {
+        return !empty($this->update);
+    }
+
+    /**
+     * Merge this Miner's UPDATE into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeUpdateInto(Miner $Miner)
+    {
+        $this->mergeOptionsInto($Miner);
+
+        if ($this->update) {
+            $Miner->update($this->getUpdate());
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Set the UPDATE table.
+     *
+     * @param  string $table UPDATE table
+     * @return Miner
+     */
+    public function update($table)
+    {
+        $this->update = $table;
+
+        return $this;
+    }
+
+    /**
+     * Get the UPDATE table.
+     *
+     * @return string UPDATE table
+     */
+    public function getUpdate()
+    {
+        return $this->update;
+    }
+
+    /**
+     * Whether this is a DELETE statement.
+     *
+     * @return bool whether this is a DELETE statement
+     */
+    public function isDelete()
+    {
+        return !empty($this->delete);
+    }
+
+    /**
+     * Merge this Miner's DELETE into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeDeleteInto(Miner $Miner)
+    {
+        $this->mergeOptionsInto($Miner);
+
+        if ($this->isDeleteTableFrom()) {
+            $Miner->delete();
+        } else {
+            foreach ($this->delete as $delete) {
+                $Miner->delete($delete);
+            }
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Whether the FROM table is the single table to delete from.
+     *
+     * @return bool whether the delete table is FROM
+     */
+    private function isDeleteTableFrom()
+    {
+        return $this->delete === true;
+    }
+
+    /**
+     * Add a table to DELETE from, or false if deleting from the FROM table.
+     *
+     * @param  string|false $table optional table name, default false
+     * @return Miner
+     */
+    public function delete($table = false)
+    {
+        if ($table === false) {
+            $this->delete = true;
+        } else {
+            // Reset the array in case the class variable was previously set to a
+            // boolean value.
+            if (!is_array($this->delete)) {
+                $this->delete = array();
+            }
+
+            $this->delete[] = $table;
+        }
+
+        return $this;
+    }
+
+    /**
+     * Execute the statement using the PDO database connection.
+     *
+     * @return PDOStatement|false executed statement or false if failed
+     */
+    public function execute()
+    {
+        $PdoConnection = $this->getPdoConnection();
+
+        // Without a PDO database connection, the statement cannot be executed.
+        if (!$PdoConnection) {
+            return false;
+        }
+
+        $statement = $this->getStatement();
+
+        // Only execute if a statement is set.
+        if ($statement) {
+            $PdoStatement = $PdoConnection->prepare($statement);
+            $PdoStatement->execute($this->getPlaceholderValues());
+
+            return $PdoStatement;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Get the PDO database connection to use in executing this statement.
+     *
+     * @return PDO|null
+     */
+    public function getPdoConnection()
+    {
+        return $this->PdoConnection;
+    }
+
+    /**
+     * Set the PDO database connection to use in executing this statement.
+     *
+     * @param  PDO|null $PdoConnection optional PDO database connection
+     * @return Miner
+     */
+    public function setPdoConnection(\PDO $PdoConnection = null)
+    {
+        $this->PdoConnection = $PdoConnection;
+
+        return $this;
+    }
+
+    /**
+     * Get the full SQL statement.
+     *
+     * @param  bool $usePlaceholders optional use ? placeholders, default true
+     * @return string full SQL statement
+     */
+    public function getStatement($usePlaceholders = true)
+    {
+        $statement = "";
+
+        if ($this->isSelect()) {
+            $statement = $this->getSelectStatement($usePlaceholders);
+        } elseif ($this->isInsert()) {
+            $statement = $this->getInsertStatement($usePlaceholders);
+        } elseif ($this->isReplace()) {
+            $statement = $this->getReplaceStatement($usePlaceholders);
+        } elseif ($this->isUpdate()) {
+            $statement = $this->getUpdateStatement($usePlaceholders);
+        } elseif ($this->isDelete()) {
+            $statement = $this->getDeleteStatement($usePlaceholders);
+        }
+        $this->clear();
+        return $statement;
+    }
+
+    /**
+     * Get the full SELECT statement.
+     *
+     * @param  bool $usePlaceholders optional use ? placeholders, default true
+     * @return string full SELECT statement
+     */
+    private function getSelectStatement($usePlaceholders = true)
+    {
+        $statement = "";
+
+        if (!$this->isSelect()) {
+            return $statement;
+        }
+
+        $statement .= $this->getSelectString();
+
+        if ($this->from) {
+            $statement .= " " . $this->getFromString();
+        }
+
+        if ($this->where) {
+            $statement .= " " . $this->getWhereString($usePlaceholders);
+        }
+
+        if ($this->groupBy) {
+            $statement .= " " . $this->getGroupByString();
+        }
+
+        if ($this->having) {
+            $statement .= " " . $this->getHavingString($usePlaceholders);
+        }
+
+        if ($this->orderBy) {
+            $statement .= " " . $this->getOrderByString();
+        }
+
+        if ($this->limit) {
+            $statement .= " " . $this->getLimitString();
+        }
+
+        return $statement;
     }
 
     /**
@@ -558,192 +1541,47 @@ class Miner
     }
 
     /**
-     * Set the INSERT table.
+     * Get the execution options portion of the statement as a string.
      *
-     * @param  string $table INSERT table
-     * @return Miner
+     * @param  bool $includeTrailingSpace optional include space after options
+     * @return string execution options portion of the statement
      */
-    public function insert($table)
-    {
-        $this->insert = $table;
-
-        return $this;
-    }
-
-    /**
-     * Merge this Miner's INSERT into the given Miner.
-     *
-     * @param  Miner $Miner to merge into
-     * @return Miner
-     */
-    public function mergeInsertInto(Miner $Miner)
-    {
-        $this->mergeOptionsInto($Miner);
-
-        if ($this->insert) {
-            $Miner->insert($this->getInsert());
-        }
-
-        return $Miner;
-    }
-
-    /**
-     * Get the INSERT table.
-     *
-     * @return string INSERT table
-     */
-    public function getInsert()
-    {
-        return $this->insert;
-    }
-
-    /**
-     * Get the INSERT portion of the statement as a string.
-     *
-     * @param  bool $includeText optional include 'INSERT' text, default true
-     * @return string INSERT portion of the statement
-     */
-    public function getInsertString($includeText = true)
+    public function getOptionsString($includeTrailingSpace = false)
     {
         $statement = "";
 
-        if (!$this->insert) {
+        if (!$this->option) {
             return $statement;
         }
 
-        $statement .= $this->getOptionsString(true);
+        $statement .= implode(' ', $this->option);
 
-        $statement .= $this->getInsert();
-
-        if ($includeText && $statement) {
-            $statement = "INSERT " . $statement;
+        if ($includeTrailingSpace) {
+            $statement .= " ";
         }
 
         return $statement;
     }
 
     /**
-     * Set the REPLACE table.
+     * Get the FROM portion of the statement, including all JOINs, as a string.
      *
-     * @param  string $table REPLACE table
-     * @return Miner
+     * @param  bool $includeText optional include 'FROM' text, default true
+     * @return string FROM portion of the statement
      */
-    public function replace($table)
-    {
-        $this->replace = $table;
-
-        return $this;
-    }
-
-    /**
-     * Merge this Miner's REPLACE into the given Miner.
-     *
-     * @param  Miner $Miner to merge into
-     * @return Miner
-     */
-    public function mergeReplaceInto(Miner $Miner)
-    {
-        $this->mergeOptionsInto($Miner);
-
-        if ($this->replace) {
-            $Miner->replace($this->getReplace());
-        }
-
-        return $Miner;
-    }
-
-    /**
-     * Get the REPLACE table.
-     *
-     * @return string REPLACE table
-     */
-    public function getReplace()
-    {
-        return $this->replace;
-    }
-
-    /**
-     * Get the REPLACE portion of the statement as a string.
-     *
-     * @param  bool $includeText optional include 'REPLACE' text, default true
-     * @return string REPLACE portion of the statement
-     */
-    public function getReplaceString($includeText = true)
+    public function getFromString($includeText = true)
     {
         $statement = "";
 
-        if (!$this->replace) {
+        if (!$this->from) {
             return $statement;
         }
 
-        $statement .= $this->getOptionsString(true);
+        $statement .= $this->getFrom();
 
-        $statement .= $this->getReplace();
-
-        if ($includeText && $statement) {
-            $statement = "REPLACE " . $statement;
+        if ($this->getFromAlias()) {
+            $statement .= " AS " . $this->getFromAlias();
         }
-
-        return $statement;
-    }
-
-    /**
-     * Set the UPDATE table.
-     *
-     * @param  string $table UPDATE table
-     * @return Miner
-     */
-    public function update($table)
-    {
-        $this->update = $table;
-
-        return $this;
-    }
-
-    /**
-     * Merge this Miner's UPDATE into the given Miner.
-     *
-     * @param  Miner $Miner to merge into
-     * @return Miner
-     */
-    public function mergeUpdateInto(Miner $Miner)
-    {
-        $this->mergeOptionsInto($Miner);
-
-        if ($this->update) {
-            $Miner->update($this->getUpdate());
-        }
-
-        return $Miner;
-    }
-
-    /**
-     * Get the UPDATE table.
-     *
-     * @return string UPDATE table
-     */
-    public function getUpdate()
-    {
-        return $this->update;
-    }
-
-    /**
-     * Get the UPDATE portion of the statement as a string.
-     *
-     * @param  bool $includeText optional include 'UPDATE' text, default true
-     * @return string UPDATE portion of the statement
-     */
-    public function getUpdateString($includeText = true)
-    {
-        $statement = "";
-
-        if (!$this->update) {
-            return $statement;
-        }
-
-        $statement .= $this->getOptionsString(true);
-
-        $statement .= $this->getUpdate();
 
         // Add any JOINs.
         $statement .= " " . $this->getJoinString();
@@ -751,371 +1589,10 @@ class Miner
         $statement = rtrim($statement);
 
         if ($includeText && $statement) {
-            $statement = "UPDATE " . $statement;
+            $statement = "FROM " . $statement;
         }
 
         return $statement;
-    }
-
-    /**
-     * Add a table to DELETE from, or false if deleting from the FROM table.
-     *
-     * @param  string|false $table optional table name, default false
-     * @return Miner
-     */
-    public function delete($table = false)
-    {
-        if ($table === false) {
-            $this->delete = true;
-        } else {
-            // Reset the array in case the class variable was previously set to a
-            // boolean value.
-            if (!is_array($this->delete)) {
-                $this->delete = array();
-            }
-
-            $this->delete[] = $table;
-        }
-
-        return $this;
-    }
-
-    /**
-     * Merge this Miner's DELETE into the given Miner.
-     *
-     * @param  Miner $Miner to merge into
-     * @return Miner
-     */
-    public function mergeDeleteInto(Miner $Miner)
-    {
-        $this->mergeOptionsInto($Miner);
-
-        if ($this->isDeleteTableFrom()) {
-            $Miner->delete();
-        } else {
-            foreach ($this->delete as $delete) {
-                $Miner->delete($delete);
-            }
-        }
-
-        return $Miner;
-    }
-
-    /**
-     * Get the DELETE portion of the statement as a string.
-     *
-     * @param  bool $includeText optional include 'DELETE' text, default true
-     * @return string DELETE portion of the statement
-     */
-    public function getDeleteString($includeText = true)
-    {
-        $statement = "";
-
-        if (!$this->delete && !$this->isDeleteTableFrom()) {
-            return $statement;
-        }
-
-        $statement .= $this->getOptionsString(true);
-
-        if (is_array($this->delete)) {
-            $statement .= implode(', ', $this->delete);
-        }
-
-        if ($includeText && ($statement || $this->isDeleteTableFrom())) {
-            $statement = "DELETE " . $statement;
-
-            // Trim in case the table is specified in FROM.
-            $statement = trim($statement);
-        }
-
-        return $statement;
-    }
-
-    /**
-     * Whether the FROM table is the single table to delete from.
-     *
-     * @return bool whether the delete table is FROM
-     */
-    private function isDeleteTableFrom()
-    {
-        return $this->delete === true;
-    }
-
-    /**
-     * Add one or more column values to INSERT, UPDATE, or REPLACE.
-     *
-     * @param  string|array $column column name or array of columns => values
-     * @param  mixed|null $value optional value for single column
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function set($column, $value = null, $quote = null)
-    {
-        if (is_array($column)) {
-            foreach ($column as $columnName => $columnValue) {
-                $this->set($columnName, $columnValue, $quote);
-            }
-        } else {
-            $this->set[] = array('column' => $column,
-                'value' => $value,
-                'quote' => $quote);
-        }
-
-        return $this;
-    }
-
-    /**
-     * Add an array of columns => values to INSERT, UPDATE, or REPLACE.
-     *
-     * @param  array $values columns => values
-     * @return Miner
-     */
-    public function values(array $values)
-    {
-        return $this->set($values);
-    }
-
-    /**
-     * Merge this Miner's SET into the given Miner.
-     *
-     * @param  Miner $Miner to merge into
-     * @return Miner
-     */
-    public function mergeSetInto(Miner $Miner)
-    {
-        foreach ($this->set as $set) {
-            $Miner->set($set['column'], $set['value'], $set['quote']);
-        }
-
-        return $Miner;
-    }
-
-    /**
-     * Get the SET portion of the statement as a string.
-     *
-     * @param  bool $usePlaceholders optional use ? placeholders, default true
-     * @param  bool $includeText optional include 'SET' text, default true
-     * @return string SET portion of the statement
-     */
-    public function getSetString($usePlaceholders = true, $includeText = true)
-    {
-        $statement = "";
-        $this->setPlaceholderValues = array();
-
-        foreach ($this->set as $set) {
-            $autoQuote = $this->getAutoQuote($set['quote']);
-
-            if ($usePlaceholders && $autoQuote) {
-                $statement .= $set['column'] . " " . self::EQUALS . " ?, ";
-
-                $this->setPlaceholderValues[] = $set['value'];
-            } else {
-                $statement .= $set['column'] . " " . self::EQUALS . " " . $this->autoQuote($set['value'], $autoQuote) . ", ";
-            }
-        }
-
-        $statement = substr($statement, 0, -2);
-
-        if ($includeText && $statement) {
-            $statement = "SET " . $statement;
-        }
-
-        return $statement;
-    }
-
-    /**
-     * Get the SET placeholder values.
-     *
-     * @return array SET placeholder values
-     */
-    public function getSetPlaceholderValues()
-    {
-        return $this->setPlaceholderValues;
-    }
-
-    /**
-     * Set the FROM table with optional alias.
-     *
-     * @param  string $table table name
-     * @param  string $alias optional alias
-     * @return Miner
-     */
-    public function from($table, $alias = null)
-    {
-        $this->from['table'] = $table;
-        $this->from['alias'] = $alias;
-
-        return $this;
-    }
-
-    /**
-     * Merge this Miner's FROM into the given Miner.
-     *
-     * @param  Miner $Miner to merge into
-     * @return Miner
-     */
-    public function mergeFromInto(Miner $Miner)
-    {
-        if ($this->from) {
-            $Miner->from($this->getFrom(), $this->getFromAlias());
-        }
-
-        return $Miner;
-    }
-
-    /**
-     * Get the FROM table.
-     *
-     * @return string FROM table
-     */
-    public function getFrom()
-    {
-        return $this->from['table'];
-    }
-
-    /**
-     * Get the FROM table alias.
-     *
-     * @return string FROM table alias
-     */
-    public function getFromAlias()
-    {
-        return $this->from['alias'];
-    }
-
-    /**
-     * Whether the join table and alias is unique (hasn't already been joined).
-     *
-     * @param  string $table table name
-     * @param  string $alias table alias
-     * @return bool whether the join table and alias is unique
-     */
-    private function isJoinUnique($table, $alias)
-    {
-        foreach ($this->join as $join) {
-            if ($join['table'] == $table && $join['alias'] == $alias) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /**
-     * Add a JOIN table with optional ON criteria.
-     *
-     * @param  string $table table name
-     * @param  string|array $criteria optional ON criteria
-     * @param  string $type optional type of join, default INNER JOIN
-     * @param  string $alias optional alias
-     * @return Miner
-     */
-    public function join($table, $criteria = null, $type = self::INNER_JOIN, $alias = null)
-    {
-        if (!$this->isJoinUnique($table, $alias)) {
-            return $this;
-        }
-
-        if (is_string($criteria)) {
-            $criteria = array($criteria);
-        }
-
-        $this->join[] = array('table' => $table,
-            'criteria' => $criteria,
-            'type' => $type,
-            'alias' => $alias);
-
-        return $this;
-    }
-
-    /**
-     * Add an INNER JOIN table with optional ON criteria.
-     *
-     * @param  string $table table name
-     * @param  string|array $criteria optional ON criteria
-     * @param  string $alias optional alias
-     * @return Miner
-     */
-    public function innerJoin($table, $criteria = null, $alias = null)
-    {
-        return $this->join($table, $criteria, self::INNER_JOIN, $alias);
-    }
-
-    /**
-     * Add a LEFT JOIN table with optional ON criteria.
-     *
-     * @param  string $table table name
-     * @param  string|array $criteria optional ON criteria
-     * @param  string $alias optional alias
-     * @return Miner
-     */
-    public function leftJoin($table, $criteria = null, $alias = null)
-    {
-        return $this->join($table, $criteria, self::LEFT_JOIN, $alias);
-    }
-
-    /**
-     * Add a RIGHT JOIN table with optional ON criteria.
-     *
-     * @param  string $table table name
-     * @param  string|array $criteria optional ON criteria
-     * @param  string $alias optional alias
-     * @return Miner
-     */
-    public function rightJoin($table, $criteria = null, $alias = null)
-    {
-        return $this->join($table, $criteria, self::RIGHT_JOIN, $alias);
-    }
-
-    /**
-     * Merge this Miner's JOINs into the given Miner.
-     *
-     * @param  Miner $Miner to merge into
-     * @return Miner
-     */
-    public function mergeJoinInto(Miner $Miner)
-    {
-        foreach ($this->join as $join) {
-            $Miner->join($join['table'], $join['criteria'], $join['type'], $join['alias']);
-        }
-
-        return $Miner;
-    }
-
-    /**
-     * Get an ON criteria string joining the specified table and column to the
-     * same column of the previous JOIN or FROM table.
-     *
-     * @param  int $joinIndex index of current join
-     * @param  string $table current table name
-     * @param  string $column current column name
-     * @return string ON join criteria
-     */
-    private function getJoinCriteriaUsingPreviousTable($joinIndex, $table, $column)
-    {
-        $joinCriteria = "";
-        $previousJoinIndex = $joinIndex - 1;
-
-        // If the previous table is from a JOIN, use that. Otherwise, use the
-        // FROM table.
-        if (array_key_exists($previousJoinIndex, $this->join)) {
-            $previousTable = $this->join[$previousJoinIndex]['table'];
-        } elseif ($this->isSelect()) {
-            $previousTable = $this->getFrom();
-        } elseif ($this->isUpdate()) {
-            $previousTable = $this->getUpdate();
-        } else {
-            $previousTable = false;
-        }
-
-        // In the off chance there is no previous table.
-        if ($previousTable) {
-            $joinCriteria .= $previousTable . ".";
-        }
-
-        $joinCriteria .= $column . " " . self::EQUALS . " " . $table . "." . $column;
-
-        return $joinCriteria;
     }
 
     /**
@@ -1162,170 +1639,57 @@ class Miner
     }
 
     /**
-     * Get the FROM portion of the statement, including all JOINs, as a string.
+     * Get an ON criteria string joining the specified table and column to the
+     * same column of the previous JOIN or FROM table.
      *
-     * @param  bool $includeText optional include 'FROM' text, default true
-     * @return string FROM portion of the statement
+     * @param  int $joinIndex index of current join
+     * @param  string $table current table name
+     * @param  string $column current column name
+     * @return string ON join criteria
      */
-    public function getFromString($includeText = true)
+    private function getJoinCriteriaUsingPreviousTable($joinIndex, $table, $column)
     {
-        $statement = "";
+        $joinCriteria = "";
+        $previousJoinIndex = $joinIndex - 1;
 
-        if (!$this->from) {
-            return $statement;
+        // If the previous table is from a JOIN, use that. Otherwise, use the
+        // FROM table.
+        if (array_key_exists($previousJoinIndex, $this->join)) {
+            $previousTable = $this->join[$previousJoinIndex]['table'];
+        } elseif ($this->isSelect()) {
+            $previousTable = $this->getFrom();
+        } elseif ($this->isUpdate()) {
+            $previousTable = $this->getUpdate();
+        } else {
+            $previousTable = false;
         }
 
-        $statement .= $this->getFrom();
-
-        if ($this->getFromAlias()) {
-            $statement .= " AS " . $this->getFromAlias();
+        // In the off chance there is no previous table.
+        if ($previousTable) {
+            $joinCriteria .= $previousTable . ".";
         }
 
-        // Add any JOINs.
-        $statement .= " " . $this->getJoinString();
+        $joinCriteria .= $column . " " . self::EQUALS . " " . $table . "." . $column;
 
-        $statement = rtrim($statement);
+        return $joinCriteria;
+    }
+
+    /**
+     * Get the WHERE portion of the statement as a string.
+     *
+     * @param  bool $usePlaceholders optional use ? placeholders, default true
+     * @param  bool $includeText optional include 'WHERE' text, default true
+     * @return string WHERE portion of the statement
+     */
+    public function getWhereString($usePlaceholders = true, $includeText = true)
+    {
+        $statement = $this->getCriteriaString($this->where, $usePlaceholders, $this->wherePlaceholderValues);
 
         if ($includeText && $statement) {
-            $statement = "FROM " . $statement;
+            $statement = "WHERE " . $statement;
         }
 
         return $statement;
-    }
-
-    /**
-     * Add an open bracket for nesting conditions to the specified WHERE or
-     * HAVING criteria.
-     *
-     * @param  array $criteria WHERE or HAVING criteria
-     * @param  string $connector optional logical connector, default AND
-     * @return Miner
-     */
-    private function openCriteria(array &$criteria, $connector = self::LOGICAL_AND)
-    {
-        $criteria[] = array('bracket' => self::BRACKET_OPEN,
-            'connector' => $connector);
-
-        return $this;
-    }
-
-    /**
-     * Add a closing bracket for nesting conditions to the specified WHERE or
-     * HAVING criteria.
-     *
-     * @param  array $criteria WHERE or HAVING criteria
-     * @return Miner
-     */
-    private function closeCriteria(array &$criteria)
-    {
-        $criteria[] = array('bracket' => self::BRACKET_CLOSE,
-            'connector' => null);
-
-        return $this;
-    }
-
-    /**
-     * Add a condition to the specified WHERE or HAVING criteria.
-     *
-     * @param  array $criteria WHERE or HAVING criteria
-     * @param  string $column column name
-     * @param  mixed $value value
-     * @param  string $operator optional comparison operator, default =
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    private function criteria(array &$criteria, $column, $value, $operator = self::EQUALS,
-                              $connector = self::LOGICAL_AND, $quote = null)
-    {
-        $criteria[] = array('column' => $column,
-            'value' => $value,
-            'operator' => $operator,
-            'connector' => $connector,
-            'quote' => $quote);
-
-        return $this;
-    }
-
-    /**
-     * Add an OR condition to the specified WHERE or HAVING criteria.
-     *
-     * @param  array $criteria WHERE or HAVING criteria
-     * @param  string $column column name
-     * @param  mixed $value value
-     * @param  string $operator optional comparison operator, default =
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    private function orCriteria(array &$criteria, $column, $value, $operator = self::EQUALS, $quote = null)
-    {
-        return $this->criteria($criteria, $column, $value, $operator, self::LOGICAL_OR, $quote);
-    }
-
-    /**
-     * Add an IN condition to the specified WHERE or HAVING criteria.
-     *
-     * @param  array $criteria WHERE or HAVING criteria
-     * @param  string $column column name
-     * @param  array $values values
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    private function criteriaIn(array &$criteria, $column, array $values, $connector = self::LOGICAL_AND,
-                                $quote = null)
-    {
-        return $this->criteria($criteria, $column, $values, self::IN, $connector, $quote);
-    }
-
-    /**
-     * Add a NOT IN condition to the specified WHERE or HAVING criteria.
-     *
-     * @param  array $criteria WHERE or HAVING criteria
-     * @param  string $column column name
-     * @param  array $values values
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    private function criteriaNotIn(array &$criteria, $column, array $values, $connector = self::LOGICAL_AND,
-                                   $quote = null)
-    {
-        return $this->criteria($criteria, $column, $values, self::NOT_IN, $connector, $quote);
-    }
-
-    /**
-     * Add a BETWEEN condition to the specified WHERE or HAVING criteria.
-     *
-     * @param  array $criteria WHERE or HAVING criteria
-     * @param  string $column column name
-     * @param  mixed $min minimum value
-     * @param  mixed $max maximum value
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    private function criteriaBetween(array &$criteria, $column, $min, $max, $connector = self::LOGICAL_AND,
-                                     $quote = null)
-    {
-        return $this->criteria($criteria, $column, array($min, $max), self::BETWEEN, $connector, $quote);
-    }
-
-    /**
-     * Add a NOT BETWEEN condition to the specified WHERE or HAVING criteria.
-     *
-     * @param  array $criteria WHERE or HAVING criteria
-     * @param  string $column column name
-     * @param  mixed $min minimum value
-     * @param  mixed $max maximum value
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    private function criteriaNotBetween(array &$criteria, $column, $min, $max, $connector = self::LOGICAL_AND,
-                                        $quote = null)
-    {
-        return $this->criteria($criteria, $column, array($min, $max), self::NOT_BETWEEN, $connector, $quote);
     }
 
     /**
@@ -1427,207 +1791,71 @@ class Miner
     }
 
     /**
-     * Add an open bracket for nesting WHERE conditions.
+     * Get whether values will be automatically escaped.
      *
-     * @param  string $connector optional logical connector, default AND
+     * The $override parameter is for convenience in checking if a specific
+     * value should be quoted differently than the rest. 'null' defers to the
+     * global setting.
+     *
+     * @param  bool|null $override value-specific override for convenience
+     * @return bool
+     */
+    public function getAutoQuote($override = null)
+    {
+        return $override === null ? $this->autoQuote : $override;
+    }
+
+    /**
+     * Set whether to automatically escape values.
+     *
+     * @param  bool|null $autoQuote whether to automatically escape values
      * @return Miner
      */
-    public function openWhere($connector = self::LOGICAL_AND)
+    public function setAutoQuote($autoQuote)
     {
-        return $this->openCriteria($this->where, $connector);
-    }
-
-    /**
-     * Add a closing bracket for nesting WHERE conditions.
-     *
-     * @return Miner
-     */
-    public function closeWhere()
-    {
-        return $this->closeCriteria($this->where);
-    }
-
-    /**
-     * Add a WHERE condition.
-     *
-     * @param  string $column column name
-     * @param  mixed $value value
-     * @param  string $operator optional comparison operator, default =
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function where($column, $value, $operator = self::EQUALS, $connector = self::LOGICAL_AND, $quote = null)
-    {
-        return $this->criteria($this->where, $column, $value, $operator, $connector, $quote);
-    }
-
-    /**
-     * Add an AND WHERE condition.
-     *
-     * @param  string $column colum name
-     * @param  mixed $value value
-     * @param  string $operator optional comparison operator, default =
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function andWhere($column, $value, $operator = self::EQUALS, $quote = null)
-    {
-        return $this->criteria($this->where, $column, $value, $operator, self::LOGICAL_AND, $quote);
-    }
-
-    /**
-     * Add an OR WHERE condition.
-     *
-     * @param  string $column colum name
-     * @param  mixed $value value
-     * @param  string $operator optional comparison operator, default =
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function orWhere($column, $value, $operator = self::EQUALS, $quote = null)
-    {
-        return $this->orCriteria($this->where, $column, $value, $operator, self::LOGICAL_OR, $quote);
-    }
-
-    /**
-     * Add an IN WHERE condition.
-     *
-     * @param  string $column column name
-     * @param  array $values values
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function whereIn($column, array $values, $connector = self::LOGICAL_AND, $quote = null)
-    {
-        return $this->criteriaIn($this->where, $column, $values, $connector, $quote);
-    }
-
-    /**
-     * Add a NOT IN WHERE condition.
-     *
-     * @param  string $column column name
-     * @param  array $values values
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function whereNotIn($column, array $values, $connector = self::LOGICAL_AND, $quote = null)
-    {
-        return $this->criteriaNotIn($this->where, $column, $values, $connector, $quote);
-    }
-
-    /**
-     * Add a BETWEEN WHERE condition.
-     *
-     * @param  string $column column name
-     * @param  mixed $min minimum value
-     * @param  mixed $max maximum value
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function whereBetween($column, $min, $max, $connector = self::LOGICAL_AND, $quote = null)
-    {
-        return $this->criteriaBetween($this->where, $column, $min, $max, $connector, $quote);
-    }
-
-    /**
-     * Add a NOT BETWEEN WHERE condition.
-     *
-     * @param  string $column column name
-     * @param  mixed $min minimum value
-     * @param  mixed $max maximum value
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function whereNotBetween($column, $min, $max, $connector = self::LOGICAL_AND, $quote = null)
-    {
-        return $this->criteriaNotBetween($this->where, $column, $min, $max, $connector, $quote);
-    }
-
-    /**
-     * Merge this Miner's WHERE into the given Miner.
-     *
-     * @param  Miner $Miner to merge into
-     * @return Miner
-     */
-    public function mergeWhereInto(Miner $Miner)
-    {
-        foreach ($this->where as $where) {
-            // Handle open/close brackets differently than other criteria.
-            if (array_key_exists('bracket', $where)) {
-                if (strcmp($where['bracket'], self::BRACKET_OPEN) == 0) {
-                    $Miner->openWhere($where['connector']);
-                } else {
-                    $Miner->closeWhere();
-                }
-            } else {
-                $Miner->where($where['column'], $where['value'], $where['operator'], $where['connector'], $where['quote']);
-            }
-        }
-
-        return $Miner;
-    }
-
-    /**
-     * Get the WHERE portion of the statement as a string.
-     *
-     * @param  bool $usePlaceholders optional use ? placeholders, default true
-     * @param  bool $includeText optional include 'WHERE' text, default true
-     * @return string WHERE portion of the statement
-     */
-    public function getWhereString($usePlaceholders = true, $includeText = true)
-    {
-        $statement = $this->getCriteriaString($this->where, $usePlaceholders, $this->wherePlaceholderValues);
-
-        if ($includeText && $statement) {
-            $statement = "WHERE " . $statement;
-        }
-
-        return $statement;
-    }
-
-    /**
-     * Get the WHERE placeholder values.
-     *
-     * @return array WHERE placeholder values
-     */
-    public function getWherePlaceholderValues()
-    {
-        return $this->wherePlaceholderValues;
-    }
-
-    /**
-     * Add a GROUP BY column.
-     *
-     * @param  string $column column name
-     * @param  string|null $order optional order direction, default none
-     * @return Miner
-     */
-    public function groupBy($column, $order = null)
-    {
-        $this->groupBy[] = array('column' => $column,
-            'order' => $order);
+        $this->autoQuote = $autoQuote;
 
         return $this;
     }
 
     /**
-     * Merge this Miner's GROUP BY into the given Miner.
+     * Safely escape a value if auto-quoting is enabled, or do nothing if
+     * disabled.
      *
-     * @param  Miner $Miner to merge into
-     * @return Miner
+     * The $override parameter is for convenience in checking if a specific
+     * value should be quoted differently than the rest. 'null' defers to the
+     * global setting.
+     *
+     * @param  mixed $value value to escape (or not)
+     * @param  bool|null $override value-specific override for convenience
+     * @return mixed|false value (escaped or original) or false if failed
      */
-    public function mergeGroupByInto(Miner $Miner)
+    public function autoQuote($value, $override = null)
     {
-        foreach ($this->groupBy as $groupBy) {
-            $Miner->groupBy($groupBy['column'], $groupBy['order']);
-        }
+        return $this->getAutoQuote($override) ? $this->quote($value) : $value;
+    }
 
-        return $Miner;
+    /**
+     * Safely escape a value for use in a statement.
+     *
+     * @param  mixed $value value to escape
+     * @return mixed|false escaped value or false if failed
+     */
+    public function quote($value)
+    {
+        $PdoConnection = $this->getPdoConnection();
+
+        // If a PDO database connection is set, use it to quote the value using
+        // the underlying database. Otherwise, quote it manually.
+        if ($PdoConnection) {
+            return $PdoConnection->quote($value);
+        } elseif (is_numeric($value)) {
+            return $value;
+        } elseif (is_null($value)) {
+            return "NULL";
+        } else {
+            return "'" . addslashes($value) . "'";
+        }
     }
 
     /**
@@ -1660,153 +1888,6 @@ class Miner
     }
 
     /**
-     * Add an open bracket for nesting HAVING conditions.
-     *
-     * @param  string $connector optional logical connector, default AND
-     * @return Miner
-     */
-    public function openHaving($connector = self::LOGICAL_AND)
-    {
-        return $this->openCriteria($this->having, $connector);
-    }
-
-    /**
-     * Add a closing bracket for nesting HAVING conditions.
-     *
-     * @return Miner
-     */
-    public function closeHaving()
-    {
-        return $this->closeCriteria($this->having);
-    }
-
-    /**
-     * Add a HAVING condition.
-     *
-     * @param  string $column colum name
-     * @param  mixed $value value
-     * @param  string $operator optional comparison operator, default =
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function having($column, $value, $operator = self::EQUALS, $connector = self::LOGICAL_AND, $quote = null)
-    {
-        return $this->criteria($this->having, $column, $value, $operator, $connector, $quote);
-    }
-
-    /**
-     * Add an AND HAVING condition.
-     *
-     * @param  string $column colum name
-     * @param  mixed $value value
-     * @param  string $operator optional comparison operator, default =
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function andHaving($column, $value, $operator = self::EQUALS, $quote = null)
-    {
-        return $this->criteria($this->having, $column, $value, $operator, self::LOGICAL_AND, $quote);
-    }
-
-    /**
-     * Add an OR HAVING condition.
-     *
-     * @param  string $column colum name
-     * @param  mixed $value value
-     * @param  string $operator optional comparison operator, default =
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function orHaving($column, $value, $operator = self::EQUALS, $quote = null)
-    {
-        return $this->orCriteria($this->having, $column, $value, $operator, self::LOGICAL_OR, $quote);
-    }
-
-    /**
-     * Add an IN WHERE condition.
-     *
-     * @param  string $column column name
-     * @param  array $values values
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function havingIn($column, array $values, $connector = self::LOGICAL_AND, $quote = null)
-    {
-        return $this->criteriaIn($this->having, $column, $values, $connector, $quote);
-    }
-
-    /**
-     * Add a NOT IN HAVING condition.
-     *
-     * @param  string $column column name
-     * @param  array $values values
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function havingNotIn($column, array $values, $connector = self::LOGICAL_AND, $quote = null)
-    {
-        return $this->criteriaNotIn($this->having, $column, $values, $connector, $quote);
-    }
-
-    /**
-     * Add a BETWEEN HAVING condition.
-     *
-     * @param  string $column column name
-     * @param  mixed $min minimum value
-     * @param  mixed $max maximum value
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function havingBetween($column, $min, $max, $connector = self::LOGICAL_AND, $quote = null)
-    {
-        return $this->criteriaBetween($this->having, $column, $min, $max, $connector, $quote);
-    }
-
-    /**
-     * Add a NOT BETWEEN HAVING condition.
-     *
-     * @param  string $column column name
-     * @param  mixed $min minimum value
-     * @param  mixed $max maximum value
-     * @param  string $connector optional logical connector, default AND
-     * @param  bool|null $quote optional auto-escape value, default to global
-     * @return Miner
-     */
-    public function havingNotBetween($column, $min, $max, $connector = self::LOGICAL_AND, $quote = null)
-    {
-        return $this->criteriaNotBetween($this->having, $column, $min, $max, $connector, $quote);
-    }
-
-    /**
-     * Merge this Miner's HAVING into the given Miner.
-     *
-     * @param  Miner $Miner to merge into
-     * @return Miner
-     */
-    public function mergeHavingInto(Miner $Miner)
-    {
-        foreach ($this->having as $having) {
-            // Handle open/close brackets differently than other criteria.
-            if (array_key_exists('bracket', $having)) {
-                if (strcmp($having['bracket'], self::BRACKET_OPEN) == 0) {
-                    $Miner->openHaving($having['connector']);
-                } else {
-                    $Miner->closeHaving();
-                }
-            } else {
-                $Miner->having($having['column'], $having['value'], $having['operator'],
-                    $having['connector'], $having['quote']);
-            }
-        }
-
-        return $Miner;
-    }
-
-    /**
      * Get the HAVING portion of the statement as a string.
      *
      * @param  bool $usePlaceholders optional use ? placeholders, default true
@@ -1822,46 +1903,6 @@ class Miner
         }
 
         return $statement;
-    }
-
-    /**
-     * Get the HAVING placeholder values.
-     *
-     * @return array HAVING placeholder values
-     */
-    public function getHavingPlaceholderValues()
-    {
-        return $this->havingPlaceholderValues;
-    }
-
-    /**
-     * Add a column to ORDER BY.
-     *
-     * @param  string $column column name
-     * @param  string $order optional order direction, default ASC
-     * @return Miner
-     */
-    public function orderBy($column, $order = self::ORDER_BY_ASC)
-    {
-        $this->orderBy[] = array('column' => $column,
-            'order' => $order);
-
-        return $this;
-    }
-
-    /**
-     * Merge this Miner's ORDER BY into the given Miner.
-     *
-     * @param  Miner $Miner to merge into
-     * @return Miner
-     */
-    public function mergeOrderByInto(Miner $Miner)
-    {
-        foreach ($this->orderBy as $orderBy) {
-            $Miner->orderBy($orderBy['column'], $orderBy['order']);
-        }
-
-        return $Miner;
     }
 
     /**
@@ -1885,56 +1926,6 @@ class Miner
         }
 
         return $statement;
-    }
-
-    /**
-     * Set the LIMIT on number of rows to return with optional offset.
-     *
-     * @param  int|string $limit number of rows to return
-     * @param  int|string $offset optional row number to start at, default 0
-     * @return Miner
-     */
-    public function limit($limit, $offset = 0)
-    {
-        $this->limit['limit'] = $limit;
-        $this->limit['offset'] = $offset;
-
-        return $this;
-    }
-
-    /**
-     * Merge this Miner's LIMIT into the given Miner.
-     *
-     * @param  Miner $Miner to merge into
-     * @return Miner
-     */
-    public function mergeLimitInto(Miner $Miner)
-    {
-        if ($this->limit) {
-            $Miner->limit($this->getLimit(), $this->getLimitOffset());
-        }
-
-        return $Miner;
-    }
-
-    /**
-     * Get the LIMIT on number of rows to return.
-     *
-     * @return int|string LIMIT on number of rows to return
-     */
-    public function getLimit()
-    {
-        return $this->limit['limit'];
-    }
-
-    /**
-     * Get the LIMIT row number to start at.
-     *
-     * @return int|string LIMIT row number to start at
-     */
-    public function getLimitOffset()
-    {
-        return $this->limit['offset'];
     }
 
     /**
@@ -1965,160 +1956,6 @@ class Miner
     }
 
     /**
-     * Whether this is a SELECT statement.
-     *
-     * @return bool whether this is a SELECT statement
-     */
-    public function isSelect()
-    {
-        return !empty($this->select);
-    }
-
-    /**
-     * Whether this is an INSERT statement.
-     *
-     * @return bool whether this is an INSERT statement
-     */
-    public function isInsert()
-    {
-        return !empty($this->insert);
-    }
-
-    /**
-     * Whether this is a REPLACE statement.
-     *
-     * @return bool whether this is a REPLACE statement
-     */
-    public function isReplace()
-    {
-        return !empty($this->replace);
-    }
-
-    /**
-     * Whether this is an UPDATE statement.
-     *
-     * @return bool whether this is an UPDATE statement
-     */
-    public function isUpdate()
-    {
-        return !empty($this->update);
-    }
-
-    /**
-     * Whether this is a DELETE statement.
-     *
-     * @return bool whether this is a DELETE statement
-     */
-    public function isDelete()
-    {
-        return !empty($this->delete);
-    }
-
-    /**
-     * Merge this Miner into the given Miner.
-     *
-     * @param  Miner $Miner to merge into
-     * @param  bool $overrideLimit optional override limit, default true
-     * @return Miner
-     */
-    public function mergeInto(Miner $Miner, $overrideLimit = true)
-    {
-        if ($this->isSelect()) {
-            $this->mergeSelectInto($Miner);
-            $this->mergeFromInto($Miner);
-            $this->mergeJoinInto($Miner);
-            $this->mergeWhereInto($Miner);
-            $this->mergeGroupByInto($Miner);
-            $this->mergeHavingInto($Miner);
-            $this->mergeOrderByInto($Miner);
-
-            if ($overrideLimit) {
-                $this->mergeLimitInto($Miner);
-            }
-        } elseif ($this->isInsert()) {
-            $this->mergeInsertInto($Miner);
-            $this->mergeSetInto($Miner);
-        } elseif ($this->isReplace()) {
-            $this->mergeReplaceInto($Miner);
-            $this->mergeSetInto($Miner);
-        } elseif ($this->isUpdate()) {
-            $this->mergeUpdateInto($Miner);
-            $this->mergeJoinInto($Miner);
-            $this->mergeSetInto($Miner);
-            $this->mergeWhereInto($Miner);
-
-            // ORDER BY and LIMIT are only applicable when updating a single table.
-            if (!$this->join) {
-                $this->mergeOrderByInto($Miner);
-
-                if ($overrideLimit) {
-                    $this->mergeLimitInto($Miner);
-                }
-            }
-        } elseif ($this->isDelete()) {
-            $this->mergeDeleteInto($Miner);
-            $this->mergeFromInto($Miner);
-            $this->mergeJoinInto($Miner);
-            $this->mergeWhereInto($Miner);
-
-            // ORDER BY and LIMIT are only applicable when deleting from a single
-            // table.
-            if ($this->isDeleteTableFrom()) {
-                $this->mergeOrderByInto($Miner);
-
-                if ($overrideLimit) {
-                    $this->mergeLimitInto($Miner);
-                }
-            }
-        }
-
-        return $Miner;
-    }
-
-    /**
-     * Get the full SELECT statement.
-     *
-     * @param  bool $usePlaceholders optional use ? placeholders, default true
-     * @return string full SELECT statement
-     */
-    private function getSelectStatement($usePlaceholders = true)
-    {
-        $statement = "";
-
-        if (!$this->isSelect()) {
-            return $statement;
-        }
-
-        $statement .= $this->getSelectString();
-
-        if ($this->from) {
-            $statement .= " " . $this->getFromString();
-        }
-
-        if ($this->where) {
-            $statement .= " " . $this->getWhereString($usePlaceholders);
-        }
-
-        if ($this->groupBy) {
-            $statement .= " " . $this->getGroupByString();
-        }
-
-        if ($this->having) {
-            $statement .= " " . $this->getHavingString($usePlaceholders);
-        }
-
-        if ($this->orderBy) {
-            $statement .= " " . $this->getOrderByString();
-        }
-
-        if ($this->limit) {
-            $statement .= " " . $this->getLimitString();
-        }
-
-        return $statement;
-    }
-
-    /**
      * Get the full INSERT statement.
      *
      * @param  bool $usePlaceholders optional use ? placeholders, default true
@@ -2142,6 +1979,64 @@ class Miner
     }
 
     /**
+     * Get the INSERT portion of the statement as a string.
+     *
+     * @param  bool $includeText optional include 'INSERT' text, default true
+     * @return string INSERT portion of the statement
+     */
+    public function getInsertString($includeText = true)
+    {
+        $statement = "";
+
+        if (!$this->insert) {
+            return $statement;
+        }
+
+        $statement .= $this->getOptionsString(true);
+
+        $statement .= $this->getInsert();
+
+        if ($includeText && $statement) {
+            $statement = "INSERT " . $statement;
+        }
+
+        return $statement;
+    }
+
+    /**
+     * Get the SET portion of the statement as a string.
+     *
+     * @param  bool $usePlaceholders optional use ? placeholders, default true
+     * @param  bool $includeText optional include 'SET' text, default true
+     * @return string SET portion of the statement
+     */
+    public function getSetString($usePlaceholders = true, $includeText = true)
+    {
+        $statement = "";
+        $this->setPlaceholderValues = array();
+
+        foreach ($this->set as $set) {
+            $autoQuote = $this->getAutoQuote($set['quote']);
+
+            if ($usePlaceholders && $autoQuote) {
+                $statement .= $set['column'] . " " . self::EQUALS . " ?, ";
+
+                $this->setPlaceholderValues[] = $set['value'];
+            } else {
+                $statement .= $set['column'] . " " . self::EQUALS . " " . $this->autoQuote($set['value'], $autoQuote) . ", ";
+            }
+        }
+
+        $statement = substr($statement, 0, -2);
+
+        if ($includeText && $statement) {
+            $statement = "SET " . $statement;
+        }
+
+        return $statement;
+    }
+
+    /**
      * Get the full REPLACE statement.
      *
      * @param  bool $usePlaceholders optional use ? placeholders, default true
@@ -2159,6 +2054,31 @@ class Miner
 
         if ($this->set) {
             $statement .= " " . $this->getSetString($usePlaceholders);
+        }
+
+        return $statement;
+    }
+
+    /**
+     * Get the REPLACE portion of the statement as a string.
+     *
+     * @param  bool $includeText optional include 'REPLACE' text, default true
+     * @return string REPLACE portion of the statement
+     */
+    public function getReplaceString($includeText = true)
+    {
+        $statement = "";
+
+        if (!$this->replace) {
+            return $statement;
+        }
+
+        $statement .= $this->getOptionsString(true);
+
+        $statement .= $this->getReplace();
+
+        if ($includeText && $statement) {
+            $statement = "REPLACE " . $statement;
         }
 
         return $statement;
@@ -2197,6 +2117,36 @@ class Miner
             if ($this->limit) {
                 $statement .= " " . $this->getLimitString();
             }
+        }
+
+        return $statement;
+    }
+
+    /**
+     * Get the UPDATE portion of the statement as a string.
+     *
+     * @param  bool $includeText optional include 'UPDATE' text, default true
+     * @return string UPDATE portion of the statement
+     */
+    public function getUpdateString($includeText = true)
+    {
+        $statement = "";
+
+        if (!$this->update) {
+            return $statement;
+        }
+
+        $statement .= $this->getOptionsString(true);
+
+        $statement .= $this->getUpdate();
+
+        // Add any JOINs.
+        $statement .= " " . $this->getJoinString();
+
+        $statement = rtrim($statement);
+
+        if ($includeText && $statement) {
+            $statement = "UPDATE " . $statement;
         }
 
         return $statement;
@@ -2242,28 +2192,55 @@ class Miner
     }
 
     /**
-     * Get the full SQL statement.
+     * Get the DELETE portion of the statement as a string.
      *
-     * @param  bool $usePlaceholders optional use ? placeholders, default true
-     * @return string full SQL statement
+     * @param  bool $includeText optional include 'DELETE' text, default true
+     * @return string DELETE portion of the statement
      */
-    public function getStatement($usePlaceholders = true)
+    public function getDeleteString($includeText = true)
     {
         $statement = "";
 
-        if ($this->isSelect()) {
-            $statement = $this->getSelectStatement($usePlaceholders);
-        } elseif ($this->isInsert()) {
-            $statement = $this->getInsertStatement($usePlaceholders);
-        } elseif ($this->isReplace()) {
-            $statement = $this->getReplaceStatement($usePlaceholders);
-        } elseif ($this->isUpdate()) {
-            $statement = $this->getUpdateStatement($usePlaceholders);
-        } elseif ($this->isDelete()) {
-            $statement = $this->getDeleteStatement($usePlaceholders);
+        if (!$this->delete && !$this->isDeleteTableFrom()) {
+            return $statement;
         }
-        $this->clear();
+
+        $statement .= $this->getOptionsString(true);
+
+        if (is_array($this->delete)) {
+            $statement .= implode(', ', $this->delete);
+        }
+
+        if ($includeText && ($statement || $this->isDeleteTableFrom())) {
+            $statement = "DELETE " . $statement;
+
+            // Trim in case the table is specified in FROM.
+            $statement = trim($statement);
+        }
+
         return $statement;
+    }
+
+    public function clear()
+    {
+        $this->option = array();
+        $this->select = array();
+        $this->delete = array();
+        $this->set = array();
+        $this->from = array();
+        $this->join = array();
+        $this->where = array();
+        $this->groupBy = array();
+        $this->having = array();
+        $this->orderBy = array();
+        $this->limit = array();
+        $this->insert = array();
+        $this->replace = array();
+        $this->update = array();
+
+        $this->setPlaceholderValues = array();
+        $this->wherePlaceholderValues = array();
+        $this->havingPlaceholderValues = array();
     }
 
     /**
@@ -2279,30 +2256,33 @@ class Miner
     }
 
     /**
-     * Execute the statement using the PDO database connection.
+     * Get the SET placeholder values.
      *
-     * @return PDOStatement|false executed statement or false if failed
+     * @return array SET placeholder values
      */
-    public function execute()
+    public function getSetPlaceholderValues()
     {
-        $PdoConnection = $this->getPdoConnection();
+        return $this->setPlaceholderValues;
+    }
 
-        // Without a PDO database connection, the statement cannot be executed.
-        if (!$PdoConnection) {
-            return false;
-        }
+    /**
+     * Get the WHERE placeholder values.
+     *
+     * @return array WHERE placeholder values
+     */
+    public function getWherePlaceholderValues()
+    {
+        return $this->wherePlaceholderValues;
+    }
 
-        $statement = $this->getStatement();
-
-        // Only execute if a statement is set.
-        if ($statement) {
-            $PdoStatement = $PdoConnection->prepare($statement);
-            $PdoStatement->execute($this->getPlaceholderValues());
-
-            return $PdoStatement;
-        } else {
-            return false;
-        }
+    /**
+     * Get the HAVING placeholder values.
+     *
+     * @return array HAVING placeholder values
+     */
+    public function getHavingPlaceholderValues()
+    {
+        return $this->havingPlaceholderValues;
     }
 
     /**
@@ -2321,11 +2301,12 @@ class Miner
      * @param null $sql
      * @return MySqlCoroutine
      */
-    public function coroutineSend($bind_id = null, $sql = null){
+    public function coroutineSend($bind_id = null, $sql = null)
+    {
         if ($sql == null) {
             $sql = $this->getStatement(false);
         }
-        return new MySqlCoroutine($this->mysql_pool,$bind_id,$sql);
+        return new MySqlCoroutine($this->mysql_pool, $bind_id, $sql);
     }
 }
 

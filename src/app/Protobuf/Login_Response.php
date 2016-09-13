@@ -64,6 +64,81 @@ class Login_Response extends \Protobuf\AbstractMessage
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public static function fromStream($stream, \Protobuf\Configuration $configuration = null)
+    {
+        return new self($stream, $configuration);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public static function fromArray(array $values)
+    {
+        if (!isset($values['username'])) {
+            throw new \InvalidArgumentException('Field "username" (tag 1) is required but has no value.');
+        }
+
+        if (!isset($values['password'])) {
+            throw new \InvalidArgumentException('Field "password" (tag 2) is required but has no value.');
+        }
+
+        $message = new self();
+        $values = array_merge([
+            'cmd_service' => \app\Protobuf\CMD_SERVICE::Account(),
+            'cmd_method' => \app\Protobuf\CMD_METHOD::Login(),
+        ], $values);
+
+        $message->setCmdService($values['cmd_service']);
+        $message->setCmdMethod($values['cmd_method']);
+        $message->setUsername($values['username']);
+        $message->setPassword($values['password']);
+
+        return $message;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public static function descriptor()
+    {
+        return \google\protobuf\DescriptorProto::fromArray([
+            'name' => 'Login_Response',
+            'field' => [
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 100,
+                    'name' => 'cmd_service',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_ENUM(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
+                    'type_name' => '.youwo.CMD_SERVICE',
+                    'default_value' => \app\Protobuf\CMD_SERVICE::Account()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 101,
+                    'name' => 'cmd_method',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_ENUM(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
+                    'type_name' => '.youwo.CMD_METHOD',
+                    'default_value' => \app\Protobuf\CMD_METHOD::Login()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 1,
+                    'name' => 'username',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_STRING(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_REQUIRED()
+                ]),
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 2,
+                    'name' => 'password',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_STRING(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_REQUIRED()
+                ]),
+            ],
+        ]);
+    }
+
+    /**
      * Check if 'cmd_service' has a value
      *
      * @return bool
@@ -186,18 +261,6 @@ class Login_Response extends \Protobuf\AbstractMessage
     /**
      * {@inheritdoc}
      */
-    public function extensions()
-    {
-        if ( $this->extensions !== null) {
-            return $this->extensions;
-        }
-
-        return $this->extensions = new \Protobuf\Extension\ExtensionFieldMap(__CLASS__);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function unknownFieldSet()
     {
         return $this->unknownFieldSet;
@@ -206,86 +269,11 @@ class Login_Response extends \Protobuf\AbstractMessage
     /**
      * {@inheritdoc}
      */
-    public static function fromStream($stream, \Protobuf\Configuration $configuration = null)
-    {
-        return new self($stream, $configuration);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function fromArray(array $values)
-    {
-        if ( ! isset($values['username'])) {
-            throw new \InvalidArgumentException('Field "username" (tag 1) is required but has no value.');
-        }
-
-        if ( ! isset($values['password'])) {
-            throw new \InvalidArgumentException('Field "password" (tag 2) is required but has no value.');
-        }
-
-        $message = new self();
-        $values  = array_merge([
-            'cmd_service' => \app\Protobuf\CMD_SERVICE::Account(),
-            'cmd_method' => \app\Protobuf\CMD_METHOD::Login(),
-        ], $values);
-
-        $message->setCmdService($values['cmd_service']);
-        $message->setCmdMethod($values['cmd_method']);
-        $message->setUsername($values['username']);
-        $message->setPassword($values['password']);
-
-        return $message;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function descriptor()
-    {
-        return \google\protobuf\DescriptorProto::fromArray([
-            'name'      => 'Login_Response',
-            'field'     => [
-                \google\protobuf\FieldDescriptorProto::fromArray([
-                    'number' => 100,
-                    'name' => 'cmd_service',
-                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_ENUM(),
-                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
-                    'type_name' => '.youwo.CMD_SERVICE',
-                    'default_value' => \app\Protobuf\CMD_SERVICE::Account()
-                ]),
-                \google\protobuf\FieldDescriptorProto::fromArray([
-                    'number' => 101,
-                    'name' => 'cmd_method',
-                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_ENUM(),
-                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
-                    'type_name' => '.youwo.CMD_METHOD',
-                    'default_value' => \app\Protobuf\CMD_METHOD::Login()
-                ]),
-                \google\protobuf\FieldDescriptorProto::fromArray([
-                    'number' => 1,
-                    'name' => 'username',
-                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_STRING(),
-                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_REQUIRED()
-                ]),
-                \google\protobuf\FieldDescriptorProto::fromArray([
-                    'number' => 2,
-                    'name' => 'password',
-                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_STRING(),
-                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_REQUIRED()
-                ]),
-            ],
-        ]);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function toStream(\Protobuf\Configuration $configuration = null)
     {
-        $config  = $configuration ?: \Protobuf\Configuration::getInstance();
+        $config = $configuration ?: \Protobuf\Configuration::getInstance();
         $context = $config->createWriteContext();
-        $stream  = $context->getStream();
+        $stream = $context->getStream();
 
         $this->writeTo($context);
         $stream->seek(0);
@@ -298,8 +286,8 @@ class Login_Response extends \Protobuf\AbstractMessage
      */
     public function writeTo(\Protobuf\WriteContext $context)
     {
-        $stream      = $context->getStream();
-        $writer      = $context->getWriter();
+        $stream = $context->getStream();
+        $writer = $context->getWriter();
         $sizeContext = $context->getComputeSizeContext();
 
         if ($this->username === null) {
@@ -356,9 +344,9 @@ class Login_Response extends \Protobuf\AbstractMessage
                 break;
             }
 
-            $key  = $reader->readVarint($stream);
+            $key = $reader->readVarint($stream);
             $wire = \Protobuf\WireFormat::getTagWireType($key);
-            $tag  = \Protobuf\WireFormat::getTagFieldNumber($key);
+            $tag = \Protobuf\WireFormat::getTagFieldNumber($key);
 
             if ($stream->eof()) {
                 break;
@@ -397,7 +385,7 @@ class Login_Response extends \Protobuf\AbstractMessage
             }
 
             $extensions = $context->getExtensionRegistry();
-            $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
+            $extension = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
             if ($extension !== null) {
                 $this->extensions()->add($extension, $extension->readFrom($context, $wire));
@@ -409,7 +397,7 @@ class Login_Response extends \Protobuf\AbstractMessage
                 $this->unknownFieldSet = new \Protobuf\UnknownFieldSet();
             }
 
-            $data    = $reader->readUnknown($stream, $wire);
+            $data = $reader->readUnknown($stream, $wire);
             $unknown = new \Protobuf\Unknown($tag, $wire, $data);
 
             $this->unknownFieldSet->add($unknown);
@@ -420,10 +408,22 @@ class Login_Response extends \Protobuf\AbstractMessage
     /**
      * {@inheritdoc}
      */
+    public function extensions()
+    {
+        if ($this->extensions !== null) {
+            return $this->extensions;
+        }
+
+        return $this->extensions = new \Protobuf\Extension\ExtensionFieldMap(__CLASS__);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function serializedSize(\Protobuf\ComputeSizeContext $context)
     {
         $calculator = $context->getSizeCalculator();
-        $size       = 0;
+        $size = 0;
 
         if ($this->cmd_service !== null) {
             $size += 2;
@@ -468,7 +468,7 @@ class Login_Response extends \Protobuf\AbstractMessage
      */
     public function merge(\Protobuf\Message $message)
     {
-        if ( ! $message instanceof \app\Protobuf\Login_Response) {
+        if (!$message instanceof \app\Protobuf\Login_Response) {
             throw new \InvalidArgumentException(sprintf('Argument 1 passed to %s must be a %s, %s given', __METHOD__, __CLASS__, get_class($message)));
         }
 

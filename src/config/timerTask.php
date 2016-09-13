@@ -15,16 +15,9 @@
  */
 //dispatch发现广播，实现集群的实现
 $config['timerTask'][] = [
-    'task_name'=>'UdpDispatchTask',
-    'method_name'=>'send',
-    'interval_time'=>'30'
-];
-$config['timerTask'][] = [
-    'task_name'=>'TestTask',
-    'method_name'=>'testTimer',
-    'start_time'=>'Y-m-d 00:00:00',
-    'end_time'=>'Y-m-d 23:59:59',
-    'interval_time'=>'2',
+    'task_name' => 'UdpDispatchTask',
+    'method_name' => 'send',
+    'interval_time' => '30'
 ];
 
 return $config;

@@ -32,6 +32,48 @@ class Request extends \Protobuf\AbstractMessage
     protected $mLoginRequest = null;
 
     /**
+     * {@inheritdoc}
+     */
+    public static function fromStream($stream, \Protobuf\Configuration $configuration = null)
+    {
+        return new self($stream, $configuration);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public static function fromArray(array $values)
+    {
+        $message = new self();
+        $values = array_merge([
+            'mLoginRequest' => null
+        ], $values);
+
+        $message->setMLoginRequest($values['mLoginRequest']);
+
+        return $message;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public static function descriptor()
+    {
+        return \google\protobuf\DescriptorProto::fromArray([
+            'name' => 'Request',
+            'field' => [
+                \google\protobuf\FieldDescriptorProto::fromArray([
+                    'number' => 1,
+                    'name' => 'mLoginRequest',
+                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
+                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
+                    'type_name' => '.youwo.Login_Request'
+                ]),
+            ],
+        ]);
+    }
+
+    /**
      * Check if 'mLoginRequest' has a value
      *
      * @return bool
@@ -64,18 +106,6 @@ class Request extends \Protobuf\AbstractMessage
     /**
      * {@inheritdoc}
      */
-    public function extensions()
-    {
-        if ( $this->extensions !== null) {
-            return $this->extensions;
-        }
-
-        return $this->extensions = new \Protobuf\Extension\ExtensionFieldMap(__CLASS__);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function unknownFieldSet()
     {
         return $this->unknownFieldSet;
@@ -84,53 +114,11 @@ class Request extends \Protobuf\AbstractMessage
     /**
      * {@inheritdoc}
      */
-    public static function fromStream($stream, \Protobuf\Configuration $configuration = null)
-    {
-        return new self($stream, $configuration);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function fromArray(array $values)
-    {
-        $message = new self();
-        $values  = array_merge([
-            'mLoginRequest' => null
-        ], $values);
-
-        $message->setMLoginRequest($values['mLoginRequest']);
-
-        return $message;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function descriptor()
-    {
-        return \google\protobuf\DescriptorProto::fromArray([
-            'name'      => 'Request',
-            'field'     => [
-                \google\protobuf\FieldDescriptorProto::fromArray([
-                    'number' => 1,
-                    'name' => 'mLoginRequest',
-                    'type' => \google\protobuf\FieldDescriptorProto\Type::TYPE_MESSAGE(),
-                    'label' => \google\protobuf\FieldDescriptorProto\Label::LABEL_OPTIONAL(),
-                    'type_name' => '.youwo.Login_Request'
-                ]),
-            ],
-        ]);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
     public function toStream(\Protobuf\Configuration $configuration = null)
     {
-        $config  = $configuration ?: \Protobuf\Configuration::getInstance();
+        $config = $configuration ?: \Protobuf\Configuration::getInstance();
         $context = $config->createWriteContext();
-        $stream  = $context->getStream();
+        $stream = $context->getStream();
 
         $this->writeTo($context);
         $stream->seek(0);
@@ -143,8 +131,8 @@ class Request extends \Protobuf\AbstractMessage
      */
     public function writeTo(\Protobuf\WriteContext $context)
     {
-        $stream      = $context->getStream();
-        $writer      = $context->getWriter();
+        $stream = $context->getStream();
+        $writer = $context->getWriter();
         $sizeContext = $context->getComputeSizeContext();
 
         if ($this->mLoginRequest !== null) {
@@ -179,9 +167,9 @@ class Request extends \Protobuf\AbstractMessage
                 break;
             }
 
-            $key  = $reader->readVarint($stream);
+            $key = $reader->readVarint($stream);
             $wire = \Protobuf\WireFormat::getTagWireType($key);
-            $tag  = \Protobuf\WireFormat::getTagFieldNumber($key);
+            $tag = \Protobuf\WireFormat::getTagFieldNumber($key);
 
             if ($stream->eof()) {
                 break;
@@ -190,7 +178,7 @@ class Request extends \Protobuf\AbstractMessage
             if ($tag === 1) {
                 \Protobuf\WireFormat::assertWireType($wire, 11);
 
-                $innerSize    = $reader->readVarint($stream);
+                $innerSize = $reader->readVarint($stream);
                 $innerMessage = new \app\Protobuf\Login_Request();
 
                 $this->mLoginRequest = $innerMessage;
@@ -203,7 +191,7 @@ class Request extends \Protobuf\AbstractMessage
             }
 
             $extensions = $context->getExtensionRegistry();
-            $extension  = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
+            $extension = $extensions ? $extensions->findByNumber(__CLASS__, $tag) : null;
 
             if ($extension !== null) {
                 $this->extensions()->add($extension, $extension->readFrom($context, $wire));
@@ -215,7 +203,7 @@ class Request extends \Protobuf\AbstractMessage
                 $this->unknownFieldSet = new \Protobuf\UnknownFieldSet();
             }
 
-            $data    = $reader->readUnknown($stream, $wire);
+            $data = $reader->readUnknown($stream, $wire);
             $unknown = new \Protobuf\Unknown($tag, $wire, $data);
 
             $this->unknownFieldSet->add($unknown);
@@ -226,10 +214,22 @@ class Request extends \Protobuf\AbstractMessage
     /**
      * {@inheritdoc}
      */
+    public function extensions()
+    {
+        if ($this->extensions !== null) {
+            return $this->extensions;
+        }
+
+        return $this->extensions = new \Protobuf\Extension\ExtensionFieldMap(__CLASS__);
+    }
+
+    /**
+     * {@inheritdoc}
+     */
     public function serializedSize(\Protobuf\ComputeSizeContext $context)
     {
         $calculator = $context->getSizeCalculator();
-        $size       = 0;
+        $size = 0;
 
         if ($this->mLoginRequest !== null) {
             $innerSize = $this->mLoginRequest->serializedSize($context);
@@ -259,7 +259,7 @@ class Request extends \Protobuf\AbstractMessage
      */
     public function merge(\Protobuf\Message $message)
     {
-        if ( ! $message instanceof \app\Protobuf\Request) {
+        if (!$message instanceof \app\Protobuf\Request) {
             throw new \InvalidArgumentException(sprintf('Argument 1 passed to %s must be a %s, %s given', __METHOD__, __CLASS__, get_class($message)));
         }
 

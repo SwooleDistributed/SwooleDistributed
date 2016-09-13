@@ -12,6 +12,7 @@ class TaskCoroutine implements ICoroutineBase
     public $id;
     public $task_proxy_data;
     public $result = null;
+
     public function __construct($task_proxy_data, $id)
     {
         $this->task_proxy_data = $task_proxy_data;

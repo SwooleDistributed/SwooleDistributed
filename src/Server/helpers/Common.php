@@ -13,3 +13,12 @@ function &get_instance()
 {
     return \Server\SwooleDistributedServer::get_instance();
 }
+
+function shell_read()
+{
+    $fp = fopen('/dev/stdin', 'r');
+    $input = fgets($fp, 255);
+    fclose($fp);
+    $input = chop($input);
+    return $input;
+}

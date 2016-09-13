@@ -48,36 +48,6 @@ class HttpInput
     }
 
     /**
-     * get_post
-     * @param $index
-     * @param $xss_clean
-     * @return string
-     */
-    public function get_post($index, $xss_clean = true)
-    {
-        return isset($this->request->get[$index])
-            ? $this->get($index, $xss_clean)
-            : $this->post($index, $xss_clean);
-    }
-
-    /**
-     * 获取所有的post和get
-     */
-    public function getAllPostGet()
-    {
-        return $this->request->post??$this->request->get??[];
-    }
-
-    /**
-     * getAllHeader
-     * @return array
-     */
-    public function getAllHeader()
-    {
-        return $this->request->header;
-    }
-
-    /**
      * post
      * @param $index
      * @param $xss_clean
@@ -105,6 +75,36 @@ class HttpInput
         } else {
             return $this->request->get[$index]??'';
         }
+    }
+
+    /**
+     * get_post
+     * @param $index
+     * @param $xss_clean
+     * @return string
+     */
+    public function get_post($index, $xss_clean = true)
+    {
+        return isset($this->request->get[$index])
+            ? $this->get($index, $xss_clean)
+            : $this->post($index, $xss_clean);
+    }
+
+    /**
+     * 获取所有的post和get
+     */
+    public function getAllPostGet()
+    {
+        return $this->request->post??$this->request->get??[];
+    }
+
+    /**
+     * getAllHeader
+     * @return array
+     */
+    public function getAllHeader()
+    {
+        return $this->request->header;
     }
 
     /**

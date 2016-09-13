@@ -14,7 +14,7 @@ use Server\CoreBase\Coroutine;
  */
 abstract class SwooleServer
 {
-    const version = "1.2.1";
+    const version = "1.2.2";
     /**
      * 协程调度器
      * @var Coroutine
@@ -77,25 +77,12 @@ abstract class SwooleServer
      */
     protected static $_worker = null;
     /**
-     * Maximum length of the worker names.
+     * Maximum length of the show names.
      *
      * @var int
      */
-    protected static $_maxWorkerNameLength = 12;
+    protected static $_maxShowLength = 12;
 
-    /**
-     * Maximum length of the socket names.
-     *
-     * @var int
-     */
-    protected static $_maxSocketNameLength = 12;
-
-    /**
-     * Maximum length of the process user names.
-     *
-     * @var int
-     */
-    protected static $_maxUserNameLength = 12;
     /**
      * Emitted when worker processes stoped.
      *
@@ -116,12 +103,13 @@ abstract class SwooleServer
      * 协议设置
      * @var
      */
-    protected $probuf_set =  ['open_length_check' => 1,
+    protected $probuf_set = ['open_length_check' => 1,
         'package_length_type' => 'N',
         'package_length_offset' => 0,       //第N个字节是包长度的值
         'package_body_offset' => 0,       //第几个字节开始计算长度
         'package_max_length' => 2000000,  //协议最大长度)
     ];
+
     public function __construct()
     {
         self::$_worker = $this;
@@ -160,7 +148,7 @@ abstract class SwooleServer
         $this->server->on('WorkerError', [$this, 'onSwooleWorkerError']);
         $this->server->on('ManagerStart', [$this, 'onSwooleManagerStart']);
         $this->server->on('ManagerStop', [$this, 'onSwooleManagerStop']);
-        $this->server->on('Packet',[$this,'onSwoolePacket']);
+        $this->server->on('Packet', [$this, 'onSwoolePacket']);
         $set = $this->setServerSet();
         $set['daemonize'] = self::$daemonize ? 1 : 0;
         $this->server->set($set);
@@ -221,7 +209,7 @@ abstract class SwooleServer
      */
     public function onSwooleConnect($serv, $fd)
     {
-        
+
     }
 
     /**
@@ -339,6 +327,7 @@ abstract class SwooleServer
     {
 
     }
+
     /**
      * 包装SerevrMessageBody消息
      * @param $type
@@ -467,25 +456,6 @@ abstract class SwooleServer
         if (empty(self::$_worker->name)) {
             self::$_worker->name = 'none';
         }
-
-        // Get maximum length of worker name.
-        $worker_name_length = strlen(self::$_worker->name);
-        if (self::$_maxWorkerNameLength < $worker_name_length) {
-            self::$_maxWorkerNameLength = $worker_name_length;
-        }
-
-        // Get maximum length of socket name.
-        $socket_name_length = strlen(self::$_worker->getSocketName());
-        if (self::$_maxSocketNameLength < $socket_name_length) {
-            self::$_maxSocketNameLength = $socket_name_length;
-        }
-
-        // Get maximum length of unix user name.
-        $user_name_length = strlen(self::$_worker->user);
-        if (self::$_maxUserNameLength < $user_name_length) {
-            self::$_maxUserNameLength = $user_name_length;
-        }
-
         // Get unix user of the worker process.
         if (empty(self::$_worker->user)) {
             self::$_worker->user = self::getCurrentUser();
@@ -514,18 +484,62 @@ abstract class SwooleServer
      */
     protected static function displayUI()
     {
-        echo "\033[1A\n\033[K---------------------\033[47;30m SWOOLE_DISTRIBUTED \033[0m-----------------------\n\033[0m";
+        $setConfig = self::$_worker->setServerSet();
+        echo "\033[2J";
+        echo "\033[1A\n\033[K-------------\033[47;30m SWOOLE_DISTRIBUTED \033[0m--------------\n\033[0m";
         echo 'SwooleDistributed version:', self::version, "\n";
-        echo 'Swoole version:', SWOOLE_VERSION, "          PHP version:", PHP_VERSION, "\n";
-        echo "--------------------------\033[47;30m WORKERS \033[0m-----------------------------\n";
-        echo "\033[47;30muser\033[0m", str_pad('',
-            self::$_maxUserNameLength + 2 - strlen('user')), "\033[47;30mworker\033[0m", str_pad('',
-            self::$_maxWorkerNameLength + 2 - strlen('worker')), "\033[47;30mlisten\033[0m", str_pad('',
-            self::$_maxSocketNameLength + 2 - strlen('listen')), "\033[47;30mprocesses\033[0m \033[47;30m", "status\033[0m\n";
-        echo str_pad(self::$_worker->user, self::$_maxUserNameLength + 2), str_pad(self::$_worker->name,
-            self::$_maxWorkerNameLength + 2), str_pad(self::$_worker->getSocketName(),
-            self::$_maxSocketNameLength + 2), str_pad(' ' . self::$_worker->worker_num, 9), " \033[32;40m [OK] \033[0m\n";
-        echo "----------------------------------------------------------------\n";
+        echo 'Swoole version: ', SWOOLE_VERSION, "\n";
+        echo 'PHP version: ', PHP_VERSION, "\n";
+        echo 'worker_num: ', $setConfig['worker_num'], "\n";
+        echo 'task_num: ', $setConfig['task_worker_num']??0, "\n";
+        echo "-------------------\033[47;30m" . self::$_worker->name . "\033[0m----------------------\n";
+        echo "\033[47;30mtype\033[0m", str_pad('',
+            self::$_maxShowLength - strlen('type')), "\033[47;30msocket\033[0m", str_pad('',
+            self::$_maxShowLength - strlen('socket')), "\033[47;30mport\033[0m", str_pad('',
+            self::$_maxShowLength - strlen('port')), "\033[47;30m", "status\033[0m\n";
+        switch (self::$_worker->name) {
+            case SwooleDispatchClient::SERVER_NAME:
+                echo str_pad('TCP',
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch_server.socket', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch_server.port', '--'),
+                    self::$_maxShowLength - 2);
+                if (self::$_worker->config->get('dispatch_server.port') == null) {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
+                } else {
+                    echo " \033[32;40m [OPEN] \033[0m\n";
+                }
+                break;
+            case SwooleDistributedServer::SERVER_NAME:
+                echo str_pad('TCP',
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.socket', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.port', '--'),
+                    self::$_maxShowLength - 2);
+                if (self::$_worker->config->get('server.port') == null) {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
+                } else {
+                    echo " \033[32;40m [OPEN] \033[0m\n";
+                }
+                echo str_pad('HTTP',
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
+                    self::$_maxShowLength - 2);
+                if (self::$_worker->config->get('http_server.port') == null) {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
+                } else {
+                    echo " \033[32;40m [OPEN] \033[0m\n";
+                }
+                echo str_pad('DISPATCH',
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.socket', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.dispatch_port', '--'),
+                    self::$_maxShowLength - 2);
+                if (self::$_worker->config->get('use_dispatch', false)) {
+                    echo " \033[32;40m [OPEN] \033[0m\n";
+                } else {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
+                }
+                break;
+        }
+        echo "-----------------------------------------------\n";
         if (self::$daemonize) {
             global $argv;
             $start_file = $argv[0];

@@ -25,6 +25,20 @@ class CMD_SERVICE extends \Protobuf\Enum
     protected static $Account = null;
 
     /**
+     * @param int $value
+     * @return \app\Protobuf\CMD_SERVICE
+     */
+    public static function valueOf($value)
+    {
+        switch ($value) {
+            case 1:
+                return self::Account();
+            default:
+                return null;
+        }
+    }
+
+    /**
      * @return \app\Protobuf\CMD_SERVICE
      */
     public static function Account()
@@ -34,18 +48,6 @@ class CMD_SERVICE extends \Protobuf\Enum
         }
 
         return self::$Account = new self('Account', self::Account_VALUE);
-    }
-
-    /**
-     * @param int $value
-     * @return \app\Protobuf\CMD_SERVICE
-     */
-    public static function valueOf($value)
-    {
-        switch ($value) {
-            case 1: return self::Account();
-            default: return null;
-        }
     }
 
 

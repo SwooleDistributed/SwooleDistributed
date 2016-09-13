@@ -13,6 +13,7 @@ class CoroutineTask
 {
     protected $stack;
     protected $routine;
+
     public function __construct(\Generator $routine)
     {
         $this->routine = $routine;
@@ -28,7 +29,7 @@ class CoroutineTask
         $routine = &$this->routine;
 
         try {
-            if(!$routine){
+            if (!$routine) {
                 return;
             }
             $value = $routine->current();
@@ -38,7 +39,7 @@ class CoroutineTask
                 $routine = $value;
                 return;
             }
-            if($value!=null) {
+            if ($value != null) {
                 $result = $value->getResult();
                 if ($result !== CoroutineNull::getInstance()) {
                     $routine->send($result);
@@ -49,23 +50,23 @@ class CoroutineTask
                     $this->routine = $this->stack->pop();
                     $this->routine->send($result);
                 }
-            }else{
+            } else {
                 $routine->next();
             }
         } catch (\Exception $e) {
-            while (!$this->stack->isEmpty()){
+            while (!$this->stack->isEmpty()) {
                 $this->routine = $this->stack->pop();
                 try {
                     $this->routine->throw($e);
                     break;
-                }catch (\Exception $e){
+                } catch (\Exception $e) {
 
                 }
             }
-            if($routine->controller!=null){
-                call_user_func([$routine->controller,'onExceptionHandle'],$e);
+            if ($routine->controller != null) {
+                call_user_func([$routine->controller, 'onExceptionHandle'], $e);
                 $routine->controller = null;
-            }else {
+            } else {
                 $routine->throw($e);
             }
         }

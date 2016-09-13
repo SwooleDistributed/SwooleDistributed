@@ -48,7 +48,7 @@ class TaskProxy extends CoreBase
     /**
      * 开始异步任务
      */
-    public function startTask($callback,$id = -1)
+    public function startTask($callback, $id = -1)
     {
         get_instance()->server->task($this->task_proxy_data, $id, $callback);
     }
@@ -62,11 +62,12 @@ class TaskProxy extends CoreBase
     {
         return new TaskCoroutine($this->task_proxy_data, $id);
     }
+
     /**
      * 开始同步任务
      */
     public function startTaskWait($timeOurt = 0.5, $id = -1)
     {
-        return get_instance()->server->taskwait($this->task_proxy_data,$timeOurt,$id);
+        return get_instance()->server->taskwait($this->task_proxy_data, $timeOurt, $id);
     }
 }

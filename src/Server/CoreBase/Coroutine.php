@@ -30,33 +30,17 @@ class Coroutine
         $this->startTick();
     }
 
-    public function stop(\Generator $routine)
-    {
-        foreach ($this->routineList as $k => $task) {
-            if($task->getRoutine() == $routine){
-                unset($this->routineList[$k]);
-            }
-        }
-    }
-
     private function startTick()
     {
-        swoole_timer_tick(self::TICK_INTERVAL, function($timerId){
+        swoole_timer_tick(self::TICK_INTERVAL, function ($timerId) {
             $this->tickId = $timerId;
             $this->run();
         });
     }
 
-    private function stopTick()
-    {
-        if($this->tickId >= 0) {
-            swoole_timer_clear($this->tickId);
-        }
-    }
-
     private function run()
     {
-        if(empty($this->routineList)){
+        if (empty($this->routineList)) {
             $this->stopTick();
             return;
         }
@@ -64,7 +48,23 @@ class Coroutine
         foreach ($this->routineList as $k => $task) {
             $task->run();
 
-            if($task->isFinished()){
+            if ($task->isFinished()) {
+                unset($this->routineList[$k]);
+            }
+        }
+    }
+
+    private function stopTick()
+    {
+        if ($this->tickId >= 0) {
+            swoole_timer_clear($this->tickId);
+        }
+    }
+
+    public function stop(\Generator $routine)
+    {
+        foreach ($this->routineList as $k => $task) {
+            if ($task->getRoutine() == $routine) {
                 unset($this->routineList[$k]);
             }
         }

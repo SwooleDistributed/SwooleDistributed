@@ -77,7 +77,8 @@ class Loader
      * @param $template
      * @return \League\Plates\Template\Template
      */
-    public function view($template){
+    public function view($template)
+    {
         $template = get_instance()->templateEngine->make($template);
         return $template;
     }

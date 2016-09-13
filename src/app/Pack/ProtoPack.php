@@ -32,7 +32,7 @@ class ProtoPack implements IPack
         $cmd_method = $message->getCmdMethod();
         $clientData = new \stdClass();
         $clientData->controller_name = $cmd_service->name();
-        $clientData->method_name = 'proto/'.$cmd_method->name();
+        $clientData->method_name = 'proto/' . $cmd_method->name();
         $clientData->data = $message;
         return $clientData;
     }

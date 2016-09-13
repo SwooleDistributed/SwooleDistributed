@@ -48,6 +48,7 @@ abstract class AsynPool implements IAsynPool
         }
         return $token;
     }
+
     /**
      * 分发消息
      * @param $data
@@ -56,7 +57,7 @@ abstract class AsynPool implements IAsynPool
     {
         $callback = $this->callBacks[$data['token']];
         unset($this->callBacks[$data['token']]);
-        if($callback!=null) {
+        if ($callback != null) {
             call_user_func($callback, $data['result']);
         }
     }
@@ -65,7 +66,7 @@ abstract class AsynPool implements IAsynPool
      * @param $swoole_server
      * @param $asyn_manager
      */
-    public function server_init($swoole_server,$asyn_manager)
+    public function server_init($swoole_server, $asyn_manager)
     {
         $this->config = $swoole_server->config;
         $this->swoole_server = $swoole_server;

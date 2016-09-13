@@ -9,5 +9,6 @@ namespace Server\Pack;
 interface IPack
 {
     function pack($data);
+
     function unPack($data);
 }

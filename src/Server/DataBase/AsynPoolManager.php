@@ -21,6 +21,7 @@ class AsynPoolManager
     protected $process;
     protected $registDir = [];
     protected $not_event_add = false;
+
     public function __construct($process, $swoole_server)
     {
         $this->process = $process;
@@ -31,7 +32,8 @@ class AsynPoolManager
      * 采用额外进程的方式
      * event_add
      */
-    public function event_add(){
+    public function event_add()
+    {
         $this->not_event_add = false;
         swoole_event_add($this->process->pipe, [$this, 'getPipeMessage']);
     }
@@ -39,9 +41,11 @@ class AsynPoolManager
     /**
      * 不采用进程通讯，每个进程都启用进程池
      */
-    public function no_event_add(){
+    public function no_event_add()
+    {
         $this->not_event_add = true;
     }
+
     /**
      * 管道来消息
      * @param $pipe
@@ -82,9 +86,9 @@ class AsynPoolManager
      */
     public function writePipe(IAsynPool $asyn, $data, $worker_id)
     {
-        if($this->not_event_add){
+        if ($this->not_event_add) {
             call_user_func([$asyn, 'execute'], $data);
-        }else {
+        } else {
             $data['asyn_name'] = $asyn->getAsynName();
             $data['worker_id'] = $worker_id;
             //写入管道
@@ -98,9 +102,9 @@ class AsynPoolManager
      */
     public function sendMessageToWorker(IAsynPool $asyn, $data)
     {
-        if($this->not_event_add){
+        if ($this->not_event_add) {
             call_user_func([$asyn, 'distribute'], $data);
-        }else{
+        } else {
             $workerID = $data['worker_id'];
             $message = $this->swoole_server->packSerevrMessageBody($asyn->getMessageType(), $data);
             $this->swoole_server->server->sendMessage($message, $workerID);

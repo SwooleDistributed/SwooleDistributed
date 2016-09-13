@@ -25,6 +25,20 @@ class CMD_METHOD extends \Protobuf\Enum
     protected static $Login = null;
 
     /**
+     * @param int $value
+     * @return \app\Protobuf\CMD_METHOD
+     */
+    public static function valueOf($value)
+    {
+        switch ($value) {
+            case 1:
+                return self::Login();
+            default:
+                return null;
+        }
+    }
+
+    /**
      * @return \app\Protobuf\CMD_METHOD
      */
     public static function Login()
@@ -34,18 +48,6 @@ class CMD_METHOD extends \Protobuf\Enum
         }
 
         return self::$Login = new self('Login', self::Login_VALUE);
-    }
-
-    /**
-     * @param int $value
-     * @return \app\Protobuf\CMD_METHOD
-     */
-    public static function valueOf($value)
-    {
-        switch ($value) {
-            case 1: return self::Login();
-            default: return null;
-        }
     }
 
 

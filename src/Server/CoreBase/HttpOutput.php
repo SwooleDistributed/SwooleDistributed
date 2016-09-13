@@ -8,7 +8,8 @@ namespace Server\CoreBase;
  * Date: 16-7-29
  * Time: 上午11:22
  */
-class HttpOutput{
+class HttpOutput
+{
     /**
      * http response
      * @var \swoole_http_response
@@ -32,9 +33,11 @@ class HttpOutput{
      * 设置
      * @param $response
      */
-    public function set($response){
+    public function set($response)
+    {
         $this->response = $response;
     }
+
     /**
      * 重置
      */
@@ -42,6 +45,7 @@ class HttpOutput{
     {
         unset($this->response);
     }
+
     /**
      * Set HTTP Status Header
      *
@@ -52,18 +56,6 @@ class HttpOutput{
     public function set_status_header($code = 200)
     {
         $this->response->status($code);
-        return $this;
-    }
-
-    /**
-     * set_header
-     * @param $key
-     * @param $value
-     * @return $this
-     */
-    public function set_header($key, $value)
-    {
-        $this->response->header($key, $value);
         return $this;
     }
 
@@ -80,14 +72,26 @@ class HttpOutput{
     }
 
     /**
+     * set_header
+     * @param $key
+     * @param $value
+     * @return $this
+     */
+    public function set_header($key, $value)
+    {
+        $this->response->header($key, $value);
+        return $this;
+    }
+
+    /**
      * 发送
      * @param string $output
      * @param bool $gzip
      * @param bool $destory
      */
-    public function end($output = '',$gzip=true,$destory = true)
+    public function end($output = '', $gzip = true, $destory = true)
     {
-        if($gzip){
+        if ($gzip) {
             $this->response->gzip(1);
         }
         //压缩备用方案
@@ -97,7 +101,7 @@ class HttpOutput{
             $output = gzencode($output . " \n", 9);
         }*/
         $this->response->end($output);
-        if($destory) {
+        if ($destory) {
             $this->controller->destroy();
         }
         return;
@@ -109,8 +113,9 @@ class HttpOutput{
      * @param $file_name
      * @return bool
      */
-    public function endFile($root_file,$file_name){
-        $result = swoole_async_readfile($root_file.'/'.$file_name, function($filename, $content) {
+    public function endFile($root_file, $file_name)
+    {
+        $result = swoole_async_readfile($root_file . '/' . $file_name, function ($filename, $content) {
             $this->response->end($content);
             $this->controller->destroy();
         });

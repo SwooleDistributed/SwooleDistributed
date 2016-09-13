@@ -21,7 +21,8 @@ class RedisCoroutine implements ICoroutineBase
     public $name;
     public $arguments;
     public $result;
-    public function __construct($redisAsynPool,$name, $arguments)
+
+    public function __construct($redisAsynPool, $name, $arguments)
     {
         $this->result = CoroutineNull::getInstance();
         $this->redisAsynPool = $redisAsynPool;
@@ -43,6 +44,8 @@ class RedisCoroutine implements ICoroutineBase
         return $this->result;
     }
 }
-class RedisNull{
+
+class RedisNull
+{
 
 }

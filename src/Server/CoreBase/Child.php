@@ -32,10 +32,11 @@ class Child
      * 被加入列表时
      * @param $parent
      */
-    public function onAddChild($parent){
+    public function onAddChild($parent)
+    {
         $this->parent = $parent;
     }
-    
+
     /**
      * 销毁，解除引用
      */

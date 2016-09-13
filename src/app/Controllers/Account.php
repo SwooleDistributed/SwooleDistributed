@@ -12,12 +12,12 @@ use app\Protobuf\Login_Response;
  */
 class Account extends ProtoController
 {
-     public function login(Login_Request $loginRequest)
-     {
-         $loginResponse = new Login_Response();
-         $loginResponse->setUsername('test');
-         $loginResponse->setPassword('123');
-         $this->makeMessageData($loginResponse);
-         $this->send($this->Message);
-     }
+    public function login(Login_Request $loginRequest)
+    {
+        $loginResponse = new Login_Response();
+        $loginResponse->setUsername('test');
+        $loginResponse->setPassword('123');
+        $this->makeMessageData($loginResponse);
+        $this->send($this->Message);
+    }
 }

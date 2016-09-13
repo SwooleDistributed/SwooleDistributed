@@ -10,22 +10,21 @@
 namespace Server\DataBase;
 
 
-use Noodlehaus\Config;
 use Server\CoreBase\SwooleException;
 use Server\SwooleMarco;
-use Server\SwooleServer;
 
 class RedisAsynPool extends AsynPool
 {
     const AsynName = 'redis';
-   
+
     protected $redis_max_count = 0;
     /**
      * 连接
      * @var array
      */
     public $connect;
-    public function __construct($connect=null)
+
+    public function __construct($connect = null)
     {
         parent::__construct();
         $this->connect = $connect;
@@ -58,13 +57,14 @@ class RedisAsynPool extends AsynPool
     {
         return new RedisCoroutine($this, $name, $arg);
     }
+
     /**
      * 执行redis命令
      * @param $data
      */
     public function execute($data)
     {
-        if (count($this->pool)==0) {//代表目前没有可用的连接
+        if (count($this->pool) == 0) {//代表目前没有可用的连接
             $this->prepareOne();
             $this->commands->push($data);
         } else {
@@ -127,22 +127,25 @@ class RedisAsynPool extends AsynPool
                 });
             });
         };
-        if($this->connect==null){
+        if ($this->connect == null) {
             $this->connect = [$this->config['redis']['ip'], $this->config['redis']['port']];
         }
         $client->connect($this->connect[0], $this->connect[1], $callback);
     }
+
     /**
      * @return string
      */
-    public function getAsynName(){
+    public function getAsynName()
+    {
         return self::AsynName;
     }
 
     /**
      * @return int
      */
-    public function getMessageType(){
+    public function getMessageType()
+    {
         return SwooleMarco::MSG_TYPE_REDIS_MESSAGE;
     }
 }

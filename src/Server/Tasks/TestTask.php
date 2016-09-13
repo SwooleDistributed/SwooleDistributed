@@ -1,7 +1,6 @@
 <?php
 namespace Server\Tasks;
 
-use Server\CoreBase\SwooleException;
 use Server\CoreBase\Task;
 use Server\DataBase\DbConnection;
 use Server\DataBase\DbQueryBuilder;
@@ -18,6 +17,7 @@ class TestTask extends Task
     {
         print_r("test timer task\n");
     }
+
     public function test()
     {
         print_r("test\n");

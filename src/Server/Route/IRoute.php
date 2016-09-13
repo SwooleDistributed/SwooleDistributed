@@ -9,7 +9,10 @@ namespace Server\Route;
 interface IRoute
 {
     function handleClientData($data);
+
     function handleClientRequest($request);
+
     function getControllerName();
+
     function getMethodName();
 }

@@ -1,5 +1,6 @@
 <?php
 namespace Server\CoreBase;
+
 use Server\SwooleMarco;
 
 /**
@@ -12,6 +13,31 @@ use Server\SwooleMarco;
  */
 class Controller extends CoreBase
 {
+    /**
+     * @var \Server\DataBase\RedisAsynPool
+     */
+    public $redis_pool;
+    /**
+     * @var \Server\DataBase\MysqlAsynPool
+     */
+    public $mysql_pool;
+    /**
+     * @var HttpInPut
+     */
+    public $http_input;
+    /**
+     * @var HttpOutPut
+     */
+    public $http_output;
+    /**
+     * 是否来自http的请求不是就是来自tcp
+     * @var string
+     */
+    public $request_type;
+    /**
+     * @var \Server\Client\Client
+     */
+    public $client;
     /**
      * fd
      * @var int
@@ -28,14 +54,6 @@ class Controller extends CoreBase
      */
     protected $client_data;
     /**
-     * @var \Server\DataBase\RedisAsynPool
-     */
-    public $redis_pool;
-    /**
-     * @var \Server\DataBase\MysqlAsynPool
-     */
-    public $mysql_pool;
-    /**
      * http response
      * @var \swoole_http_request
      */
@@ -46,26 +64,6 @@ class Controller extends CoreBase
      */
     protected $response;
 
-    /**
-     * @var HttpInPut
-     */
-    public $http_input;
-
-    /**
-     * @var HttpOutPut
-     */
-    public $http_output;
-
-    /**
-     * 是否来自http的请求不是就是来自tcp
-     * @var string
-     */
-    public $request_type;
-
-    /**
-     * @var \Server\Client\Client
-     */
-    public $client;
     /**
      * Controller constructor.
      */
@@ -108,19 +106,19 @@ class Controller extends CoreBase
     }
 
     /**
-     * 销毁
+     * 异常的回调
+     * @param \Exception $e
      */
-    public function destroy()
+    public function onExceptionHandle(\Exception $e)
     {
-        parent::destroy();
-        unset($this->fd);
-        unset($this->uid);
-        unset($this->client_data);
-        unset($this->request);
-        unset($this->response);
-        $this->http_input->reset();
-        $this->http_output->reset();
-        ControllerFactory::getInstance()->revertController($this);
+        switch ($this->request_type) {
+            case SwooleMarco::HTTP_REQUEST:
+                $this->http_output->end($e->getMessage());
+                break;
+            case SwooleMarco::TCP_REQUEST:
+                $this->send($e->getMessage());
+                break;
+        }
     }
 
     /**
@@ -139,6 +137,22 @@ class Controller extends CoreBase
         if ($distory) {
             $this->destroy();
         }
+    }
+
+    /**
+     * 销毁
+     */
+    public function destroy()
+    {
+        parent::destroy();
+        unset($this->fd);
+        unset($this->uid);
+        unset($this->client_data);
+        unset($this->request);
+        unset($this->response);
+        $this->http_input->reset();
+        $this->http_output->reset();
+        ControllerFactory::getInstance()->revertController($this);
     }
 
     /**
@@ -209,21 +223,5 @@ class Controller extends CoreBase
         if ($distory) {
             $this->destroy();
         }
-    }
-
-    /**
-     * 异常的回调
-     * @param \Exception $e
-     */
-    public function onExceptionHandle(\Exception $e){
-       switch ($this->request_type)
-       {
-           case SwooleMarco::HTTP_REQUEST:
-               $this->http_output->end($e->getMessage());
-               break;
-           case SwooleMarco::TCP_REQUEST:
-               $this->send($e->getMessage());
-               break;
-       }
     }
 }

@@ -1,6 +1,5 @@
 <?php
 namespace Server\CoreBase;
-use app\Controllers\Account;
 
 /**
  * 控制器工厂模式
@@ -11,22 +10,12 @@ use app\Controllers\Account;
  */
 class ControllerFactory
 {
-    private $pool = [];
     /**
      * @var ControllerFactory
      */
     private static $instance;
+    private $pool = [];
 
-    /**
-     * 获取单例
-     * @return ControllerFactory
-     */
-    public static function getInstance(){
-        if(self::$instance==null){
-            new ControllerFactory();
-        }
-        return self::$instance;
-    }
     /**
      * ControllerFactory constructor.
      */
@@ -36,25 +25,38 @@ class ControllerFactory
     }
 
     /**
+     * 获取单例
+     * @return ControllerFactory
+     */
+    public static function getInstance()
+    {
+        if (self::$instance == null) {
+            new ControllerFactory();
+        }
+        return self::$instance;
+    }
+
+    /**
      * 获取一个Controller
      * @param $controller string
      */
-    public function getController($controller){
-        if($controller==null) return null;
-        if(!key_exists($controller, $this->pool)){
+    public function getController($controller)
+    {
+        if ($controller == null) return null;
+        if (!key_exists($controller, $this->pool)) {
             $this->pool[$controller] = new \SplQueue();
         }
-        if(count($this->pool[$controller])>0){
+        if (count($this->pool[$controller]) > 0) {
             $controller_instance = $this->pool[$controller]->shift();
             $controller_instance->reUse();
             return $controller_instance;
         }
         $class_name = "\\app\\Controllers\\$controller";
-        if(class_exists($class_name)) {
+        if (class_exists($class_name)) {
             $controller_instance = new $class_name;
             $controller_instance->core_name = $controller;
             return $controller_instance;
-        }else {
+        } else {
             $class_name = "\\Server\\Controllers\\$controller";
             if (class_exists($class_name)) {
                 $controller_instance = new $class_name;
@@ -70,8 +72,9 @@ class ControllerFactory
      * 归还一个controller
      * @param $controller Controller
      */
-    public function revertController($controller){
-        if(!$controller->is_destroy) {
+    public function revertController($controller)
+    {
+        if (!$controller->is_destroy) {
             $controller->destroy();
         }
         $this->pool[$controller->core_name]->push($controller);

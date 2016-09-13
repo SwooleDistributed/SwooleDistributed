@@ -12,6 +12,7 @@ namespace Server\Route;
 class NormalRoute implements IRoute
 {
     private $client_data;
+
     /**
      * 设置反序列化后的数据 Object
      * @param $data
@@ -29,10 +30,10 @@ class NormalRoute implements IRoute
     public function handleClientRequest($request)
     {
         $route = explode('/', $request->server['path_info'], 3);
-        if(count($route) != 3){
+        if (count($route) != 3) {
             $this->client_data->controller_name = null;
             $this->client_data->method_name = null;
-        }else {
+        } else {
             $this->client_data->controller_name = $route[1];
             $this->client_data->method_name = $route[2];
         }

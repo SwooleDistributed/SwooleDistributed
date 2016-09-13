@@ -7,6 +7,7 @@
  */
 
 namespace Server\Client;
+
 use Server\CoreBase\CoroutineNull;
 use Server\CoreBase\ICoroutineBase;
 
@@ -20,7 +21,8 @@ class HttpClientRequestCoroutine implements ICoroutineBase
     public $path;
     public $method;
     public $result;
-    public function __construct($httpClient,$method,$path,$data)
+
+    public function __construct($httpClient, $method, $path, $data)
     {
         $this->result = CoroutineNull::getInstance();
         $this->httpClient = $httpClient;
@@ -34,7 +36,7 @@ class HttpClientRequestCoroutine implements ICoroutineBase
 
     public function send($callback)
     {
-        switch ($this->method){
+        switch ($this->method) {
             case 'POST':
                 $this->httpClient->post($this->path, $this->data, $callback);
                 break;

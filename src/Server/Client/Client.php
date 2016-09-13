@@ -13,7 +13,8 @@ class Client
      * @param $base_url
      * @param $callBack
      */
-    public function getHttpClient($base_url,$callBack){
+    public function getHttpClient($base_url, $callBack)
+    {
         $data = [];
         $data['url'] = $base_url;
         $data['callBack'] = $callBack;
@@ -28,10 +29,10 @@ class Client
             $data['port'] = $url_port;
         }
         $url_host = substr($url_host, 2);
-        swoole_async_dns_lookup($url_host, function ($host, $ip)use(&$data){
+        swoole_async_dns_lookup($url_host, function ($host, $ip) use (&$data) {
             $client = new \swoole_http_client($ip, $data['port'], $data['ssl']);
             $http_client = new HttpClient($client);
-            call_user_func($data['callBack'],$http_client);
+            call_user_func($data['callBack'], $http_client);
         });
     }
 
@@ -42,6 +43,6 @@ class Client
      */
     public function coroutineGetHttpClient($base_url)
     {
-        return new GetHttpClientCoroutine($this,$base_url);
+        return new GetHttpClientCoroutine($this, $base_url);
     }
 }

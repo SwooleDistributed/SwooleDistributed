@@ -10,10 +10,8 @@
 namespace Server\DataBase;
 
 
-use Noodlehaus\Config;
 use Server\CoreBase\SwooleException;
 use Server\SwooleMarco;
-use Server\SwooleServer;
 
 class MysqlAsynPool extends AsynPool
 {
@@ -68,7 +66,7 @@ class MysqlAsynPool extends AsynPool
         //写入管道
         $this->asyn_manager->writePipe($this, $data, $this->worker_id);
     }
-    
+
     /**
      * 执行mysql命令
      * @param $data
@@ -106,7 +104,7 @@ class MysqlAsynPool extends AsynPool
                     $this->reconnect($client);
                     $this->commands->unshift($data);
                 } else {
-                    throw new SwooleException("[mysql]:" . $client->error."[sql]:".$data['sql']);
+                    throw new SwooleException("[mysql]:" . $client->error . "[sql]:" . $data['sql']);
                 }
             }
             $data['result']['client_id'] = $client->client_id;

@@ -22,7 +22,8 @@ class Task extends TaskProxy
      * @param $uid
      * @param $data
      */
-    protected function sendToUid($uid,$data){
+    protected function sendToUid($uid, $data)
+    {
         $data = $this->pack->pack($data);
         get_instance()->sendToUid($uid, $data);
     }
@@ -32,7 +33,8 @@ class Task extends TaskProxy
      * @param $uids
      * @param $data
      */
-    protected function sendToUids($uids,$data){
+    protected function sendToUids($uids, $data)
+    {
         $data = $this->pack->pack($data);
         get_instance()->sendToUids($uids, $data);
     }
@@ -41,7 +43,8 @@ class Task extends TaskProxy
      * sendToAll
      * @param $data
      */
-    protected function sendToAll($data){
+    protected function sendToAll($data)
+    {
         $data = $this->pack->pack($data);
         get_instance()->sendToAll($data);
     }
@@ -51,7 +54,8 @@ class Task extends TaskProxy
      * @return \Redis
      * @throws SwooleException
      */
-    protected function getRedis(){
+    protected function getRedis()
+    {
         return get_instance()->getRedis();
     }
 }

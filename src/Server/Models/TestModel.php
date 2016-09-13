@@ -10,13 +10,14 @@ namespace Server\Models;
 
 
 use Server\CoreBase\Model;
-use Server\Tasks\TestTask;
 
 class TestModel extends Model
 {
-    public function test(){
+    public function test()
+    {
         return 123456;
     }
+
     public function test_coroutine()
     {
         $mySqlCoroutine = $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10303)->coroutineSend();
@@ -25,15 +26,17 @@ class TestModel extends Model
         $result = yield $redisCoroutine;
         return $result;
     }
+
     public function test_coroutineII($callback)
     {
-        $this->redis_pool->get('test',function ($uid)use($callback){
+        $this->redis_pool->get('test', function ($uid) use ($callback) {
             $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', $uid);
-            $this->mysql_pool->query(function ($result)use($callback) {
-                call_user_func($callback,$result);
+            $this->mysql_pool->query(function ($result) use ($callback) {
+                call_user_func($callback, $result);
             });
         });
     }
+
     public function test_exception()
     {
         throw new \Exception('test');

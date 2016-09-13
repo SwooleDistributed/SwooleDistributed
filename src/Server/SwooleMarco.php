@@ -35,7 +35,7 @@ class SwooleMarco
      * 发送给群
      */
     const MSG_TYPE_SEND_GROUP = 3;
-    
+
     /**
      * REDIS 异步回调消息
      */
