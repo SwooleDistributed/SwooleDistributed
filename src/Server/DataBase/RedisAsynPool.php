@@ -108,6 +108,7 @@ class RedisAsynPool extends AsynPool
         if ($this->redis_max_count > $this->config->get('redis.asyn_max_count', 10)) {
             return;
         }
+        $this->prepareLock = true;
         $client = new \swoole_redis();
         $callback = function ($client, $result) {
             if (!$result) {
