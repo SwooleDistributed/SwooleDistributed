@@ -83,6 +83,16 @@ class TestController extends Controller
     }
 
     /**
+     * mysql效率测试
+     * @throws \Server\CoreBase\SwooleException
+     */
+    public function mysql_efficiency()
+    {
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10004)->coroutineSend();
+        $this->send($this->client_data->data);
+    }
+
+    /**
      * 测试redis效率
      */
     public function ansy_redis_test()

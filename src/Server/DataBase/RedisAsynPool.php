@@ -104,6 +104,7 @@ class RedisAsynPool extends AsynPool
      */
     public function prepareOne()
     {
+        if($this->prepareLock) return;
         if ($this->redis_max_count > $this->config->get('redis.asyn_max_count', 10)) {
             return;
         }

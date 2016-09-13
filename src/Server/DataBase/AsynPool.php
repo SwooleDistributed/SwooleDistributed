@@ -22,6 +22,8 @@ abstract class AsynPool implements IAsynPool
     protected $server;
     protected $swoole_server;
     protected $token = 0;
+    //避免爆发连接的锁
+    protected $prepareLock = false;
     /**
      * @var AsynPoolManager
      */
@@ -87,6 +89,7 @@ abstract class AsynPool implements IAsynPool
      */
     public function pushToPool($client)
     {
+        $this->prepareLock = false;
         $this->pool->push($client);
         if (count($this->commands) > 0) {//有残留的任务
             $command = $this->commands->shift();

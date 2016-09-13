@@ -30,6 +30,8 @@ $config['server']['set'] = [
     'dispatch_mode' => 5,
     'task_worker_num' => 5,
     'enable_reuse_port' => true,
+    'heartbeat_idle_time' => 120,//2分钟后没消息自动释放连接
+    'heartbeat_check_interval' => 60,//1分钟检测一次
 ];
 
 /**

@@ -457,8 +457,13 @@ class SwooleDistributedServer extends SwooleHttpServer
     {
         parent::onSwooleReceive($serv, $fd, $from_id, $data);
         $data = substr($data, SwooleMarco::HEADER_LENGTH);//去掉头
-        //反序列化
-        $client_data = $this->pack->unPack($data);
+        //反序列化，出现异常断开连接
+        try {
+            $client_data = $this->pack->unPack($data);
+        }catch (\Exception $e){
+            $serv->close($fd);
+            return;
+        }
         //client_data进行处理
         $client_data = $this->route->handleClientData($client_data);
         $controller_name = $this->route->getControllerName();
@@ -540,12 +545,10 @@ class SwooleDistributedServer extends SwooleHttpServer
         //将这个fd与当前worker进行绑定
         $this->server->bind($fd, $uid);
         //建立映射表
-        if (!empty($this->USID)) {
-            if ($this->redis_client != null) {
-                $this->redis_client->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID);
-            } else {
-                $this->redis_pool->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID, null);
-            }
+        if ($this->redis_client != null) {
+            $this->redis_client->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID);
+        } else {
+            $this->redis_pool->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID, null);
         }
         //加入共享内存
         $this->uid_fd_table->set($uid, ['fd' => $fd]);
@@ -557,13 +560,11 @@ class SwooleDistributedServer extends SwooleHttpServer
      */
     public function unBindUid($uid)
     {
-        if (!empty($this->USID)) {
-            //更新映射表
-            if ($this->redis_client != null) {
-                $this->redis_client->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
-            } else {
-                $this->redis_pool->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid, null);
-            }
+        //更新映射表
+        if ($this->redis_client != null) {
+            $this->redis_client->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
+        } else {
+            $this->redis_pool->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid, null);
         }
         //更新共享内存
         $this->uid_fd_table->del($uid);

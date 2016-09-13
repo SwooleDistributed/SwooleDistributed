@@ -3,7 +3,6 @@ namespace Server;
 
 use Noodlehaus\Exception;
 use Server\DataBase\AsynPoolManager;
-use Server\DataBase\DbConnection;
 use Server\DataBase\RedisAsynPool;
 
 /**
