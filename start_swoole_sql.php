@@ -6,10 +6,10 @@
  * Time: 下午1:56
  */
 
-$set['host'] = 'rm-bp1x6124228341u40o.mysql.rds.aliyuncs.com';
-$set['user'] = 'youwo';
-$set['password'] = 'youwo_197197';
-$set['database'] = 'youwo_school';
+$set['host'] = 'localhost';
+$set['user'] = 'test';
+$set['password'] = 'test';
+$set['database'] = 'test';
 
 /*$mysqli = mysqli_init();
 if (!$mysqli) {
