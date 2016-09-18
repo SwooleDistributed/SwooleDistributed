@@ -357,7 +357,7 @@ class SwooleDistributedServer extends SwooleHttpServer
                 } else {
                     throw new SwooleException("method $task_fuc_name not exist in $task_name");
                 }
-                $task->distory();
+                $task->destroy();
                 return $result;
             default:
                 return parent::onSwooleTask($serv, $task_id, $from_id, $data);
@@ -460,7 +460,7 @@ class SwooleDistributedServer extends SwooleHttpServer
         //反序列化，出现异常断开连接
         try {
             $client_data = $this->pack->unPack($data);
-        }catch (\Exception $e){
+        } catch (\Exception $e) {
             $serv->close($fd);
             return;
         }
@@ -747,8 +747,10 @@ class SwooleDistributedServer extends SwooleHttpServer
         if ($this->redis_client->pconnect($this->config['redis']['ip'], $this->config['redis']['port']) == false) {
             throw new SwooleException($this->redis_client->getLastError());
         }
-        if ($this->redis_client->auth($this->config['redis']['password']) == false) {
-            throw new SwooleException($this->redis_client->getLastError());
+        if ($this->config->has('redis.password')) {//存在验证
+            if ($this->redis_client->auth($this->config['redis']['password']) == false) {
+                throw new SwooleException($this->redis_client->getLastError());
+            }
         }
         $this->redis_client->select($this->config['redis']['select']);
         return $this->redis_client;

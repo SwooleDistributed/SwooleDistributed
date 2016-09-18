@@ -95,10 +95,10 @@ class TestController extends Controller
     /**
      * 测试redis效率
      */
-    public function ansy_redis_test()
+    public function http_ansy_redis_test()
     {
-        $this->redis_pool->get('test', function ($result) {
-            $this->send($this->client_data->data);
+        $this->redis_pool->mset(array('a1' => 'Joe', 'a2' => 'jeck'), function ($result) {
+            var_dump($result);
         });
     }
 

@@ -14,7 +14,7 @@ use Server\CoreBase\Coroutine;
  */
 abstract class SwooleServer
 {
-    const version = "1.2.2";
+    const version = "1.2.3";
     /**
      * 协程调度器
      * @var Coroutine

@@ -71,21 +71,61 @@ class RedisAsynPool extends AsynPool
             $client = $this->pool->shift();
             $arguments = $data['arguments'];
             //特别处理下M命令(批量)
-            $harray = $arguments[1]??null;
-            if ($harray != null && is_array($harray)) {
-                unset($arguments[1]);
-                $arguments = array_merge($arguments, $harray);
-                $data['arguments'] = $arguments;
-                $data['M'] = $harray;
+            switch (strtolower($data['name'])) {
+                case 'mset':
+                    $harray = $arguments[0];
+                    unset($arguments[0]);
+                    foreach ($harray as $key => $value) {
+                        $arguments[] = $key;
+                        $arguments[] = $value;
+                    }
+                    $data['arguments'] = $arguments;
+                    $data['M'] = $harray;
+                    break;
+                case 'hmset':
+                    $harray = $arguments[1];
+                    unset($arguments[1]);
+                    foreach ($harray as $key => $value) {
+                        $arguments[] = $key;
+                        $arguments[] = $value;
+                    }
+                    $data['arguments'] = $arguments;
+                    $data['M'] = $harray;
+                    break;
+                case 'mget':
+                    $harray = $arguments[0];
+                    unset($arguments[0]);
+                    $arguments = array_merge($arguments, $harray);
+                    $data['arguments'] = $arguments;
+                    $data['M'] = $harray;
+                    break;
+                case 'hmget':
+                    $harray = $arguments[1];
+                    unset($arguments[1]);
+                    $arguments = array_merge($arguments, $harray);
+                    $data['arguments'] = $arguments;
+                    $data['M'] = $harray;
+                    break;
             }
             $arguments[] = function ($client, $result) use ($data) {
-                if (key_exists('M', $data)) {//批量命令
-                    $data['result'] = [];
-                    for ($i = 0; $i < count($result); $i++) {
-                        $data['result'][$data['M'][$i]] = $result[$i];
-                    }
-                } else {
-                    $data['result'] = $result;
+                switch (strtolower($data['name'])) {
+                    case 'hmget':
+                    case 'mget':
+                        $data['result'] = [];
+                        $count = count($result);
+                        for ($i = 0; $i < $count; $i++) {
+                            $data['result'][$data['M'][$i]] = $result[$i];
+                        }
+                        break;
+                    case 'hgetall':
+                        $data['result'] = [];
+                        $count = count($result);
+                        for ($i = 0; $i < $count; $i = $i + 2) {
+                            $data['result'][$result[$i]] = $result[$i + 1];
+                        }
+                        break;
+                    default:
+                        $data['result'] = $result;
                 }
                 unset($data['M']);
                 unset($data['arguments']);
@@ -95,7 +135,7 @@ class RedisAsynPool extends AsynPool
                 //回归连接
                 $this->pushToPool($client);
             };
-            $client->__call($data['name'], $arguments);
+            $client->__call($data['name'], array_values($arguments));
         }
     }
 
@@ -104,8 +144,8 @@ class RedisAsynPool extends AsynPool
      */
     public function prepareOne()
     {
-        if($this->prepareLock) return;
-        if ($this->redis_max_count > $this->config->get('redis.asyn_max_count', 10)) {
+        if ($this->prepareLock) return;
+        if ($this->redis_max_count >= $this->config->get('redis.asyn_max_count', 10)) {
             return;
         }
         $this->prepareLock = true;
@@ -114,12 +154,22 @@ class RedisAsynPool extends AsynPool
             if (!$result) {
                 throw new SwooleException($client->errMsg);
             }
-            $client->auth($this->config['redis']['password'], function ($client, $result) {
-                if (!$result) {
-                    $errMsg = $client->errMsg;
-                    unset($client);
-                    throw new SwooleException($errMsg);
-                }
+            if ($this->config->has('redis.password')) {//存在验证
+                $client->auth($this->config['redis']['password'], function ($client, $result) {
+                    if (!$result) {
+                        $errMsg = $client->errMsg;
+                        unset($client);
+                        throw new SwooleException($errMsg);
+                    }
+                    $client->select($this->config['redis']['select'], function ($client, $result) {
+                        if (!$result) {
+                            throw new SwooleException($client->errMsg);
+                        }
+                        $this->redis_max_count++;
+                        $this->pushToPool($client);
+                    });
+                });
+            } else {
                 $client->select($this->config['redis']['select'], function ($client, $result) {
                     if (!$result) {
                         throw new SwooleException($client->errMsg);
@@ -127,8 +177,9 @@ class RedisAsynPool extends AsynPool
                     $this->redis_max_count++;
                     $this->pushToPool($client);
                 });
-            });
+            }
         };
+
         if ($this->connect == null) {
             $this->connect = [$this->config['redis']['ip'], $this->config['redis']['port']];
         }
