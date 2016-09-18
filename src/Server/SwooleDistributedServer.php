@@ -168,8 +168,6 @@ class SwooleDistributedServer extends SwooleHttpServer
         $this->socket_name = $this->config['server']['socket'];
         $this->port = $this->config['server']['port'];
         $this->user = $this->config->get('server.set.user', '');
-        $this->worker_num = $this->config['server']['set']['worker_num'];
-        $this->task_num = $this->config['server']['set']['task_worker_num'];
         $this->send_use_task_num = $this->config['server']['send_use_task_num'];
     }
 
@@ -182,6 +180,8 @@ class SwooleDistributedServer extends SwooleHttpServer
         $set = $this->config->get('server.set', []);
         $set = array_merge($set, $this->probuf_set);
         $set = array_merge($set, $this->overrideSetConfig);
+        $this->worker_num = $set['worker_num'];
+        $this->task_num = $set['task_worker_num'];
         return $set;
     }
 

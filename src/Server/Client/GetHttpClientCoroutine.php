@@ -8,21 +8,19 @@
 
 namespace Server\Client;
 
-use Server\CoreBase\CoroutineNull;
-use Server\CoreBase\ICoroutineBase;
+use Server\CoreBase\CoroutineBase;
 
-class GetHttpClientCoroutine implements ICoroutineBase
+class GetHttpClientCoroutine extends CoroutineBase
 {
     /**
      * @var Client
      */
     public $client;
     public $base_url;
-    public $result;
 
     public function __construct($client, $base_url)
     {
-        $this->result = CoroutineNull::getInstance();
+        parent::__construct();
         $this->base_url = $base_url;
         $this->client = $client;
         $this->send(function ($http_client) {
@@ -33,10 +31,5 @@ class GetHttpClientCoroutine implements ICoroutineBase
     public function send($callback)
     {
         $this->client->getHttpClient($this->base_url, $callback);
-    }
-
-    public function getResult()
-    {
-        return $this->result;
     }
 }

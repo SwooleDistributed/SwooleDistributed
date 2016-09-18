@@ -12,6 +12,10 @@ namespace Server\Route;
 class NormalRoute implements IRoute
 {
     private $client_data;
+    public function __construct()
+    {
+        $this->client_data = new \stdClass();
+    }
 
     /**
      * 设置反序列化后的数据 Object

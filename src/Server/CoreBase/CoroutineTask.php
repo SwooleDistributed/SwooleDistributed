@@ -27,7 +27,6 @@ class CoroutineTask
     public function run()
     {
         $routine = &$this->routine;
-
         try {
             if (!$routine) {
                 return;

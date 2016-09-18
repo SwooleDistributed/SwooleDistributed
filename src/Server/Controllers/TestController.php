@@ -163,7 +163,7 @@ class TestController extends Controller
      * 异常的回调处理函数
      * @param \Exception $e
      */
-    public function onExceptionHandle($e)
+    public function onExceptionHandle(\Exception $e)
     {
         $this->http_output->end($e->getMessage());
     }

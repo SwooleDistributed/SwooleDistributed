@@ -8,10 +8,9 @@
 
 namespace Server\Client;
 
-use Server\CoreBase\CoroutineNull;
-use Server\CoreBase\ICoroutineBase;
+use Server\CoreBase\CoroutineBase;
 
-class HttpClientRequestCoroutine implements ICoroutineBase
+class HttpClientRequestCoroutine extends CoroutineBase
 {
     /**
      * @var HttpClient
@@ -20,11 +19,10 @@ class HttpClientRequestCoroutine implements ICoroutineBase
     public $data;
     public $path;
     public $method;
-    public $result;
 
     public function __construct($httpClient, $method, $path, $data)
     {
-        $this->result = CoroutineNull::getInstance();
+        parent::__construct();
         $this->httpClient = $httpClient;
         $this->path = $path;
         $this->method = $method;
@@ -44,11 +42,6 @@ class HttpClientRequestCoroutine implements ICoroutineBase
                 $this->httpClient->get($this->path, $this->data, $callback);
                 break;
         }
-
     }
 
-    public function getResult()
-    {
-        return $this->result;
-    }
 }

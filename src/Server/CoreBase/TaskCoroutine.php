@@ -7,14 +7,14 @@
  */
 
 namespace Server\CoreBase;
-class TaskCoroutine implements ICoroutineBase
+class TaskCoroutine extends CoroutineBase
 {
     public $id;
     public $task_proxy_data;
-    public $result = null;
 
     public function __construct($task_proxy_data, $id)
     {
+        parent::__construct();
         $this->task_proxy_data = $task_proxy_data;
         $this->id = $id;
         $this->send(function ($serv, $task_id, $data) {
@@ -25,10 +25,5 @@ class TaskCoroutine implements ICoroutineBase
     public function send($callback)
     {
         get_instance()->server->task($this->task_proxy_data, $this->id, $callback);
-    }
-
-    public function getResult()
-    {
-        return $this->result;
     }
 }
