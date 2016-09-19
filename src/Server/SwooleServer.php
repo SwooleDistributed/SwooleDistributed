@@ -187,6 +187,7 @@ abstract class SwooleServer
         self::$_masterPid = $serv->master_pid;
         file_put_contents(self::$pidFile, self::$_masterPid);
         file_put_contents(self::$pidFile, ',' . $serv->manager_pid, FILE_APPEND);
+        self::setProcessTitle('SWD-Master');
     }
 
     /**
@@ -199,6 +200,9 @@ abstract class SwooleServer
         file_put_contents(self::$pidFile, ',' . $serv->worker_pid, FILE_APPEND);
         if (!$serv->taskworker) {//worker进程启动协程调度器
             $this->coroutine = new Coroutine();
+            self::setProcessTitle('SWD-Worker');
+        }else{
+            self::setProcessTitle('SWD-Tasker');
         }
     }
 
@@ -305,7 +309,7 @@ abstract class SwooleServer
      */
     public function onSwooleManagerStart($serv)
     {
-
+        self::setProcessTitle('SWD-Manager');
     }
 
     /**
@@ -566,7 +570,7 @@ abstract class SwooleServer
         }
 
         // Process title.
-        self::setProcessTitle('Swoole: master process  start_file=' . self::$_startFile);
+        self::setProcessTitle('SWD');
     }
 
     /**
@@ -575,14 +579,14 @@ abstract class SwooleServer
      * @param string $title
      * @return void
      */
-    protected static function setProcessTitle($title)
+    public static function setProcessTitle($title)
     {
         // >=php 5.5
         if (function_exists('cli_set_process_title')) {
             @cli_set_process_title($title);
         } // Need proctitle when php<=5.5 .
-        elseif (extension_loaded('proctitle') && function_exists('setproctitle')) {
-            @setproctitle($title);
+        else{
+            @swoole_set_process_name($title);
         }
     }
 

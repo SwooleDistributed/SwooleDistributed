@@ -198,7 +198,7 @@ class SwooleDistributedServer extends SwooleHttpServer
         //创建redis，mysql异步连接池进程
         if ($this->config->get('asyn_process_enable',false)) {//代表启动单独进程进行管理
             $this->pool_process = new \swoole_process(function ($process) {
-                $process->name = 'SWD-ASYN';
+                $process->name('SWD-ASYN');
                 $this->asnyPoolManager = new AsynPoolManager($process, $this);
                 $this->asnyPoolManager->event_add();
                 $this->asnyPoolManager->registAsyn(new RedisAsynPool());
@@ -209,7 +209,7 @@ class SwooleDistributedServer extends SwooleHttpServer
         //reload监控进程
         if ($this->config->get('auto_reload_enable',false)) {//代表启动单独进程进行reload管理
             $reload_process = new \swoole_process(function ($process) {
-                $process->name = 'SWD-RELOAD';
+                $process->name('SWD-RELOAD');
                 new InotifyProcess($this->server);
             }, false, 2);
             $this->server->addProcess($reload_process);
