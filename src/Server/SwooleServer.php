@@ -14,7 +14,7 @@ use Server\CoreBase\Coroutine;
  */
 abstract class SwooleServer
 {
-    const version = "1.2.3";
+    const version = "1.3.0";
     /**
      * 协程调度器
      * @var Coroutine
@@ -201,7 +201,7 @@ abstract class SwooleServer
         if (!$serv->taskworker) {//worker进程启动协程调度器
             $this->coroutine = new Coroutine();
             self::setProcessTitle('SWD-Worker');
-        }else{
+        } else {
             self::setProcessTitle('SWD-Tasker');
         }
     }
@@ -585,7 +585,7 @@ abstract class SwooleServer
         if (function_exists('cli_set_process_title')) {
             @cli_set_process_title($title);
         } // Need proctitle when php<=5.5 .
-        else{
+        else {
             @swoole_set_process_name($title);
         }
     }

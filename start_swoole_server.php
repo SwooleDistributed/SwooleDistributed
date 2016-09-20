@@ -7,6 +7,6 @@
  */
 
 require_once __DIR__ . '/vendor/autoload.php';
-$worker = new Server\SwooleDistributedServer();
+$worker = new \app\AppServer();
 $worker->overrideSetConfig = ['worker_num' => 2, 'task_worker_num' => 2];
 Server\SwooleServer::run();

@@ -39,6 +39,7 @@ class ControllerFactory
     /**
      * 获取一个Controller
      * @param $controller string
+     * @return Controller
      */
     public function getController($controller)
     {

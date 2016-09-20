@@ -91,15 +91,16 @@ class HttpOutput
      */
     public function end($output = '', $gzip = true, $destory = true)
     {
-        if ($gzip) {
+        //swoole的gzip方法存在效率问题
+        /*if ($gzip) {
             $this->response->gzip(1);
-        }
+        }*/
         //压缩备用方案
-        /*if ($gzip === TRUE) {
+        if ($gzip) {
             $this->response->header('Content-Encoding', 'gzip');
             $this->response->header('Vary', 'Accept-Encoding');
             $output = gzencode($output . " \n", 9);
-        }*/
+        }
         $this->response->end($output);
         if ($destory) {
             $this->controller->destroy();
@@ -115,10 +116,7 @@ class HttpOutput
      */
     public function endFile($root_file, $file_name)
     {
-        $result = swoole_async_readfile($root_file . '/' . $file_name, function ($filename, $content) {
-            $this->response->end($content);
-            $this->controller->destroy();
-        });
+        $result = httpEndFile($root_file . '/' . $file_name, $this->response);
         return $result;
     }
 }

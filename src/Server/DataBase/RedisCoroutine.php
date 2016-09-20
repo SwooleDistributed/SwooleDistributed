@@ -10,7 +10,6 @@ namespace Server\DataBase;
 
 
 use Server\CoreBase\CoroutineBase;
-use Server\CoreBase\CoroutineNull;
 
 class RedisCoroutine extends CoroutineBase
 {

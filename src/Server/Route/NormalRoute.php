@@ -12,6 +12,7 @@ namespace Server\Route;
 class NormalRoute implements IRoute
 {
     private $client_data;
+
     public function __construct()
     {
         $this->client_data = new \stdClass();
@@ -33,6 +34,7 @@ class NormalRoute implements IRoute
      */
     public function handleClientRequest($request)
     {
+        $this->client_data->path = $request->server['path_info'];
         $route = explode('/', $request->server['path_info'], 3);
         if (count($route) != 3) {
             $this->client_data->controller_name = null;
@@ -59,5 +61,10 @@ class NormalRoute implements IRoute
     public function getMethodName()
     {
         return $this->client_data->method_name;
+    }
+
+    public function getPath()
+    {
+        return $this->client_data->path;
     }
 }

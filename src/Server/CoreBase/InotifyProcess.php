@@ -17,12 +17,12 @@ class InotifyProcess
     public $inotifyFd;
     public $managePid;
     public $server;
+
     public function __construct($server)
     {
         $this->server = $server;
-        $this->monitor_dir = realpath(__DIR__.'/../..');
-        if(!extension_loaded('inotify'))
-        {
+        $this->monitor_dir = realpath(__DIR__ . '/../..');
+        if (!extension_loaded('inotify')) {
             echo "FileMonitor : Please install inotify extension.\n";
             return;
         }
@@ -35,11 +35,9 @@ class InotifyProcess
         // 递归遍历目录里面的文件
         $dir_iterator = new \RecursiveDirectoryIterator($this->monitor_dir);
         $iterator = new \RecursiveIteratorIterator($dir_iterator);
-        foreach ($iterator as $file)
-        {
+        foreach ($iterator as $file) {
             // 只监控php文件
-            if(pathinfo($file, PATHINFO_EXTENSION) != 'php')
-            {
+            if (pathinfo($file, PATHINFO_EXTENSION) != 'php') {
                 continue;
             }
             // 把文件加入inotify监控，这里只监控了IN_MODIFY文件更新事件
@@ -47,18 +45,16 @@ class InotifyProcess
             $monitor_files[$wd] = $file;
         }
         // 监控inotify句柄可读事件
-        swoole_event_add($this->inotifyFd,function ($inotify_fd){
+        swoole_event_add($this->inotifyFd, function ($inotify_fd) {
             global $monitor_files;
             // 读取有哪些文件事件
             $events = inotify_read($inotify_fd);
-            if($events)
-            {
+            if ($events) {
                 // 检查哪些文件被更新了
-                foreach($events as $ev)
-                {
+                foreach ($events as $ev) {
                     // 更新的文件
                     $file = $monitor_files[$ev['wd']];
-                    echo "[RELOAD]  ".$file ." update\n";
+                    echo "[RELOAD]  " . $file . " update\n";
                     unset($monitor_files[$ev['wd']]);
                     // 需要把文件重新加入监控
                     $wd = inotify_add_watch($inotify_fd, $file, IN_MODIFY);
@@ -67,6 +63,6 @@ class InotifyProcess
                 //reload
                 $this->server->reload();
             }
-        },null,SWOOLE_EVENT_READ);
+        }, null, SWOOLE_EVENT_READ);
     }
 }

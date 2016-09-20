@@ -10,11 +10,13 @@ use Server\CoreBase\SwooleException;
 use Server\DataBase\AsynPoolManager;
 use Server\DataBase\MysqlAsynPool;
 use Server\DataBase\RedisAsynPool;
+use Server\DataBase\RedisCoroutine;
 use Server\Pack\IPack;
 use Server\Route\IRoute;
 
 define("SERVER_DIR", __DIR__);
 define("APP_DIR", __DIR__ . "/../app");
+define("WWW_DIR", __DIR__ . "/../www");
 
 /**
  * Created by PhpStorm.
@@ -22,7 +24,7 @@ define("APP_DIR", __DIR__ . "/../app");
  * Date: 16-7-14
  * Time: 上午9:18
  */
-class SwooleDistributedServer extends SwooleHttpServer
+abstract class SwooleDistributedServer extends SwooleHttpServer
 {
     const SERVER_NAME = "SERVER";
     /**
@@ -100,6 +102,8 @@ class SwooleDistributedServer extends SwooleHttpServer
      * @var array
      */
     public $overrideSetConfig = [];
+
+    public $cache404;
 
     /**
      * SwooleDistributedServer constructor.
@@ -196,7 +200,7 @@ class SwooleDistributedServer extends SwooleHttpServer
         $this->uid_fd_table->column('fd', \swoole_table::TYPE_INT, 8);
         $this->uid_fd_table->create();
         //创建redis，mysql异步连接池进程
-        if ($this->config->get('asyn_process_enable',false)) {//代表启动单独进程进行管理
+        if ($this->config->get('asyn_process_enable', false)) {//代表启动单独进程进行管理
             $this->pool_process = new \swoole_process(function ($process) {
                 $process->name('SWD-ASYN');
                 $this->asnyPoolManager = new AsynPoolManager($process, $this);
@@ -207,7 +211,7 @@ class SwooleDistributedServer extends SwooleHttpServer
             $this->server->addProcess($this->pool_process);
         }
         //reload监控进程
-        if ($this->config->get('auto_reload_enable',false)) {//代表启动单独进程进行reload管理
+        if ($this->config->get('auto_reload_enable', false)) {//代表启动单独进程进行reload管理
             $reload_process = new \swoole_process(function ($process) {
                 $process->name('SWD-RELOAD');
                 new InotifyProcess($this->server);
@@ -481,9 +485,9 @@ class SwooleDistributedServer extends SwooleHttpServer
         if ($controller_instance != null) {
             $uid = $serv->connection_info($fd)['uid']??0;
             $controller_instance->setClientData($uid, $fd, $client_data);
-            $methd_name = $this->config->get('tcp.method_prefix', '') . $this->route->getMethodName();
+            $method_name = $this->config->get('tcp.method_prefix', '') . $this->route->getMethodName();
             try {
-                $generator = call_user_func([$controller_instance, $methd_name]);
+                $generator = call_user_func([$controller_instance, $method_name]);
                 if ($generator instanceof \Generator) {
                     $generator->controller = &$controller_instance;
                     $this->coroutine->start($generator);
@@ -503,30 +507,53 @@ class SwooleDistributedServer extends SwooleHttpServer
     {
         $error_404 = false;
         $this->route->handleClientRequest($request);
-        $controller_name = $this->route->getControllerName();
-        $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
-        if ($controller_instance != null) {
-            $controller_instance->setRequestResponse($request, $response);
-            $methd_name = $this->config->get('http.method_prefix', '') . $this->route->getMethodName();
-            if (method_exists($controller_instance, $methd_name)) {
-                try {
-                    $generator = call_user_func([$controller_instance, $methd_name]);
-                    if ($generator instanceof \Generator) {
-                        $generator->controller = &$controller_instance;
-                        $this->coroutine->start($generator);
+        if($this->route->getPath()=='/'){
+            $www_path = WWW_DIR . '/'.$this->config->get('http.index','index.html');
+            $result = httpEndFile($www_path, $response);
+            if(!$result){
+                $error_404 = true;
+            }else{
+                return;
+            }
+        }else {
+            $controller_name = $this->route->getControllerName();
+            $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
+            if ($controller_instance != null) {
+                $methd_name = $this->config->get('http.method_prefix', '') . $this->route->getMethodName();
+                if (method_exists($controller_instance, $methd_name)) {
+                    try {
+                        $controller_instance->setRequestResponse($request, $response);
+                        $generator = call_user_func([$controller_instance, $methd_name]);
+                        if ($generator instanceof \Generator) {
+                            $generator->controller = &$controller_instance;
+                            $this->coroutine->start($generator);
+                        }
+                        return;
+                    } catch (\Exception $e) {
+                        call_user_func([$controller_instance, 'onExceptionHandle'], $e);
                     }
-                } catch (\Exception $e) {
-                    call_user_func([$controller_instance, 'onExceptionHandle'], $e);
+                } else {
+                    $error_404 = true;
                 }
             } else {
                 $error_404 = true;
             }
-        } else {
-            $error_404 = true;
         }
         if ($error_404) {
-            $template = $this->loader->view('server::error_404');
-            $response->end($template->render(['controller' => $request->server['path_info'], 'message' => '页面不存在！']));
+            if ($controller_instance != null) {
+                $controller_instance->destroy();
+            }
+            //先根据path找下www目录
+            $www_path = WWW_DIR . $this->route->getPath();
+            $result = httpEndFile($www_path, $response);
+            if (!$result) {
+                $response->header('HTTP/1.1', '404 Not Found');
+                if (!isset($this->cache404)) {//内存缓存404页面
+                    $template = $this->loader->view('server::error_404');
+                    $this->cache404 = $template->render();
+                }
+                $response->end($this->cache404);
+            }
         }
     }
 
@@ -540,10 +567,21 @@ class SwooleDistributedServer extends SwooleHttpServer
         $info = $serv->connection_info($fd, 0, true);
         $uid = $info['uid']??0;
         if (!empty($uid)) {
+            $generator = $this->onUidCloseClear($uid);
+            if ($generator instanceof \Generator) {
+                $this->coroutine->start($generator);
+            }
             $this->unBindUid($uid);
         }
         parent::onSwooleClose($serv, $fd);
     }
+
+    /**
+     * 当一个绑定uid的连接close后的清理
+     * 支持协程
+     * @param $uid
+     */
+    abstract public function onUidCloseClear($uid);
 
     /**
      * 将fd绑定到uid,uid不能为0
@@ -555,7 +593,7 @@ class SwooleDistributedServer extends SwooleHttpServer
         //将这个fd与当前worker进行绑定
         $this->server->bind($fd, $uid);
         //建立映射表
-        if ($this->redis_client != null) {
+        if (isset($this->redis_client)) {
             $this->redis_client->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID);
         } else {
             $this->redis_pool->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID, null);
@@ -571,7 +609,7 @@ class SwooleDistributedServer extends SwooleHttpServer
     public function unBindUid($uid)
     {
         //更新映射表
-        if ($this->redis_client != null) {
+        if (isset($this->redis_client)) {
             $this->redis_client->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
         } else {
             $this->redis_pool->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid, null);
@@ -598,7 +636,7 @@ class SwooleDistributedServer extends SwooleHttpServer
     /**
      * 协程版uid是否在线
      * @param $uid
-     * @return ServerCoroutine
+     * @return RedisCoroutine
      */
     public function coroutineUidIsOnline($uid)
     {
@@ -612,7 +650,7 @@ class SwooleDistributedServer extends SwooleHttpServer
      */
     public function countOnline($callback)
     {
-        if ($this->redis_client != null) {
+        if (isset($this->redis_client)) {
             return $this->redis_client->hLen(SwooleMarco::redis_uid_usid_hash_name);
         } else {
             $this->redis_pool->hLen(SwooleMarco::redis_uid_usid_hash_name, $callback);
@@ -621,7 +659,7 @@ class SwooleDistributedServer extends SwooleHttpServer
 
     /**
      * 协程版获取在线人数
-     * @return ServerCoroutine
+     * @return RedisCoroutine
      */
     public function coroutineCountOnline()
     {
@@ -635,7 +673,7 @@ class SwooleDistributedServer extends SwooleHttpServer
      */
     public function addToGroup($uid, $group_id)
     {
-        if ($this->redis_client != null) {
+        if (isset($this->redis_client)) {
             $this->redis_client->hSet(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, $uid);
         } else {
             $this->redis_pool->hSet(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, $uid, null);
@@ -649,7 +687,7 @@ class SwooleDistributedServer extends SwooleHttpServer
      */
     public function removeFromGroup($uid, $group_id)
     {
-        if ($this->redis_client != null) {
+        if (isset($this->redis_client)) {
             $this->redis_client->hDel(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid);
         } else {
             $this->redis_client->hDel(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, null);
@@ -662,7 +700,7 @@ class SwooleDistributedServer extends SwooleHttpServer
      */
     public function delGroup($group_id)
     {
-        if ($this->redis_client != null) {
+        if (isset($this->redis_client)) {
             $this->redis_client->del(SwooleMarco::redis_group_hash_name_prefix . $group_id);
         } else {
             $this->redis_client->del(SwooleMarco::redis_group_hash_name_prefix . $group_id, null);
@@ -750,11 +788,11 @@ class SwooleDistributedServer extends SwooleHttpServer
      */
     public function getRedis()
     {
-        if ($this->redis_client != null) return $this->redis_client;
+        if (isset($this->redis_client)) return $this->redis_client;
         //同步redis连接，给task使用
         $this->redis_client = new \Redis();
 
-        if ($this->redis_client->pconnect($this->config['redis']['ip'], $this->config['redis']['port']) == false) {
+        if ($this->redis_client->connect($this->config['redis']['ip'], $this->config['redis']['port']) == false) {
             throw new SwooleException($this->redis_client->getLastError());
         }
         if ($this->config->has('redis.password')) {//存在验证

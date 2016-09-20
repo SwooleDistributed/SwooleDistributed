@@ -15,4 +15,6 @@ interface IRoute
     function getControllerName();
 
     function getMethodName();
+
+    function getPath();
 }

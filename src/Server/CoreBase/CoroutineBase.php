@@ -18,17 +18,18 @@ abstract class CoroutineBase implements ICoroutineBase
      * @var int
      */
     public $getCount;
-    public abstract function send($callback);
 
     public function __construct()
     {
         $this->result = CoroutineNull::getInstance();
     }
 
+    public abstract function send($callback);
+
     public function getResult()
     {
         $this->getCount++;
-        if($this->getCount>self::MAX_TIMERS){
+        if ($this->getCount > self::MAX_TIMERS) {
             throw new SwooleException('CoroutineTask Time Out!');
         }
         return $this->result;
