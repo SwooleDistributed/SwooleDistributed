@@ -11,6 +11,7 @@ namespace Server;
 
 
 use League\Plates\Engine;
+use Server\CoreBase\ControllerFactory;
 
 abstract class SwooleHttpServer extends SwooleServer
 {
@@ -22,6 +23,17 @@ abstract class SwooleHttpServer extends SwooleServer
      * @var Engine
      */
     public $templateEngine;
+
+    public function __construct()
+    {
+        parent::__construct();
+        //view dir
+        $view_dir = APP_DIR . '/Views';
+        if (!is_dir($view_dir)) {
+            echo "app目录下不存在Views目录，请创建。\n";
+            exit();
+        }
+    }
 
     public function start()
     {
@@ -73,9 +85,61 @@ abstract class SwooleHttpServer extends SwooleServer
     }
 
     /**
-     * onSwooleRequest http发来请求
+     * http服务器发来消息
      * @param $request
      * @param $response
      */
-    abstract public function onSwooleRequest($request, $response);
+    public function onSwooleRequest($request, $response)
+    {
+        $error_404 = false;
+        $this->route->handleClientRequest($request);
+        if ($this->route->getPath() == '/') {
+            $www_path = WWW_DIR . '/' . $this->config->get('http.index', 'index.html');
+            $result = httpEndFile($www_path, $response);
+            if (!$result) {
+                $error_404 = true;
+            } else {
+                return;
+            }
+        } else {
+            $controller_name = $this->route->getControllerName();
+            $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
+            if ($controller_instance != null) {
+                $methd_name = $this->config->get('http.method_prefix', '') . $this->route->getMethodName();
+                if (method_exists($controller_instance, $methd_name)) {
+                    try {
+                        $controller_instance->setRequestResponse($request, $response);
+                        $generator = call_user_func([$controller_instance, $methd_name]);
+                        if ($generator instanceof \Generator) {
+                            $generator->controller = &$controller_instance;
+                            $this->coroutine->start($generator);
+                        }
+                        return;
+                    } catch (\Exception $e) {
+                        call_user_func([$controller_instance, 'onExceptionHandle'], $e);
+                    }
+                } else {
+                    $error_404 = true;
+                }
+            } else {
+                $error_404 = true;
+            }
+        }
+        if ($error_404) {
+            if ($controller_instance != null) {
+                $controller_instance->destroy();
+            }
+            //先根据path找下www目录
+            $www_path = WWW_DIR . $this->route->getPath();
+            $result = httpEndFile($www_path, $response);
+            if (!$result) {
+                $response->header('HTTP/1.1', '404 Not Found');
+                if (!isset($this->cache404)) {//内存缓存404页面
+                    $template = $this->loader->view('server::error_404');
+                    $this->cache404 = $template->render();
+                }
+                $response->end($this->cache404);
+            }
+        }
+    }
 }

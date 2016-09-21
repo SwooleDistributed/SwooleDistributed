@@ -24,43 +24,14 @@ class InotifyProcess
         $this->server = $server;
         $this->monitor_dir = realpath(__DIR__ . '/../..');
         if (!extension_loaded('inotify')) {
-            swoole_timer_after(1000,[$this,'unUseInotify']);
-        }else{
+            swoole_timer_after(1000, [$this, 'unUseInotify']);
+        } else {
             $this->useInotify();
         }
     }
 
-    public function unUseInotify(){
-        echo "非inotify模式，性能极低，不建议在正式环境启用。\n";
-        swoole_timer_tick(1, function(){
-            global $last_mtime;
-            // recursive traversal directory
-            $dir_iterator = new \RecursiveDirectoryIterator($this->monitor_dir);
-            $iterator = new \RecursiveIteratorIterator($dir_iterator);
-            foreach ($iterator as $file)
-            {
-                // only check php files
-                if(pathinfo($file, PATHINFO_EXTENSION) != 'php')
-                {
-                    continue;
-                }
-                if(!isset($last_mtime)){
-                    $last_mtime = $file->getMTime();
-                }
-                // check mtime
-                if($last_mtime < $file->getMTime())
-                {
-                    echo "[RELOAD]  " . $file . " update\n";
-                    //reload
-                    $this->server->reload();
-                    $last_mtime = $file->getMTime();
-                    break;
-                }
-            }
-        });
-    }
-
-    public function useInotify(){
+    public function useInotify()
+    {
         global $monitor_files;
         // 初始化inotify句柄
         $this->inotifyFd = inotify_init();
@@ -98,6 +69,34 @@ class InotifyProcess
                 $this->server->reload();
             }
         }, null, SWOOLE_EVENT_READ);
+    }
+
+    public function unUseInotify()
+    {
+        echo "非inotify模式，性能极低，不建议在正式环境启用。\n";
+        swoole_timer_tick(1, function () {
+            global $last_mtime;
+            // recursive traversal directory
+            $dir_iterator = new \RecursiveDirectoryIterator($this->monitor_dir);
+            $iterator = new \RecursiveIteratorIterator($dir_iterator);
+            foreach ($iterator as $file) {
+                // only check php files
+                if (pathinfo($file, PATHINFO_EXTENSION) != 'php') {
+                    continue;
+                }
+                if (!isset($last_mtime)) {
+                    $last_mtime = $file->getMTime();
+                }
+                // check mtime
+                if ($last_mtime < $file->getMTime()) {
+                    echo "[RELOAD]  " . $file . " update\n";
+                    //reload
+                    $this->server->reload();
+                    $last_mtime = $file->getMTime();
+                    break;
+                }
+            }
+        });
     }
 }
 

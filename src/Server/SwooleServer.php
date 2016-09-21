@@ -4,7 +4,12 @@ namespace Server;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Noodlehaus\Config;
+use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Coroutine;
+use Server\CoreBase\Loader;
+use Server\CoreBase\SwooleException;
+use Server\Pack\IPack;
+use Server\Route\IRoute;
 
 /**
  * Created by PhpStorm.
@@ -46,6 +51,21 @@ abstract class SwooleServer
     public $socket_name;
     public $port;
     public $socket_type;
+    /**
+     * 封包器
+     * @var IPack
+     */
+    public $pack;
+    /**
+     * 路由器
+     * @var IRoute
+     */
+    public $route;
+    /**
+     * 加载器
+     * @var Loader
+     */
+    public $loader;
     /**
      * Log file.
      *
@@ -122,6 +142,31 @@ abstract class SwooleServer
             $this->config['server']['log_level']));
         register_shutdown_function(array($this, 'checkErrors'));
         set_error_handler(array($this, 'displayErrorHandler'));
+        //pack class
+        $pack_class_name = "\\app\\Pack\\" . $this->config['server']['pack_tool'];
+        if (class_exists($pack_class_name)) {
+            $this->pack = new $pack_class_name;
+        } else {
+            $pack_class_name = "\\Server\\Pack\\" . $this->config['server']['pack_tool'];
+            if (class_exists($pack_class_name)) {
+                $this->pack = new $pack_class_name;
+            } else {
+                throw new SwooleException("class {$this->config['server']['pack_tool']} is not exist.");
+            }
+        }
+        //route class
+        $route_class_name = "\\app\\Route\\" . $this->config['server']['route_tool'];
+        if (class_exists($route_class_name)) {
+            $this->route = new $route_class_name;
+        } else {
+            $route_class_name = "\\Server\\Route\\" . $this->config['server']['route_tool'];
+            if (class_exists($route_class_name)) {
+                $this->route = new $route_class_name;
+            } else {
+                throw new SwooleException("class {$this->config['server']['route_tool']} is not exist.");
+            }
+        }
+        $this->loader = new Loader();
     }
 
     /**
@@ -217,7 +262,7 @@ abstract class SwooleServer
     }
 
     /**
-     * onSwooleReceive
+     * 客户端有消息时
      * @param $serv
      * @param $fd
      * @param $from_id
@@ -225,7 +270,32 @@ abstract class SwooleServer
      */
     public function onSwooleReceive($serv, $fd, $from_id, $data)
     {
-
+        $data = substr($data, SwooleMarco::HEADER_LENGTH);//去掉头
+        //反序列化，出现异常断开连接
+        try {
+            $client_data = $this->pack->unPack($data);
+        } catch (\Exception $e) {
+            $serv->close($fd);
+            return;
+        }
+        //client_data进行处理
+        $client_data = $this->route->handleClientData($client_data);
+        $controller_name = $this->route->getControllerName();
+        $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
+        if ($controller_instance != null) {
+            $uid = $serv->connection_info($fd)['uid']??0;
+            $controller_instance->setClientData($uid, $fd, $client_data);
+            $method_name = $this->config->get('tcp.method_prefix', '') . $this->route->getMethodName();
+            try {
+                $generator = call_user_func([$controller_instance, $method_name]);
+                if ($generator instanceof \Generator) {
+                    $generator->controller = &$controller_instance;
+                    $this->coroutine->start($generator);
+                }
+            } catch (\Exception $e) {
+                call_user_func([$controller_instance, 'onExceptionHandle'], $e);
+            }
+        }
     }
 
     /**
@@ -435,6 +505,31 @@ abstract class SwooleServer
     }
 
     /**
+     * 判断这个fd是不是一个WebSocket连接，用于区分tcp和websocket
+     * 握手后才识别为websocket
+     * @param $fd
+     * @return bool
+     */
+    public function isWebSocket($fd)
+    {
+        $fdinfo = $this->server->connection_info($fd);
+        if (key_exists('websocket_status', $fdinfo) && $fdinfo['websocket_status'] == WEBSOCKET_STATUS_FRAME) {
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * 判断是tcp还是websocket进行发送
+     * @param $fd
+     * @param $data
+     */
+    public function send($fd, $data)
+    {
+        $this->server->send($fd, $data);
+    }
+
+    /**
      * Run all worker instances.
      *
      * @return void
@@ -528,6 +623,15 @@ abstract class SwooleServer
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
                     self::$_maxShowLength - 2);
                 if (self::$_worker->config->get('http_server.port') == null) {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
+                } else {
+                    echo " \033[32;40m [OPEN] \033[0m\n";
+                }
+                echo str_pad('WEBSOCKET',
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
+                    self::$_maxShowLength - 2);
+                if (!self::$_worker->config->get('websocket.enable', false)) {
                     echo " \033[31;40m [CLOSE] \033[0m\n";
                 } else {
                     echo " \033[32;40m [OPEN] \033[0m\n";

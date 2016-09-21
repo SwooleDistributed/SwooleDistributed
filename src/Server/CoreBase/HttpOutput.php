@@ -91,16 +91,16 @@ class HttpOutput
      */
     public function end($output = '', $gzip = true, $destory = true)
     {
-        //swoole的gzip方法存在效率问题
-        /*if ($gzip) {
-            $this->response->gzip(1);
-        }*/
-        //压缩备用方案
+        //低版本swoole的gzip方法存在效率问题
         if ($gzip) {
+            $this->response->gzip(1);
+        }
+        //压缩备用方案
+        /*if ($gzip) {
             $this->response->header('Content-Encoding', 'gzip');
             $this->response->header('Vary', 'Accept-Encoding');
             $output = gzencode($output . " \n", 9);
-        }
+        }*/
         $this->response->end($output);
         if ($destory) {
             $this->controller->destroy();

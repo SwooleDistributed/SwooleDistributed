@@ -133,7 +133,7 @@ class Controller extends CoreBase
             throw new SwooleException('controller is distory can not send data');
         }
         $data = get_instance()->encode($this->pack->pack($data));
-        get_instance()->server->send($this->fd, $data);
+        get_instance()->send($this->fd, $data);
         if ($distory) {
             $this->destroy();
         }

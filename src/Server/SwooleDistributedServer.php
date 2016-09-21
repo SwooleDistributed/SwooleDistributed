@@ -3,16 +3,12 @@ namespace Server;
 
 use Noodlehaus\Exception;
 use Server\Client\Client;
-use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\InotifyProcess;
-use Server\CoreBase\Loader;
 use Server\CoreBase\SwooleException;
 use Server\DataBase\AsynPoolManager;
 use Server\DataBase\MysqlAsynPool;
 use Server\DataBase\RedisAsynPool;
 use Server\DataBase\RedisCoroutine;
-use Server\Pack\IPack;
-use Server\Route\IRoute;
 
 define("SERVER_DIR", __DIR__);
 define("APP_DIR", __DIR__ . "/../app");
@@ -24,7 +20,7 @@ define("WWW_DIR", __DIR__ . "/../www");
  * Date: 16-7-14
  * Time: 上午9:18
  */
-abstract class SwooleDistributedServer extends SwooleHttpServer
+abstract class SwooleDistributedServer extends SwooleWebSocketServer
 {
     const SERVER_NAME = "SERVER";
     /**
@@ -63,23 +59,10 @@ abstract class SwooleDistributedServer extends SwooleHttpServer
      * @var
      */
     private $send_use_task_num;
+
     /**
-     * 加载器
-     * @var Loader
-     */
-    public $loader;
-    /**
-     * 封包器
-     * @var IPack
-     */
-    public $pack;
-    /**
-     * 路由器
-     * @var IRoute
-     */
-    public $route;
-    /**
-     * @var dispatch 端口
+     * dispatch 端口
+     * @var int
      */
     protected $dispatch_port;
     /**
@@ -113,37 +96,6 @@ abstract class SwooleDistributedServer extends SwooleHttpServer
         self::$instance =& $this;
         $this->name = self::SERVER_NAME;
         parent::__construct();
-        $this->loader = new Loader();
-        //pack class
-        $pack_class_name = "\\app\\Pack\\" . $this->config['server']['pack_tool'];
-        if (class_exists($pack_class_name)) {
-            $this->pack = new $pack_class_name;
-        } else {
-            $pack_class_name = "\\Server\\Pack\\" . $this->config['server']['pack_tool'];
-            if (class_exists($pack_class_name)) {
-                $this->pack = new $pack_class_name;
-            } else {
-                throw new SwooleException("class {$this->config['server']['pack_tool']} is not exist.");
-            }
-        }
-        //route class
-        $route_class_name = "\\app\\Route\\" . $this->config['server']['route_tool'];
-        if (class_exists($route_class_name)) {
-            $this->route = new $route_class_name;
-        } else {
-            $route_class_name = "\\Server\\Route\\" . $this->config['server']['route_tool'];
-            if (class_exists($route_class_name)) {
-                $this->route = new $route_class_name;
-            } else {
-                throw new SwooleException("class {$this->config['server']['route_tool']} is not exist.");
-            }
-        }
-        //view dir
-        $view_dir = APP_DIR . '/Views';
-        if (!is_dir($view_dir)) {
-            echo "app目录下不存在Views目录，请创建。\n";
-            exit();
-        }
         $this->clearState();
     }
 
@@ -341,7 +293,7 @@ abstract class SwooleDistributedServer extends SwooleHttpServer
         switch ($type) {
             case SwooleMarco::MSG_TYPE_SEND_BATCH://发送消息
                 foreach ($message['fd'] as $fd) {
-                    $this->server->send($fd, $message['data']);
+                    $this->send($fd, $message['data']);
                 }
                 return null;
             case SwooleMarco::MSG_TYPE_SEND_ALL://发送广播
@@ -357,7 +309,7 @@ abstract class SwooleDistributedServer extends SwooleHttpServer
                 foreach ($uids as $uid) {
                     if ($this->uid_fd_table->exist($uid)) {
                         $fd = $this->uid_fd_table->get($uid)['fd'];
-                        $this->server->send($fd, $message['data']);
+                        $this->send($fd, $message['data']);
                     }
                 }
                 return null;
@@ -458,103 +410,6 @@ abstract class SwooleDistributedServer extends SwooleHttpServer
             }
         }
         parent::onSwooleWorkerStart($serv, $workerId);
-    }
-
-    /**
-     * 客户端有消息时
-     * @param $serv
-     * @param $fd
-     * @param $from_id
-     * @param $data
-     */
-    public function onSwooleReceive($serv, $fd, $from_id, $data)
-    {
-        parent::onSwooleReceive($serv, $fd, $from_id, $data);
-        $data = substr($data, SwooleMarco::HEADER_LENGTH);//去掉头
-        //反序列化，出现异常断开连接
-        try {
-            $client_data = $this->pack->unPack($data);
-        } catch (\Exception $e) {
-            $serv->close($fd);
-            return;
-        }
-        //client_data进行处理
-        $client_data = $this->route->handleClientData($client_data);
-        $controller_name = $this->route->getControllerName();
-        $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
-        if ($controller_instance != null) {
-            $uid = $serv->connection_info($fd)['uid']??0;
-            $controller_instance->setClientData($uid, $fd, $client_data);
-            $method_name = $this->config->get('tcp.method_prefix', '') . $this->route->getMethodName();
-            try {
-                $generator = call_user_func([$controller_instance, $method_name]);
-                if ($generator instanceof \Generator) {
-                    $generator->controller = &$controller_instance;
-                    $this->coroutine->start($generator);
-                }
-            } catch (\Exception $e) {
-                call_user_func([$controller_instance, 'onExceptionHandle'], $e);
-            }
-        }
-    }
-
-    /**
-     * http服务器发来消息
-     * @param $request
-     * @param $response
-     */
-    public function onSwooleRequest($request, $response)
-    {
-        $error_404 = false;
-        $this->route->handleClientRequest($request);
-        if($this->route->getPath()=='/'){
-            $www_path = WWW_DIR . '/'.$this->config->get('http.index','index.html');
-            $result = httpEndFile($www_path, $response);
-            if(!$result){
-                $error_404 = true;
-            }else{
-                return;
-            }
-        }else {
-            $controller_name = $this->route->getControllerName();
-            $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
-            if ($controller_instance != null) {
-                $methd_name = $this->config->get('http.method_prefix', '') . $this->route->getMethodName();
-                if (method_exists($controller_instance, $methd_name)) {
-                    try {
-                        $controller_instance->setRequestResponse($request, $response);
-                        $generator = call_user_func([$controller_instance, $methd_name]);
-                        if ($generator instanceof \Generator) {
-                            $generator->controller = &$controller_instance;
-                            $this->coroutine->start($generator);
-                        }
-                        return;
-                    } catch (\Exception $e) {
-                        call_user_func([$controller_instance, 'onExceptionHandle'], $e);
-                    }
-                } else {
-                    $error_404 = true;
-                }
-            } else {
-                $error_404 = true;
-            }
-        }
-        if ($error_404) {
-            if ($controller_instance != null) {
-                $controller_instance->destroy();
-            }
-            //先根据path找下www目录
-            $www_path = WWW_DIR . $this->route->getPath();
-            $result = httpEndFile($www_path, $response);
-            if (!$result) {
-                $response->header('HTTP/1.1', '404 Not Found');
-                if (!isset($this->cache404)) {//内存缓存404页面
-                    $template = $this->loader->view('server::error_404');
-                    $this->cache404 = $template->render();
-                }
-                $response->end($this->cache404);
-            }
-        }
     }
 
     /**
@@ -720,7 +575,7 @@ abstract class SwooleDistributedServer extends SwooleHttpServer
         }
         if ($this->uid_fd_table->exist($uid)) {//本机处理
             $fd = $this->uid_fd_table->get($uid)['fd'];
-            $this->server->send($fd, $data);
+            $this->send($fd, $data);
         } else {
             if ($fromDispatch) return;
             $this->sendToDispatchMessage(SwooleMarco::MSG_TYPE_SEND, ['data' => $data, 'uid' => $uid]);
@@ -771,7 +626,7 @@ abstract class SwooleDistributedServer extends SwooleHttpServer
             $this->server->task($task_data);
         } else {
             foreach ($current_fds as $fd) {
-                $this->server->send($fd, $data);
+                $this->send($fd, $data);
             }
         }
         if ($fromDispatch) return;
