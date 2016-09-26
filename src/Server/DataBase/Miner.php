@@ -1443,11 +1443,11 @@ class Miner
                         $PdoStatement = $PdoConnection->prepare($statement);
                         $PdoStatement->execute($this->getPlaceholderValues());
                     } catch (\PDOException $ex) {
-                        $this->rollBackTrans();
+                        $this->pdoRollBackTrans();
                         throw $ex;
                     }
                 } else {
-                    $this->rollBackTrans();
+                    $this->pdoRollBackTrans();
                     throw $e;
                 }
             }
@@ -2326,7 +2326,7 @@ class Miner
     /**
      * 事务回滚
      */
-    public function rollBackTrans()
+    public function pdoRollBackTrans()
     {
         if ($this->PdoConnection->inTransaction()) {
             $this->PdoConnection->rollBack();
