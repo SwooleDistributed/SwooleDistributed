@@ -223,4 +223,11 @@ class TestController extends Controller
         $result = yield get_instance()->coroutineCountOnline();
         var_dump($result);
     }
+
+    public function http_test_pdoMysql()
+    {
+        get_instance()->getMysql()->select('*')->from('account')->where('uid', 10004);
+        $result = get_instance()->getMysql()->pdoQuery();
+        var_dump($result);
+    }
 }

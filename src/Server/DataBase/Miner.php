@@ -143,13 +143,17 @@ class Miner
      */
     const BRACKET_CLOSE = ")";
     /**
+     * @var array
+     */
+    protected $activeConfig;
+    /**
      * @var MysqlAsynPool
      */
     protected $mysql_pool;
     /**
      * PDO database connection to use in executing the statement.
      *
-     * @var PDO|null
+     * @var \PDO|null
      */
     private $PdoConnection;
     /**
@@ -265,7 +269,7 @@ class Miner
      * Miner constructor.
      * @param $mysql_pool
      */
-    public function __construct($mysql_pool)
+    public function __construct($mysql_pool = null)
     {
         $this->option = array();
         $this->select = array();
@@ -286,7 +290,6 @@ class Miner
         $this->mysql_pool = $mysql_pool;
         $this->setAutoQuote(true);
     }
-
     /**
      * Add SQL_CALC_FOUND_ROWS execution option.
      *
@@ -1388,26 +1391,66 @@ class Miner
     }
 
     /**
+     * pdo Query
+     * @param int $fetchmode
+     * @return array|bool|int|null|string
+     */
+    public function pdoQuery($fetchmode = \PDO::FETCH_ASSOC)
+    {
+        $pdoStatement = $this->pdoExecute();
+        $result = null;
+        if (!$pdoStatement) {
+            $result = false;
+        }
+        if ($this->isSelect()) {
+            $result = $pdoStatement->fetchAll($fetchmode);
+        } elseif ($this->isDelete() || $this->isUpdate()) {
+            $result = $pdoStatement->rowCount();
+        } elseif ($this->isInsert()) {
+            if ($pdoStatement->rowCount() > 0) {
+                $result = $this->pdoInsertId();
+            }
+        }
+        $this->clear();
+        return $result;
+    }
+
+    /**
      * Execute the statement using the PDO database connection.
      *
-     * @return PDOStatement|false executed statement or false if failed
+     * @return \PDOStatement|false executed statement or false if failed
      */
-    public function execute()
+    protected function pdoExecute()
     {
         $PdoConnection = $this->getPdoConnection();
-
         // Without a PDO database connection, the statement cannot be executed.
         if (!$PdoConnection) {
             return false;
         }
-
         $statement = $this->getStatement();
-
         // Only execute if a statement is set.
         if ($statement) {
             $PdoStatement = $PdoConnection->prepare($statement);
-            $PdoStatement->execute($this->getPlaceholderValues());
-
+            try {
+                $PdoStatement->execute($this->getPlaceholderValues());
+            } catch (\PDOException $e) {
+                // 服务端断开时重连一次
+                if ($e->errorInfo[1] == 2006 || $e->errorInfo[1] == 2013) {
+                    $this->setPdoConnection(null);
+                    $this->pdoConnect($this->activeConfig);
+                    try {
+                        $PdoConnection = $this->getPdoConnection();
+                        $PdoStatement = $PdoConnection->prepare($statement);
+                        $PdoStatement->execute($this->getPlaceholderValues());
+                    } catch (\PDOException $ex) {
+                        $this->rollBackTrans();
+                        throw $ex;
+                    }
+                } else {
+                    $this->rollBackTrans();
+                    throw $e;
+                }
+            }
             return $PdoStatement;
         } else {
             return false;
@@ -1417,7 +1460,7 @@ class Miner
     /**
      * Get the PDO database connection to use in executing this statement.
      *
-     * @return PDO|null
+     * @return \PDO|null
      */
     public function getPdoConnection()
     {
@@ -1427,7 +1470,7 @@ class Miner
     /**
      * Set the PDO database connection to use in executing this statement.
      *
-     * @param  PDO|null $PdoConnection optional PDO database connection
+     * @param  \PDO|null $PdoConnection optional PDO database connection
      * @return Miner
      */
     public function setPdoConnection(\PDO $PdoConnection = null)
@@ -1446,7 +1489,6 @@ class Miner
     public function getStatement($usePlaceholders = true)
     {
         $statement = "";
-
         if ($this->isSelect()) {
             $statement = $this->getSelectStatement($usePlaceholders);
         } elseif ($this->isInsert()) {
@@ -1458,7 +1500,6 @@ class Miner
         } elseif ($this->isDelete()) {
             $statement = $this->getDeleteStatement($usePlaceholders);
         }
-        $this->clear();
         return $statement;
     }
 
@@ -2221,28 +2262,6 @@ class Miner
         return $statement;
     }
 
-    public function clear()
-    {
-        $this->option = array();
-        $this->select = array();
-        $this->delete = array();
-        $this->set = array();
-        $this->from = array();
-        $this->join = array();
-        $this->where = array();
-        $this->groupBy = array();
-        $this->having = array();
-        $this->orderBy = array();
-        $this->limit = array();
-        $this->insert = array();
-        $this->replace = array();
-        $this->update = array();
-
-        $this->setPlaceholderValues = array();
-        $this->wherePlaceholderValues = array();
-        $this->havingPlaceholderValues = array();
-    }
-
     /**
      * Get all placeholder values (SET, WHERE, and HAVING).
      *
@@ -2286,6 +2305,67 @@ class Miner
     }
 
     /**
+     * PDO连接
+     * @param $activeConfig
+     */
+    public function pdoConnect($activeConfig)
+    {
+        $this->activeConfig = $activeConfig;
+        $dsn = 'mysql:dbname=' . $activeConfig["database"] . ';host=' .
+            $activeConfig["host"] . ';port=' . $activeConfig['port']??3306;
+        $pdo = new \PDO(
+            $dsn,
+            $activeConfig["user"], $activeConfig["password"],
+            [\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . $activeConfig['charset']??'utf8']
+        );
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
+        $this->setPdoConnection($pdo);
+    }
+
+    /**
+     * 事务回滚
+     */
+    public function rollBackTrans()
+    {
+        if ($this->PdoConnection->inTransaction()) {
+            $this->PdoConnection->rollBack();
+        }
+    }
+
+    /**
+     * 返回 lastInsertId
+     *
+     * @return string
+     */
+    public function pdoInsertId()
+    {
+        return $this->PdoConnection->lastInsertId();
+    }
+
+    public function clear()
+    {
+        $this->option = array();
+        $this->select = array();
+        $this->delete = array();
+        $this->set = array();
+        $this->from = array();
+        $this->join = array();
+        $this->where = array();
+        $this->groupBy = array();
+        $this->having = array();
+        $this->orderBy = array();
+        $this->limit = array();
+        $this->insert = array();
+        $this->replace = array();
+        $this->update = array();
+
+        $this->setPlaceholderValues = array();
+        $this->wherePlaceholderValues = array();
+        $this->havingPlaceholderValues = array();
+    }
+
+    /**
      * Get the full SQL statement without value placeholders.
      *
      * @return string full SQL statement
@@ -2305,8 +2385,25 @@ class Miner
     {
         if ($sql == null) {
             $sql = $this->getStatement(false);
+            $this->clear();
         }
         return new MySqlCoroutine($this->mysql_pool, $bind_id, $sql);
+    }
+
+    /**
+     * 开始事务
+     */
+    public function pdoBeginTrans()
+    {
+        $this->PdoConnection->beginTransaction();
+    }
+
+    /**
+     * 提交事务
+     */
+    public function pdoCommitTrans()
+    {
+        $this->PdoConnection->commit();
     }
 }
 

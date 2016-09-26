@@ -15,7 +15,7 @@ $config['redis']['active'] = 'test';
  */
 $config['redis']['test']['ip'] = 'localhost';
 $config['redis']['test']['port'] = 6379;
-$config['redis']['test']['select'] = 5;
+$config['redis']['test']['select'] = 1;
 $config['redis']['test']['password'] = '123456';
 $config['redis']['asyn_max_count'] = 10;
 

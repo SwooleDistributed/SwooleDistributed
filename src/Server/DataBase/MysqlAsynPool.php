@@ -43,31 +43,6 @@ class MysqlAsynPool extends AsynPool
     }
 
     /**
-     * 执行一个sql语句
-     * @param $callback
-     * @param $bind_id 绑定的连接id，用于事务
-     * @param $sql
-     */
-    public function query($callback, $bind_id = null, $sql = null)
-    {
-        if ($sql == null) {
-            $sql = $this->dbQueryBuilder->getStatement(false);
-        }
-        if (empty($sql)) {
-            throw new SwooleException('sql empty');
-        }
-        $data = [
-            'sql' => $sql
-        ];
-        $data['token'] = $this->addTokenCallback($callback);
-        if (!empty($bind_id)) {
-            $data['bind_id'] = $bind_id;
-        }
-        //写入管道
-        $this->asyn_manager->writePipe($this, $data, $this->worker_id);
-    }
-
-    /**
      * 执行mysql命令
      * @param $data
      */
@@ -131,6 +106,19 @@ class MysqlAsynPool extends AsynPool
     }
 
     /**
+     * 准备一个mysql
+     */
+    public function prepareOne()
+    {
+        if ($this->prepareLock) return;
+        if ($this->mysql_max_count >= $this->config->get('database.asyn_max_count', 10)) {
+            return;
+        }
+        $this->prepareLock = true;
+        $this->reconnect();
+    }
+
+    /**
      * 重连或者连接
      * @param null $client
      */
@@ -153,16 +141,16 @@ class MysqlAsynPool extends AsynPool
     }
 
     /**
-     * 准备一个mysql
+     * 释放绑定
+     * @param $bind_id
      */
-    public function prepareOne()
+    public function free_bind($bind_id)
     {
-        if ($this->prepareLock) return;
-        if ($this->mysql_max_count >= $this->config->get('database.asyn_max_count', 10)) {
-            return;
+        $client = $this->bind_pool[$bind_id];
+        unset($this->bind_pool[$bind_id]);
+        if ($client != null) {
+            $this->pushToPool($client);
         }
-        $this->prepareLock = true;
-        $this->reconnect();
     }
 
     /**
@@ -182,27 +170,6 @@ class MysqlAsynPool extends AsynPool
     }
 
     /**
-     * 获取绑定值
-     */
-    public function bind($object)
-    {
-        return spl_object_hash($object);
-    }
-
-    /**
-     * 释放绑定
-     * @param $bind_id
-     */
-    public function free_bind($bind_id)
-    {
-        $client = $this->bind_pool[$bind_id];
-        unset($this->bind_pool[$bind_id]);
-        if ($client != null) {
-            $this->pushToPool($client);
-        }
-    }
-
-    /**
      * 开启一个事务
      * @param $object
      * @return string
@@ -213,6 +180,40 @@ class MysqlAsynPool extends AsynPool
         $id = $this->bind($object);
         $this->query(null, $id, 'begin');
         return $id;
+    }
+
+    /**
+     * 获取绑定值
+     */
+    public function bind($object)
+    {
+        return spl_object_hash($object);
+    }
+
+    /**
+     * 执行一个sql语句
+     * @param $callback
+     * @param $bind_id 绑定的连接id，用于事务
+     * @param $sql
+     */
+    public function query($callback, $bind_id = null, $sql = null)
+    {
+        if ($sql == null) {
+            $sql = $this->dbQueryBuilder->getStatement(false);
+            $this->dbQueryBuilder->clear();
+        }
+        if (empty($sql)) {
+            throw new SwooleException('sql empty');
+        }
+        $data = [
+            'sql' => $sql
+        ];
+        $data['token'] = $this->addTokenCallback($callback);
+        if (!empty($bind_id)) {
+            $data['bind_id'] = $bind_id;
+        }
+        //写入管道
+        $this->asyn_manager->writePipe($this, $data, $this->worker_id);
     }
 
     /**

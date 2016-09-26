@@ -6,6 +6,7 @@ use Server\Client\Client;
 use Server\CoreBase\InotifyProcess;
 use Server\CoreBase\SwooleException;
 use Server\DataBase\AsynPoolManager;
+use Server\DataBase\Miner;
 use Server\DataBase\MysqlAsynPool;
 use Server\DataBase\RedisAsynPool;
 use Server\DataBase\RedisCoroutine;
@@ -29,10 +30,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     private static $instance;
     /**
-     * @var \Redis
-     */
-    public $redis_client;
-    /**
      * @var RedisAsynPool
      */
     public $redis_pool;
@@ -55,6 +52,14 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @var string
      */
     public $cache404;
+    /**
+     * @var \Redis
+     */
+    protected $redis_client;
+    /**
+     * @var Miner
+     */
+    protected $mysql_client;
     /**
      * dispatch fd
      * @var array
@@ -147,6 +152,20 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public static function &get_instance()
     {
         return self::$instance;
+    }
+
+    /**
+     * 获取同步mysql
+     * @return Miner
+     */
+    public function getMysql()
+    {
+        if (isset($this->mysql_client)) return $this->mysql_client;
+        $active = $this->config['database']['active'];
+        $activeConfig = $this->config['database'][$active];
+        $this->mysql_client = new Miner();
+        $this->mysql_client->pdoConnect($activeConfig);
+        return $this->mysql_client;
     }
 
     /**
@@ -341,7 +360,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 }
                 return null;
             case SwooleMarco::MSG_TYPE_SEND_GROUP://群组
-                $uids = $this->redis_client->hGetAll(SwooleMarco::redis_group_hash_name_prefix . $message['groupId']);
+                $uids = $this->getRedis()->hGetAll(SwooleMarco::redis_group_hash_name_prefix . $message['groupId']);
                 foreach ($uids as $uid) {
                     if ($this->uid_fd_table->exist($uid)) {
                         $fd = $this->uid_fd_table->get($uid)['fd'];
@@ -541,8 +560,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function unBindUid($uid)
     {
         //更新映射表
-        if (isset($this->redis_client)) {
-            $this->redis_client->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
+        if ($this->isTaskWorker()) {
+            $this->getRedis()->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
         } else {
             $this->redis_pool->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid, null);
         }
@@ -560,8 +579,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         //将这个fd与当前worker进行绑定
         $this->server->bind($fd, $uid);
         //建立映射表
-        if (isset($this->redis_client)) {
-            $this->redis_client->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID);
+        if ($this->isTaskWorker()) {
+            $this->getRedis()->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID);
         } else {
             $this->redis_pool->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID, null);
         }
@@ -577,8 +596,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function uidIsOnline($uid, $callback)
     {
-        if ($this->redis_client) {
-            return $this->redis_client->hExists(SwooleMarco::redis_uid_usid_hash_name, $uid);
+        if ($this->isTaskWorker()) {
+            return $this->getRedis()->hExists(SwooleMarco::redis_uid_usid_hash_name, $uid);
         } else {
             $this->redis_pool->hExists(SwooleMarco::redis_uid_usid_hash_name, $uid, $callback);
         }
@@ -601,8 +620,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function countOnline($callback)
     {
-        if (isset($this->redis_client)) {
-            return $this->redis_client->hLen(SwooleMarco::redis_uid_usid_hash_name);
+        if ($this->isTaskWorker()) {
+            return $this->getRedis()->hLen(SwooleMarco::redis_uid_usid_hash_name);
         } else {
             $this->redis_pool->hLen(SwooleMarco::redis_uid_usid_hash_name, $callback);
         }
@@ -624,8 +643,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function addToGroup($uid, $group_id)
     {
-        if (isset($this->redis_client)) {
-            $this->redis_client->hSet(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, $uid);
+        if ($this->isTaskWorker()) {
+            $this->getRedis()->hSet(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, $uid);
         } else {
             $this->redis_pool->hSet(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, $uid, null);
         }
@@ -638,10 +657,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function removeFromGroup($uid, $group_id)
     {
-        if (isset($this->redis_client)) {
-            $this->redis_client->hDel(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid);
+        if ($this->isTaskWorker()) {
+            $this->getRedis()->hDel(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid);
         } else {
-            $this->redis_client->hDel(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, null);
+            $this->redis_pool->hDel(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, null);
         }
     }
 
@@ -651,10 +670,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function delGroup($group_id)
     {
-        if (isset($this->redis_client)) {
-            $this->redis_client->del(SwooleMarco::redis_group_hash_name_prefix . $group_id);
+        if ($this->isTaskWorker()) {
+            $this->getRedis()->del(SwooleMarco::redis_group_hash_name_prefix . $group_id);
         } else {
-            $this->redis_client->del(SwooleMarco::redis_group_hash_name_prefix . $group_id, null);
+            $this->redis_pool->del(SwooleMarco::redis_group_hash_name_prefix . $group_id, null);
         }
     }
 
