@@ -18,6 +18,11 @@ class TestTask extends Task
         print_r("test timer task\n");
     }
 
+    public function testsend()
+    {
+        get_instance()->sendToAll(1);
+    }
+
     public function test()
     {
         print_r("test\n");

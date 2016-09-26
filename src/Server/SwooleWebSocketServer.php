@@ -11,16 +11,9 @@ namespace Server;
 
 
 use Server\CoreBase\ControllerFactory;
-use Server\CoreBase\SwooleException;
-use Server\Pack\IPack;
 
 abstract class SwooleWebSocketServer extends SwooleHttpServer
 {
-    /**
-     * websocket封包器
-     * @var IPack
-     */
-    public $webSocketPack;
     public $opcode;
     public $webSocketEnable;
 
@@ -29,18 +22,6 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         parent::__construct();
         $this->webSocketEnable = $this->config->get('websocket.enable', false);
         $this->opcode = $this->config->get('websocket.opcode', WEBSOCKET_OPCODE_TEXT);
-        //pack class
-        $pack_class_name = "\\app\\Pack\\" . $this->config['websocket']['pack_tool'];
-        if (class_exists($pack_class_name)) {
-            $this->webSocketPack = new $pack_class_name;
-        } else {
-            $pack_class_name = "\\Server\\Pack\\" . $this->config['websocket']['pack_tool'];
-            if (class_exists($pack_class_name)) {
-                $this->webSocketPack = new $pack_class_name;
-            } else {
-                throw new SwooleException("class {$this->config['websocket']['pack_tool']} is not exist.");
-            }
-        }
     }
 
     public function start()
@@ -130,7 +111,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
     {
         //反序列化，出现异常断开连接
         try {
-            $client_data = $this->webSocketPack->unPack($data);
+            $client_data = $this->pack->unPack($data);
         } catch (\Exception $e) {
             $serv->close($fd);
             return;
@@ -144,7 +125,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             $controller_instance->setClientData($uid, $fd, $client_data);
             $method_name = $this->config->get('websocket.method_prefix', '') . $this->route->getMethodName();
             try {
-                $generator = call_user_func([$controller_instance, $method_name]);
+                $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
                 if ($generator instanceof \Generator) {
                     $generator->controller = &$controller_instance;
                     $this->coroutine->start($generator);

@@ -21,17 +21,52 @@ abstract class SwooleServer
 {
     const version = "1.3.0";
     /**
-     * 协程调度器
-     * @var Coroutine
+     * Daemonize.
+     *
+     * @var bool
      */
-    public $coroutine;
+    public static $daemonize = false;
+    /**
+     * The file to store master process PID.
+     *
+     * @var string
+     */
+    public static $pidFile = '';
     /**
      * The PID of master process.
      *
      * @var int
      */
     protected static $_masterPid = 0;
-
+    /**
+     * Log file.
+     *
+     * @var mixed
+     */
+    protected static $logFile = '';
+    /**
+     * Start file.
+     *
+     * @var string
+     */
+    protected static $_startFile = '';
+    /**
+     * worker instance.
+     *
+     * @var SwooleServer
+     */
+    protected static $_worker = null;
+    /**
+     * Maximum length of the show names.
+     *
+     * @var int
+     */
+    protected static $_maxShowLength = 12;
+    /**
+     * 协程调度器
+     * @var Coroutine
+     */
+    public $coroutine;
     /**
      * server name
      * @var string
@@ -66,43 +101,6 @@ abstract class SwooleServer
      * @var Loader
      */
     public $loader;
-    /**
-     * Log file.
-     *
-     * @var mixed
-     */
-    protected static $logFile = '';
-    /**
-     * Daemonize.
-     *
-     * @var bool
-     */
-    public static $daemonize = false;
-    /**
-     * Start file.
-     *
-     * @var string
-     */
-    protected static $_startFile = '';
-    /**
-     * The file to store master process PID.
-     *
-     * @var string
-     */
-    public static $pidFile = '';
-    /**
-     * worker instance.
-     *
-     * @var SwooleServer
-     */
-    protected static $_worker = null;
-    /**
-     * Maximum length of the show names.
-     *
-     * @var int
-     */
-    protected static $_maxShowLength = 12;
-
     /**
      * Emitted when worker processes stoped.
      *
@@ -176,6 +174,319 @@ abstract class SwooleServer
     abstract public function setConfig();
 
     /**
+     * Run all worker instances.
+     *
+     * @return void
+     */
+    public static function run()
+    {
+        self::checkSapiEnv();
+        self::init();
+        self::parseCommand();
+        self::initWorkers();
+        self::displayUI();
+        self::startSwooles();
+    }
+
+    /**
+     * Check sapi.
+     *
+     * @return void
+     */
+    protected static function checkSapiEnv()
+    {
+        // Only for cli.
+        if (php_sapi_name() != "cli") {
+            exit("only run in command line mode \n");
+        }
+    }
+
+    /**
+     * Init.
+     *
+     * @return void
+     */
+    protected static function init()
+    {
+        // Start file.
+        $backtrace = debug_backtrace();
+        self::$_startFile = $backtrace[count($backtrace) - 1]['file'];
+
+        // Pid file.
+        if (empty(self::$pidFile)) {
+            self::$pidFile = __DIR__ . "/../" . str_replace('/', '_', self::$_startFile) . ".pid";
+        }
+
+        // Process title.
+        self::setProcessTitle('SWD');
+    }
+
+    /**
+     * Set process name.
+     *
+     * @param string $title
+     * @return void
+     */
+    public static function setProcessTitle($title)
+    {
+        // >=php 5.5
+        if (function_exists('cli_set_process_title')) {
+            @cli_set_process_title($title);
+        } // Need proctitle when php<=5.5 .
+        else {
+            @swoole_set_process_name($title);
+        }
+    }
+
+    /**
+     * Parse command.
+     * php yourfile.php start | stop | reload
+     *
+     * @return void
+     */
+    protected static function parseCommand()
+    {
+        global $argv;
+        // Check argv;
+        $start_file = $argv[0];
+        if (!isset($argv[1])) {
+            exit("Usage: php yourfile.php {start|stop|reload|restart}\n");
+        }
+
+        // Get command.
+        $command = trim($argv[1]);
+        $command2 = isset($argv[2]) ? $argv[2] : '';
+
+        // Start command.
+        $mode = '';
+        if ($command === 'start') {
+            if ($command2 === '-d') {
+                $mode = 'in DAEMON mode';
+            } else {
+                $mode = 'in DEBUG mode';
+            }
+        }
+        echo("Swoole[$start_file] $command $mode");
+        if (file_exists(self::$pidFile)) {
+            $pids = explode(',', file_get_contents(self::$pidFile));
+            // Get master process PID.
+            $master_pid = $pids[0];
+            $manager_pid = $pids[1];
+            $master_is_alive = $master_pid && @posix_kill($master_pid, 0);
+        } else {
+            $master_is_alive = false;
+        }
+        // Master is still alive?
+        if ($master_is_alive) {
+            if ($command === 'start') {
+                echo("Swoole[$start_file] already running");
+                exit;
+            }
+        } elseif ($command !== 'start') {
+            echo("Swoole[$start_file] not run");
+            exit;
+        }
+
+        // execute command.
+        switch ($command) {
+            case 'start':
+                if ($command2 === '-d') {
+                    self::$daemonize = true;
+                }
+                break;
+            case 'stop':
+                @unlink(self::$pidFile);
+                echo("Swoole[$start_file] is stoping ...");
+                // Send stop signal to master process.
+                $master_pid && posix_kill($master_pid, SIGTERM);
+                // Timeout.
+                $timeout = 5;
+                $start_time = time();
+                // Check master process is still alive?
+                while (1) {
+                    $master_is_alive = $master_pid && posix_kill($master_pid, 0);
+                    if ($master_is_alive) {
+                        // Timeout?
+                        if (time() - $start_time >= $timeout) {
+                            echo("Swoole[$start_file] stop fail");
+                            exit;
+                        }
+                        // Waiting amoment.
+                        usleep(10000);
+                        continue;
+                    }
+                    // Stop success.
+                    echo("Swoole[$start_file] stop success");
+                    break;
+                }
+                exit(0);
+                break;
+            case 'reload':
+                posix_kill($manager_pid, SIGUSR1);
+                echo("Swoole[$start_file] reload");
+                exit;
+            case 'restart':
+                @unlink(self::$pidFile);
+                echo("Swoole[$start_file] is stoping ...");
+                // Send stop signal to master process.
+                $master_pid && posix_kill($master_pid, SIGTERM);
+                // Timeout.
+                $timeout = 5;
+                $start_time = time();
+                // Check master process is still alive?
+                while (1) {
+                    $master_is_alive = $master_pid && posix_kill($master_pid, 0);
+                    if ($master_is_alive) {
+                        // Timeout?
+                        if (time() - $start_time >= $timeout) {
+                            echo("Swoole[$start_file] stop fail");
+                            exit;
+                        }
+                        // Waiting amoment.
+                        usleep(10000);
+                        continue;
+                    }
+                    // Stop success.
+                    echo("Swoole[$start_file] stop success");
+                    break;
+                }
+                self::$daemonize = true;
+                break;
+            default :
+                exit("Usage: php yourfile.php {start|stop|reload|restart}\n");
+        }
+    }
+
+    /**
+     * Init All worker instances.
+     *
+     * @return void
+     */
+    protected static function initWorkers()
+    {
+        // Worker name.
+        if (empty(self::$_worker->name)) {
+            self::$_worker->name = 'none';
+        }
+        // Get unix user of the worker process.
+        if (empty(self::$_worker->user)) {
+            self::$_worker->user = self::getCurrentUser();
+        } else {
+            if (posix_getuid() !== 0 && self::$_worker->user != self::getCurrentUser()) {
+                echo('Warning: You must have the root privileges to change uid and gid.');
+            }
+        }
+    }
+
+    /**
+     * Get unix user of current porcess.
+     *
+     * @return string
+     */
+    protected static function getCurrentUser()
+    {
+        $user_info = posix_getpwuid(posix_getuid());
+        return $user_info['name'];
+    }
+
+    /**
+     * Display staring UI.
+     *
+     * @return void
+     */
+    protected static function displayUI()
+    {
+        $setConfig = self::$_worker->setServerSet();
+        echo "\033[2J";
+        echo "\033[1A\n\033[K-------------\033[47;30m SWOOLE_DISTRIBUTED \033[0m--------------\n\033[0m";
+        echo 'SwooleDistributed version:', self::version, "\n";
+        echo 'Swoole version: ', SWOOLE_VERSION, "\n";
+        echo 'PHP version: ', PHP_VERSION, "\n";
+        echo 'worker_num: ', $setConfig['worker_num'], "\n";
+        echo 'task_num: ', $setConfig['task_worker_num']??0, "\n";
+        echo "-------------------\033[47;30m" . self::$_worker->name . "\033[0m----------------------\n";
+        echo "\033[47;30mtype\033[0m", str_pad('',
+            self::$_maxShowLength - strlen('type')), "\033[47;30msocket\033[0m", str_pad('',
+            self::$_maxShowLength - strlen('socket')), "\033[47;30mport\033[0m", str_pad('',
+            self::$_maxShowLength - strlen('port')), "\033[47;30m", "status\033[0m\n";
+        switch (self::$_worker->name) {
+            case SwooleDispatchClient::SERVER_NAME:
+                echo str_pad('TCP',
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch_server.socket', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch_server.port', '--'),
+                    self::$_maxShowLength - 2);
+                if (self::$_worker->config->get('dispatch_server.port') == null) {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
+                } else {
+                    echo " \033[32;40m [OPEN] \033[0m\n";
+                }
+                break;
+            case SwooleDistributedServer::SERVER_NAME:
+                echo str_pad('TCP',
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.socket', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.port', '--'),
+                    self::$_maxShowLength - 2);
+                if (self::$_worker->config->get('server.port') == null) {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
+                } else {
+                    echo " \033[32;40m [OPEN] \033[0m\n";
+                }
+                echo str_pad('HTTP',
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
+                    self::$_maxShowLength - 2);
+                if (self::$_worker->config->get('http_server.port') == null) {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
+                } else {
+                    echo " \033[32;40m [OPEN] \033[0m\n";
+                }
+                echo str_pad('WEBSOCKET',
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
+                    self::$_maxShowLength - 2);
+                if (!self::$_worker->config->get('websocket.enable', false)) {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
+                } else {
+                    echo " \033[32;40m [OPEN] \033[0m\n";
+                }
+                echo str_pad('DISPATCH',
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.socket', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.dispatch_port', '--'),
+                    self::$_maxShowLength - 2);
+                if (self::$_worker->config->get('use_dispatch', false)) {
+                    echo " \033[32;40m [OPEN] \033[0m\n";
+                } else {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
+                }
+                break;
+        }
+        echo "-----------------------------------------------\n";
+        if (self::$daemonize) {
+            global $argv;
+            $start_file = $argv[0];
+            echo "Input \"php $start_file stop\" to quit. Start success.\n";
+        } else {
+            echo "Press Ctrl-C to quit. Start success.\n";
+        }
+    }
+
+    /**
+     * 设置服务器配置参数
+     * @return mixed
+     */
+    abstract public function setServerSet();
+
+    /**
+     * Fork some worker processes.
+     *
+     * @return void
+     */
+    protected static function startSwooles()
+    {
+        self::$_worker->start();
+    }
+
+    /**
      * 启动
      */
     public function start()
@@ -202,6 +513,11 @@ abstract class SwooleServer
     }
 
     /**
+     * start前的操作
+     */
+    abstract public function beforeSwooleStart();
+
+    /**
      * 数据包编码
      * @param $buffer
      * @return string
@@ -211,17 +527,6 @@ abstract class SwooleServer
         $total_length = SwooleMarco::HEADER_LENGTH + strlen($buffer);
         return pack('N', $total_length) . $buffer;
     }
-
-    /**
-     * start前的操作
-     */
-    abstract public function beforeSwooleStart();
-
-    /**
-     * 设置服务器配置参数
-     * @return mixed
-     */
-    abstract public function setServerSet();
 
     /**
      * onSwooleStart
@@ -287,10 +592,14 @@ abstract class SwooleServer
             $controller_instance->setClientData($uid, $fd, $client_data);
             $method_name = $this->config->get('tcp.method_prefix', '') . $this->route->getMethodName();
             try {
-                $generator = call_user_func([$controller_instance, $method_name]);
-                if ($generator instanceof \Generator) {
-                    $generator->controller = &$controller_instance;
-                    $this->coroutine->start($generator);
+                if (method_exists($controller_instance, $method_name)) {
+                    $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
+                    if ($generator instanceof \Generator) {
+                        $generator->controller = &$controller_instance;
+                        $this->coroutine->start($generator);
+                    }
+                } else {
+                    throw new \Exception('method not exists');
                 }
             } catch (\Exception $e) {
                 call_user_func([$controller_instance, 'onExceptionHandle'], $e);
@@ -520,6 +829,15 @@ abstract class SwooleServer
     }
 
     /**
+     * 是否是task进程
+     * @return bool
+     */
+    public function isTaskWorker()
+    {
+        return $this->server->taskworker;
+    }
+
+    /**
      * 判断是tcp还是websocket进行发送
      * @param $fd
      * @param $data
@@ -529,310 +847,4 @@ abstract class SwooleServer
         $this->server->send($fd, $data);
     }
 
-    /**
-     * Run all worker instances.
-     *
-     * @return void
-     */
-    public static function run()
-    {
-        self::checkSapiEnv();
-        self::init();
-        self::parseCommand();
-        self::initWorkers();
-        self::displayUI();
-        self::startSwooles();
-    }
-
-    /**
-     * Init All worker instances.
-     *
-     * @return void
-     */
-    protected static function initWorkers()
-    {
-        // Worker name.
-        if (empty(self::$_worker->name)) {
-            self::$_worker->name = 'none';
-        }
-        // Get unix user of the worker process.
-        if (empty(self::$_worker->user)) {
-            self::$_worker->user = self::getCurrentUser();
-        } else {
-            if (posix_getuid() !== 0 && self::$_worker->user != self::getCurrentUser()) {
-                echo('Warning: You must have the root privileges to change uid and gid.');
-            }
-        }
-    }
-
-    /**
-     * Get unix user of current porcess.
-     *
-     * @return string
-     */
-    protected static function getCurrentUser()
-    {
-        $user_info = posix_getpwuid(posix_getuid());
-        return $user_info['name'];
-    }
-
-    /**
-     * Display staring UI.
-     *
-     * @return void
-     */
-    protected static function displayUI()
-    {
-        $setConfig = self::$_worker->setServerSet();
-        echo "\033[2J";
-        echo "\033[1A\n\033[K-------------\033[47;30m SWOOLE_DISTRIBUTED \033[0m--------------\n\033[0m";
-        echo 'SwooleDistributed version:', self::version, "\n";
-        echo 'Swoole version: ', SWOOLE_VERSION, "\n";
-        echo 'PHP version: ', PHP_VERSION, "\n";
-        echo 'worker_num: ', $setConfig['worker_num'], "\n";
-        echo 'task_num: ', $setConfig['task_worker_num']??0, "\n";
-        echo "-------------------\033[47;30m" . self::$_worker->name . "\033[0m----------------------\n";
-        echo "\033[47;30mtype\033[0m", str_pad('',
-            self::$_maxShowLength - strlen('type')), "\033[47;30msocket\033[0m", str_pad('',
-            self::$_maxShowLength - strlen('socket')), "\033[47;30mport\033[0m", str_pad('',
-            self::$_maxShowLength - strlen('port')), "\033[47;30m", "status\033[0m\n";
-        switch (self::$_worker->name) {
-            case SwooleDispatchClient::SERVER_NAME:
-                echo str_pad('TCP',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch_server.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch_server.port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->config->get('dispatch_server.port') == null) {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                } else {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                }
-                break;
-            case SwooleDistributedServer::SERVER_NAME:
-                echo str_pad('TCP',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->config->get('server.port') == null) {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                } else {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                }
-                echo str_pad('HTTP',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->config->get('http_server.port') == null) {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                } else {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                }
-                echo str_pad('WEBSOCKET',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
-                    self::$_maxShowLength - 2);
-                if (!self::$_worker->config->get('websocket.enable', false)) {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                } else {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                }
-                echo str_pad('DISPATCH',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.dispatch_port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->config->get('use_dispatch', false)) {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                } else {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                }
-                break;
-        }
-        echo "-----------------------------------------------\n";
-        if (self::$daemonize) {
-            global $argv;
-            $start_file = $argv[0];
-            echo "Input \"php $start_file stop\" to quit. Start success.\n";
-        } else {
-            echo "Press Ctrl-C to quit. Start success.\n";
-        }
-    }
-
-    /**
-     * Init.
-     *
-     * @return void
-     */
-    protected static function init()
-    {
-        // Start file.
-        $backtrace = debug_backtrace();
-        self::$_startFile = $backtrace[count($backtrace) - 1]['file'];
-
-        // Pid file.
-        if (empty(self::$pidFile)) {
-            self::$pidFile = __DIR__ . "/../" . str_replace('/', '_', self::$_startFile) . ".pid";
-        }
-
-        // Process title.
-        self::setProcessTitle('SWD');
-    }
-
-    /**
-     * Set process name.
-     *
-     * @param string $title
-     * @return void
-     */
-    public static function setProcessTitle($title)
-    {
-        // >=php 5.5
-        if (function_exists('cli_set_process_title')) {
-            @cli_set_process_title($title);
-        } // Need proctitle when php<=5.5 .
-        else {
-            @swoole_set_process_name($title);
-        }
-    }
-
-    /**
-     * Check sapi.
-     *
-     * @return void
-     */
-    protected static function checkSapiEnv()
-    {
-        // Only for cli.
-        if (php_sapi_name() != "cli") {
-            exit("only run in command line mode \n");
-        }
-    }
-
-    /**
-     * Parse command.
-     * php yourfile.php start | stop | reload
-     *
-     * @return void
-     */
-    protected static function parseCommand()
-    {
-        global $argv;
-        // Check argv;
-        $start_file = $argv[0];
-        if (!isset($argv[1])) {
-            exit("Usage: php yourfile.php {start|stop|reload|restart}\n");
-        }
-
-        // Get command.
-        $command = trim($argv[1]);
-        $command2 = isset($argv[2]) ? $argv[2] : '';
-
-        // Start command.
-        $mode = '';
-        if ($command === 'start') {
-            if ($command2 === '-d') {
-                $mode = 'in DAEMON mode';
-            } else {
-                $mode = 'in DEBUG mode';
-            }
-        }
-        echo("Swoole[$start_file] $command $mode");
-        if (file_exists(self::$pidFile)) {
-            $pids = explode(',', file_get_contents(self::$pidFile));
-            // Get master process PID.
-            $master_pid = $pids[0];
-            $manager_pid = $pids[1];
-            $master_is_alive = $master_pid && @posix_kill($master_pid, 0);
-        } else {
-            $master_is_alive = false;
-        }
-        // Master is still alive?
-        if ($master_is_alive) {
-            if ($command === 'start') {
-                echo("Swoole[$start_file] already running");
-                exit;
-            }
-        } elseif ($command !== 'start') {
-            echo("Swoole[$start_file] not run");
-            exit;
-        }
-
-        // execute command.
-        switch ($command) {
-            case 'start':
-                if ($command2 === '-d') {
-                    self::$daemonize = true;
-                }
-                break;
-            case 'stop':
-                @unlink(self::$pidFile);
-                echo("Swoole[$start_file] is stoping ...");
-                // Send stop signal to master process.
-                $master_pid && posix_kill($master_pid, SIGTERM);
-                // Timeout.
-                $timeout = 5;
-                $start_time = time();
-                // Check master process is still alive?
-                while (1) {
-                    $master_is_alive = $master_pid && posix_kill($master_pid, 0);
-                    if ($master_is_alive) {
-                        // Timeout?
-                        if (time() - $start_time >= $timeout) {
-                            echo("Swoole[$start_file] stop fail");
-                            exit;
-                        }
-                        // Waiting amoment.
-                        usleep(10000);
-                        continue;
-                    }
-                    // Stop success.
-                    echo("Swoole[$start_file] stop success");
-                    break;
-                }
-                exit(0);
-                break;
-            case 'reload':
-                posix_kill($manager_pid, SIGUSR1);
-                echo("Swoole[$start_file] reload");
-                exit;
-            case 'restart':
-                @unlink(self::$pidFile);
-                echo("Swoole[$start_file] is stoping ...");
-                // Send stop signal to master process.
-                $master_pid && posix_kill($master_pid, SIGTERM);
-                // Timeout.
-                $timeout = 5;
-                $start_time = time();
-                // Check master process is still alive?
-                while (1) {
-                    $master_is_alive = $master_pid && posix_kill($master_pid, 0);
-                    if ($master_is_alive) {
-                        // Timeout?
-                        if (time() - $start_time >= $timeout) {
-                            echo("Swoole[$start_file] stop fail");
-                            exit;
-                        }
-                        // Waiting amoment.
-                        usleep(10000);
-                        continue;
-                    }
-                    // Stop success.
-                    echo("Swoole[$start_file] stop success");
-                    break;
-                }
-                self::$daemonize = true;
-                break;
-            default :
-                exit("Usage: php yourfile.php {start|stop|reload|restart}\n");
-        }
-    }
-
-    /**
-     * Fork some worker processes.
-     *
-     * @return void
-     */
-    protected static function startSwooles()
-    {
-        self::$_worker->start();
-    }
 }

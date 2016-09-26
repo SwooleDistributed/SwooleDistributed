@@ -19,5 +19,4 @@ $config['timerTask'][] = [
     'method_name' => 'send',
     'interval_time' => '30'
 ];
-
 return $config;

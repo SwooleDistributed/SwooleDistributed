@@ -16,5 +16,7 @@ interface IRoute
 
     function getMethodName();
 
+    function getParams();
+
     function getPath();
 }

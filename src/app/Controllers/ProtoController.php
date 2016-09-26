@@ -19,19 +19,6 @@ class ProtoController extends Controller
      */
     public $Message;
 
-    public function __call($name, $arguments)
-    {
-        list($proto, $method_name) = explode('/', $name);
-        $fuc_name = lcfirst($method_name);
-        $this->Message = $this->client_data->data;
-        $request = $this->Message->getRequest();
-        $method = "getM{$method_name}Request";
-        $pamars = call_user_func([$request, $method]);
-        if (!empty($pamars)) {
-            return call_user_func([$this, $fuc_name], $pamars);
-        }
-    }
-
     /**
      * 构建Message
      * @param AbstractMessage $responseMessage

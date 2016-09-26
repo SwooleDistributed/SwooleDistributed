@@ -16,18 +16,24 @@ use Server\SwooleMarco;
 class RedisAsynPool extends AsynPool
 {
     const AsynName = 'redis';
-
-    protected $redis_max_count = 0;
     /**
      * 连接
      * @var array
      */
     public $connect;
+    protected $redis_max_count = 0;
+    private $active;
 
     public function __construct($connect = null)
     {
         parent::__construct();
         $this->connect = $connect;
+    }
+
+    public function server_init($swoole_server, $asyn_manager)
+    {
+        parent::server_init($swoole_server, $asyn_manager);
+        $this->active = $this->config['redis']['active'];
     }
 
     /**
@@ -154,14 +160,14 @@ class RedisAsynPool extends AsynPool
             if (!$result) {
                 throw new SwooleException($client->errMsg);
             }
-            if ($this->config->has('redis.password')) {//存在验证
-                $client->auth($this->config['redis']['password'], function ($client, $result) {
+            if ($this->config->has('redis.' . $this->active . '.password')) {//存在验证
+                $client->auth($this->config['redis'][$this->active]['password'], function ($client, $result) {
                     if (!$result) {
                         $errMsg = $client->errMsg;
                         unset($client);
                         throw new SwooleException($errMsg);
                     }
-                    $client->select($this->config['redis']['select'], function ($client, $result) {
+                    $client->select($this->config['redis'][$this->active]['select'], function ($client, $result) {
                         if (!$result) {
                             throw new SwooleException($client->errMsg);
                         }
@@ -170,7 +176,7 @@ class RedisAsynPool extends AsynPool
                     });
                 });
             } else {
-                $client->select($this->config['redis']['select'], function ($client, $result) {
+                $client->select($this->config['redis'][$this->active]['select'], function ($client, $result) {
                     if (!$result) {
                         throw new SwooleException($client->errMsg);
                     }
@@ -181,7 +187,7 @@ class RedisAsynPool extends AsynPool
         };
 
         if ($this->connect == null) {
-            $this->connect = [$this->config['redis']['ip'], $this->config['redis']['port']];
+            $this->connect = [$this->config['redis'][$this->active]['ip'], $this->config['redis'][$this->active]['port']];
         }
         $client->connect($this->connect[0], $this->connect[1], $callback);
     }
