@@ -58,4 +58,13 @@ class Task extends TaskProxy
     {
         return get_instance()->getRedis();
     }
+
+    /**
+     * 获取同步mysql
+     * @return \Server\DataBase\Miner
+     */
+    protected function getMysql()
+    {
+        return get_instance()->getMysql();
+    }
 }
