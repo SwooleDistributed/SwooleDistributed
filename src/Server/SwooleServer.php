@@ -107,6 +107,9 @@ abstract class SwooleServer
      * @var callback
      */
     public $onErrorHandel = null;
+    /**
+     * @var \swoole_server
+     */
     public $server;
     /**
      * @var Config
@@ -117,6 +120,11 @@ abstract class SwooleServer
      * @var Logger
      */
     public $log;
+    /**
+     * 是否开启tcp
+     * @var bool
+     */
+    public $tcp_enable;
     /**
      * 协议设置
      * @var
@@ -171,7 +179,14 @@ abstract class SwooleServer
      * 设置配置
      * @return mixed
      */
-    abstract public function setConfig();
+    public function setConfig()
+    {
+        $this->socket_type = SWOOLE_SOCK_TCP;
+        $this->tcp_enable = $this->config->get('tcp.enable', true);
+        $this->socket_name = $this->config['tcp']['socket'];
+        $this->port = $this->config['tcp']['port'];
+        $this->user = $this->config->get('server.set.user', '');
+    }
 
     /**
      * Run all worker instances.
@@ -423,34 +438,34 @@ abstract class SwooleServer
                 break;
             case SwooleDistributedServer::SERVER_NAME:
                 echo str_pad('TCP',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.port', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('tcp.socket', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('tcp.port', '--'),
                     self::$_maxShowLength - 2);
-                if (self::$_worker->config->get('server.port') == null) {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                } else {
+                if (self::$_worker->tcp_enable??false) {
                     echo " \033[32;40m [OPEN] \033[0m\n";
+                } else {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
                 }
                 echo str_pad('HTTP',
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
                     self::$_maxShowLength - 2);
-                if (self::$_worker->config->get('http_server.port') == null) {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                } else {
+                if (self::$_worker->http_enable??false) {
                     echo " \033[32;40m [OPEN] \033[0m\n";
+                } else {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
                 }
                 echo str_pad('WEBSOCKET',
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
                     self::$_maxShowLength - 2);
-                if (!self::$_worker->config->get('websocket.enable', false)) {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                } else {
+                if (self::$_worker->websocket_enable??false) {
                     echo " \033[32;40m [OPEN] \033[0m\n";
+                } else {
+                    echo " \033[31;40m [CLOSE] \033[0m\n";
                 }
                 echo str_pad('DISPATCH',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.socket', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('tcp.socket', '--'),
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('server.dispatch_port', '--'),
                     self::$_maxShowLength - 2);
                 if (self::$_worker->config->get('use_dispatch', false)) {
@@ -491,25 +506,30 @@ abstract class SwooleServer
      */
     public function start()
     {
-        $this->server = new \swoole_server($this->socket_name, $this->port, SWOOLE_PROCESS, $this->socket_type);
-        $this->server->on('Start', [$this, 'onSwooleStart']);
-        $this->server->on('WorkerStart', [$this, 'onSwooleWorkerStart']);
-        $this->server->on('connect', [$this, 'onSwooleConnect']);
-        $this->server->on('receive', [$this, 'onSwooleReceive']);
-        $this->server->on('close', [$this, 'onSwooleClose']);
-        $this->server->on('WorkerStop', [$this, 'onSwooleWorkerStop']);
-        $this->server->on('Task', [$this, 'onSwooleTask']);
-        $this->server->on('Finish', [$this, 'onSwooleFinish']);
-        $this->server->on('PipeMessage', [$this, 'onSwoolePipeMessage']);
-        $this->server->on('WorkerError', [$this, 'onSwooleWorkerError']);
-        $this->server->on('ManagerStart', [$this, 'onSwooleManagerStart']);
-        $this->server->on('ManagerStop', [$this, 'onSwooleManagerStop']);
-        $this->server->on('Packet', [$this, 'onSwoolePacket']);
-        $set = $this->setServerSet();
-        $set['daemonize'] = self::$daemonize ? 1 : 0;
-        $this->server->set($set);
-        $this->beforeSwooleStart();
-        $this->server->start();
+        if ($this->tcp_enable) {
+            $this->server = new \swoole_server($this->socket_name, $this->port, SWOOLE_PROCESS, $this->socket_type);
+            $this->server->on('Start', [$this, 'onSwooleStart']);
+            $this->server->on('WorkerStart', [$this, 'onSwooleWorkerStart']);
+            $this->server->on('connect', [$this, 'onSwooleConnect']);
+            $this->server->on('receive', [$this, 'onSwooleReceive']);
+            $this->server->on('close', [$this, 'onSwooleClose']);
+            $this->server->on('WorkerStop', [$this, 'onSwooleWorkerStop']);
+            $this->server->on('Task', [$this, 'onSwooleTask']);
+            $this->server->on('Finish', [$this, 'onSwooleFinish']);
+            $this->server->on('PipeMessage', [$this, 'onSwoolePipeMessage']);
+            $this->server->on('WorkerError', [$this, 'onSwooleWorkerError']);
+            $this->server->on('ManagerStart', [$this, 'onSwooleManagerStart']);
+            $this->server->on('ManagerStop', [$this, 'onSwooleManagerStop']);
+            $this->server->on('Packet', [$this, 'onSwoolePacket']);
+            $set = $this->setServerSet();
+            $set['daemonize'] = self::$daemonize ? 1 : 0;
+            $this->server->set($set);
+            $this->beforeSwooleStart();
+            $this->server->start();
+        } else {
+            print_r("没有任何服务启动\n");
+            exit(0);
+        }
     }
 
     /**

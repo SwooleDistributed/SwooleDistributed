@@ -15,9 +15,21 @@ use Server\CoreBase\ControllerFactory;
 
 abstract class SwooleHttpServer extends SwooleServer
 {
+    /**
+     * http host
+     * @var string
+     */
     public $http_socket_name;
+    /**
+     * http port
+     * @var integer
+     */
     public $http_port;
-    public $port;
+    /**
+     * http使能
+     * @var bool
+     */
+    public $http_enable;
     /**
      * 模板引擎
      * @var Engine
@@ -35,10 +47,23 @@ abstract class SwooleHttpServer extends SwooleServer
         }
     }
 
+    /**
+     * 设置配置
+     */
+    public function setConfig()
+    {
+        parent::setConfig();
+        $this->http_enable = $this->config['http_server']['enable'];
+        $this->http_socket_name = $this->config['http_server']['socket'];
+        $this->http_port = $this->config['http_server']['port'];
+    }
+
+    /**
+     * 启动
+     */
     public function start()
     {
-        if (empty($this->http_socket_name) || empty($this->http_port)) {
-            print_r("not use http server.\n");
+        if (!$this->http_enable) {
             parent::start();
             return;
         }
@@ -57,16 +82,23 @@ abstract class SwooleHttpServer extends SwooleServer
         $set = $this->setServerSet();
         $set['daemonize'] = self::$daemonize ? 1 : 0;
         $this->server->set($set);
-        $this->port = $this->server->listen($this->socket_name, $this->port, $this->socket_type);
-        $this->port->set($set);
-        $this->port->on('connect', [$this, 'onSwooleConnect']);
-        $this->port->on('receive', [$this, 'onSwooleReceive']);
-        $this->port->on('close', [$this, 'onSwooleClose']);
-        $this->port->on('Packet', [$this, 'onSwoolePacket']);
+        if ($this->tcp_enable) {
+            $this->port = $this->server->listen($this->socket_name, $this->port, $this->socket_type);
+            $this->port->set($set);
+            $this->port->on('connect', [$this, 'onSwooleConnect']);
+            $this->port->on('receive', [$this, 'onSwooleReceive']);
+            $this->port->on('close', [$this, 'onSwooleClose']);
+            $this->port->on('Packet', [$this, 'onSwoolePacket']);
+        }
         $this->beforeSwooleStart();
         $this->server->start();
     }
 
+    /**
+     * workerStart
+     * @param $serv
+     * @param $workerId
+     */
     public function onSwooleWorkerStart($serv, $workerId)
     {
         parent::onSwooleWorkerStart($serv, $workerId);

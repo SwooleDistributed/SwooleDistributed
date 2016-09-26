@@ -173,12 +173,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function setConfig()
     {
-        $this->http_socket_name = $this->config['http_server']['socket'];
-        $this->http_port = $this->config['http_server']['port'];
-        $this->socket_type = SWOOLE_SOCK_TCP;
-        $this->socket_name = $this->config['server']['socket'];
-        $this->port = $this->config['server']['port'];
-        $this->user = $this->config->get('server.set.user', '');
+        parent::setConfig();
         $this->send_use_task_num = $this->config['server']['send_use_task_num'];
     }
 

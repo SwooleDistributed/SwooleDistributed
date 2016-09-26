@@ -8,20 +8,27 @@
 /**
  * http服务器设置
  */
+$config['http_server']['enable'] = true;
 $config['http_server']['socket'] = '0.0.0.0';
 $config['http_server']['port'] = 8081;
 /**
  * 是否启用websocket
  */
-$config['websocket']['enable'] = true;
+$config['websocket']['enable'] = false;
 /*WEBSOCKET_OPCODE_TEXT = 0x1，UTF-8文本字符数据
 WEBSOCKET_OPCODE_BINARY = 0x2，二进制数据*/
 $config['websocket']['opcode'] = WEBSOCKET_OPCODE_BINARY;
+
+/**
+ * tcp设置
+ */
+$config['tcp']['enable'] = true;
+$config['tcp']['socket'] = '0.0.0.0';
+$config['tcp']['port'] = 9093;
+
 /**
  * 服务器设置
  */
-$config['server']['socket'] = '0.0.0.0';
-$config['server']['port'] = 9093;
 $config['server']['dispatch_port'] = 9991;
 $config['server']['send_use_task_num'] = 20;
 $config['server']['log_path'] = '/../../';

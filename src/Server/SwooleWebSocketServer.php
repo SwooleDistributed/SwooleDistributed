@@ -14,19 +14,39 @@ use Server\CoreBase\ControllerFactory;
 
 abstract class SwooleWebSocketServer extends SwooleHttpServer
 {
+    /**
+     * opcode
+     * @var int
+     */
     public $opcode;
-    public $webSocketEnable;
+    /**
+     * websocket使能
+     * @var bool
+     */
+    public $websocket_enable;
 
     public function __construct()
     {
         parent::__construct();
-        $this->webSocketEnable = $this->config->get('websocket.enable', false);
+
+    }
+
+    /**
+     * 设置配置
+     */
+    public function setConfig()
+    {
+        parent::setConfig();
+        $this->websocket_enable = $this->config->get('websocket.enable', false);
         $this->opcode = $this->config->get('websocket.opcode', WEBSOCKET_OPCODE_TEXT);
     }
 
+    /**
+     * 启动
+     */
     public function start()
     {
-        if (!$this->webSocketEnable) {
+        if (!$this->websocket_enable) {
             parent::start();
             return;
         }
@@ -70,7 +90,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      */
     public function send($fd, $data)
     {
-        if (!$this->webSocketEnable) {
+        if (!$this->websocket_enable) {
             parent::send($fd, $data);
             return;
         }
