@@ -1,4 +1,4 @@
-# SwooleDistributed v1.2
+# SwooleDistributed v1.3
 swoole 分布式通讯框架  
 开发交流群：569037921  
 
