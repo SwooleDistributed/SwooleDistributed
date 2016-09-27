@@ -35,6 +35,10 @@ class SwooleMarco
      * 发送给群
      */
     const MSG_TYPE_SEND_GROUP = 3;
+    /**
+     * 踢uid下线
+     */
+    const MSG_TYPE_KICK_UID = 4;
 
     /**
      * REDIS 异步回调消息

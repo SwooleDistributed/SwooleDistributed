@@ -224,4 +224,13 @@ class Controller extends CoreBase
             $this->destroy();
         }
     }
+
+    /**
+     * 踢用户
+     * @param $uid
+     */
+    protected function kickUid($uid)
+    {
+        get_instance()->kickUid($uid);
+    }
 }

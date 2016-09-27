@@ -57,6 +57,32 @@ class SwooleDispatchClient extends SwooleServer
     }
 
     /**
+     * 启动
+     */
+    public function start()
+    {
+        $this->server = new \swoole_server($this->socket_name, $this->port, SWOOLE_PROCESS, $this->socket_type);
+        $this->server->on('Start', [$this, 'onSwooleStart']);
+        $this->server->on('WorkerStart', [$this, 'onSwooleWorkerStart']);
+        $this->server->on('connect', [$this, 'onSwooleConnect']);
+        $this->server->on('receive', [$this, 'onSwooleReceive']);
+        $this->server->on('close', [$this, 'onSwooleClose']);
+        $this->server->on('WorkerStop', [$this, 'onSwooleWorkerStop']);
+        $this->server->on('Task', [$this, 'onSwooleTask']);
+        $this->server->on('Finish', [$this, 'onSwooleFinish']);
+        $this->server->on('PipeMessage', [$this, 'onSwoolePipeMessage']);
+        $this->server->on('WorkerError', [$this, 'onSwooleWorkerError']);
+        $this->server->on('ManagerStart', [$this, 'onSwooleManagerStart']);
+        $this->server->on('ManagerStop', [$this, 'onSwooleManagerStop']);
+        $this->server->on('Packet', [$this, 'onSwoolePacket']);
+        $set = $this->setServerSet();
+        $set['daemonize'] = self::$daemonize ? 1 : 0;
+        $this->server->set($set);
+        $this->beforeSwooleStart();
+        $this->server->start();
+    }
+
+    /**
      * 设置服务器配置参数
      * @return array
      */
@@ -128,6 +154,26 @@ class SwooleDispatchClient extends SwooleServer
     }
 
     /**
+     * 增加一个服务器连接
+     * @param $address
+     */
+    private function addServerClient($address)
+    {
+        if (key_exists(ip2long($address), $this->server_clients)) {
+            return;
+        }
+        $client = new \swoole_client(SWOOLE_TCP, SWOOLE_SOCK_ASYNC);
+        $client->set($this->probuf_set);
+        $client->on("connect", [$this, 'onClientConnect']);
+        $client->on("receive", [$this, 'onClientReceive']);
+        $client->on("close", [$this, 'onClientClose']);
+        $client->on("error", [$this, 'onClientError']);
+        $client->address = $address;
+        $client->connect($address, $this->config['server']['dispatch_port']);
+        $this->server_clients[ip2long($address)] = $client;
+    }
+
+    /**
      * PipeMessage
      * @param $serv
      * @param $from_worker_id
@@ -149,34 +195,16 @@ class SwooleDispatchClient extends SwooleServer
     }
 
     /**
-     * 增加一个服务器连接
-     * @param $address
-     */
-    private function addServerClient($address)
-    {
-        if (key_exists(ip2long($address), $this->server_clients)) {
-            return;
-        }
-        $client = new \swoole_client(SWOOLE_TCP, SWOOLE_SOCK_ASYNC);
-        $client->set($this->probuf_set);
-        $client->on("connect", [$this, 'onClientConnect']);
-        $client->on("receive", [$this, 'onClientReceive']);
-        $client->on("close", [$this, 'onClientClose']);
-        $client->on("error", [$this, 'onClientError']);
-        $client->address = $address;
-        $client->connect($address, $this->config['server']['dispatch_port']);
-        $this->server_clients[ip2long($address)] = $client;
-    }
-
-    /**
      * 连接到服务器
      * @param $cli
      */
     public function onClientConnect($cli)
     {
         print_r("connect\n");
-        $write_data = ['wid' => $this->server->worker_id, 'usid' => ip2long($cli->address)];
+        $usid = ip2long($cli->address);
+        $write_data = ['wid' => $this->server->worker_id, 'usid' => $usid];
         $data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_USID, serialize($write_data));
+        $cli->usid = $usid;
         $cli->send($this->encode($data));
     }
 
@@ -248,6 +276,14 @@ class SwooleDispatchClient extends SwooleServer
                     $client = $this->server_clients[$usid];
                     $client->send($client_data);
                 });
+                break;
+            case SwooleMarco::MSG_TYPE_KICK_UID://踢人
+                $usid = $message['usid'];
+                if (empty($usid) || !key_exists($usid, $this->server_clients)) {
+                    return;
+                }
+                $client = $this->server_clients[$usid];
+                $client->send($client_data);
                 break;
         }
     }

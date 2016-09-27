@@ -51,11 +51,13 @@ class CoreBase extends Child
      */
     public function __construct()
     {
-        $this->loader = get_instance()->loader;
-        $this->logger = get_instance()->log;
-        $this->server = get_instance()->server;
-        $this->config = get_instance()->config;
-        $this->pack = get_instance()->pack;
+        if (!empty(get_instance())) {
+            $this->loader = get_instance()->loader;
+            $this->logger = get_instance()->log;
+            $this->server = get_instance()->server;
+            $this->config = get_instance()->config;
+            $this->pack = get_instance()->pack;
+        }
     }
 
     /**

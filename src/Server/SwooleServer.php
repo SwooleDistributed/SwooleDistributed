@@ -867,4 +867,12 @@ abstract class SwooleServer
         $this->server->send($fd, $data);
     }
 
+    /**
+     * close fd
+     * @param $fd
+     */
+    public function close($fd)
+    {
+        $this->server->close($fd);
+    }
 }

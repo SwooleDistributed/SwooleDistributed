@@ -290,6 +290,7 @@ class Miner
         $this->mysql_pool = $mysql_pool;
         $this->setAutoQuote(true);
     }
+
     /**
      * Add SQL_CALC_FOUND_ROWS execution option.
      *

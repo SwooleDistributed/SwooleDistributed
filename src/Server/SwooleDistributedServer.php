@@ -1,7 +1,6 @@
 <?php
 namespace Server;
 
-use Noodlehaus\Exception;
 use Server\Client\Client;
 use Server\CoreBase\InotifyProcess;
 use Server\CoreBase\SwooleException;
@@ -207,7 +206,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         }
         if ($this->config->get('use_dispatch')) {
             //创建dispatch端口用于连接dispatch
-            $this->dispatch_port = $this->server->listen($this->config['server']['socket'], $this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
+            $this->dispatch_port = $this->server->listen($this->config['tcp']['socket'], $this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
             $this->dispatch_port->set($this->setServerSet());
             $this->dispatch_port->on('close', function ($serv, $fd) {
                 print_r("Remove a dispatcher.\n");
@@ -245,6 +244,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                         break;
                     case SwooleMarco::MSG_TYPE_SEND_ALL://广播消息
                         $serv->task($data);
+                        break;
+                    case SwooleMarco::MSG_TYPE_KICK_UID://踢人
+                        $this->kickUid($message['uid'], true);
                         break;
                 }
             });
@@ -311,7 +313,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     private function sendToDispatchMessage($type, $data)
     {
         $send_data = $this->packSerevrMessageBody($type, $data);
-        $fd = $this->dispatchClientFds[array_rand($this->dispatchClientFds)];
+        $fd = null;
+        if (count($this->dispatchClientFds) > 0) {
+            $fd = $this->dispatchClientFds[array_rand($this->dispatchClientFds)];
+        }
         if ($fd != null) {
             $this->server->send($fd, $this->encode($send_data));
         } else {
@@ -329,7 +334,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @param $task_id
      * @param $from_id
      * @param $data
-     * @return mixed
+     * @return mixed|null
+     * @throws SwooleException
      */
     public function onSwooleTask($serv, $task_id, $from_id, $data)
     {
@@ -414,6 +420,23 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         //本机处理不了的发给dispatch
         if (count($uids) > 0) {
             $this->sendToDispatchMessage(SwooleMarco::MSG_TYPE_SEND_BATCH, ['data' => $data, 'uids' => array_values($uids)]);
+        }
+    }
+
+    /**
+     * 踢用户下线
+     * @param $uid
+     * @param bool $fromDispatch
+     */
+    protected function kickUid($uid, $fromDispatch = false)
+    {
+        if ($this->uid_fd_table->exist($uid)) {//本机处理
+            $fd = $this->uid_fd_table->get($uid)['fd'];
+            $this->close($fd);
+        } else {
+            if ($fromDispatch) return;
+            $usid = $this->getRedis()->hGet(SwooleMarco::redis_uid_usid_hash_name, $uid);
+            $this->sendToDispatchMessage(SwooleMarco::MSG_TYPE_KICK_UID, ['usid' => $usid, 'uid' => $uid]);
         }
     }
 
@@ -555,10 +578,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function unBindUid($uid)
     {
         //更新映射表
-        if ($this->isTaskWorker()) {
+        $usid = $this->getRedis()->hGet(SwooleMarco::redis_uid_usid_hash_name, $uid);
+        if ($usid == $this->USID) {
             $this->getRedis()->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
-        } else {
-            $this->redis_pool->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid, null);
         }
         //更新共享内存
         $this->uid_fd_table->del($uid);
@@ -568,20 +590,20 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * 将fd绑定到uid,uid不能为0
      * @param $fd
      * @param $uid
+     * @param bool $isKick 是否踢掉uid上一个的链接
      */
-    public function bindUid($fd, $uid)
+    public function bindUid($fd, $uid, $isKick = true)
     {
+        if ($isKick) {
+            $this->kickUid($uid, false);
+        }
+        $this->getRedis()->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID);
         //将这个fd与当前worker进行绑定
         $this->server->bind($fd, $uid);
-        //建立映射表
-        if ($this->isTaskWorker()) {
-            $this->getRedis()->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID);
-        } else {
-            $this->redis_pool->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID, null);
-        }
         //加入共享内存
         $this->uid_fd_table->set($uid, ['fd' => $fd]);
     }
+
 
     /**
      * uid是否在线(异步时候需要提供callback,task可以直接返回结果)
