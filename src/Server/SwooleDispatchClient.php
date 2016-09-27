@@ -206,12 +206,19 @@ class SwooleDispatchClient extends SwooleServer
         $data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_USID, serialize($write_data));
         $cli->usid = $usid;
         $cli->send($this->encode($data));
+        //心跳包
+        $heartData = $this->encode($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_HEART, null));
+        if (!isset($cli->tick)) {
+            $cli->tick = swoole_timer_tick(60000, function () use ($cli, $heartData) {
+                $cli->send($heartData);
+            });
+        }
     }
 
     /**
      * 服务器发来消息
      * @param $cli
-     * @param $data
+     * @param $client_data
      */
     public function onClientReceive($cli, $client_data)
     {
@@ -295,8 +302,13 @@ class SwooleDispatchClient extends SwooleServer
     public function onClientClose($cli)
     {
         print_r("close\n");
+        if (isset($cli->tick)) {
+            swoole_timer_clear($cli->tick);
+        }
+        $address = $cli->address;
         unset($this->server_clients[ip2long($cli->address)]);
         unset($cli);
+        $this->addServerClient($address);
     }
 
     /**
@@ -305,8 +317,10 @@ class SwooleDispatchClient extends SwooleServer
      */
     public function onClientError($cli)
     {
-        print_r("close\n");
-        $cli->close();
+        print_r("error\n");
+        if (isset($cli->tick)) {
+            swoole_timer_clear($cli->tick);
+        }
         unset($this->server_clients[$cli->address]);
         unset($cli);
     }

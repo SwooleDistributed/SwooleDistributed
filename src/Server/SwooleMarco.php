@@ -20,6 +20,10 @@ class SwooleMarco
      */
     const MSG_TYPE_USID = -1;
     /**
+     * 心跳
+     */
+    const MSG_TYPE_HEART = -2;
+    /**
      * 发送消息
      */
     const MSG_TYPE_SEND = 0;

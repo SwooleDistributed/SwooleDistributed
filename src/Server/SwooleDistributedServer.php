@@ -208,9 +208,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             //创建dispatch端口用于连接dispatch
             $this->dispatch_port = $this->server->listen($this->config['tcp']['socket'], $this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
             $dispatch_set = $this->setServerSet();
-            //dispatch删除心跳判定
-            unset($dispatch_set['heartbeat_idle_time']);
-            unset($dispatch_set['heartbeat_check_interval']);
             $this->dispatch_port->set($this->setServerSet());
             $this->dispatch_port->on('close', function ($serv, $fd) {
                 print_r("Remove a dispatcher.\n");

@@ -868,6 +868,7 @@ abstract class SwooleServer
     }
 
     /**
+     * 服务器主动关闭链接
      * close fd
      * @param $fd
      */
