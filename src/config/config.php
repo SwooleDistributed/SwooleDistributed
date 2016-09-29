@@ -14,7 +14,7 @@ $config['http_server']['port'] = 8081;
 /**
  * 是否启用websocket
  */
-$config['websocket']['enable'] = false;
+$config['websocket']['enable'] = true;
 /*WEBSOCKET_OPCODE_TEXT = 0x1，UTF-8文本字符数据
 WEBSOCKET_OPCODE_BINARY = 0x2，二进制数据*/
 $config['websocket']['opcode'] = WEBSOCKET_OPCODE_BINARY;

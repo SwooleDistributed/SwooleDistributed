@@ -321,7 +321,7 @@ class SwooleDispatchClient extends SwooleServer
         if (isset($cli->tick)) {
             swoole_timer_clear($cli->tick);
         }
-        unset($this->server_clients[$cli->address]);
+        unset($this->server_clients[ip2long($cli->address)]);
         unset($cli);
     }
 }
