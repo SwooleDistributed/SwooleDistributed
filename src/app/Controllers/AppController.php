@@ -2,9 +2,7 @@
 namespace app\Controllers;
 
 use app\Models\AppModel;
-use app\Tasks\AppTask;
 use Server\CoreBase\Controller;
-use Server\Tasks\TestTask;
 
 /**
  * Created by PhpStorm.

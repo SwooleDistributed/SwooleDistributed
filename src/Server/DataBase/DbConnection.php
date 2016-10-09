@@ -207,6 +207,45 @@ class DbConnection
     protected $success = false;
 
     /**
+     * 构造函数
+     *
+     * @param string $host
+     * @param int    $port
+     * @param string $user
+     * @param string $password
+     * @param string $db_name
+     * @param string $charset
+     */
+    public function __construct($host, $port, $user, $password, $db_name, $charset = 'utf8')
+    {
+        $this->settings = array(
+            'host'     => $host,
+            'port'     => $port,
+            'user'     => $user,
+            'password' => $password,
+            'dbname'   => $db_name,
+            'charset'  => $charset,
+        );
+        $this->connect();
+    }
+
+    /**
+     * 创建 PDO 实例
+     */
+    protected function connect()
+    {
+        $dsn       = 'mysql:dbname=' . $this->settings["dbname"] . ';host=' .
+            $this->settings["host"] . ';port=' . $this->settings['port'];
+        $this->pdo = new PDO($dsn, $this->settings["user"], $this->settings["password"],
+            array(
+                PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . (!empty($this->settings['charset']) ?
+                        $this->settings['charset'] : 'utf8')
+            ));
+        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+    }
+
+    /**
      * 选择哪些列
      *
      * @param string|array $cols
@@ -223,6 +262,156 @@ class DbConnection
     }
 
     /**
+     * 设置多列
+     *
+     * @param array $cols
+     * @return self
+     */
+    public function cols(array $cols)
+    {
+        if ($this->type == 'SELECT') {
+            foreach ($cols as $key => $val) {
+                $this->addColSELECT($key, $val);
+            }
+            return $this;
+        }
+        return $this->addCols($cols);
+    }
+
+    /**
+     *
+     * SELECT选择哪些列
+     *
+     * @param mixed  $key
+     * @param string $val
+     * @return void
+     */
+    protected function addColSELECT($key, $val)
+    {
+        if (is_string($key)) {
+            $this->cols[$val] = $key;
+        } else {
+            $this->addColWithAlias($val);
+        }
+    }
+
+    /**
+     * SELECT 增加选择的列
+     *
+     * @param string $spec
+     */
+    protected function addColWithAlias($spec)
+    {
+        $parts = explode(' ', $spec);
+        $count = count($parts);
+        if ($count == 2) {
+            $this->cols[$parts[1]] = $parts[0];
+        } elseif ($count == 3 && strtoupper($parts[1]) == 'AS') {
+            $this->cols[$parts[2]] = $parts[0];
+        } else {
+            $this->cols[] = $spec;
+        }
+    }
+
+    /**
+     * 设置多个列
+     *
+     * @param array $cols
+     * @return self
+     */
+    protected function addCols(array $cols)
+    {
+        foreach ($cols as $key => $val) {
+            if (is_int($key)) {
+                $this->addCol($val);
+            } else {
+                $this->addCol($key, $val);
+            }
+        }
+        return $this;
+    }
+
+    /**
+     * 设置列
+     *
+     * @param string $col
+     * @return self
+     */
+    protected function addCol($col)
+    {
+        $key                    = $this->quoteName($col);
+        $this->col_values[$key] = ":$col";
+        $args                   = func_get_args();
+        if (count($args) > 1) {
+            $this->bindValue($col, $args[1]);
+        }
+        return $this;
+    }
+
+    /**
+     * Quotes
+     *
+     * @param string $spec
+     * @return string|array
+     */
+    public function quoteName($spec)
+    {
+        $spec = trim($spec);
+        $seps = array(' AS ', ' ', '.');
+        foreach ($seps as $sep) {
+            $pos = strripos($spec, $sep);
+            if ($pos) {
+                return $this->quoteNameWithSeparator($spec, $sep, $pos);
+            }
+        }
+        return $this->replaceName($spec);
+    }
+
+    /**
+     * 指定分隔符的 Quotes
+     *
+     * @param string $spec
+     * @param string $sep
+     * @param int    $pos
+     * @return string
+     */
+    protected function quoteNameWithSeparator($spec, $sep, $pos)
+    {
+        $len   = strlen($sep);
+        $part1 = $this->quoteName(substr($spec, 0, $pos));
+        $part2 = $this->replaceName(substr($spec, $pos + $len));
+        return "{$part1}{$sep}{$part2}";
+    }
+
+    /**
+     * Quotes name
+     *
+     * @param string $name
+     * @return string
+     */
+    protected function replaceName($name)
+    {
+        $name = trim($name);
+        if ($name == '*') {
+            return $name;
+        }
+        return '`' . $name . '`';
+    }
+
+    /**
+     * 单个为占位符绑定值
+     *
+     * @param string $name
+     * @param mixed  $value
+     * @return self
+     */
+    public function bindValue($name, $value)
+    {
+        $this->bind_values[$name] = $value;
+        return $this;
+    }
+
+    /**
      * 从哪个表删除
      *
      * @param string $table
@@ -233,6 +422,19 @@ class DbConnection
         $this->type  = 'DELETE';
         $this->table = $this->quoteName($table);
         $this->fromRaw($this->quoteName($table));
+        return $this;
+    }
+
+    /**
+     * from的表
+     *
+     * @param string $table
+     * @return self
+     */
+    public function fromRaw($table)
+    {
+        $this->from[] = array($table);
+        $this->from_key++;
         return $this;
     }
 
@@ -273,6 +475,21 @@ class DbConnection
     {
         $this->setFlag('SQL_CALC_FOUND_ROWS', $enable);
         return $this;
+    }
+
+    /**
+     * 设置 flag.
+     *
+     * @param string $flag
+     * @param bool   $enable
+     */
+    protected function setFlag($flag, $enable = true)
+    {
+        if ($enable) {
+            $this->flags[$flag] = true;
+        } else {
+            unset($this->flags[$flag]);
+        }
     }
 
     /**
@@ -446,15 +663,409 @@ class DbConnection
     }
 
     /**
-     * 设置每页多少条记录
+     * 生成完整 SQL 语句
      *
-     * @param int $paging
-     * @return self
+     * @return string
+     * @throws Exception
      */
-    public function setPaging($paging)
+    protected function build()
     {
-        $this->paging = (int)$paging;
-        return $this;
+        switch ($this->type) {
+            case 'DELETE':
+                return $this->buildDELETE();
+            case 'INSERT':
+                return $this->buildINSERT();
+            case 'UPDATE':
+                return $this->buildUPDATE();
+            case 'SELECT':
+                return $this->buildSELECT();
+        }
+        throw new Exception("type empty");
+    }
+
+    /**
+     * 创建 DELETE SQL
+     */
+    protected function buildDELETE()
+    {
+        return 'DELETE'
+        . $this->buildFlags()
+        . $this->buildFrom()
+        . $this->buildWhere()
+        . $this->buildOrderBy()
+        . $this->buildLimit()
+        . $this->buildReturning();
+    }
+
+    /**
+     * 生成 flag
+     *
+     * @return string
+     */
+    protected function buildFlags()
+    {
+        if (!$this->flags) {
+            return '';
+        }
+        return ' ' . implode(' ', array_keys($this->flags));
+    }
+
+    /**
+     * 生成 FROM 语句.
+     *
+     * @return string
+     */
+    protected function buildFrom()
+    {
+        if (!$this->from) {
+            return '';
+        }
+
+        $refs = array();
+        foreach ($this->from as $from) {
+            $refs[] = implode(' ', $from);
+        }
+        return ' FROM' . $this->indentCsv($refs);
+    }
+
+    /**
+     * 返回逗号分隔的字符串
+     *
+     * @param array $list
+     * @return string
+     */
+    protected function indentCsv(array $list)
+    {
+        return ' ' . implode(',', $list);
+    }
+
+    /**
+     * 生成 where 语句
+     *
+     * @return string
+     */
+    protected function buildWhere()
+    {
+        if (!$this->where) {
+            return '';
+        }
+        return ' WHERE' . $this->indent($this->where);
+    }
+
+    /**
+     * 返回空格分隔的字符串
+     *
+     * @param array $list
+     * @return string
+     */
+    protected function indent(array $list)
+    {
+        return ' ' . implode(' ', $list);
+    }
+
+    /**
+     * 生成 order by 语句
+     *
+     * @return string
+     */
+    protected function buildOrderBy()
+    {
+        if (!$this->order_by) {
+            return '';
+        }
+
+        if ($this->order_asc) {
+            return ' ORDER BY' . $this->indentCsv($this->order_by) . ' ASC';
+        } else {
+            return ' ORDER BY' . $this->indentCsv($this->order_by) . ' DESC';
+        }
+    }
+
+    /**
+     * 生成 limit 语句
+     *
+     * @return string
+     */
+    protected function buildLimit()
+    {
+        $has_limit  = $this->type == 'DELETE' || $this->type == 'UPDATE';
+        $has_offset = $this->type == 'SELECT';
+
+        if ($has_offset && $this->limit) {
+            $clause = " LIMIT {$this->limit}";
+            if ($this->offset) {
+                $clause .= " OFFSET {$this->offset}";
+            }
+            return $clause;
+        } elseif ($has_limit && $this->limit) {
+            return " LIMIT {$this->limit}";
+        }
+        return '';
+    }
+
+    /**
+     * 生成 RETURNING 语句
+     *
+     * @return string
+     */
+    protected function buildReturning()
+    {
+        if (!$this->returning) {
+            return '';
+        }
+        return ' RETURNING' . $this->indentCsv($this->returning);
+    }
+
+    /**
+     * 生成 INSERT 语句
+     *
+     * @return string
+     */
+    protected function buildINSERT()
+    {
+        return 'INSERT'
+        . $this->buildFlags()
+        . $this->buildInto()
+        . $this->buildValuesForInsert()
+        . $this->buildReturning();
+    }
+
+    /**
+     * 生成 INTO 语句
+     *
+     * @return string
+     */
+    protected function buildInto()
+    {
+        return " INTO " . $this->table;
+    }
+
+    /**
+     * 为 INSERT 语句绑定值
+     *
+     * @return string
+     */
+    protected function buildValuesForInsert()
+    {
+        return ' (' . $this->indentCsv(array_keys($this->col_values)) . ') VALUES (' .
+        $this->indentCsv(array_values($this->col_values)) . ')';
+    }
+
+    /**
+     * 生成更新的 SQL 语句
+     */
+    protected function buildUPDATE()
+    {
+        return 'UPDATE'
+        . $this->buildFlags()
+        . $this->buildTable()
+        . $this->buildValuesForUpdate()
+        . $this->buildWhere()
+        . $this->buildOrderBy()
+        . $this->buildLimit()
+        . $this->buildReturning();
+    }
+
+    /**
+     * 哪个表
+     *
+     * @return string
+     */
+    protected function buildTable()
+    {
+        return " {$this->table}";
+    }
+
+    /**
+     * 为更新语句绑定值
+     *
+     * @return string
+     */
+    protected function buildValuesForUpdate()
+    {
+        $values = array();
+        foreach ($this->col_values as $col => $value) {
+            $values[] = "{$col} = {$value}";
+        }
+        return ' SET' . $this->indentCsv($values);
+    }
+
+    /**
+     * 创建 SELECT SQL
+     *
+     * @return string
+     */
+    protected function buildSELECT()
+    {
+        return 'SELECT'
+        . $this->buildFlags()
+        . $this->buildCols()
+        . $this->buildFrom()
+        . $this->buildWhere()
+        . $this->buildGroupBy()
+        . $this->buildHaving()
+        . $this->buildOrderBy()
+        . $this->buildLimit()
+        . $this->buildForUpdate();
+    }
+
+    /**
+     * 生成 SELECT 列语句
+     *
+     * @return string
+     * @throws Exception
+     */
+    protected function buildCols()
+    {
+        if (!$this->cols) {
+            throw new Exception('No columns in the SELECT.');
+        }
+
+        $cols = array();
+        foreach ($this->cols as $key => $val) {
+            if (is_int($key)) {
+                $cols[] = $this->quoteNamesIn($val);
+            } else {
+                $cols[] = $this->quoteNamesIn("$val AS $key");
+            }
+        }
+
+        return $this->indentCsv($cols);
+    }
+
+    /**
+     * Quotes "table.col" 格式的字符串
+     *
+     * @param string $text
+     * @return string|array
+     */
+    public function quoteNamesIn($text)
+    {
+        $list = $this->getListForQuoteNamesIn($text);
+        $last = count($list) - 1;
+        $text = null;
+        foreach ($list as $key => $val) {
+            if (($key + 1) % 3) {
+                $text .= $this->quoteNamesInLoop($val, $key == $last);
+            }
+        }
+        return $text;
+    }
+
+    /**
+     * 返回 quote 元素列表
+     *
+     * @param string $text
+     * @return array
+     */
+    protected function getListForQuoteNamesIn($text)
+    {
+        $apos = "'";
+        $quot = '"';
+        return preg_split(
+            "/(($apos+|$quot+|\\$apos+|\\$quot+).*?\\2)/",
+            $text,
+            -1,
+            PREG_SPLIT_DELIM_CAPTURE
+        );
+    }
+
+    /**
+     * 循环 quote
+     *
+     * @param string $val
+     * @param bool   $is_last
+     * @return string
+     */
+    protected function quoteNamesInLoop($val, $is_last)
+    {
+        if ($is_last) {
+            return $this->replaceNamesAndAliasIn($val);
+        }
+        return $this->replaceNamesIn($val);
+    }
+
+    /**
+     * 替换成别名
+     *
+     * @param string $val
+     * @return string
+     */
+    protected function replaceNamesAndAliasIn($val)
+    {
+        $quoted = $this->replaceNamesIn($val);
+        $pos    = strripos($quoted, ' AS ');
+        if ($pos) {
+            $alias  = $this->replaceName(substr($quoted, $pos + 4));
+            $quoted = substr($quoted, 0, $pos) . " AS $alias";
+        }
+        return $quoted;
+    }
+
+    /**
+     * Quotes
+     *
+     * @param string $text
+     * @return string|array
+     */
+    protected function replaceNamesIn($text)
+    {
+        $is_string_literal = strpos($text, "'") !== false
+            || strpos($text, '"') !== false;
+        if ($is_string_literal) {
+            return $text;
+        }
+
+        $word = '[a-z_][a-z0-9_]+';
+
+        $find = "/(\\b)($word)\\.($word)(\\b)/i";
+
+        $repl = '$1`$2`.`$3`$4';
+
+        $text = preg_replace($find, $repl, $text);
+
+        return $text;
+    }
+
+    /**
+     * 生成 GROUP BY 语句.
+     *
+     * @return string
+     */
+    protected function buildGroupBy()
+    {
+        if (!$this->group_by) {
+            return '';
+        }
+        return ' GROUP BY' . $this->indentCsv($this->group_by);
+    }
+
+    // -------------abstractquery----------
+
+    /**
+     * 生成 HAVING 语句.
+     *
+     * @return string
+     */
+    protected function buildHaving()
+    {
+        if (!$this->having) {
+            return '';
+        }
+        return ' HAVING' . $this->indent($this->having);
+    }
+
+    /**
+     * 生成 FOR UPDATE 语句
+     *
+     * @return string
+     */
+    protected function buildForUpdate()
+    {
+        if (!$this->for_update) {
+            return '';
+        }
+        return ' FOR UPDATE';
     }
 
     /**
@@ -468,75 +1079,15 @@ class DbConnection
     }
 
     /**
-     * 获取绑定在占位符上的值
-     */
-    public function getBindValues()
-    {
-        switch ($this->type) {
-            case 'SELECT':
-                return $this->getBindValuesSELECT();
-            case 'DELETE':
-            case 'UPDATE':
-            case 'INSERT':
-                return $this->getBindValuesCOMMON();
-            default :
-                throw new Exception("type err");
-        }
-    }
-
-    /**
-     * 获取绑定在占位符上的值
+     * 设置每页多少条记录
      *
-     * @return array
+     * @param int $paging
+     * @return self
      */
-    public function getBindValuesSELECT()
+    public function setPaging($paging)
     {
-        $bind_values = $this->bind_values;
-        $i           = 1;
-        foreach ($this->bind_where as $val) {
-            $bind_values[$i] = $val;
-            $i++;
-        }
-        foreach ($this->bind_having as $val) {
-            $bind_values[$i] = $val;
-            $i++;
-        }
-        return $bind_values;
-    }
-
-    /**
-     *
-     * SELECT选择哪些列
-     *
-     * @param mixed  $key
-     * @param string $val
-     * @return void
-     */
-    protected function addColSELECT($key, $val)
-    {
-        if (is_string($key)) {
-            $this->cols[$val] = $key;
-        } else {
-            $this->addColWithAlias($val);
-        }
-    }
-
-    /**
-     * SELECT 增加选择的列
-     *
-     * @param string $spec
-     */
-    protected function addColWithAlias($spec)
-    {
-        $parts = explode(' ', $spec);
-        $count = count($parts);
-        if ($count == 2) {
-            $this->cols[$parts[1]] = $parts[0];
-        } elseif ($count == 3 && strtoupper($parts[1]) == 'AS') {
-            $this->cols[$parts[2]] = $parts[0];
-        } else {
-            $this->cols[] = $spec;
-        }
+        $this->paging = (int)$paging;
+        return $this;
     }
 
     /**
@@ -548,19 +1099,6 @@ class DbConnection
     public function from($table)
     {
         return $this->fromRaw($this->quoteName($table));
-    }
-
-    /**
-     * from的表
-     *
-     * @param string $table
-     * @return self
-     */
-    public function fromRaw($table)
-    {
-        $this->from[] = array($table);
-        $this->from_key++;
-        return $this;
     }
 
     /**
@@ -577,7 +1115,6 @@ class DbConnection
         $this->from_key++;
         return $this;
     }
-
 
     /**
      * 增加 join 语句
@@ -730,6 +1267,31 @@ class DbConnection
     }
 
     /**
+     * 添加条件和绑定值
+     *
+     * @param string $clause where 、having等
+     * @param string $andor  AND、OR等
+     * @param array  $conditions
+     */
+    protected function addClauseCondWithBind($clause, $andor, $conditions)
+    {
+        $cond = array_shift($conditions);
+        $cond = $this->quoteNamesIn($cond);
+
+        $bind =& $this->{"bind_{$clause}"};
+        foreach ($conditions as $value) {
+            $bind[] = $value;
+        }
+
+        $clause =& $this->$clause;
+        if ($clause) {
+            $clause[] = "$andor $cond";
+        } else {
+            $clause[] = $cond;
+        }
+    }
+
+    /**
      * or having 语句
      *
      * @param string $cond The HAVING condition.
@@ -773,18 +1335,6 @@ class DbConnection
     }
 
     /**
-     * unionAll
-     *
-     * @return self
-     */
-    public function unionAll()
-    {
-        $this->union[] = $this->build() . ' UNION ALL';
-        $this->reset();
-        return $this;
-    }
-
-    /**
      * 重置
      */
     protected function reset()
@@ -803,145 +1353,25 @@ class DbConnection
     }
 
     /**
-     * 清除所有数据
+     * 重置 flag
      */
-    protected function resetAll()
+    protected function resetFlags()
     {
-        $this->union                = array();
-        $this->for_update           = false;
-        $this->cols                 = array();
-        $this->from                 = array();
-        $this->from_key             = -1;
-        $this->group_by             = array();
-        $this->having               = array();
-        $this->bind_having          = array();
-        $this->paging               = 10;
-        $this->bind_values          = array();
-        $this->where                = array();
-        $this->bind_where           = array();
-        $this->order_by             = array();
-        $this->limit                = 0;
-        $this->offset               = 0;
-        $this->flags                = array();
-        $this->table                = '';
-        $this->last_insert_id_names = array();
-        $this->col_values           = array();
-        $this->returning            = array();
-        $this->parameters           = array();
+        $this->flags = array();
     }
 
+    // ---------- insert --------------
+
     /**
-     * 创建 SELECT SQL
+     * unionAll
      *
-     * @return string
+     * @return self
      */
-    protected function buildSELECT()
+    public function unionAll()
     {
-        return 'SELECT'
-        . $this->buildFlags()
-        . $this->buildCols()
-        . $this->buildFrom()
-        . $this->buildWhere()
-        . $this->buildGroupBy()
-        . $this->buildHaving()
-        . $this->buildOrderBy()
-        . $this->buildLimit()
-        . $this->buildForUpdate();
-    }
-
-    /**
-     * 创建 DELETE SQL
-     */
-    protected function buildDELETE()
-    {
-        return 'DELETE'
-        . $this->buildFlags()
-        . $this->buildFrom()
-        . $this->buildWhere()
-        . $this->buildOrderBy()
-        . $this->buildLimit()
-        . $this->buildReturning();
-    }
-
-    /**
-     * 生成 SELECT 列语句
-     *
-     * @return string
-     * @throws Exception
-     */
-    protected function buildCols()
-    {
-        if (!$this->cols) {
-            throw new Exception('No columns in the SELECT.');
-        }
-
-        $cols = array();
-        foreach ($this->cols as $key => $val) {
-            if (is_int($key)) {
-                $cols[] = $this->quoteNamesIn($val);
-            } else {
-                $cols[] = $this->quoteNamesIn("$val AS $key");
-            }
-        }
-
-        return $this->indentCsv($cols);
-    }
-
-    /**
-     * 生成 FROM 语句.
-     *
-     * @return string
-     */
-    protected function buildFrom()
-    {
-        if (!$this->from) {
-            return '';
-        }
-
-        $refs = array();
-        foreach ($this->from as $from) {
-            $refs[] = implode(' ', $from);
-        }
-        return ' FROM' . $this->indentCsv($refs);
-    }
-
-    /**
-     * 生成 GROUP BY 语句.
-     *
-     * @return string
-     */
-    protected function buildGroupBy()
-    {
-        if (!$this->group_by) {
-            return '';
-        }
-        return ' GROUP BY' . $this->indentCsv($this->group_by);
-    }
-
-    /**
-     * 生成 HAVING 语句.
-     *
-     * @return string
-     */
-    protected function buildHaving()
-    {
-        if (!$this->having) {
-            return '';
-        }
-        return ' HAVING' . $this->indent($this->having);
-    }
-
-    /**
-     * 生成 FOR UPDATE 语句
-     *
-     * @return string
-     */
-    protected function buildForUpdate()
-    {
-        if (!$this->for_update) {
-            return '';
-        }
-        return ' FOR UPDATE';
+        $this->union[] = $this->build() . ' UNION ALL';
+        $this->reset();
+        return $this;
     }
 
     /**
@@ -963,6 +1393,21 @@ class DbConnection
         } else {
             $this->addWhere('AND', func_get_args());
         }
+        return $this;
+    }
+
+    /**
+     *
+     * 添加 where 语句
+     *
+     * @param string $andor 'AND' or 'OR
+     * @param array  $conditions
+     * @return self
+     *
+     */
+    protected function addWhere($andor, $conditions)
+    {
+        $this->addClauseCondWithBind('where', $andor, $conditions);
         return $this;
     }
 
@@ -1024,6 +1469,20 @@ class DbConnection
     }
 
     /**
+     * 增加 order by
+     *
+     * @param array $spec The columns and direction to order by.
+     * @return self
+     */
+    protected function addOrderBy(array $spec)
+    {
+        foreach ($spec as $col) {
+            $this->order_by[] = $this->quoteNamesIn($col);
+        }
+        return $this;
+    }
+
+    /**
      * order by ASC OR DESC
      *
      * @param array $cols
@@ -1036,28 +1495,7 @@ class DbConnection
         return $this->addOrderBy($cols);
     }
 
-    // -------------abstractquery----------
-    /**
-     * 返回逗号分隔的字符串
-     *
-     * @param array $list
-     * @return string
-     */
-    protected function indentCsv(array $list)
-    {
-        return ' ' . implode(',', $list);
-    }
-
-    /**
-     * 返回空格分隔的字符串
-     *
-     * @param array $list
-     * @return string
-     */
-    protected function indent(array $list)
-    {
-        return ' ' . implode(' ', $list);
-    }
+    // ------update-------
 
     /**
      * 批量为占位符绑定值
@@ -1074,307 +1512,6 @@ class DbConnection
         return $this;
     }
 
-    /**
-     * 单个为占位符绑定值
-     *
-     * @param string $name
-     * @param mixed  $value
-     * @return self
-     */
-    public function bindValue($name, $value)
-    {
-        $this->bind_values[$name] = $value;
-        return $this;
-    }
-
-    /**
-     * 生成 flag
-     *
-     * @return string
-     */
-    protected function buildFlags()
-    {
-        if (!$this->flags) {
-            return '';
-        }
-        return ' ' . implode(' ', array_keys($this->flags));
-    }
-
-    /**
-     * 设置 flag.
-     *
-     * @param string $flag
-     * @param bool   $enable
-     */
-    protected function setFlag($flag, $enable = true)
-    {
-        if ($enable) {
-            $this->flags[$flag] = true;
-        } else {
-            unset($this->flags[$flag]);
-        }
-    }
-
-    /**
-     * 重置 flag
-     */
-    protected function resetFlags()
-    {
-        $this->flags = array();
-    }
-
-    /**
-     *
-     * 添加 where 语句
-     *
-     * @param string $andor 'AND' or 'OR
-     * @param array  $conditions
-     * @return self
-     *
-     */
-    protected function addWhere($andor, $conditions)
-    {
-        $this->addClauseCondWithBind('where', $andor, $conditions);
-        return $this;
-    }
-
-    /**
-     * 添加条件和绑定值
-     *
-     * @param string $clause where 、having等
-     * @param string $andor  AND、OR等
-     * @param array  $conditions
-     */
-    protected function addClauseCondWithBind($clause, $andor, $conditions)
-    {
-        $cond = array_shift($conditions);
-        $cond = $this->quoteNamesIn($cond);
-
-        $bind =& $this->{"bind_{$clause}"};
-        foreach ($conditions as $value) {
-            $bind[] = $value;
-        }
-
-        $clause =& $this->$clause;
-        if ($clause) {
-            $clause[] = "$andor $cond";
-        } else {
-            $clause[] = $cond;
-        }
-    }
-
-    /**
-     * 生成 where 语句
-     *
-     * @return string
-     */
-    protected function buildWhere()
-    {
-        if (!$this->where) {
-            return '';
-        }
-        return ' WHERE' . $this->indent($this->where);
-    }
-
-    /**
-     * 增加 order by
-     *
-     * @param array $spec The columns and direction to order by.
-     * @return self
-     */
-    protected function addOrderBy(array $spec)
-    {
-        foreach ($spec as $col) {
-            $this->order_by[] = $this->quoteNamesIn($col);
-        }
-        return $this;
-    }
-
-    /**
-     * 生成 order by 语句
-     *
-     * @return string
-     */
-    protected function buildOrderBy()
-    {
-        if (!$this->order_by) {
-            return '';
-        }
-
-        if ($this->order_asc) {
-            return ' ORDER BY' . $this->indentCsv($this->order_by) . ' ASC';
-        } else {
-            return ' ORDER BY' . $this->indentCsv($this->order_by) . ' DESC';
-        }
-    }
-
-    /**
-     * 生成 limit 语句
-     *
-     * @return string
-     */
-    protected function buildLimit()
-    {
-        $has_limit  = $this->type == 'DELETE' || $this->type == 'UPDATE';
-        $has_offset = $this->type == 'SELECT';
-
-        if ($has_offset && $this->limit) {
-            $clause = " LIMIT {$this->limit}";
-            if ($this->offset) {
-                $clause .= " OFFSET {$this->offset}";
-            }
-            return $clause;
-        } elseif ($has_limit && $this->limit) {
-            return " LIMIT {$this->limit}";
-        }
-        return '';
-    }
-
-    /**
-     * Quotes
-     *
-     * @param string $spec
-     * @return string|array
-     */
-    public function quoteName($spec)
-    {
-        $spec = trim($spec);
-        $seps = array(' AS ', ' ', '.');
-        foreach ($seps as $sep) {
-            $pos = strripos($spec, $sep);
-            if ($pos) {
-                return $this->quoteNameWithSeparator($spec, $sep, $pos);
-            }
-        }
-        return $this->replaceName($spec);
-    }
-
-    /**
-     * 指定分隔符的 Quotes
-     *
-     * @param string $spec
-     * @param string $sep
-     * @param int    $pos
-     * @return string
-     */
-    protected function quoteNameWithSeparator($spec, $sep, $pos)
-    {
-        $len   = strlen($sep);
-        $part1 = $this->quoteName(substr($spec, 0, $pos));
-        $part2 = $this->replaceName(substr($spec, $pos + $len));
-        return "{$part1}{$sep}{$part2}";
-    }
-
-    /**
-     * Quotes "table.col" 格式的字符串
-     *
-     * @param string $text
-     * @return string|array
-     */
-    public function quoteNamesIn($text)
-    {
-        $list = $this->getListForQuoteNamesIn($text);
-        $last = count($list) - 1;
-        $text = null;
-        foreach ($list as $key => $val) {
-            if (($key + 1) % 3) {
-                $text .= $this->quoteNamesInLoop($val, $key == $last);
-            }
-        }
-        return $text;
-    }
-
-    /**
-     * 返回 quote 元素列表
-     *
-     * @param string $text
-     * @return array
-     */
-    protected function getListForQuoteNamesIn($text)
-    {
-        $apos = "'";
-        $quot = '"';
-        return preg_split(
-            "/(($apos+|$quot+|\\$apos+|\\$quot+).*?\\2)/",
-            $text,
-            -1,
-            PREG_SPLIT_DELIM_CAPTURE
-        );
-    }
-
-    /**
-     * 循环 quote
-     *
-     * @param string $val
-     * @param bool   $is_last
-     * @return string
-     */
-    protected function quoteNamesInLoop($val, $is_last)
-    {
-        if ($is_last) {
-            return $this->replaceNamesAndAliasIn($val);
-        }
-        return $this->replaceNamesIn($val);
-    }
-
-    /**
-     * 替换成别名
-     *
-     * @param string $val
-     * @return string
-     */
-    protected function replaceNamesAndAliasIn($val)
-    {
-        $quoted = $this->replaceNamesIn($val);
-        $pos    = strripos($quoted, ' AS ');
-        if ($pos) {
-            $alias  = $this->replaceName(substr($quoted, $pos + 4));
-            $quoted = substr($quoted, 0, $pos) . " AS $alias";
-        }
-        return $quoted;
-    }
-
-    /**
-     * Quotes name
-     *
-     * @param string $name
-     * @return string
-     */
-    protected function replaceName($name)
-    {
-        $name = trim($name);
-        if ($name == '*') {
-            return $name;
-        }
-        return '`' . $name . '`';
-    }
-
-    /**
-     * Quotes
-     *
-     * @param string $text
-     * @return string|array
-     */
-    protected function replaceNamesIn($text)
-    {
-        $is_string_literal = strpos($text, "'") !== false
-            || strpos($text, '"') !== false;
-        if ($is_string_literal) {
-            return $text;
-        }
-
-        $word = '[a-z_][a-z0-9_]+';
-
-        $find = "/(\\b)($word)\\.($word)(\\b)/i";
-
-        $repl = '$1`$2`.`$3`$4';
-
-        $text = preg_replace($find, $repl, $text);
-
-        return $text;
-    }
-
-    // ---------- insert --------------
     /**
      * 设置 `table.column` 与 last-insert-id 的映射
      *
@@ -1395,30 +1532,6 @@ class DbConnection
     {
         $this->table = $this->quoteName($table);
         return $this;
-    }
-
-    /**
-     * 生成 INSERT 语句
-     *
-     * @return string
-     */
-    protected function buildINSERT()
-    {
-        return 'INSERT'
-        . $this->buildFlags()
-        . $this->buildInto()
-        . $this->buildValuesForInsert()
-        . $this->buildReturning();
-    }
-
-    /**
-     * 生成 INTO 语句
-     *
-     * @return string
-     */
-    protected function buildInto()
-    {
-        return " INTO " . $this->table;
     }
 
     /**
@@ -1448,22 +1561,7 @@ class DbConnection
         return call_user_func_array(array($this, 'addCol'), func_get_args());
     }
 
-    /**
-     * 设置多列
-     *
-     * @param array $cols
-     * @return self
-     */
-    public function cols(array $cols)
-    {
-        if ($this->type == 'SELECT') {
-            foreach ($cols as $key => $val) {
-                $this->addColSELECT($key, $val);
-            }
-            return $this;
-        }
-        return $this->addCols($cols);
-    }
+    // ----------Dml---------------
 
     /**
      * 直接设置列的值
@@ -1475,142 +1573,6 @@ class DbConnection
     public function set($col, $value)
     {
         return $this->setCol($col, $value);
-    }
-
-    /**
-     * 为 INSERT 语句绑定值
-     *
-     * @return string
-     */
-    protected function buildValuesForInsert()
-    {
-        return ' (' . $this->indentCsv(array_keys($this->col_values)) . ') VALUES (' .
-        $this->indentCsv(array_values($this->col_values)) . ')';
-    }
-
-    // ------update-------
-    /**
-     * 更新哪个表
-     *
-     * @param string $table
-     * @return self
-     */
-    public function table($table)
-    {
-        $this->table = $this->quoteName($table);
-        return $this;
-    }
-
-    /**
-     * 生成完整 SQL 语句
-     *
-     * @return string
-     * @throws Exception
-     */
-    protected function build()
-    {
-        switch ($this->type) {
-            case 'DELETE':
-                return $this->buildDELETE();
-            case 'INSERT':
-                return $this->buildINSERT();
-            case 'UPDATE':
-                return $this->buildUPDATE();
-            case 'SELECT':
-                return $this->buildSELECT();
-        }
-        throw new Exception("type empty");
-    }
-
-    /**
-     * 生成更新的 SQL 语句
-     */
-    protected function buildUPDATE()
-    {
-        return 'UPDATE'
-        . $this->buildFlags()
-        . $this->buildTable()
-        . $this->buildValuesForUpdate()
-        . $this->buildWhere()
-        . $this->buildOrderBy()
-        . $this->buildLimit()
-        . $this->buildReturning();
-    }
-
-    /**
-     * 哪个表
-     *
-     * @return string
-     */
-    protected function buildTable()
-    {
-        return " {$this->table}";
-    }
-
-    /**
-     * 为更新语句绑定值
-     *
-     * @return string
-     */
-    protected function buildValuesForUpdate()
-    {
-        $values = array();
-        foreach ($this->col_values as $col => $value) {
-            $values[] = "{$col} = {$value}";
-        }
-        return ' SET' . $this->indentCsv($values);
-    }
-
-    // ----------Dml---------------
-    /**
-     * 获取绑定的值
-     *
-     * @return array
-     */
-    public function getBindValuesCOMMON()
-    {
-        $bind_values = $this->bind_values;
-        $i           = 1;
-        foreach ($this->bind_where as $val) {
-            $bind_values[$i] = $val;
-            $i++;
-        }
-        return $bind_values;
-    }
-
-    /**
-     * 设置列
-     *
-     * @param string $col
-     * @return self
-     */
-    protected function addCol($col)
-    {
-        $key                    = $this->quoteName($col);
-        $this->col_values[$key] = ":$col";
-        $args                   = func_get_args();
-        if (count($args) > 1) {
-            $this->bindValue($col, $args[1]);
-        }
-        return $this;
-    }
-
-    /**
-     * 设置多个列
-     *
-     * @param array $cols
-     * @return self
-     */
-    protected function addCols(array $cols)
-    {
-        foreach ($cols as $key => $val) {
-            if (is_int($key)) {
-                $this->addCol($val);
-            } else {
-                $this->addCol($key, $val);
-            }
-        }
-        return $this;
     }
 
     /**
@@ -1633,78 +1595,137 @@ class DbConnection
     }
 
     /**
-     * 增加返回的列
+     * 更新哪个表
      *
-     * @param array $cols
+     * @param string $table
      * @return self
-     *
      */
-    protected function addReturning(array $cols)
+    public function table($table)
     {
-        foreach ($cols as $col) {
-            $this->returning[] = $this->quoteNamesIn($col);
-        }
+        $this->table = $this->quoteName($table);
         return $this;
     }
 
     /**
-     * 生成 RETURNING 语句
+     * 执行 SQL
      *
-     * @return string
+     * @param string $query
+     * @param array  $params
+     * @param int    $fetchmode
+     * @return mixed
      */
-    protected function buildReturning()
+    public function query($query = '', $params = null, $fetchmode = PDO::FETCH_ASSOC)
     {
-        if (!$this->returning) {
-            return '';
+        $query = trim($query);
+        if (empty($query)) {
+            $query = $this->build();
+            if (!$params) {
+                $params = $this->getBindValues();
+            }
         }
-        return ' RETURNING' . $this->indentCsv($this->returning);
+
+        $this->resetAll();
+        $this->lastSql = $query;
+
+        $this->execute($query, $params);
+
+        $rawStatement = explode(" ", $query);
+
+        $statement = strtolower(trim($rawStatement[0]));
+        if ($statement === 'select' || $statement === 'show') {
+            return $this->sQuery->fetchAll($fetchmode);
+        } elseif ($statement === 'update' || $statement === 'delete') {
+            return $this->sQuery->rowCount();
+        } elseif ($statement === 'insert') {
+            if ($this->sQuery->rowCount() > 0) {
+                return $this->lastInsertId();
+            }
+        } else {
+            return null;
+        }
+
+        return null;
     }
 
     /**
-     * 构造函数
+     * 获取绑定在占位符上的值
+     */
+    public function getBindValues()
+    {
+        switch ($this->type) {
+            case 'SELECT':
+                return $this->getBindValuesSELECT();
+            case 'DELETE':
+            case 'UPDATE':
+            case 'INSERT':
+                return $this->getBindValuesCOMMON();
+            default :
+                throw new Exception("type err");
+        }
+    }
+
+    /**
+     * 获取绑定在占位符上的值
      *
-     * @param string $host
-     * @param int    $port
-     * @param string $user
-     * @param string $password
-     * @param string $db_name
-     * @param string $charset
+     * @return array
      */
-    public function __construct($host, $port, $user, $password, $db_name, $charset = 'utf8')
+    public function getBindValuesSELECT()
     {
-        $this->settings = array(
-            'host'     => $host,
-            'port'     => $port,
-            'user'     => $user,
-            'password' => $password,
-            'dbname'   => $db_name,
-            'charset'  => $charset,
-        );
-        $this->connect();
+        $bind_values = $this->bind_values;
+        $i           = 1;
+        foreach ($this->bind_where as $val) {
+            $bind_values[$i] = $val;
+            $i++;
+        }
+        foreach ($this->bind_having as $val) {
+            $bind_values[$i] = $val;
+            $i++;
+        }
+        return $bind_values;
     }
 
     /**
-     * 创建 PDO 实例
+     * 获取绑定的值
+     *
+     * @return array
      */
-    protected function connect()
+    public function getBindValuesCOMMON()
     {
-        $dsn       = 'mysql:dbname=' . $this->settings["dbname"] . ';host=' .
-            $this->settings["host"] . ';port=' . $this->settings['port'];
-        $this->pdo = new PDO($dsn, $this->settings["user"], $this->settings["password"],
-            array(
-                PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . (!empty($this->settings['charset']) ?
-                        $this->settings['charset'] : 'utf8')
-            ));
-        $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        $this->pdo->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+        $bind_values = $this->bind_values;
+        $i           = 1;
+        foreach ($this->bind_where as $val) {
+            $bind_values[$i] = $val;
+            $i++;
+        }
+        return $bind_values;
     }
 
-   /**
-    * 关闭连接
-    */
-    public function closeConnection()
+    /**
+     * 清除所有数据
+     */
+    protected function resetAll()
     {
-        $this->pdo = null;
+        $this->union                = array();
+        $this->for_update           = false;
+        $this->cols                 = array();
+        $this->from                 = array();
+        $this->from_key             = -1;
+        $this->group_by             = array();
+        $this->having               = array();
+        $this->bind_having          = array();
+        $this->paging               = 10;
+        $this->bind_values          = array();
+        $this->where                = array();
+        $this->bind_where           = array();
+        $this->order_by             = array();
+        $this->limit                = 0;
+        $this->offset               = 0;
+        $this->flags                = array();
+        $this->table                = '';
+        $this->last_insert_id_names = array();
+        $this->col_values           = array();
+        $this->returning            = array();
+        $this->parameters           = array();
     }
 
     /**
@@ -1755,21 +1776,6 @@ class DbConnection
     }
 
     /**
-     * 绑定
-     *
-     * @param string $para
-     * @param string $value
-     */
-    public function bind($para, $value)
-    {
-        if (is_string($para)) {
-            $this->parameters[sizeof($this->parameters)] = ":" . $para . "\x7F" . $value;
-        } else {
-            $this->parameters[sizeof($this->parameters)] = $para . "\x7F" . $value;
-        }
-    }
-
-    /**
      * 绑定多个
      *
      * @param array $parray
@@ -1785,44 +1791,46 @@ class DbConnection
     }
 
     /**
-     * 执行 SQL
+     * 绑定
      *
-     * @param string $query
-     * @param array  $params
-     * @param int    $fetchmode
-     * @return mixed
+     * @param string $para
+     * @param string $value
      */
-    public function query($query = '', $params = null, $fetchmode = PDO::FETCH_ASSOC)
+    public function bind($para, $value)
     {
-        $query = trim($query);
-        if (empty($query)) {
-            $query = $this->build();
-            if (!$params) {
-                $params = $this->getBindValues();
-            }
-        }
-
-        $this->resetAll();
-        $this->lastSql = $query;
-
-        $this->execute($query, $params);
-
-        $rawStatement = explode(" ", $query);
-
-        $statement = strtolower(trim($rawStatement[0]));
-        if ($statement === 'select' || $statement === 'show') {
-            return $this->sQuery->fetchAll($fetchmode);
-        } elseif ($statement === 'update' || $statement === 'delete') {
-            return $this->sQuery->rowCount();
-        } elseif ($statement === 'insert') {
-            if ($this->sQuery->rowCount() > 0) {
-                return $this->lastInsertId();
-            }
+        if (is_string($para)) {
+            $this->parameters[sizeof($this->parameters)] = ":" . $para . "\x7F" . $value;
         } else {
-            return null;
+            $this->parameters[sizeof($this->parameters)] = $para . "\x7F" . $value;
         }
+    }
 
-        return null;
+   /**
+    * 关闭连接
+    */
+    public function closeConnection()
+    {
+        $this->pdo = null;
+    }
+
+    /**
+     * 事务回滚
+     */
+    public function rollBackTrans()
+    {
+        if ($this->pdo->inTransaction()) {
+            $this->pdo->rollBack();
+        }
+    }
+
+    /**
+     * 返回 lastInsertId
+     *
+     * @return string
+     */
+    public function lastInsertId()
+    {
+        return $this->pdo->lastInsertId();
     }
 
     /**
@@ -1904,16 +1912,6 @@ class DbConnection
     }
 
     /**
-     * 返回 lastInsertId
-     *
-     * @return string
-     */
-    public function lastInsertId()
-    {
-        return $this->pdo->lastInsertId();
-    }
-
-    /**
      * 返回最后一条直行的 sql
      *
      * @return  string
@@ -1940,12 +1938,17 @@ class DbConnection
     }
 
     /**
-     * 事务回滚
+     * 增加返回的列
+     *
+     * @param array $cols
+     * @return self
+     *
      */
-    public function rollBackTrans()
+    protected function addReturning(array $cols)
     {
-        if ($this->pdo->inTransaction()) {
-            $this->pdo->rollBack();
+        foreach ($cols as $col) {
+            $this->returning[] = $this->quoteNamesIn($col);
         }
+        return $this;
     }
 }

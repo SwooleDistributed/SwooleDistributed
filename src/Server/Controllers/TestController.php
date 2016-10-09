@@ -107,7 +107,7 @@ class TestController extends Controller
      */
     public function http_test()
     {
-        $this->http_output->end('hello');
+        $this->http_output->end('hello', false);
     }
 
     /**
@@ -229,5 +229,12 @@ class TestController extends Controller
         get_instance()->getMysql()->select('*')->from('account')->where('uid', 10004);
         $result = get_instance()->getMysql()->pdoQuery();
         var_dump($result);
+    }
+
+    public function http_redis_rpop()
+    {
+        $result = yield $this->redis_pool->coroutineSend('rPop', 'test');
+        var_dump($result);
+        $this->http_output->end($result);
     }
 }
