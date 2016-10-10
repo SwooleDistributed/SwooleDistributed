@@ -140,7 +140,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 throw new SwooleException($this->redis_client->getLastError());
             }
         }
-        $this->redis_client->select($this->config['redis'][$active]['select']);
+        if ($this->config->has('redis.' . $active . '.select')) {//存在select
+            $this->redis_client->select($this->config['redis'][$active]['select']);
+        }
         return $this->redis_client;
     }
 

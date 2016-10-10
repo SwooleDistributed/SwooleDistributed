@@ -167,6 +167,21 @@ class RedisAsynPool extends AsynPool
                         unset($client);
                         throw new SwooleException($errMsg);
                     }
+                    if ($this->config->has('redis.' . $this->active . '.select')) {//存在select
+                        $client->select($this->config['redis'][$this->active]['select'], function ($client, $result) {
+                            if (!$result) {
+                                throw new SwooleException($client->errMsg);
+                            }
+                            $this->redis_max_count++;
+                            $this->pushToPool($client);
+                        });
+                    } else {
+                        $this->redis_max_count++;
+                        $this->pushToPool($client);
+                    }
+                });
+            } else {
+                if ($this->config->has('redis.' . $this->active . '.select')) {//存在select
                     $client->select($this->config['redis'][$this->active]['select'], function ($client, $result) {
                         if (!$result) {
                             throw new SwooleException($client->errMsg);
@@ -174,15 +189,10 @@ class RedisAsynPool extends AsynPool
                         $this->redis_max_count++;
                         $this->pushToPool($client);
                     });
-                });
-            } else {
-                $client->select($this->config['redis'][$this->active]['select'], function ($client, $result) {
-                    if (!$result) {
-                        throw new SwooleException($client->errMsg);
-                    }
+                } else {
                     $this->redis_max_count++;
                     $this->pushToPool($client);
-                });
+                }
             }
         };
 
