@@ -120,8 +120,9 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
     }
 
     /**
-     * wensocket合并后完整的消息
-     * @param $server
+     * websocket合并后完整的消息
+     * @param $serv
+     * @param $fd
      * @param $data
      */
     public function onSwooleWSAllMessage($serv, $fd, $data)
