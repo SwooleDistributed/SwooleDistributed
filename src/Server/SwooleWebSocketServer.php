@@ -50,11 +50,6 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             parent::start();
             return;
         }
-        $dispatch_mode = $this->config['server']['set']['dispatch_mode'];
-        if ($dispatch_mode != 2 && $dispatch_mode != 5) {
-            print_r("启动失败，websocket模式下dispatch_mode只能是2或者5.\n");
-            exit();
-        }
         //开启一个websocket服务器
         $this->server = new \swoole_websocket_server($this->http_socket_name, $this->http_port);
         $this->server->on('Start', [$this, 'onSwooleStart']);
@@ -73,12 +68,14 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $set = $this->setServerSet();
         $set['daemonize'] = self::$daemonize ? 1 : 0;
         $this->server->set($set);
-        $this->port = $this->server->listen($this->socket_name, $this->port, $this->socket_type);
-        $this->port->set($set);
-        $this->port->on('connect', [$this, 'onSwooleConnect']);
-        $this->port->on('receive', [$this, 'onSwooleReceive']);
-        $this->port->on('close', [$this, 'onSwooleClose']);
-        $this->port->on('Packet', [$this, 'onSwoolePacket']);
+        if ($this->tcp_enable) {
+            $this->port = $this->server->listen($this->socket_name, $this->port, $this->socket_type);
+            $this->port->set($set);
+            $this->port->on('connect', [$this, 'onSwooleConnect']);
+            $this->port->on('receive', [$this, 'onSwooleReceive']);
+            $this->port->on('close', [$this, 'onSwooleClose']);
+            $this->port->on('Packet', [$this, 'onSwoolePacket']);
+        }
         $this->beforeSwooleStart();
         $this->server->start();
     }
