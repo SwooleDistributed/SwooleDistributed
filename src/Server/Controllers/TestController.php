@@ -237,4 +237,15 @@ class TestController extends Controller
         var_dump($result);
         $this->http_output->end($result);
     }
+
+    /**
+     * mysql
+     * @throws \Server\CoreBase\SwooleException
+     */
+    public function http_mysql_batch()
+    {
+        $result = $this->mysql_pool->dbQueryBuilder->updateInto('account')->intoColumns(['network_id', 'name'])->intoValues([[1, 'test1'], [2, 'test2']])->getStatement(false);
+        $this->mysql_pool->dbQueryBuilder->clear();
+        $this->http_output->end($result);
+    }
 }

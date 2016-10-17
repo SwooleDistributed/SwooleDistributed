@@ -266,6 +266,22 @@ class Miner
     private $havingPlaceholderValues;
 
     /**
+     * InTo
+     * @var bool
+     */
+    private $isInto = false;
+    /**
+     * into colums
+     * @var array
+     */
+    private $intoColums;
+    /**
+     * into values
+     * @var array
+     */
+    private $intoValues;
+
+    /**
      * Miner constructor.
      * @param $mysql_pool
      */
@@ -282,6 +298,8 @@ class Miner
         $this->having = array();
         $this->orderBy = array();
         $this->limit = array();
+        $this->intoColums = array();
+        $this->intoValues = array();
 
         $this->setPlaceholderValues = array();
         $this->wherePlaceholderValues = array();
@@ -355,6 +373,32 @@ class Miner
                 'quote' => $quote);
         }
 
+        return $this;
+    }
+
+    /**
+     * 配合into使用
+     * @param array $columns
+     * @return $this
+     */
+    public function intoColumns(array $columns)
+    {
+        $this->intoColums = $columns;
+        return $this;
+    }
+
+    /**
+     * 配合into使用
+     * @param array $values
+     * @return $this
+     */
+    public function intoValues(array $values)
+    {
+        if (is_array($values[0])) {
+            $this->intoValues = $values;
+        } else {
+            $this->intoValues[] = $values;
+        }
         return $this;
     }
 
@@ -1392,6 +1436,39 @@ class Miner
     }
 
     /**
+     * ISet the INSERT INTO table.
+     * @param $table
+     * @return Miner
+     */
+    public function insertInto($table)
+    {
+        $this->isInto = true;
+        return $this->insert($table);
+    }
+
+    /**
+     * ISet the REPLACE INTO table.
+     * @param $table
+     * @return Miner
+     */
+    public function replaceInto($table)
+    {
+        $this->isInto = true;
+        return $this->replace($table);
+    }
+
+    /**
+     * ISet the UPDATE INTO table.
+     * @param $table
+     * @return Miner
+     */
+    public function updateInto($table)
+    {
+        $this->isInto = true;
+        return $this->update($table);
+    }
+
+    /**
      * pdo Query
      * @param int $fetchmode
      * @return array|bool|int|null|string
@@ -2013,10 +2090,13 @@ class Miner
 
         $statement .= $this->getInsertString();
 
-        if ($this->set) {
-            $statement .= " " . $this->getSetString($usePlaceholders);
+        if ($this->isInto) {
+            $statement .= " " . $this->getIntoString($usePlaceholders);
+        } else {
+            if ($this->set) {
+                $statement .= " " . $this->getSetString($usePlaceholders);
+            }
         }
-
         return $statement;
     }
 
@@ -2034,13 +2114,52 @@ class Miner
             return $statement;
         }
 
-        $statement .= $this->getOptionsString(true);
+        if ($this->isInto) {
+            $statement .= $this->getOptionsString(true) . 'INTO ';
+        } else {
+            $statement .= $this->getOptionsString(true);
+        }
 
         $statement .= $this->getInsert();
 
         if ($includeText && $statement) {
             $statement = "INSERT " . $statement;
         }
+
+        return $statement;
+    }
+
+    /**
+     * Get the INTO portion of the statement as a string.
+     * @param bool $usePlaceholders
+     * @return string
+     */
+    public function getIntoString($usePlaceholders = true)
+    {
+        $statement = '(';
+        $this->setPlaceholderValues = array();
+
+        foreach ($this->intoColums as $colum) {
+            $statement .= "`$colum`" . ", ";
+        }
+        $statement = substr($statement, 0, -2);
+        $statement .= ') VALUES ';
+
+        foreach ($this->intoValues as $values) {
+            $value_statement = '(';
+            foreach ($values as $value) {
+                if ($usePlaceholders) {
+                    $value_statement .= "?, ";
+                    $this->setPlaceholderValues[] = $value;
+                } else {
+                    $value_statement .= $this->autoQuote($value) . ", ";
+                }
+            }
+            $value_statement = substr($value_statement, 0, -2);
+            $value_statement .= '), ';
+            $statement .= $value_statement;
+        }
+        $statement = substr($statement, 0, -2);
 
         return $statement;
     }
@@ -2093,8 +2212,12 @@ class Miner
 
         $statement .= $this->getReplaceString();
 
-        if ($this->set) {
-            $statement .= " " . $this->getSetString($usePlaceholders);
+        if ($this->isInto) {
+            $statement .= " " . $this->getIntoString($usePlaceholders);
+        } else {
+            if ($this->set) {
+                $statement .= " " . $this->getSetString($usePlaceholders);
+            }
         }
 
         return $statement;
@@ -2114,7 +2237,11 @@ class Miner
             return $statement;
         }
 
-        $statement .= $this->getOptionsString(true);
+        if ($this->isInto) {
+            $statement .= $this->getOptionsString(true) . 'INTO ';
+        } else {
+            $statement .= $this->getOptionsString(true);
+        }
 
         $statement .= $this->getReplace();
 
@@ -2141,8 +2268,12 @@ class Miner
 
         $statement .= $this->getUpdateString();
 
-        if ($this->set) {
-            $statement .= " " . $this->getSetString($usePlaceholders);
+        if ($this->isInto) {
+            $statement .= " " . $this->getIntoString($usePlaceholders);
+        } else {
+            if ($this->set) {
+                $statement .= " " . $this->getSetString($usePlaceholders);
+            }
         }
 
         if ($this->where) {
@@ -2177,8 +2308,11 @@ class Miner
             return $statement;
         }
 
-        $statement .= $this->getOptionsString(true);
-
+        if ($this->isInto) {
+            $statement .= $this->getOptionsString(true) . 'INTO ';
+        } else {
+            $statement .= $this->getOptionsString(true);
+        }
         $statement .= $this->getUpdate();
 
         // Add any JOINs.
@@ -2360,9 +2494,14 @@ class Miner
         $this->replace = array();
         $this->update = array();
 
+        $this->intoColums = array();
+        $this->intoValues = array();
+
         $this->setPlaceholderValues = array();
         $this->wherePlaceholderValues = array();
         $this->havingPlaceholderValues = array();
+
+        $this->isInto = false;
     }
 
     /**
