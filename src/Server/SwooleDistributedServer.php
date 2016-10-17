@@ -95,6 +95,12 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     private $send_use_task_num;
 
     /**
+     * 定时器
+     * @var array
+     */
+    private $timer_tasks_used;
+
+    /**
      * SwooleDistributedServer constructor.
      */
     public function __construct()
@@ -140,9 +146,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 throw new SwooleException($this->redis_client->getLastError());
             }
         }
-        if ($this->config->has('redis.' . $active . '.select')) {//存在select
-            $this->redis_client->select($this->config['redis'][$active]['select']);
-        }
+        $this->redis_client->select($this->config['redis'][$active]['select']);
         return $this->redis_client;
     }
 
@@ -495,7 +499,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             //重新读入timerTask配置
             $timerTaskConfig = $this->config->load(__DIR__ . '/../config/timerTask.php');
             $timer_tasks = $timerTaskConfig->get('timerTask');
-            $timer_tasks_used = array();
+            $this->timer_tasks_used = array();
 
             foreach ($timer_tasks as $timer_task) {
                 $task_name = $timer_task['task_name'];
@@ -510,42 +514,61 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 } else {
                     $end_time = strtotime(date($timer_task['end_time']));
                 }
+                if (!key_exists('delay', $timer_task)) {
+                    $delay = false;
+                } else {
+                    $delay = $timer_task['delay'];
+                }
                 $interval_time = $timer_task['interval_time'] < 1 ? 1 : $timer_task['interval_time'];
                 $max_exec = $timer_task['max_exec']??-1;
-                $timer_tasks_used[] = [
+                $this->timer_tasks_used[] = [
                     'task_name' => $task_name,
                     'method_name' => $method_name,
                     'start_time' => $start_time,
                     'end_time' => $end_time,
                     'interval_time' => $interval_time,
                     'max_exec' => $max_exec,
-                    'now_exec' => 0
+                    'now_exec' => 0,
+                    'delay' => $delay
                 ];
             }
-            if (count($timer_tasks_used) > 0) {
-                $serv->tick(1000, function () use (&$timer_tasks_used) {
-                    $time = time();
-                    foreach ($timer_tasks_used as &$timer_task) {
-                        if ($timer_task['start_time'] < $time && $timer_task['start_time'] != -1) {
-                            $count = round(($time - $timer_task['start_time']) / $timer_task['interval_time']);
-                            $timer_task['start_time'] += $count * $timer_task['interval_time'];
-                        }
-                        if (($time == $timer_task['start_time'] || $timer_task['start_time'] == -1) &&
-                            ($time < $timer_task['end_time'] || $timer_task['end_time'] = -1) &&
-                            ($timer_task['now_exec'] < $timer_task['max_exec'] || $timer_task['max_exec'] == -1)
-                        ) {
-                            $timer_task['now_exec']++;
-                            if ($timer_task['start_time'] == -1) $timer_task['start_time'] = $time;
-                            $timer_task['start_time'] += $timer_task['interval_time'];
-                            $task = $this->loader->task($timer_task['task_name']);
-                            call_user_func([$task, $timer_task['method_name']]);
-                            $task->startTask(null);
-                        }
-                    }
-                });
+            if (count($this->timer_tasks_used) > 0) {
+                $this->timerTask();
+                $serv->tick(1000, [$this, 'timerTask']);
             }
         }
         parent::onSwooleWorkerStart($serv, $workerId);
+    }
+
+    /**
+     * 定时任务
+     */
+    public function timerTask()
+    {
+        $time = time();
+        foreach ($this->timer_tasks_used as &$timer_task) {
+            if ($timer_task['start_time'] < $time && $timer_task['start_time'] != -1) {
+                $count = round(($time - $timer_task['start_time']) / $timer_task['interval_time']);
+                $timer_task['start_time'] += $count * $timer_task['interval_time'];
+            }
+            if (($time == $timer_task['start_time'] || $timer_task['start_time'] == -1) &&
+                ($time < $timer_task['end_time'] || $timer_task['end_time'] = -1) &&
+                ($timer_task['now_exec'] < $timer_task['max_exec'] || $timer_task['max_exec'] == -1)
+            ) {
+                if ($timer_task['delay']) {
+                    if ($timer_task['start_time'] == -1) $timer_task['start_time'] = $time;
+                    $timer_task['start_time'] += $timer_task['interval_time'];
+                    $timer_task['delay'] = false;
+                    continue;
+                }
+                $timer_task['now_exec']++;
+                if ($timer_task['start_time'] == -1) $timer_task['start_time'] = $time;
+                $timer_task['start_time'] += $timer_task['interval_time'];
+                $task = $this->loader->task($timer_task['task_name']);
+                call_user_func([$task, $timer_task['method_name']]);
+                $task->startTask(null);
+            }
+        }
     }
 
     /**

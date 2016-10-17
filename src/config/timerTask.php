@@ -12,6 +12,7 @@
  * （选填）执行区间 [start_time,end_time) 格式： Y-m-d H:i:s 没有代表一直执行
  * （必填）执行间隔 interval_time 单位： 秒
  * （选填）最大执行次数 max_exec，默认不限次数
+ * （选填）是否立即执行 delay，默认为false立即执行
  */
 //dispatch发现广播，实现集群的实现
 $config['timerTask'][] = [
