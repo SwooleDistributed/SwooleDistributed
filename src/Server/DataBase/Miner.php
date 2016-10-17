@@ -265,6 +265,8 @@ class Miner
      */
     private $havingPlaceholderValues;
 
+    private $batchInsert;
+
     /**
      * Miner constructor.
      * @param $mysql_pool
@@ -286,8 +288,9 @@ class Miner
         $this->setPlaceholderValues = array();
         $this->wherePlaceholderValues = array();
         $this->havingPlaceholderValues = array();
-
+        $this->batchInsert = array();
         $this->mysql_pool = $mysql_pool;
+
         $this->setAutoQuote(true);
     }
 
@@ -1411,7 +1414,12 @@ class Miner
             if ($pdoStatement->rowCount() > 0) {
                 $result = $this->pdoInsertId();
             }
+        } elseif ($this->isBatchInsert()) {
+            if ($pdoStatement->rowCount() > 0) {
+                $result = $this->pdoInsertId();
+            }
         }
+
         $this->clear();
         return $result;
     }
@@ -1428,12 +1436,26 @@ class Miner
         if (!$PdoConnection) {
             return false;
         }
-        $statement = $this->getStatement();
+
+        if (!empty($this->batchInsert)) {
+            $statement = $this->batchInsert['query'];
+            $placeHoldValues = $this->batchInsert['data'];
+        } else {
+            $statement = $this->getStatement();
+            $placeHoldValues = $this->getPlaceholderValues();
+        }
+
         // Only execute if a statement is set.
         if ($statement) {
             $PdoStatement = $PdoConnection->prepare($statement);
             try {
-                $PdoStatement->execute($this->getPlaceholderValues());
+                if (!empty($this->batchInsert)) {
+                    foreach ($placeHoldValues as &$row) {
+                        $PdoStatement->execute($row);
+                    }
+                } else {
+                    $PdoStatement->execute($placeHoldValues);
+                }
             } catch (\PDOException $e) {
                 // 服务端断开时重连一次
                 if ($e->errorInfo[1] == 2006 || $e->errorInfo[1] == 2013) {
@@ -1442,7 +1464,13 @@ class Miner
                     try {
                         $PdoConnection = $this->getPdoConnection();
                         $PdoStatement = $PdoConnection->prepare($statement);
-                        $PdoStatement->execute($this->getPlaceholderValues());
+                        if (!empty($this->batchInsert)) {
+                            foreach ($placeHoldValues as &$row) {
+                                $PdoStatement->execute($row);
+                            }
+                        } else {
+                            $PdoStatement->execute($placeHoldValues);
+                        }
                     } catch (\PDOException $ex) {
                         $this->pdoRollBackTrans();
                         throw $ex;
@@ -2364,6 +2392,9 @@ class Miner
         $this->setPlaceholderValues = array();
         $this->wherePlaceholderValues = array();
         $this->havingPlaceholderValues = array();
+
+        //批量插入的数组
+        $this->batchInsert = array();
     }
 
     /**
@@ -2405,6 +2436,22 @@ class Miner
     public function pdoCommitTrans()
     {
         $this->PdoConnection->commit();
+    }
+
+    /**
+     * 批量插入,这边data是个二维数组
+     * ['query'=>'insert into mytable (column1, column2) values (:column1, :column2)','data'=>[['column1'=>'column1_value','column2'=>'column2_value'],['column1'=>'column1_value','column2'=>'column2_value']]]
+     * @param $data
+     * @author jackysong
+     */
+    public function BatchInsert($data)
+    {
+        $this->batchInsert = $data;
+    }
+
+    public function isBatchInsert()
+    {
+        return !empty($this->batchInsert);
     }
 }
 
