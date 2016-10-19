@@ -105,10 +105,21 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function __construct()
     {
+        $this->onErrorHandel = [$this,'onErrorHandel'];
         self::$instance =& $this;
         $this->name = self::SERVER_NAME;
         parent::__construct();
         $this->clearState();
+    }
+
+    /**
+     * 错误处理函数
+     * @param $msg
+     * @param $log
+     */
+    public function onErrorHandel($msg,$log){
+        print_r($msg."\n");
+        print_r($log."\n");
     }
 
     /**

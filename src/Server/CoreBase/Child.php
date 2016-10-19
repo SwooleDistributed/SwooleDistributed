@@ -25,7 +25,7 @@ class Child
     public function addChild($child)
     {
         $child->onAddChild($this);
-        array_push($this->child_list, $child);
+        $this->child_list[get_class($child)] = $child;
     }
 
     /**

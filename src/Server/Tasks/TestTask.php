@@ -2,8 +2,6 @@
 namespace Server\Tasks;
 
 use Server\CoreBase\Task;
-use Server\DataBase\DbConnection;
-use Server\DataBase\DbQueryBuilder;
 
 /**
  * Created by PhpStorm.

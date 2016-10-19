@@ -12,5 +12,6 @@ namespace Server\DataBase;
 interface ICoroutineBase
 {
     function send($callback);
+
     function getResult();
 }

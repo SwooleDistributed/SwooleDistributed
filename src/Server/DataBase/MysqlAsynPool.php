@@ -60,6 +60,12 @@ class MysqlAsynPool extends AsynPool
                 return;
             } else {
                 $client = $this->pool->shift();
+                if($client->isClose){
+                    unset($client);
+                    $this->prepareOne();
+                    $this->commands->push($data);
+                    return;
+                }
                 if ($bind_id != null) {//添加绑定
                     $client->isAffair = true;
                     $this->bind_pool[$bind_id]['client'] = $client;
@@ -132,14 +138,24 @@ class MysqlAsynPool extends AsynPool
             if (!$result) {
                 throw new SwooleException($client->connect_error);
             } else {
+                $client->isClose = false;
                 $client->isAffair = false;
                 $client->client_id = $this->mysql_max_count;
                 $this->mysql_max_count++;
                 $this->pushToPool($client);
             }
         });
+        $client->on('Close',[$this,'onClose']);
     }
 
+    /**
+     * 断开链接
+     * @param $client
+     */
+    public function onClose($client)
+    {
+        $client->isClose = true;
+    }
     /**
      * 释放绑定
      * @param $bind_id

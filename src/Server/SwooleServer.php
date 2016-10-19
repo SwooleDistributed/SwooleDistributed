@@ -4,6 +4,7 @@ namespace Server;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Noodlehaus\Config;
+use Server\CoreBase\Child;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Coroutine;
 use Server\CoreBase\Loader;
@@ -17,7 +18,7 @@ use Server\Route\IRoute;
  * Date: 16-6-28
  * Time: 上午11:37
  */
-abstract class SwooleServer
+abstract class SwooleServer extends Child
 {
     const version = "1.3.3";
     /**
@@ -842,6 +843,9 @@ abstract class SwooleServer
     public function isWebSocket($fd)
     {
         $fdinfo = $this->server->connection_info($fd);
+        if(empty($fdinfo)){
+            throw new \Exception('fd not exist');
+        }
         if (key_exists('websocket_status', $fdinfo) && $fdinfo['websocket_status'] == WEBSOCKET_STATUS_FRAME) {
             return true;
         }

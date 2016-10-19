@@ -3,12 +3,6 @@ namespace Server\DataBase;
 /**
  * A dead simple PHP class for building SQL statements. No manual string
  * concatenation necessary.
- *
- * @author    Justin Stayton
- * @copyright Copyright 2014 by Justin Stayton
- * @license   https://github.com/jstayton/Miner/blob/master/LICENSE-MIT MIT
- * @package   Miner
- * @version   0.10.0
  */
 class Miner
 {
@@ -1470,12 +1464,14 @@ class Miner
 
     /**
      * pdo Query
+     * @param string $sql
+     * @param array $palceholderValues
      * @param int $fetchmode
      * @return array|bool|int|null|string
      */
-    public function pdoQuery($fetchmode = \PDO::FETCH_ASSOC)
+    public function pdoQuery($sql = null, $palceholderValues = null, $fetchmode = \PDO::FETCH_ASSOC)
     {
-        $pdoStatement = $this->pdoExecute();
+        $pdoStatement = $this->pdoExecute($sql, $palceholderValues);
         $result = null;
         if (!$pdoStatement) {
             $result = false;
@@ -1495,22 +1491,30 @@ class Miner
 
     /**
      * Execute the statement using the PDO database connection.
-     *
+     * @param $sql string
+     * @param $palceholderValues array
      * @return \PDOStatement|false executed statement or false if failed
      */
-    protected function pdoExecute()
+    protected function pdoExecute($sql, $palceholderValues)
     {
         $PdoConnection = $this->getPdoConnection();
         // Without a PDO database connection, the statement cannot be executed.
         if (!$PdoConnection) {
             return false;
         }
-        $statement = $this->getStatement();
+        if (empty($sql)) {
+            $statement = $this->getStatement();
+        } else {
+            $statement = $sql;
+        }
         // Only execute if a statement is set.
         if ($statement) {
             $PdoStatement = $PdoConnection->prepare($statement);
             try {
-                $PdoStatement->execute($this->getPlaceholderValues());
+                if (empty($palceholderValues)) {
+                    $palceholderValues = $this->getPlaceholderValues();
+                }
+                $PdoStatement->execute($palceholderValues);
             } catch (\PDOException $e) {
                 // 服务端断开时重连一次
                 if ($e->errorInfo[1] == 2006 || $e->errorInfo[1] == 2013) {
