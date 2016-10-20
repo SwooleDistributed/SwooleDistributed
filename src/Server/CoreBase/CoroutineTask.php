@@ -39,7 +39,6 @@ class CoroutineTask
                 return;
             }
             if ($value != null) {
-                print_r(1);
                 $result = $value->getResult();
                 if ($result !== CoroutineNull::getInstance()) {
                     $routine->send($result);
