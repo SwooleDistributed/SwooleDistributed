@@ -39,6 +39,7 @@ class CoroutineTask
                 return;
             }
             if ($value != null) {
+                print_r(1);
                 $result = $value->getResult();
                 if ($result !== CoroutineNull::getInstance()) {
                     $routine->send($result);
@@ -50,7 +51,13 @@ class CoroutineTask
                     $this->routine->send($result);
                 }
             } else {
-                $routine->next();
+                if ($routine->valid()) {
+                    $routine->next();
+                } else {
+                    $result = $routine->getReturn();
+                    $this->routine = $this->stack->pop();
+                    $this->routine->send($result);
+                }
             }
         } catch (\Exception $e) {
             while (!$this->stack->isEmpty()) {
