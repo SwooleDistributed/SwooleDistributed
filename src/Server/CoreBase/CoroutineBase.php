@@ -27,6 +27,7 @@ abstract class CoroutineBase implements ICoroutineBase
     public function __construct()
     {
         $this->result = CoroutineNull::getInstance();
+        $this->getCount = 0;
     }
 
     public abstract function send($callback);

@@ -14,6 +14,20 @@ function &get_instance()
     return \Server\SwooleDistributedServer::get_instance();
 }
 
+/**
+ * 获取服务器运行到现在的毫秒数
+ * @return int
+ */
+function getTickTime()
+{
+    return \Server\SwooleDistributedServer::get_instance()->tickTime;
+}
+
+function getMillisecond() {
+    list($t1, $t2) = explode(' ', microtime());
+    return (float)sprintf('%.0f',(floatval($t1)+floatval($t2))*1000);
+}
+
 function shell_read()
 {
     $fp = fopen('/dev/stdin', 'r');

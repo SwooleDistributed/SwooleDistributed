@@ -102,6 +102,12 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     private $timer_tasks_used;
 
     /**
+     * 服务器到现在的毫秒数
+     * @var int
+     */
+    public $tickTime;
+
+    /**
      * SwooleDistributedServer constructor.
      */
     public function __construct()

@@ -11,37 +11,51 @@ namespace Server\CoreBase;
 
 class Coroutine
 {
-//可以根据需要更改定时器间隔，单位ms
+    /**
+     * 可以根据需要更改定时器间隔，单位ms
+     **/
     const TICK_INTERVAL = 1;
 
     private $routineList;
 
     private $tickId = -1;
 
+    private $tickTime = 0;
+
     public function __construct()
     {
         $this->routineList = [];
+        $this->startTick();
     }
 
     public function start(\Generator $routine, GeneratorContext $generatorContext)
     {
         $task = new CoroutineTask($routine, $generatorContext);
         $this->routineList[] = $task;
-        $this->startTick();
+    }
+
+    /**
+     * 服务器运行到现在的毫秒数
+     * @return int
+     */
+    public function getTickTime()
+    {
+        return $this->tickTime*self::TICK_INTERVAL;
     }
 
     private function startTick()
     {
         swoole_timer_tick(self::TICK_INTERVAL, function ($timerId) {
+            $this->tickTime++;
             $this->tickId = $timerId;
             $this->run();
+            get_instance()->tickTime = $this->getTickTime();
         });
     }
 
     private function run()
     {
         if (empty($this->routineList)) {
-            $this->stopTick();
             return;
         }
 
@@ -52,13 +66,6 @@ class Coroutine
                 $task->destory();
                 unset($this->routineList[$k]);
             }
-        }
-    }
-
-    private function stopTick()
-    {
-        if ($this->tickId >= 0) {
-            swoole_timer_clear($this->tickId);
         }
     }
 
