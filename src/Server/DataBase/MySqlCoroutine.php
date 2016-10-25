@@ -10,6 +10,7 @@ namespace Server\DataBase;
 
 
 use Server\CoreBase\CoroutineBase;
+use Server\CoreBase\SwooleException;
 
 class MySqlCoroutine extends CoroutineBase
 {
@@ -26,6 +27,7 @@ class MySqlCoroutine extends CoroutineBase
         $this->mysqlAsynPool = $_mysqlAsynPool;
         $this->bind_id = $_bind_id;
         $this->sql = $_sql;
+        $this->request = '#Mysql:' . $_sql;
         $this->send(function ($result) {
             $this->result = $result;
         });
@@ -34,5 +36,14 @@ class MySqlCoroutine extends CoroutineBase
     public function send($callback)
     {
         $this->mysqlAsynPool->query($callback, $this->bind_id, $this->sql);
+    }
+
+    public function getResult()
+    {
+        $result = parent::getResult();
+        if(is_array($result)&&isset($result['error'])){
+            throw new SwooleException($result['error']);
+        }
+        return $result;
     }
 }

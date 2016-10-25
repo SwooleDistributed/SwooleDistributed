@@ -23,9 +23,9 @@ class Coroutine
         $this->routineList = [];
     }
 
-    public function start(\Generator $routine)
+    public function start(\Generator $routine, GeneratorContext $generatorContext)
     {
-        $task = new CoroutineTask($routine);
+        $task = new CoroutineTask($routine, $generatorContext);
         $this->routineList[] = $task;
         $this->startTick();
     }
@@ -49,6 +49,7 @@ class Coroutine
             $task->run();
 
             if ($task->isFinished()) {
+                $task->destory();
                 unset($this->routineList[$k]);
             }
         }

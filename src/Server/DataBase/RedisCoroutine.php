@@ -26,6 +26,7 @@ class RedisCoroutine extends CoroutineBase
         $this->redisAsynPool = $redisAsynPool;
         $this->name = $name;
         $this->arguments = $arguments;
+        $this->request = "#redis: $name";
         $this->send(function ($result) {
             $this->result = $result;
         });

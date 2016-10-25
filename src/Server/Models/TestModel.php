@@ -10,6 +10,7 @@ namespace Server\Models;
 
 
 use Server\CoreBase\Model;
+use Server\CoreBase\SwooleException;
 
 class TestModel extends Model
 {
@@ -39,13 +40,12 @@ class TestModel extends Model
 
     public function test_exception()
     {
-        throw new \Exception('test');
+        throw new SwooleException('test');
     }
 
     public function test_exceptionII()
     {
-        $mySqlCoroutine = $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10303)->coroutineSend();
-        $result = yield $mySqlCoroutine;
-        throw new \Exception('test');
+        $result = yield $this->redis_pool->coroutineSend('get', 'test');
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->where('uid', 10303)->coroutineSend();
     }
 }

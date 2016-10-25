@@ -2,6 +2,7 @@
 namespace Server\Controllers;
 
 use Server\CoreBase\Controller;
+use Server\CoreBase\SwooleException;
 use Server\Models\TestModel;
 use Server\Tasks\TestTask;
 
@@ -137,7 +138,7 @@ class TestController extends Controller
      */
     public function http_testExceptionHandleII()
     {
-        throw new \Exception('ExceptionHandle');
+        throw new SwooleException('ExceptionHandle');
     }
 
     /**
@@ -157,15 +158,6 @@ class TestController extends Controller
     {
         $this->testModel = $this->loader->model('TestModel', $this);
         $result = yield $this->testModel->test_exceptionII();
-    }
-
-    /**
-     * 异常的回调处理函数
-     * @param \Exception $e
-     */
-    public function onExceptionHandle(\Exception $e)
-    {
-        $this->http_output->end($e->getMessage());
     }
 
     public function http_testRedis()

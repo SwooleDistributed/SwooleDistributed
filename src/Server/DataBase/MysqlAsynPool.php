@@ -85,7 +85,8 @@ class MysqlAsynPool extends AsynPool
                     $this->reconnect($client);
                     $this->commands->unshift($data);
                 } else {
-                    throw new SwooleException("[mysql]:" . $client->error . "[sql]:" . $data['sql']);
+                    //设置错误信息
+                    $data['result']['error'] = "[mysql]:" . $client->error . "[sql]:" . $data['sql'];
                 }
             }
             $data['result']['client_id'] = $client->client_id;

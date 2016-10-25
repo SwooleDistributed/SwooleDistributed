@@ -2,6 +2,7 @@
 namespace Server;
 
 use Server\Client\Client;
+use Server\CoreBase\GeneratorContext;
 use Server\CoreBase\InotifyProcess;
 use Server\CoreBase\SwooleException;
 use Server\DataBase\AsynPoolManager;
@@ -113,16 +114,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
-     * 错误处理函数
-     * @param $msg
-     * @param $log
-     */
-    public function onErrorHandel($msg,$log){
-        print_r($msg."\n");
-        print_r($log."\n");
-    }
-
-    /**
      * 清除状态
      * @throws SwooleException
      */
@@ -168,6 +159,17 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public static function &get_instance()
     {
         return self::$instance;
+    }
+
+    /**
+     * 错误处理函数
+     * @param $msg
+     * @param $log
+     */
+    public function onErrorHandel($msg, $log)
+    {
+        print_r($msg . "\n");
+        print_r($log . "\n");
     }
 
     /**
@@ -287,7 +289,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
 
     /**
      * 移除dispatch
-     * @param $data
+     * @param $fd
      */
     public function removeDispatch($fd)
     {
@@ -594,7 +596,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if (!empty($uid)) {
             $generator = $this->onUidCloseClear($uid);
             if ($generator instanceof \Generator) {
-                $this->coroutine->start($generator);
+                $generatorContext = new GeneratorContext();
+                $generatorContext->setController(null, 'SwooleDistributedServer', 'onSwooleClose');
+                $this->coroutine->start($generator, $generatorContext);
             }
             $this->unBindUid($uid);
         }

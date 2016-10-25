@@ -12,6 +12,11 @@ namespace Server\CoreBase;
 abstract class CoroutineBase implements ICoroutineBase
 {
     const MAX_TIMERS = 1000;
+    /**
+     * 请求语句
+     * @var string
+     */
+    public $request;
     public $result;
     /**
      * 获取的次数，用于判断超时
@@ -30,7 +35,7 @@ abstract class CoroutineBase implements ICoroutineBase
     {
         $this->getCount++;
         if ($this->getCount > self::MAX_TIMERS) {
-            throw new SwooleException('CoroutineTask Time Out!');
+            throw new SwooleException("[CoroutineTask]: Time Out!, [Request]: $this->request");
         }
         return $this->result;
     }

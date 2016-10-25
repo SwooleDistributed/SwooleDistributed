@@ -7,6 +7,7 @@ use Noodlehaus\Config;
 use Server\CoreBase\Child;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Coroutine;
+use Server\CoreBase\GeneratorContext;
 use Server\CoreBase\Loader;
 use Server\CoreBase\SwooleException;
 use Server\Pack\IPack;
@@ -616,8 +617,9 @@ abstract class SwooleServer extends Child
                 if (method_exists($controller_instance, $method_name)) {
                     $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
                     if ($generator instanceof \Generator) {
-                        $generator->controller = &$controller_instance;
-                        $this->coroutine->start($generator);
+                        $generatorContext = new GeneratorContext();
+                        $generatorContext->setController($controller_instance, $controller_name, $method_name);
+                        $this->coroutine->start($generator, $generatorContext);
                     }
                 } else {
                     throw new \Exception('method not exists');
@@ -839,6 +841,7 @@ abstract class SwooleServer extends Child
      * 握手后才识别为websocket
      * @param $fd
      * @return bool
+     * @throws \Exception
      */
     public function isWebSocket($fd)
     {

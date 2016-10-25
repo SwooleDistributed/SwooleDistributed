@@ -13,27 +13,31 @@ class CoroutineTask
 {
     protected $stack;
     protected $routine;
+    protected $generatorContext;
 
-    public function __construct(\Generator $routine)
+    public function __construct(\Generator $routine, GeneratorContext $generatorContext)
     {
         $this->routine = $routine;
+        $this->generatorContext = $generatorContext;
         $this->stack = new \SplStack();
     }
 
     /**
-     * [run 协程调度]
-     * @return [type]         [description]
+     * 协程调度
      */
     public function run()
     {
         $routine = &$this->routine;
+        $flag = false;
         try {
             if (!$routine) {
                 return;
             }
             $value = $routine->current();
+            $flag = true;
             //嵌套的协程
             if ($value instanceof \Generator) {
+                $this->generatorContext->addYieldStack($routine->key());
                 $this->stack->push($routine);
                 $routine = $value;
                 return;
@@ -48,6 +52,7 @@ class CoroutineTask
                     $result = $routine->getReturn();
                     $this->routine = $this->stack->pop();
                     $this->routine->send($result);
+                    $this->generatorContext->popYieldStack();
                 }
             } else {
                 if ($routine->valid()) {
@@ -59,6 +64,11 @@ class CoroutineTask
                 }
             }
         } catch (\Exception $e) {
+            if ($flag) {
+                $this->generatorContext->addYieldStack($routine->key());
+            }
+            $this->generatorContext->setErrorFile($e->getFile(), $e->getLine());
+            $this->generatorContext->setErrorMessage($e->getMessage());
             while (!$this->stack->isEmpty()) {
                 $this->routine = $this->stack->pop();
                 try {
@@ -68,9 +78,11 @@ class CoroutineTask
 
                 }
             }
-            if ($routine->controller != null) {
-                call_user_func([$routine->controller, 'onExceptionHandle'], $e);
-                $routine->controller = null;
+            if ($e instanceof SwooleException) {
+                $e->setShowOther($this->generatorContext->getTraceStack());
+            }
+            if ($this->generatorContext->getController() != null) {
+                call_user_func([$this->generatorContext->getController(), 'onExceptionHandle'], $e);
             } else {
                 $routine->throw($e);
             }
@@ -89,5 +101,16 @@ class CoroutineTask
     public function getRoutine()
     {
         return $this->routine;
+    }
+
+    /**
+     * 销毁
+     */
+    public function destory()
+    {
+        $this->generatorContext->destory();
+        unset($this->generatorContext);
+        unset($this->stack);
+        unset($this->routine);
     }
 }

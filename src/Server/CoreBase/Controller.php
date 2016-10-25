@@ -89,6 +89,15 @@ class Controller extends CoreBase
         $this->fd = $fd;
         $this->client_data = $client_data;
         $this->request_type = SwooleMarco::TCP_REQUEST;
+        $this->initialization();
+    }
+
+    /**
+     * 初始化每次执行方法之前都会执行initialization
+     */
+    public function initialization()
+    {
+
     }
 
     /**
@@ -103,6 +112,7 @@ class Controller extends CoreBase
         $this->http_input->set($request);
         $this->http_output->set($response);
         $this->request_type = SwooleMarco::HTTP_REQUEST;
+        $this->initialization();
     }
 
     /**
