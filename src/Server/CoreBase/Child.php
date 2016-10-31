@@ -11,6 +11,16 @@ namespace Server\CoreBase;
 
 class Child
 {
+    /**
+     * 名称
+     * @var string
+     */
+    public $core_name;
+
+    /**
+     * @var
+     */
+
     public $parent;
     /**
      * 子集
@@ -25,7 +35,7 @@ class Child
     public function addChild($child)
     {
         $child->onAddChild($this);
-        $this->child_list[get_class($child)] = $child;
+        $this->child_list[$child->core_name] = $child;
     }
 
     /**
@@ -35,6 +45,26 @@ class Child
     public function onAddChild($parent)
     {
         $this->parent = $parent;
+    }
+
+    /**
+     * 是否存在插件
+     * @param $name
+     * @return bool
+     */
+    public function hasChild($name)
+    {
+        return key_exists($name, $this->child_list);
+    }
+
+    /**
+     * 获取插件
+     * @param $name
+     * @return mixed|null
+     */
+    public function getChild($name)
+    {
+        return $this->child_list[$name]??null;
     }
 
     /**

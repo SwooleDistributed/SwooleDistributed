@@ -59,8 +59,10 @@ class CoroutineTask
                     $routine->next();
                 } else {
                     $result = $routine->getReturn();
-                    $this->routine = $this->stack->pop();
-                    $this->routine->send($result);
+                    if(count($this->stack)>0) {
+                        $this->routine = $this->stack->pop();
+                        $this->routine->send($result);
+                    }
                 }
             }
         } catch (\Exception $e) {

@@ -37,7 +37,9 @@ class ModelFactory
 
     /**
      * 获取一个model
-     * @param $model string
+     * @param $model
+     * @return mixed
+     * @throws SwooleException
      */
     public function getModel($model)
     {

@@ -20,11 +20,7 @@ class CoreBase extends Child
      * @var bool
      */
     public $is_destroy = false;
-    /**
-     * 名称
-     * @var string
-     */
-    public $core_name;
+
     /**
      * @var Loader
      */

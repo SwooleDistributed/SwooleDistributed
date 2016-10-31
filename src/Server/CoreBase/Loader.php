@@ -27,13 +27,17 @@ class Loader
 
     /**
      * 获取一个model
-     * @param $model string
-     * @param $parent CoreBase
+     * @param $model
+     * @param Child $parent
+     * @return mixed|null
      */
-    public function model($model, $parent)
+    public function model($model, Child $parent)
     {
         if (empty($model)) {
             return null;
+        }
+        if ($parent->hasChild($model)) {
+            return $parent->getChild($model);
         }
         $model_instance = $this->_model_factory->getModel($model);
         $parent->addChild($model_instance);
@@ -43,7 +47,8 @@ class Loader
     /**
      * 获取一个task
      * @param $task
-     * @return TaskProxy
+     * @return mixed|null|TaskProxy
+     * @throws SwooleException
      */
     public function task($task)
     {

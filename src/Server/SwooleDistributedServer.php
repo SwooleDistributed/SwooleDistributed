@@ -53,6 +53,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public $cache404;
     /**
+     * 服务器到现在的毫秒数
+     * @var int
+     */
+    public $tickTime;
+    /**
      * @var \Redis
      */
     protected $redis_client;
@@ -94,18 +99,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @var
      */
     private $send_use_task_num;
-
     /**
      * 定时器
      * @var array
      */
     private $timer_tasks_used;
-
-    /**
-     * 服务器到现在的毫秒数
-     * @var int
-     */
-    public $tickTime;
 
     /**
      * SwooleDistributedServer constructor.
@@ -493,9 +491,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * 重写onSwooleWorkerStart方法，添加异步redis
      * @param $serv
      * @param $workerId
+     * @throws SwooleException
      */
     public function onSwooleWorkerStart($serv, $workerId)
     {
+        parent::onSwooleWorkerStart($serv, $workerId);
         if (!$serv->taskworker) {
             //异步redis连接池
             $this->redis_pool = new RedisAsynPool();
@@ -521,7 +521,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $this->timer_tasks_used = array();
 
             foreach ($timer_tasks as $timer_task) {
-                $task_name = $timer_task['task_name'];
+                $task_name = $timer_task['task_name']??'';
+                $model_name = $timer_task['model_name']??'';
+                if (empty($task_name) && empty($model_name)) {
+                    throw new SwooleException('定时任务配置错误，缺少task_name或者model_name.');
+                }
                 $method_name = $timer_task['method_name'];
                 if (!key_exists('start_time', $timer_task)) {
                     $start_time = -1;
@@ -542,6 +546,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $max_exec = $timer_task['max_exec']??-1;
                 $this->timer_tasks_used[] = [
                     'task_name' => $task_name,
+                    'model_name' => $model_name,
                     'method_name' => $method_name,
                     'start_time' => $start_time,
                     'end_time' => $end_time,
@@ -556,7 +561,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $serv->tick(1000, [$this, 'timerTask']);
             }
         }
-        parent::onSwooleWorkerStart($serv, $workerId);
     }
 
     /**
@@ -583,9 +587,19 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $timer_task['now_exec']++;
                 if ($timer_task['start_time'] == -1) $timer_task['start_time'] = $time;
                 $timer_task['start_time'] += $timer_task['interval_time'];
-                $task = $this->loader->task($timer_task['task_name']);
-                call_user_func([$task, $timer_task['method_name']]);
-                $task->startTask(null);
+                if (!empty($timer_task['task_name'])) {
+                    $task = $this->loader->task($timer_task['task_name']);
+                    call_user_func([$task, $timer_task['method_name']]);
+                    $task->startTask(null);
+                } else {
+                    $model = $this->loader->model($timer_task['model_name'], $this);
+                    $generator = call_user_func([$model, $timer_task['method_name']]);
+                    if ($generator instanceof \Generator) {
+                        $generatorContext = new GeneratorContext();
+                        $generatorContext->setController(null, $timer_task['model_name'], $timer_task['method_name']);
+                        $this->coroutine->start($generator, $generatorContext);
+                    }
+                }
             }
         }
     }

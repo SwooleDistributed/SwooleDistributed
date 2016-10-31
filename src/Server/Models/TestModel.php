@@ -14,9 +14,9 @@ use Server\CoreBase\SwooleException;
 
 class TestModel extends Model
 {
-    public function test()
+    public function timerTest()
     {
-        return 123456;
+        print_r("model timer\n");
     }
 
     public function test_coroutine()
