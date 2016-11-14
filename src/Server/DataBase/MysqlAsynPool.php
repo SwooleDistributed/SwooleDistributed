@@ -61,8 +61,7 @@ class MysqlAsynPool extends AsynPool
             } else {
                 $client = $this->pool->shift();
                 if($client->isClose){
-                    unset($client);
-                    $this->prepareOne();
+                    $this->reconnect($client);
                     $this->commands->push($data);
                     return;
                 }
@@ -84,6 +83,7 @@ class MysqlAsynPool extends AsynPool
                 if ($client->errno == 2006 || $client->errno == 2013) {//断线重连
                     $this->reconnect($client);
                     $this->commands->unshift($data);
+                    return;
                 } else {
                     //设置错误信息
                     $data['result']['error'] = "[mysql]:" . $client->error . "[sql]:" . $data['sql'];
@@ -141,22 +141,16 @@ class MysqlAsynPool extends AsynPool
             } else {
                 $client->isClose = false;
                 $client->isAffair = false;
-                $client->client_id = $this->mysql_max_count;
-                $this->mysql_max_count++;
+                if (!isset($client->client_id)) {
+                    $client->client_id = $this->mysql_max_count;
+                    $this->mysql_max_count++;
+                }
                 $this->pushToPool($client);
             }
         });
         $client->on('Close',[$this,'onClose']);
     }
 
-    /**
-     * 断开链接
-     * @param $client
-     */
-    public function onClose($client)
-    {
-        $client->isClose = true;
-    }
     /**
      * 释放绑定
      * @param $bind_id
@@ -168,6 +162,15 @@ class MysqlAsynPool extends AsynPool
         if ($client != null) {
             $this->pushToPool($client);
         }
+    }
+
+    /**
+     * 断开链接
+     * @param $client
+     */
+    public function onClose($client)
+    {
+        $client->isClose = true;
     }
 
     /**
@@ -210,8 +213,9 @@ class MysqlAsynPool extends AsynPool
     /**
      * 执行一个sql语句
      * @param $callback
-     * @param $bind_id 绑定的连接id，用于事务
-     * @param $sql
+     * @param null $bind_id
+     * @param null $sql
+     * @throws SwooleException
      */
     public function query($callback, $bind_id = null, $sql = null)
     {

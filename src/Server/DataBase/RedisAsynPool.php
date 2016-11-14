@@ -78,6 +78,20 @@ class RedisAsynPool extends AsynPool
             $arguments = $data['arguments'];
             //特别处理下M命令(批量)
             switch (strtolower($data['name'])) {
+                case 'srem':
+                case 'sadd':
+                    $key = $arguments[0];
+                    if (is_array($arguments[1])) {
+                        $arguments = $arguments[1];
+                    }
+                    array_unshift($arguments, $key);
+                    break;
+                case 'del':
+                case 'delete':
+                    if (is_array($arguments[0])) {
+                        $arguments = $arguments[0];
+                    }
+                    break;
                 case 'mset':
                     $harray = $arguments[0];
                     unset($arguments[0]);

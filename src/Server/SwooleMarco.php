@@ -80,6 +80,11 @@ class SwooleMarco
     const redis_group_hash_name_prefix = '@server_group_';
 
     /**
+     *  redis groups
+     */
+    const redis_groups_hash_name = '@server_groups';
+
+    /**
      * TCP请求
      */
     const TCP_REQUEST = 'tcp_request';

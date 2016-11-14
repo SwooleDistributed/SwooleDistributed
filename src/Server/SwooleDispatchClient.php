@@ -229,7 +229,7 @@ class SwooleDispatchClient extends SwooleServer
         switch ($type) {
             case SwooleMarco::MSG_TYPE_SEND_GROUP://发送群消息
                 //转换为batch
-                $this->redis_pool->hGetAll(SwooleMarco::redis_group_hash_name_prefix . $message['groupId'], function ($uids) use ($message) {
+                $this->redis_pool->sMembers(SwooleMarco::redis_group_hash_name_prefix . $message['groupId'], function ($uids) use ($message) {
                     if ($uids != null && count($uids) > 0) {
                         $this->redis_pool->hMGet(SwooleMarco::redis_uid_usid_hash_name, $uids, function ($usids) use ($message) {
                             $temp_dic = [];

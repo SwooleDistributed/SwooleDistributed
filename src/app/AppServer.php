@@ -11,6 +11,14 @@ use Server\SwooleDistributedServer;
  */
 class AppServer extends SwooleDistributedServer
 {
+    /**
+     * 开服初始化(支持协程)
+     * @return mixed
+     */
+    public function onOpenServiceInitialization()
+    {
+        parent::onOpenServiceInitialization();
+    }
 
     /**
      * 当一个绑定uid的连接close后的清理
@@ -21,4 +29,6 @@ class AppServer extends SwooleDistributedServer
     {
         // TODO: Implement onUidCloseClear() method.
     }
+
+
 }

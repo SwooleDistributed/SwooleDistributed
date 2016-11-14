@@ -94,6 +94,18 @@ class TestController extends Controller
     }
 
     /**
+     * mysql效率测试
+     * @throws \Server\CoreBase\SwooleException
+     */
+    public function http_mysql_efficiency()
+    {
+        $uid = rand(36, 60);
+        $result = yield $this->mysql_pool->dbQueryBuilder->update('user_info')->where('uid', $uid)->set('chat_status', 0)->set('call_record_id', 0)->coroutineSend();
+        //print_r($result);
+        $this->http_output->end(0);
+    }
+
+    /**
      * 测试redis效率
      */
     public function http_ansy_redis_test()
@@ -230,6 +242,13 @@ class TestController extends Controller
         $this->http_output->end($result);
     }
 
+    public function http_redis_sadd()
+    {
+        $result = yield $this->redis_pool->coroutineSend('sadd', 'test123', [1, 2, 3, 4]);
+        var_dump($result);
+        $this->http_output->end($result);
+    }
+
     /**
      * mysql
      * @throws \Server\CoreBase\SwooleException
@@ -239,5 +258,40 @@ class TestController extends Controller
         $result = $this->mysql_pool->dbQueryBuilder->insertInto('account')->intoColumns(['network_id', 'name'])->intoValues([[1, 'test1'], [2, 'test2']])->getStatement(false);
         $this->mysql_pool->dbQueryBuilder->clear();
         $this->http_output->end($result);
+    }
+
+    public function http_addGroup()
+    {
+        get_instance()->addToGroup(1, 100000);
+
+    }
+
+    public function http_getGroups()
+    {
+        $result = yield get_instance()->coroutineGetAllGroups();
+        var_dump($result);
+    }
+
+    public function http_getGroupCount()
+    {
+        $result = yield get_instance()->coroutineGetGroupCount(100000);
+        var_dump($result);
+    }
+
+    public function http_getGroupUids()
+    {
+        $result = yield get_instance()->coroutineGetGroupUids(100000);
+        var_dump($result);
+    }
+
+    public function http_delGroup()
+    {
+        $result = yield get_instance()->delGroup(100000);
+        var_dump($result);
+    }
+
+    public function http_delGroups()
+    {
+        get_instance()->delAllGroups();
     }
 }

@@ -42,7 +42,7 @@ class CoroutineTask
                 $routine = $value;
                 return;
             }
-            if ($value != null) {
+            if ($value != null&&$value instanceof ICoroutineBase) {
                 $result = $value->getResult();
                 if ($result !== CoroutineNull::getInstance()) {
                     $routine->send($result);
