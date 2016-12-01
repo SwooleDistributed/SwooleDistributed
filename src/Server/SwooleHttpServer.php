@@ -141,7 +141,7 @@ abstract class SwooleHttpServer extends SwooleServer
                 $method_name = $this->config->get('http.method_prefix', '') . $this->route->getMethodName();
                 if (method_exists($controller_instance, $method_name)) {
                     try {
-                        $controller_instance->setRequestResponse($request, $response);
+                        $controller_instance->setRequestResponse($request, $response, $controller_name, $method_name);
                         $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
                         if ($generator instanceof \Generator) {
                             $generatorContext = new GeneratorContext();

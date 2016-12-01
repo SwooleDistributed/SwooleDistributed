@@ -94,8 +94,10 @@ class Controller extends CoreBase
 
     /**
      * 初始化每次执行方法之前都会执行initialization
+     * @param $controller_name 准备执行的controller名称
+     * @param $method_name 准备执行的method名称
      */
-    public function initialization()
+    public function initialization($controller_name, $method_name)
     {
 
     }
@@ -104,15 +106,17 @@ class Controller extends CoreBase
      * set http Request Response
      * @param $request
      * @param $response
+     * @param $controller_name
+     * @param $method_name
      */
-    public function setRequestResponse($request, $response)
+    public function setRequestResponse($request, $response, $controller_name, $method_name)
     {
         $this->request = $request;
         $this->response = $response;
         $this->http_input->set($request);
         $this->http_output->set($response);
         $this->request_type = SwooleMarco::HTTP_REQUEST;
-        $this->initialization();
+        $this->initialization($controller_name, $method_name);
     }
 
     /**
