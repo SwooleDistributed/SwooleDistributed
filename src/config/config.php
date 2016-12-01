@@ -63,6 +63,10 @@ $config['dispatch_server']['set'] = [
     'enable_reuse_port' => true,
 ];
 
+
+//协程超时时间
+$config['coroution']['timerOut'] = 5000;
+
 //主从redis提高读的速度
 //启动这个服务一定确保dispatch服务器上一定有一个redis只读服务器
 $config['dispatch_server']['redis_slave'] = ['unix:/var/run/redis/redis.sock', 0];

@@ -75,6 +75,11 @@ class RedisAsynPool extends AsynPool
             $this->commands->push($data);
         } else {
             $client = $this->pool->shift();
+            if($client->isClose){
+                $this->reconnect($client);
+                $this->commands->push($data);
+                return;
+            }
             $arguments = $data['arguments'];
             //特别处理下M命令(批量)
             switch (strtolower($data['name'])) {
@@ -169,7 +174,18 @@ class RedisAsynPool extends AsynPool
             return;
         }
         $this->prepareLock = true;
-        $client = new \swoole_redis();
+        $this->reconnect();
+    }
+
+    /**
+     * 重连或者连接
+     * @param null $client
+     */
+    public function reconnect($client = null)
+    {
+        if ($client == null) {
+            $client = new \swoole_redis();
+        }
         $callback = function ($client, $result) {
             if (!$result) {
                 throw new SwooleException($client->errMsg);
@@ -186,11 +202,19 @@ class RedisAsynPool extends AsynPool
                             if (!$result) {
                                 throw new SwooleException($client->errMsg);
                             }
-                            $this->redis_max_count++;
+                            $client->isClose = false;
+                            if (!isset($client->client_id)) {
+                                $client->client_id = $this->redis_max_count;
+                                $this->redis_max_count++;
+                            }
                             $this->pushToPool($client);
                         });
                     } else {
-                        $this->redis_max_count++;
+                        $client->isClose = false;
+                        if (!isset($client->client_id)) {
+                            $client->client_id = $this->redis_max_count;
+                            $this->redis_max_count++;
+                        }
                         $this->pushToPool($client);
                     }
                 });
@@ -200,11 +224,19 @@ class RedisAsynPool extends AsynPool
                         if (!$result) {
                             throw new SwooleException($client->errMsg);
                         }
-                        $this->redis_max_count++;
+                        $client->isClose = false;
+                        if (!isset($client->client_id)) {
+                            $client->client_id = $this->redis_max_count;
+                            $this->redis_max_count++;
+                        }
                         $this->pushToPool($client);
                     });
                 } else {
-                    $this->redis_max_count++;
+                    $client->isClose = false;
+                    if (!isset($client->client_id)) {
+                        $client->client_id = $this->redis_max_count;
+                        $this->redis_max_count++;
+                    }
                     $this->pushToPool($client);
                 }
             }
@@ -213,7 +245,16 @@ class RedisAsynPool extends AsynPool
         if ($this->connect == null) {
             $this->connect = [$this->config['redis'][$this->active]['ip'], $this->config['redis'][$this->active]['port']];
         }
+        $client->on('Close',[$this,'onClose']);
         $client->connect($this->connect[0], $this->connect[1], $callback);
+    }
+
+    /**
+     * 断开链接
+     * @param $client
+     */
+    public function onClose($client){
+        $client->isClose = true;
     }
 
     /**

@@ -1,5 +1,6 @@
 <?php
 namespace Server\DataBase;
+
 /**
  * A dead simple PHP class for building SQL statements. No manual string
  * concatenation necessary.
@@ -1500,7 +1501,7 @@ class Miner
         $PdoConnection = $this->getPdoConnection();
         // Without a PDO database connection, the statement cannot be executed.
         if (!$PdoConnection) {
-            return false;
+            $this->pdoConnect($this->activeConfig);
         }
         if (empty($sql)) {
             $statement = $this->getStatement();
@@ -1509,8 +1510,8 @@ class Miner
         }
         // Only execute if a statement is set.
         if ($statement) {
-            $PdoStatement = $PdoConnection->prepare($statement);
             try {
+                $PdoStatement = $PdoConnection->prepare($statement);
                 if (empty($palceholderValues)) {
                     $palceholderValues = $this->getPlaceholderValues();
                 }
@@ -1560,6 +1561,25 @@ class Miner
         $this->PdoConnection = $PdoConnection;
 
         return $this;
+    }
+
+    /**
+     * PDO连接
+     * @param $activeConfig
+     */
+    public function pdoConnect($activeConfig)
+    {
+        $this->activeConfig = $activeConfig;
+        $dsn = 'mysql:dbname=' . $activeConfig["database"] . ';host=' .
+            $activeConfig["host"] . ';port=' . $activeConfig['port']??3306;
+        $pdo = new \PDO(
+            $dsn,
+            $activeConfig["user"], $activeConfig["password"],
+            [\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . $activeConfig['charset']??'utf8']
+        );
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
+        $this->setPdoConnection($pdo);
     }
 
     /**
@@ -1972,8 +1992,6 @@ class Miner
         // the underlying database. Otherwise, quote it manually.
         if ($PdoConnection) {
             return $PdoConnection->quote($value);
-        } elseif (is_numeric($value)) {
-            return $value;
         } elseif (is_null($value)) {
             return "NULL";
         } else {
@@ -2440,25 +2458,6 @@ class Miner
     public function getHavingPlaceholderValues()
     {
         return $this->havingPlaceholderValues;
-    }
-
-    /**
-     * PDO连接
-     * @param $activeConfig
-     */
-    public function pdoConnect($activeConfig)
-    {
-        $this->activeConfig = $activeConfig;
-        $dsn = 'mysql:dbname=' . $activeConfig["database"] . ';host=' .
-            $activeConfig["host"] . ';port=' . $activeConfig['port']??3306;
-        $pdo = new \PDO(
-            $dsn,
-            $activeConfig["user"], $activeConfig["password"],
-            [\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . $activeConfig['charset']??'utf8']
-        );
-        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
-        $this->setPdoConnection($pdo);
     }
 
     /**
