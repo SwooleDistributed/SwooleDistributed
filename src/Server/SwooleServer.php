@@ -619,8 +619,8 @@ abstract class SwooleServer extends Child
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
         if ($controller_instance != null) {
             $uid = $serv->connection_info($fd)['uid']??0;
-            $controller_instance->setClientData($uid, $fd, $client_data);
             $method_name = $this->config->get('tcp.method_prefix', '') . $this->route->getMethodName();
+            $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
                 if (method_exists($controller_instance, $method_name)) {
                     $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());

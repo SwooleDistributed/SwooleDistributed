@@ -82,14 +82,16 @@ class Controller extends CoreBase
      * @param $uid
      * @param $fd
      * @param $client_data
+     * @param $controller_name
+     * @param $method_name
      */
-    public function setClientData($uid, $fd, $client_data)
+    public function setClientData($uid, $fd, $client_data, $controller_name, $method_name)
     {
         $this->uid = $uid;
         $this->fd = $fd;
         $this->client_data = $client_data;
         $this->request_type = SwooleMarco::TCP_REQUEST;
-        $this->initialization();
+        $this->initialization($controller_name, $method_name);
     }
 
     /**

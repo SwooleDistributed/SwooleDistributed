@@ -144,8 +144,8 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
         if ($controller_instance != null) {
             $uid = $serv->connection_info($fd)['uid']??0;
-            $controller_instance->setClientData($uid, $fd, $client_data);
             $method_name = $this->config->get('websocket.method_prefix', '') . $this->route->getMethodName();
+            $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
                 $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
                 if ($generator instanceof \Generator) {
