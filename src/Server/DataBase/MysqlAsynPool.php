@@ -45,16 +45,17 @@ class MysqlAsynPool extends AsynPool
     /**
      * 执行mysql命令
      * @param $data
-     * @param bool $isBind 是否是bind命令队列的调用
+     * @throws SwooleException
      */
-    public function execute($data, $isBind = false)
+    public function execute($data)
     {
         $client = null;
         $bind_id = $data['bind_id']??null;
         if ($bind_id != null) {//绑定
             $client = $this->bind_pool[$bind_id]['client']??null;
-            if (!$isBind && strtolower($data['sql']) != 'begin') {//如果不是begin全部扔到队列中，begin获取客户端链接
-                $this->bind_pool[$bind_id]['affairs'][] = $data;
+            $sql = strtolower($data['sql']);
+            if ($sql != 'begin' && $client == null) {
+                throw new SwooleException('error mysql affairs not begin.');
                 return;
             }
         }
@@ -83,45 +84,38 @@ class MysqlAsynPool extends AsynPool
                     $this->reconnect($client);
                     if (!isset($data['bind_id'])) {//非事务可以重新执行
                         $this->commands->unshift($data);
-                    } else {//事务重新开启一次
-                        $data['sql'] = 'begin';
-                        $this->commands->unshift($data);
-                        $bind_id = $data['bind_id'];
-                        $this->bind_pool[$bind_id]['affairs'][] = array_merge($this->bind_pool[$bind_id]['backup_affairs'], $this->bind_pool[$bind_id]['affairs']);
-                        $this->bind_pool[$bind_id]['backup_affairs'] = [];
                     }
                     return;
-                } else {
+                } else {//发生错误
                     if (isset($data['bind_id'])) {//事务的话要rollback
-                        $bind_id = $data['bind_id'];
-                        $this->bind_pool[$bind_id]['affairs'] = ['rollback'];
+                        $data['sql'] = 'rollback';
+                        $this->commands->push($data);
                     }
                     //设置错误信息
                     $data['result']['error'] = "[mysql]:" . $client->error . "[sql]:" . $data['sql'];
                 }
             }
-            $data['result']['client_id'] = $client->client_id;
-            $data['result']['result'] = $result;
-            $data['result']['affected_rows'] = $client->affected_rows;
-            $data['result']['insert_id'] = $client->insert_id;
             $sql = strtolower($data['sql']);
+            if ($sql == 'begin') {
+                $data['result'] = $data['bind_id'];
+            } else {
+                $data['result']['client_id'] = $client->client_id;
+                $data['result']['result'] = $result;
+                $data['result']['affected_rows'] = $client->affected_rows;
+                $data['result']['insert_id'] = $client->insert_id;
+            }
+            //给worker发消息
+            $this->asyn_manager->sendMessageToWorker($this, $data);
+
             //不是绑定的连接就回归连接
             if (!isset($data['bind_id'])) {
                 $this->pushToPool($client);
             } else {//事务
                 $bind_id = $data['bind_id'];
-                $affair = array_shift($this->bind_pool[$bind_id]['affairs']);
-                $this->bind_pool[$bind_id]['backup_affairs'] = $affair;
-                if ($affair != null) {
-                    $this->execute($affair, true);
-                }
                 if ($sql == 'commit' || $sql == 'rollback') {//结束事务
                     $this->free_bind($bind_id);
                 }
             }
-
-            //给worker发消息
-            $this->asyn_manager->sendMessageToWorker($this, $data);
         });
     }
 
@@ -207,10 +201,10 @@ class MysqlAsynPool extends AsynPool
      * @return string
      * @throws SwooleException
      */
-    public function begin($object)
+    public function begin($object, $callback)
     {
         $id = $this->bind($object);
-        $this->query(null, $id, 'begin');
+        $this->query($callback, $id, 'begin');
         return $id;
     }
 
@@ -254,21 +248,54 @@ class MysqlAsynPool extends AsynPool
     }
 
     /**
+     * 开启一个协程事务
+     * @param $object
+     * @return MySqlCoroutine
+     */
+    public function coroutineBegin($object)
+    {
+        $id = $this->bind($object);
+        return $this->dbQueryBuilder->coroutineSend($id, 'begin');
+    }
+
+    /**
      * 提交一个事务
+     * @param $callback
      * @param $id
      */
-    public function commit($id)
+    public function commit($callback, $id)
     {
-        $this->query(null, $id, 'commit');
+        $this->query($callback, $id, 'commit');
 
     }
 
     /**
+     * 协程Commit
+     * @param $id
+     * @return MySqlCoroutine
+     */
+    public function coroutineCommit($id)
+    {
+        return $this->dbQueryBuilder->coroutineSend($id, 'commit');
+    }
+
+    /**
      * 回滚
+     * @param $callback
      * @param $id
      */
-    public function rollback($id)
+    public function rollback($callback, $id)
     {
-        $this->query(null, $id, 'rollback');
+        $this->query($callback, $id, 'rollback');
+    }
+
+    /**
+     * 协程Rollback
+     * @param $id
+     * @return MySqlCoroutine
+     */
+    public function coroutineRollback($id)
+    {
+        return $this->dbQueryBuilder->coroutineSend($id, 'rollback');
     }
 }

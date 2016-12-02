@@ -38,43 +38,20 @@ class TestController extends Controller
     }
 
     /**
-     * mysql 事务测试
-     */
-    public function http_mysql_begin_test()
-    {
-        $id = $this->mysql_pool->begin($this);
-        $this->mysql_pool->dbQueryBuilder->select('*')->from('user_info')->where('uid', 36);
-        $this->mysql_pool->query(function ($result) {
-        }, $id);
-        $this->mysql_pool->dbQueryBuilder->update('user_info')->set('sex', '0')->where('uid', 36);
-        $this->mysql_pool->query(function ($result) {
-        }, $id);
-        $this->mysql_pool->rollback($id);
-
-        $id = $this->mysql_pool->begin($this);
-        $this->mysql_pool->dbQueryBuilder->select('*')->from('user_info')->where('uid', 37);
-        $this->mysql_pool->query(function ($result) {
-        }, $id);
-        $this->mysql_pool->dbQueryBuilder->update('user_info')->set('sex', '0')->where('uid', 37);
-        $this->mysql_pool->query(function ($result) {
-        }, $id);
-        $this->mysql_pool->commit($id);
-    }
-
-    /**
      * mysql 事务协程测试
      */
     public function http_mysql_begin_coroutine_test()
     {
-        $id = $this->mysql_pool->begin($this);
-        $this->mysql_pool->dbQueryBuilder->select('*')->from('user_info')->where('uid', 36)->coroutineSend($id);
-        $this->mysql_pool->dbQueryBuilder->update('user_info')->set('sex', '0')->where('uid', 36)->coroutineSend($id);
-        $this->mysql_pool->rollback($id);
-
-        $id = $this->mysql_pool->begin($this);
-        $this->mysql_pool->dbQueryBuilder->select('*')->from('user_info')->where('uid', 37)->coroutineSend($id);
-        $this->mysql_pool->dbQueryBuilder->update('user_info')->set('sex', '1')->where('uid', 37)->coroutineSend($id);
-        $this->mysql_pool->commit($id);
+        $id = yield $this->mysql_pool->coroutineBegin($this);
+        $update_result = yield $this->mysql_pool->dbQueryBuilder->update('user_info')->set('sex', '0')->where('uid', 36)->coroutineSend($id);
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('user_info')->where('uid', 36)->coroutineSend($id);
+        if ($result['result'][0]['channel'] == 888) {
+            $this->http_output->end('commit');
+            yield $this->mysql_pool->coroutineCommit($id);
+        } else {
+            $this->http_output->end('rollback');
+            yield $this->mysql_pool->coroutineRollback($id);
+        }
     }
     /**
      * 绑定uid
