@@ -40,20 +40,42 @@ class TestController extends Controller
     /**
      * mysql 事务测试
      */
-    public function mysql_begin_test()
+    public function http_mysql_begin_test()
     {
         $id = $this->mysql_pool->begin($this);
-        $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10004);
+        $this->mysql_pool->dbQueryBuilder->select('*')->from('user_info')->where('uid', 36);
         $this->mysql_pool->query(function ($result) {
-            print_r($result);
         }, $id);
-        $this->mysql_pool->dbQueryBuilder->update('account')->set('channel', '8888')->where('uid', 10004);
+        $this->mysql_pool->dbQueryBuilder->update('user_info')->set('sex', '0')->where('uid', 36);
         $this->mysql_pool->query(function ($result) {
-            print_r($result);
-            $this->mysql_pool->commit($this);
         }, $id);
+        $this->mysql_pool->rollback($id);
+
+        $id = $this->mysql_pool->begin($this);
+        $this->mysql_pool->dbQueryBuilder->select('*')->from('user_info')->where('uid', 37);
+        $this->mysql_pool->query(function ($result) {
+        }, $id);
+        $this->mysql_pool->dbQueryBuilder->update('user_info')->set('sex', '0')->where('uid', 37);
+        $this->mysql_pool->query(function ($result) {
+        }, $id);
+        $this->mysql_pool->commit($id);
     }
 
+    /**
+     * mysql 事务协程测试
+     */
+    public function http_mysql_begin_coroutine_test()
+    {
+        $id = $this->mysql_pool->begin($this);
+        $this->mysql_pool->dbQueryBuilder->select('*')->from('user_info')->where('uid', 36)->coroutineSend($id);
+        $this->mysql_pool->dbQueryBuilder->update('user_info')->set('sex', '0')->where('uid', 36)->coroutineSend($id);
+        $this->mysql_pool->rollback($id);
+
+        $id = $this->mysql_pool->begin($this);
+        $this->mysql_pool->dbQueryBuilder->select('*')->from('user_info')->where('uid', 37)->coroutineSend($id);
+        $this->mysql_pool->dbQueryBuilder->update('user_info')->set('sex', '1')->where('uid', 37)->coroutineSend($id);
+        $this->mysql_pool->commit($id);
+    }
     /**
      * 绑定uid
      */

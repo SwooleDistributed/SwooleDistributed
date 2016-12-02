@@ -169,8 +169,7 @@ class RedisAsynPool extends AsynPool
      */
     public function prepareOne()
     {
-        if ($this->prepareLock) return;
-        if ($this->redis_max_count >= $this->config->get('redis.asyn_max_count', 10)) {
+        if ($this->redis_max_count + $this->waitConnetNum >= $this->config->get('redis.asyn_max_count', 10)) {
             return;
         }
         $this->prepareLock = true;
@@ -183,10 +182,12 @@ class RedisAsynPool extends AsynPool
      */
     public function reconnect($client = null)
     {
+        $this->waitConnetNum++;
         if ($client == null) {
             $client = new \swoole_redis();
         }
         $callback = function ($client, $result) {
+            $this->waitConnetNum--;
             if (!$result) {
                 throw new SwooleException($client->errMsg);
             }
