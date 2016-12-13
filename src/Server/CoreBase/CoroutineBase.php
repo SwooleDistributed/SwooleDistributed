@@ -11,7 +11,7 @@ namespace Server\CoreBase;
 
 abstract class CoroutineBase implements ICoroutineBase
 {
-    const MAX_TIMERS = 1000;
+    public static $MAX_TIMERS = 0;
     /**
      * 请求语句
      * @var string
@@ -26,6 +26,9 @@ abstract class CoroutineBase implements ICoroutineBase
 
     public function __construct()
     {
+        if (self::$MAX_TIMERS == 0) {
+            self::$MAX_TIMERS = get_instance()->config->get('coroution.timerOut', 1000);
+        }
         $this->result = CoroutineNull::getInstance();
         $this->getCount = 0;
     }
@@ -35,7 +38,7 @@ abstract class CoroutineBase implements ICoroutineBase
     public function getResult()
     {
         $this->getCount++;
-        if ($this->getCount > self::MAX_TIMERS) {
+        if ($this->getCount > self::$MAX_TIMERS) {
             throw new SwooleException("[CoroutineTask]: Time Out!, [Request]: $this->request");
         }
         return $this->result;

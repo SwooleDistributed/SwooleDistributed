@@ -104,6 +104,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @var array
      */
     private $timer_tasks_used;
+    /**
+     * 初始化的锁
+     * @var \swoole_lock
+     */
+    private $initLock;
 
     /**
      * SwooleDistributedServer constructor.
@@ -114,7 +119,21 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         self::$instance =& $this;
         $this->name = self::SERVER_NAME;
         parent::__construct();
+    }
+
+    /**
+     * 获取实例
+     * @return SwooleDistributedServer
+     */
+    public static function &get_instance()
+    {
+        return self::$instance;
+    }
+
+    public function start()
+    {
         $this->clearState();
+        return parent::start();
     }
 
     /**
@@ -126,6 +145,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         print("是否清除Redis上的用户状态信息(y/n)？");
         $clear_redis = shell_read();
         if (strtolower($clear_redis) == 'y') {
+            echo "[初始化] 清除Redis上用户状态。\n";
             $this->getRedis()->del(SwooleMarco::redis_uid_usid_hash_name);
             $this->getRedis()->close();
             unset($this->redis_client);
@@ -154,15 +174,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         }
         $this->redis_client->select($this->config['redis'][$active]['select']);
         return $this->redis_client;
-    }
-
-    /**
-     * 获取实例
-     * @return SwooleDistributedServer
-     */
-    public static function &get_instance()
-    {
-        return self::$instance;
     }
 
     /**
@@ -204,6 +215,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function beforeSwooleStart()
     {
+        parent::beforeSwooleStart();
         //创建uid->fd共享内存表
         $this->uid_fd_table = new \swoole_table(65536);
         $this->uid_fd_table->column('fd', \swoole_table::TYPE_INT, 8);
@@ -241,6 +253,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 }
                 $this->removeDispatch($fd);
             });
+
             $this->dispatch_port->on('receive', function ($serv, $fd, $from_id, $data) {
                 $data = substr($data, SwooleMarco::HEADER_LENGTH);
                 $unserialize_data = unserialize($data);
@@ -275,6 +288,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 }
             });
         }
+        $this->initLock = new \swoole_lock(SWOOLE_RWLOCK);
     }
 
     /**
@@ -385,7 +399,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 }
                 return null;
             case SwooleMarco::MSG_TYPE_SEND_GROUP://群组
-                $uids = $this->getRedis()->hGetAll(SwooleMarco::redis_group_hash_name_prefix . $message['groupId']);
+                $uids = $this->getRedis()->sMembers(SwooleMarco::redis_group_hash_name_prefix . $message['groupId']);
                 foreach ($uids as $uid) {
                     if ($this->uid_fd_table->exist($uid)) {
                         $fd = $this->uid_fd_table->get($uid)['fd'];
@@ -452,7 +466,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @param $uid
      * @param bool $fromDispatch
      */
-    protected function kickUid($uid, $fromDispatch = false)
+    public function kickUid($uid, $fromDispatch = false)
     {
         if ($this->uid_fd_table->exist($uid)) {//本机处理
             $fd = $this->uid_fd_table->get($uid)['fd'];
@@ -513,8 +527,19 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             //初始化异步Client
             $this->client = new Client();
         }
-        //定时器
-        if ($workerId == $this->worker_num - 1) {//最后一个worker处理启动定时器
+        //进程锁
+        if (!$this->isTaskWorker()&&$this->initLock->trylock()) {
+            //进程启动后进行开服的初始化
+            $generator = $this->onOpenServiceInitialization();
+            if ($generator instanceof \Generator) {
+                $generatorContext = new GeneratorContext();
+                $generatorContext->setController(null, 'SwooleDistributedServer', 'onSwooleWorkerStart');
+                $this->coroutine->start($generator, $generatorContext);
+            }
+            $this->initLock->lock_read();
+        }
+        //最后一个worker处理启动定时器
+        if ($workerId == $this->worker_num - 1) {
             //重新读入timerTask配置
             $timerTaskConfig = $this->config->load(__DIR__ . '/../config/timerTask.php');
             $timer_tasks = $timerTaskConfig->get('timerTask');
@@ -560,6 +585,57 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $this->timerTask();
                 $serv->tick(1000, [$this, 'timerTask']);
             }
+        }
+    }
+
+    /**
+     * 开服初始化(支持协程)
+     * @return mixed
+     */
+    public function onOpenServiceInitialization()
+    {
+        if ($this->config->get('autoClearGroup', false)) {
+            $this->delAllGroups();
+            print_r("[初始化] 清除redis上所有群信息。\n");
+        }
+    }
+
+    /**
+     * 删除所有的群
+     */
+    public function delAllGroups()
+    {
+        if ($this->isTaskWorker()) {
+            $groups = $this->getAllGroups(null);
+            foreach ($groups as $key => $group_id) {
+                $groups[$key] = SwooleMarco::redis_group_hash_name_prefix . $group_id;
+            }
+            $groups[] = SwooleMarco::redis_groups_hash_name;
+            //删除所有的群和群管理
+            $this->getRedis()->del($groups);
+        } else {
+            $this->getAllGroups(function ($groups) {
+                foreach ($groups as $key => $group_id) {
+                    $groups[$key] = SwooleMarco::redis_group_hash_name_prefix . $group_id;
+                }
+                $groups[] = SwooleMarco::redis_groups_hash_name;
+                //删除所有的群和群管理
+                $this->redis_pool->del($groups, null);
+            });
+        }
+    }
+
+    /**
+     * 获取所有的群id(异步时候需要提供callback,task可以直接返回结果)
+     * @param $callback
+     * @return array
+     */
+    public function getAllGroups($callback)
+    {
+        if ($this->isTaskWorker()) {
+            return $this->getRedis()->sMembers(SwooleMarco::redis_groups_hash_name);
+        } else {
+            $this->redis_pool->sMembers(SwooleMarco::redis_groups_hash_name, $callback);
         }
     }
 
@@ -665,7 +741,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $this->uid_fd_table->set($uid, ['fd' => $fd]);
     }
 
-
     /**
      * uid是否在线(异步时候需要提供callback,task可以直接返回结果)
      * @param $uid
@@ -682,12 +757,16 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
-     * 协程版uid是否在线
+     * uid是否在线(协程)
      * @param $uid
      * @return RedisCoroutine
+     * @throws SwooleException
      */
     public function coroutineUidIsOnline($uid)
     {
+        if ($this->isTaskWorker()) {
+            throw new SwooleException('协程不能在task中运行！');
+        }
         return $this->redis_pool->coroutineSend('hExists', SwooleMarco::redis_uid_usid_hash_name, $uid);
     }
 
@@ -706,39 +785,63 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
-     * 协程版获取在线人数
+     * 获取在线人数(协程)
      * @return RedisCoroutine
+     * @throws SwooleException
      */
     public function coroutineCountOnline()
     {
+        if ($this->isTaskWorker()) {
+            throw new SwooleException('协程不能在task中运行！');
+        }
         return $this->redis_pool->coroutineSend('hLen', SwooleMarco::redis_uid_usid_hash_name);
     }
 
     /**
-     * 添加到群
-     * @param $uid int
+     * 获取所有的群id（协程）
+     * @return RedisCoroutine
+     * @throws SwooleException
+     */
+    public function coroutineGetAllGroups()
+    {
+        if ($this->isTaskWorker()) {
+            throw new SwooleException('协程不能在task中运行！');
+        }
+        return $this->redis_pool->coroutineSend('sMembers', SwooleMarco::redis_groups_hash_name);
+    }
+
+    /**
+     * 添加到群(可以支持批量,实际是否支持根据sdk版本测试)
+     * @param $uid int | array
      * @param $group_id int
      */
     public function addToGroup($uid, $group_id)
     {
         if ($this->isTaskWorker()) {
-            $this->getRedis()->hSet(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, $uid);
+            //放入群管理中
+            $this->getRedis()->sAdd(SwooleMarco::redis_groups_hash_name, $group_id);
+            //放入对应的群中
+            $this->getRedis()->sAdd(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid);
         } else {
-            $this->redis_pool->hSet(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, $uid, null);
+            //放入群管理中
+            $this->redis_pool->sAdd(SwooleMarco::redis_groups_hash_name, $group_id, null);
+            //放入对应的群中
+            $this->redis_pool->sAdd(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, null);
         }
     }
 
+
     /**
-     * 从群里移除
-     * @param $uid
+     * 从群里移除(可以支持批量,实际是否支持根据sdk版本测试)
+     * @param $uid int | array
      * @param $group_id
      */
     public function removeFromGroup($uid, $group_id)
     {
         if ($this->isTaskWorker()) {
-            $this->getRedis()->hDel(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid);
+            $this->getRedis()->sRem(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid);
         } else {
-            $this->redis_pool->hDel(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, null);
+            $this->redis_pool->sRem(SwooleMarco::redis_group_hash_name_prefix . $group_id, $uid, null);
         }
     }
 
@@ -749,10 +852,74 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function delGroup($group_id)
     {
         if ($this->isTaskWorker()) {
+            //从群管理中删除
+            $this->getRedis()->sRem(SwooleMarco::redis_groups_hash_name, $group_id);
+            //删除这个群
             $this->getRedis()->del(SwooleMarco::redis_group_hash_name_prefix . $group_id);
         } else {
+            //从群管理中删除
+            $this->redis_pool->sRem(SwooleMarco::redis_groups_hash_name, $group_id, null);
+            //删除这个群
             $this->redis_pool->del(SwooleMarco::redis_group_hash_name_prefix . $group_id, null);
         }
+    }
+
+    /**
+     * 获取群的人数(异步时候需要提供callback,task可以直接返回结果)
+     * @param $group_id
+     * @param $callback
+     * @return int
+     */
+    public function getGroupCount($group_id, $callback)
+    {
+        if ($this->isTaskWorker()) {
+            return $this->getRedis()->scard(SwooleMarco::redis_group_hash_name_prefix . $group_id);
+        } else {
+            $this->redis_pool->scard(SwooleMarco::redis_group_hash_name_prefix . $group_id, $callback);
+        }
+    }
+
+    /**
+     * 获取群的人数（协程）
+     * @param $group_id
+     * @return RedisCoroutine
+     * @throws SwooleException
+     */
+    public function coroutineGetGroupCount($group_id)
+    {
+        if ($this->isTaskWorker()) {
+            throw new SwooleException('协程不能在task中运行！');
+        }
+        return $this->redis_pool->coroutineSend('scard', SwooleMarco::redis_group_hash_name_prefix . $group_id);
+    }
+
+    /**
+     * 获取群成员uids(异步时候需要提供callback,task可以直接返回结果)
+     * @param $group_id
+     * @param $callback
+     * @return array
+     */
+    public function getGroupUids($group_id, $callback)
+    {
+        if ($this->isTaskWorker()) {
+            return $this->getRedis()->sMembers(SwooleMarco::redis_group_hash_name_prefix . $group_id);
+        } else {
+            $this->redis_pool->sMembers(SwooleMarco::redis_group_hash_name_prefix . $group_id, $callback);
+        }
+    }
+
+    /**
+     * 获取群成员uids (协程)
+     * @param $group_id
+     * @return RedisCoroutine
+     * @throws SwooleException
+     */
+    public function coroutineGetGroupUids($group_id)
+    {
+        if ($this->isTaskWorker()) {
+            throw new SwooleException('协程不能在task中运行！');
+        }
+        return $this->redis_pool->coroutineSend('sMembers', SwooleMarco::redis_group_hash_name_prefix . $group_id);
     }
 
     /**

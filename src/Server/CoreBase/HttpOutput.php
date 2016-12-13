@@ -109,6 +109,21 @@ class HttpOutput
     }
 
     /**
+     * 设置HTTP响应的cookie信息。此方法参数与PHP的setcookie完全一致。
+     * @param string $key
+     * @param string $value
+     * @param int $expire
+     * @param string $path
+     * @param string $domain
+     * @param bool $secure
+     * @param bool $httponly
+     */
+    public function setCookie(string $key, string $value = '', int $expire = 0, string $path = '/', string $domain = '', bool $secure = false, bool $httponly = false)
+    {
+        $this->response->cookie($key, $value, $expire, $path, $domain, $secure, $httponly);
+    }
+
+    /**
      * 输出文件（会自动销毁）
      * @param $root_file
      * @param $file_name

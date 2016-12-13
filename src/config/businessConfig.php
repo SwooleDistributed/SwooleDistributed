@@ -23,4 +23,8 @@ $config['http']['domain'] = 'http://localhost:8081';
 
 //默认访问的页面
 $config['http']['index'] = 'index.html';
+
+//是否服务器启动时自动清除群组信息
+$config['autoClearGroup'] = true;
+
 return $config;

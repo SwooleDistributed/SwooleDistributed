@@ -7,7 +7,8 @@
  */
 /**
  * timerTask定时任务
- * （必填）task名称 task_name
+ * （选填）task名称 task_name
+ * （选填）model名称 model_name  task或者model必须有一个优先匹配task
  * （必填）执行task的方法 method_name
  * （选填）执行区间 [start_time,end_time) 格式： Y-m-d H:i:s 没有代表一直执行
  * （必填）执行间隔 interval_time 单位： 秒

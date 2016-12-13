@@ -38,22 +38,21 @@ class TestController extends Controller
     }
 
     /**
-     * mysql 事务测试
+     * mysql 事务协程测试
      */
-    public function mysql_begin_test()
+    public function http_mysql_begin_coroutine_test()
     {
-        $id = $this->mysql_pool->begin($this);
-        $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10004);
-        $this->mysql_pool->query(function ($result) {
-            print_r($result);
-        }, $id);
-        $this->mysql_pool->dbQueryBuilder->update('account')->set('channel', '8888')->where('uid', 10004);
-        $this->mysql_pool->query(function ($result) {
-            print_r($result);
-            $this->mysql_pool->commit($this);
-        }, $id);
+        $id = yield $this->mysql_pool->coroutineBegin($this);
+        $update_result = yield $this->mysql_pool->dbQueryBuilder->update('user_info')->set('sex', '0')->where('uid', 36)->coroutineSend($id);
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('user_info')->where('uid', 36)->coroutineSend($id);
+        if ($result['result'][0]['channel'] == 888) {
+            $this->http_output->end('commit');
+            yield $this->mysql_pool->coroutineCommit($id);
+        } else {
+            $this->http_output->end('rollback');
+            yield $this->mysql_pool->coroutineRollback($id);
+        }
     }
-
     /**
      * 绑定uid
      */
@@ -91,6 +90,18 @@ class TestController extends Controller
     {
         $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10004)->coroutineSend();
         $this->send($this->client_data->data);
+    }
+
+    /**
+     * mysql效率测试
+     * @throws \Server\CoreBase\SwooleException
+     */
+    public function http_mysql_efficiency()
+    {
+        $uid = rand(36, 60);
+        $result = yield $this->mysql_pool->dbQueryBuilder->update('user_info')->where('uid', $uid)->set('chat_status', 0)->set('call_record_id', 0)->coroutineSend();
+        //print_r($result);
+        $this->http_output->end(0);
     }
 
     /**
@@ -230,6 +241,13 @@ class TestController extends Controller
         $this->http_output->end($result);
     }
 
+    public function http_redis_sadd()
+    {
+        $result = yield $this->redis_pool->coroutineSend('sadd', 'test123', [1, 2, 3, 4]);
+        var_dump($result);
+        $this->http_output->end($result);
+    }
+
     /**
      * mysql
      * @throws \Server\CoreBase\SwooleException
@@ -239,5 +257,40 @@ class TestController extends Controller
         $result = $this->mysql_pool->dbQueryBuilder->insertInto('account')->intoColumns(['network_id', 'name'])->intoValues([[1, 'test1'], [2, 'test2']])->getStatement(false);
         $this->mysql_pool->dbQueryBuilder->clear();
         $this->http_output->end($result);
+    }
+
+    public function http_addGroup()
+    {
+        get_instance()->addToGroup(1, 100000);
+
+    }
+
+    public function http_getGroups()
+    {
+        $result = yield get_instance()->coroutineGetAllGroups();
+        var_dump($result);
+    }
+
+    public function http_getGroupCount()
+    {
+        $result = yield get_instance()->coroutineGetGroupCount(100000);
+        var_dump($result);
+    }
+
+    public function http_getGroupUids()
+    {
+        $result = yield get_instance()->coroutineGetGroupUids(100000);
+        var_dump($result);
+    }
+
+    public function http_delGroup()
+    {
+        $result = yield get_instance()->delGroup(100000);
+        var_dump($result);
+    }
+
+    public function http_delGroups()
+    {
+        get_instance()->delAllGroups();
     }
 }

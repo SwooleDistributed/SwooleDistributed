@@ -21,7 +21,7 @@ use Server\Route\IRoute;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "1.3.3";
+    const version = "1.4";
     /**
      * Daemonize.
      *
@@ -88,6 +88,7 @@ abstract class SwooleServer extends Child
     public $socket_name;
     public $port;
     public $socket_type;
+
     /**
      * 封包器
      * @var IPack
@@ -283,7 +284,7 @@ abstract class SwooleServer extends Child
                 $mode = 'in DEBUG mode';
             }
         }
-        echo("Swoole[$start_file] $command $mode");
+        echo("Swoole[$start_file] $command $mode \n");
         if (file_exists(self::$pidFile)) {
             $pids = explode(',', file_get_contents(self::$pidFile));
             // Get master process PID.
@@ -296,11 +297,11 @@ abstract class SwooleServer extends Child
         // Master is still alive?
         if ($master_is_alive) {
             if ($command === 'start') {
-                echo("Swoole[$start_file] already running");
+                echo("Swoole[$start_file] already running\n");
                 exit;
             }
         } elseif ($command !== 'start') {
-            echo("Swoole[$start_file] not run");
+            echo("Swoole[$start_file] not run\n");
             exit;
         }
 
@@ -313,7 +314,7 @@ abstract class SwooleServer extends Child
                 break;
             case 'stop':
                 @unlink(self::$pidFile);
-                echo("Swoole[$start_file] is stoping ...");
+                echo("Swoole[$start_file] is stoping ...\n");
                 // Send stop signal to master process.
                 $master_pid && posix_kill($master_pid, SIGTERM);
                 // Timeout.
@@ -325,7 +326,7 @@ abstract class SwooleServer extends Child
                     if ($master_is_alive) {
                         // Timeout?
                         if (time() - $start_time >= $timeout) {
-                            echo("Swoole[$start_file] stop fail");
+                            echo("Swoole[$start_file] stop fail\n");
                             exit;
                         }
                         // Waiting amoment.
@@ -333,18 +334,18 @@ abstract class SwooleServer extends Child
                         continue;
                     }
                     // Stop success.
-                    echo("Swoole[$start_file] stop success");
+                    echo("Swoole[$start_file] stop success\n");
                     break;
                 }
                 exit(0);
                 break;
             case 'reload':
                 posix_kill($manager_pid, SIGUSR1);
-                echo("Swoole[$start_file] reload");
+                echo("Swoole[$start_file] reload\n");
                 exit;
             case 'restart':
                 @unlink(self::$pidFile);
-                echo("Swoole[$start_file] is stoping ...");
+                echo("Swoole[$start_file] is stoping ...\n");
                 // Send stop signal to master process.
                 $master_pid && posix_kill($master_pid, SIGTERM);
                 // Timeout.
@@ -356,7 +357,7 @@ abstract class SwooleServer extends Child
                     if ($master_is_alive) {
                         // Timeout?
                         if (time() - $start_time >= $timeout) {
-                            echo("Swoole[$start_file] stop fail");
+                            echo("Swoole[$start_file] stop fail\n");
                             exit;
                         }
                         // Waiting amoment.
@@ -364,7 +365,7 @@ abstract class SwooleServer extends Child
                         continue;
                     }
                     // Stop success.
-                    echo("Swoole[$start_file] stop success");
+                    echo("Swoole[$start_file] stop success\n");
                     break;
                 }
                 self::$daemonize = true;
@@ -537,7 +538,10 @@ abstract class SwooleServer extends Child
     /**
      * start前的操作
      */
-    abstract public function beforeSwooleStart();
+    public function beforeSwooleStart()
+    {
+
+    }
 
     /**
      * 数据包编码
@@ -569,6 +573,10 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleWorkerStart($serv, $workerId)
     {
+        //清除apc缓存
+        if (function_exists('apc_clear_cache')) {
+            apc_clear_cache();
+        }
         file_put_contents(self::$pidFile, ',' . $serv->worker_pid, FILE_APPEND);
         if (!$serv->taskworker) {//worker进程启动协程调度器
             $this->coroutine = new Coroutine();
@@ -611,8 +619,8 @@ abstract class SwooleServer extends Child
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
         if ($controller_instance != null) {
             $uid = $serv->connection_info($fd)['uid']??0;
-            $controller_instance->setClientData($uid, $fd, $client_data);
             $method_name = $this->config->get('tcp.method_prefix', '') . $this->route->getMethodName();
+            $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
                 if (method_exists($controller_instance, $method_name)) {
                     $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
