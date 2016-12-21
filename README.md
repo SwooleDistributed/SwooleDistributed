@@ -1,3 +1,6 @@
+﻿# SwooleDistributed v1.6 年度重磅更新  
+4大模块Model，Controller，View，Task，Model处理异步简单事务，Task处理同步耗时事务，原本开发者需要在Model中使用异步客户端（异步redis，异步mysql），在Task中使用同步客户端（redis扩展，mysql-pdo扩展），代码风格完全不一致，无法重用。现在最新版本的SD框架将托管异步和同步客户端的调用，使用协程模式书写的代码在Model和Task中完全通用，并且Task和Model之间可以完成互相调用，代码100%可重用，采用协程代码风格开发者将可以忽略异步与同步的区别。通过task调用model的方法可以很容易将一个耗时任务优化到任务队列中而不需要更改任何代码。  
+
 # SwooleDistributed v1.3
 swoole 分布式通讯框架  
 开发交流群：569037921  
