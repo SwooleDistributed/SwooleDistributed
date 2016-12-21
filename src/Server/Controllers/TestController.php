@@ -293,4 +293,19 @@ class TestController extends Controller
     {
         get_instance()->delAllGroups();
     }
+
+    /**
+     * @return boolean
+     */
+    public function isIsDestroy()
+    {
+        return $this->is_destroy;
+    }
+
+    public function http_test_pdo()
+    {
+        $testTask = $this->loader->task('TestTask');
+        $testTask->testPdo();
+        $testTask->startTask(null);
+    }
 }

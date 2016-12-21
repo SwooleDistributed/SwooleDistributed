@@ -48,4 +48,19 @@ class TestModel extends Model
         $result = yield $this->redis_pool->coroutineSend('get', 'test');
         $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->where('uid', 10303)->coroutineSend();
     }
+
+    public function test_task()
+    {
+        yield $this->redis_pool->coroutineSend('set', 'test', 'test_task');
+        $result = yield $this->redis_pool->coroutineSend('get', 'test');
+        return $result;
+    }
+
+    public function test_pdo()
+    {
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid',36)->coroutineSend();
+        $result = yield $this->mysql_pool->dbQueryBuilder->update('account')->where('uid',36)->set(['status'=>1])->coroutineSend();
+        $result = yield $this->mysql_pool->dbQueryBuilder->replace('account')->where('uid',91)->set(['status'=>1])->coroutineSend();
+        print_r($result);
+    }
 }

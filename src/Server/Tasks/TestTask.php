@@ -26,4 +26,17 @@ class TestTask extends Task
         print_r("test\n");
         return 123;
     }
+
+    public function test_task()
+    {
+        $testModel = $this->loader->model('TestModel', $this);
+        $result = yield $testModel->test_task();
+        print_r($result);
+    }
+
+    public function testPdo()
+    {
+        $testModel = $this->loader->model('TestModel',$this);
+        yield $testModel->test_pdo();
+    }
 }

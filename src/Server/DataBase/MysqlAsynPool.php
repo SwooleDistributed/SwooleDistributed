@@ -30,6 +30,7 @@ class MysqlAsynPool extends AsynPool
     {
         parent::__construct();
         $this->bind_pool = [];
+        $this->dbQueryBuilder = new Miner();
     }
 
     /**
@@ -39,7 +40,7 @@ class MysqlAsynPool extends AsynPool
     public function worker_init($worker_id)
     {
         parent::worker_init($worker_id);
-        $this->dbQueryBuilder = new Miner($this);
+        $this->dbQueryBuilder->mysql_pool = $this;
     }
 
     /**

@@ -2,6 +2,7 @@
 namespace Server;
 
 use Server\Client\Client;
+use Server\CoreBase\CoroutineTask;
 use Server\CoreBase\GeneratorContext;
 use Server\CoreBase\InotifyProcess;
 use Server\CoreBase\SwooleException;
@@ -414,6 +415,17 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $task_data = $message['task_fuc_data'];
                 if (method_exists($task, $task_fuc_name)) {
                     $result = call_user_func_array(array($task, $task_fuc_name), $task_data);
+                    if ($result instanceof \Generator) {
+                        $corotineTask = new CoroutineTask($result, new GeneratorContext());
+                        while (1) {
+                            if ($corotineTask->isFinished()) {
+                                $result = $result->getReturn();
+                                $corotineTask->destory();
+                                break;
+                            }
+                            $corotineTask->run();
+                        }
+                    }
                 } else {
                     throw new SwooleException("method $task_fuc_name not exist in $task_name");
                 }
@@ -510,12 +522,12 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function onSwooleWorkerStart($serv, $workerId)
     {
         parent::onSwooleWorkerStart($serv, $workerId);
+        $this->redis_pool = new RedisAsynPool();
+        $this->mysql_pool = new MysqlAsynPool();
         if (!$serv->taskworker) {
             //异步redis连接池
-            $this->redis_pool = new RedisAsynPool();
             $this->redis_pool->worker_init($workerId);
             //异步mysql连接池
-            $this->mysql_pool = new MysqlAsynPool();
             $this->mysql_pool->worker_init($workerId);
             //注册
             $this->asnyPoolManager = new AsynPoolManager($this->pool_process, $this);
@@ -765,7 +777,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function coroutineUidIsOnline($uid)
     {
         if ($this->isTaskWorker()) {
-            throw new SwooleException('协程不能在task中运行！');
+            return $this->getRedis()->hExists(SwooleMarco::redis_uid_usid_hash_name, $uid);
         }
         return $this->redis_pool->coroutineSend('hExists', SwooleMarco::redis_uid_usid_hash_name, $uid);
     }
@@ -792,7 +804,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function coroutineCountOnline()
     {
         if ($this->isTaskWorker()) {
-            throw new SwooleException('协程不能在task中运行！');
+            return $this->getRedis()->hLen(SwooleMarco::redis_uid_usid_hash_name);
         }
         return $this->redis_pool->coroutineSend('hLen', SwooleMarco::redis_uid_usid_hash_name);
     }
@@ -805,7 +817,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function coroutineGetAllGroups()
     {
         if ($this->isTaskWorker()) {
-            throw new SwooleException('协程不能在task中运行！');
+            return $this->getRedis()->sMembers(SwooleMarco::redis_groups_hash_name);
         }
         return $this->redis_pool->coroutineSend('sMembers', SwooleMarco::redis_groups_hash_name);
     }
@@ -888,7 +900,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function coroutineGetGroupCount($group_id)
     {
         if ($this->isTaskWorker()) {
-            throw new SwooleException('协程不能在task中运行！');
+            return $this->getRedis()->sCard(SwooleMarco::redis_group_hash_name_prefix . $group_id);
         }
         return $this->redis_pool->coroutineSend('scard', SwooleMarco::redis_group_hash_name_prefix . $group_id);
     }
@@ -917,7 +929,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function coroutineGetGroupUids($group_id)
     {
         if ($this->isTaskWorker()) {
-            throw new SwooleException('协程不能在task中运行！');
+            return $this->getRedis()->sMembers(SwooleMarco::redis_group_hash_name_prefix . $group_id);
         }
         return $this->redis_pool->coroutineSend('sMembers', SwooleMarco::redis_group_hash_name_prefix . $group_id);
     }

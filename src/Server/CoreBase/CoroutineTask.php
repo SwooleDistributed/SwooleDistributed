@@ -56,7 +56,7 @@ class CoroutineTask
                 }
             } else {
                 if ($routine->valid()) {
-                    $routine->next();
+                    $routine->send($value);
                 } else {
                     $result = $routine->getReturn();
                     if(count($this->stack)>0) {

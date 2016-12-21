@@ -144,7 +144,7 @@ class Miner
     /**
      * @var MysqlAsynPool
      */
-    protected $mysql_pool;
+    public $mysql_pool;
     /**
      * PDO database connection to use in executing the statement.
      *
@@ -1464,122 +1464,13 @@ class Miner
     }
 
     /**
-     * pdo Query
-     * @param string $sql
-     * @param array $palceholderValues
-     * @param int $fetchmode
-     * @return array|bool|int|null|string
-     */
-    public function pdoQuery($sql = null, $palceholderValues = null, $fetchmode = \PDO::FETCH_ASSOC)
-    {
-        $pdoStatement = $this->pdoExecute($sql, $palceholderValues);
-        $result = null;
-        if (!$pdoStatement) {
-            $result = false;
-        }
-        if ($this->isSelect()) {
-            $result = $pdoStatement->fetchAll($fetchmode);
-        } elseif ($this->isDelete() || $this->isUpdate()) {
-            $result = $pdoStatement->rowCount();
-        } elseif ($this->isInsert()) {
-            if ($pdoStatement->rowCount() > 0) {
-                $result = $this->pdoInsertId();
-            }
-        }
-        $this->clear();
-        return $result;
-    }
-
-    /**
-     * Execute the statement using the PDO database connection.
-     * @param $sql string
-     * @param $palceholderValues array
-     * @return \PDOStatement|false executed statement or false if failed
-     */
-    protected function pdoExecute($sql, $palceholderValues)
-    {
-        $PdoConnection = $this->getPdoConnection();
-        // Without a PDO database connection, the statement cannot be executed.
-        if (!$PdoConnection) {
-            $this->pdoConnect($this->activeConfig);
-        }
-        if (empty($sql)) {
-            $statement = $this->getStatement();
-        } else {
-            $statement = $sql;
-        }
-        // Only execute if a statement is set.
-        if ($statement) {
-            try {
-                $PdoStatement = $PdoConnection->prepare($statement);
-                if (empty($palceholderValues)) {
-                    $palceholderValues = $this->getPlaceholderValues();
-                }
-                $PdoStatement->execute($palceholderValues);
-            } catch (\PDOException $e) {
-                // 服务端断开时重连一次
-                if ($e->errorInfo[1] == 2006 || $e->errorInfo[1] == 2013) {
-                    $this->setPdoConnection(null);
-                    $this->pdoConnect($this->activeConfig);
-                    try {
-                        $PdoConnection = $this->getPdoConnection();
-                        $PdoStatement = $PdoConnection->prepare($statement);
-                        $PdoStatement->execute($this->getPlaceholderValues());
-                    } catch (\PDOException $ex) {
-                        $this->pdoRollBackTrans();
-                        throw $ex;
-                    }
-                } else {
-                    $this->pdoRollBackTrans();
-                    throw $e;
-                }
-            }
-            return $PdoStatement;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Get the PDO database connection to use in executing this statement.
+     * Get the full SQL statement without value placeholders.
      *
-     * @return \PDO|null
+     * @return string full SQL statement
      */
-    public function getPdoConnection()
+    public function __toString()
     {
-        return $this->PdoConnection;
-    }
-
-    /**
-     * Set the PDO database connection to use in executing this statement.
-     *
-     * @param  \PDO|null $PdoConnection optional PDO database connection
-     * @return Miner
-     */
-    public function setPdoConnection(\PDO $PdoConnection = null)
-    {
-        $this->PdoConnection = $PdoConnection;
-
-        return $this;
-    }
-
-    /**
-     * PDO连接
-     * @param $activeConfig
-     */
-    public function pdoConnect($activeConfig)
-    {
-        $this->activeConfig = $activeConfig;
-        $dsn = 'mysql:dbname=' . $activeConfig["database"] . ';host=' .
-            $activeConfig["host"] . ';port=' . $activeConfig['port']??3306;
-        $pdo = new \PDO(
-            $dsn,
-            $activeConfig["user"], $activeConfig["password"],
-            [\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . $activeConfig['charset']??'utf8']
-        );
-        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
-        $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
-        $this->setPdoConnection($pdo);
+        return $this->getStatement(false);
     }
 
     /**
@@ -1997,6 +1888,29 @@ class Miner
         } else {
             return "'" . addslashes($value) . "'";
         }
+    }
+
+    /**
+     * Get the PDO database connection to use in executing this statement.
+     *
+     * @return \PDO|null
+     */
+    public function getPdoConnection()
+    {
+        return $this->PdoConnection;
+    }
+
+    /**
+     * Set the PDO database connection to use in executing this statement.
+     *
+     * @param  \PDO|null $PdoConnection optional PDO database connection
+     * @return Miner
+     */
+    public function setPdoConnection(\PDO $PdoConnection = null)
+    {
+        $this->PdoConnection = $PdoConnection;
+
+        return $this;
     }
 
     /**
@@ -2419,6 +2333,195 @@ class Miner
     }
 
     /**
+     * 协程的方式
+     * @param null $bind_id
+     * @param null $sql
+     * @return MySqlCoroutine
+     */
+    public function coroutineSend($bind_id = null, $sql = null)
+    {
+        if ($sql == null) {
+            $sql = $this->getStatement(false);
+        }
+        if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式
+            $this->mergeInto(get_instance()->getMysql());
+            $this->clear();
+            $data = array();
+            switch ($sql) {
+                case 'commit':
+                    get_instance()->getMysql()->pdoCommitTrans();
+                    break;
+                case 'begin':
+                    get_instance()->getMysql()->pdoBeginTrans();
+                    break;
+                case 'rollback':
+                    get_instance()->getMysql()->pdoRollBackTrans();
+                    break;
+                default:
+                    $data = get_instance()->getMysql()->pdoQuery($sql);
+            }
+            return $data;
+        } else {
+            $this->clear();
+            return new MySqlCoroutine($this->mysql_pool, $bind_id, $sql);
+        }
+    }
+
+    public function clear()
+    {
+        $this->option = array();
+        $this->select = array();
+        $this->delete = array();
+        $this->set = array();
+        $this->from = array();
+        $this->join = array();
+        $this->where = array();
+        $this->groupBy = array();
+        $this->having = array();
+        $this->orderBy = array();
+        $this->limit = array();
+        $this->insert = array();
+        $this->replace = array();
+        $this->update = array();
+
+        $this->intoColums = array();
+        $this->intoValues = array();
+
+        $this->setPlaceholderValues = array();
+        $this->wherePlaceholderValues = array();
+        $this->havingPlaceholderValues = array();
+
+        $this->isInto = false;
+    }
+
+    /**
+     * 提交事务
+     */
+    public function pdoCommitTrans()
+    {
+        $this->PdoConnection->commit();
+    }
+
+    /**
+     * 开始事务
+     */
+    public function pdoBeginTrans()
+    {
+        $this->PdoConnection->beginTransaction();
+    }
+
+    /**
+     * 事务回滚
+     */
+    public function pdoRollBackTrans()
+    {
+        if ($this->PdoConnection->inTransaction()) {
+            $this->PdoConnection->rollBack();
+        }
+    }
+
+    /**
+     * pdo Query
+     * @param string $sql
+     * @param array $palceholderValues
+     * @param int $fetchmode
+     * @return array|bool|int|null|string
+     */
+    public function pdoQuery($sql = null, $palceholderValues = null, $fetchmode = \PDO::FETCH_ASSOC)
+    {
+        $pdoStatement = $this->pdoExecute($sql, $palceholderValues);
+        if (!$pdoStatement) {
+            $data = false;
+        }
+        $data['result'] = '';
+        $isSelect = false;
+        if($sql!=null){//代表手动执行的sql
+            $str = strtolower(substr(trim($sql) , 0 , 6));
+            if($str=='select'){
+                $isSelect = true;
+            }
+        }
+        if ($this->isSelect()||$isSelect) {
+            $data['result'] = $pdoStatement->fetchAll($fetchmode);
+        }
+        $data['insert_id'] = $this->pdoInsertId();
+        $data['affected_rows'] = $pdoStatement->rowCount();
+        $pdoStatement->closeCursor();
+        $this->clear();
+        return $data;
+    }
+
+    /**
+     * Execute the statement using the PDO database connection.
+     * @param $sql string
+     * @param $palceholderValues array
+     * @return \PDOStatement|false executed statement or false if failed
+     */
+    protected function pdoExecute($sql, $palceholderValues)
+    {
+        $PdoStatement = null;
+        $PdoConnection = $this->getPdoConnection();
+        // Without a PDO database connection, the statement cannot be executed.
+        if (!$PdoConnection) {
+            $this->pdoConnect($this->activeConfig);
+        }
+        if (empty($sql)) {
+            $statement = $this->getStatement();
+        } else {
+            $statement = $sql;
+        }
+        // Only execute if a statement is set.
+        if ($statement) {
+            try {
+                $PdoStatement = $PdoConnection->prepare($statement);
+                if (empty($palceholderValues)) {
+                    $palceholderValues = $this->getPlaceholderValues();
+                }
+                $PdoStatement->execute($palceholderValues);
+            } catch (\PDOException $e) {
+                // 服务端断开时重连一次
+                if ($e->errorInfo[1] == 2006 || $e->errorInfo[1] == 2013) {
+                    $this->setPdoConnection(null);
+                    $this->pdoConnect($this->activeConfig);
+                    try {
+                        $PdoConnection = $this->getPdoConnection();
+                        $PdoStatement = $PdoConnection->prepare($statement);
+                        $PdoStatement->execute($this->getPlaceholderValues());
+                    } catch (\PDOException $ex) {
+                        $this->pdoRollBackTrans();
+                        throw $ex;
+                    }
+                } else {
+                    $this->pdoRollBackTrans();
+                    throw $e;
+                }
+            }
+            return $PdoStatement;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * PDO连接
+     * @param $activeConfig
+     */
+    public function pdoConnect($activeConfig)
+    {
+        $this->activeConfig = $activeConfig;
+        $dsn = 'mysql:dbname=' . $activeConfig["database"] . ';host=' .
+            $activeConfig["host"] . ';port=' . $activeConfig['port']??3306;
+        $pdo = new \PDO(
+            $dsn,
+            $activeConfig["user"], $activeConfig["password"],
+            [\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . $activeConfig['charset']??'utf8']
+        );
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
+        $this->setPdoConnection($pdo);
+    }
+
+    /**
      * Get all placeholder values (SET, WHERE, and HAVING).
      *
      * @return array all placeholder values
@@ -2461,16 +2564,6 @@ class Miner
     }
 
     /**
-     * 事务回滚
-     */
-    public function pdoRollBackTrans()
-    {
-        if ($this->PdoConnection->inTransaction()) {
-            $this->PdoConnection->rollBack();
-        }
-    }
-
-    /**
      * 返回 lastInsertId
      *
      * @return string
@@ -2479,74 +2572,4 @@ class Miner
     {
         return $this->PdoConnection->lastInsertId();
     }
-
-    public function clear()
-    {
-        $this->option = array();
-        $this->select = array();
-        $this->delete = array();
-        $this->set = array();
-        $this->from = array();
-        $this->join = array();
-        $this->where = array();
-        $this->groupBy = array();
-        $this->having = array();
-        $this->orderBy = array();
-        $this->limit = array();
-        $this->insert = array();
-        $this->replace = array();
-        $this->update = array();
-
-        $this->intoColums = array();
-        $this->intoValues = array();
-
-        $this->setPlaceholderValues = array();
-        $this->wherePlaceholderValues = array();
-        $this->havingPlaceholderValues = array();
-
-        $this->isInto = false;
-    }
-
-    /**
-     * Get the full SQL statement without value placeholders.
-     *
-     * @return string full SQL statement
-     */
-    public function __toString()
-    {
-        return $this->getStatement(false);
-    }
-
-    /**
-     * 协程的方式
-     * @param null $bind_id
-     * @param null $sql
-     * @return MySqlCoroutine
-     */
-    public function coroutineSend($bind_id = null, $sql = null)
-    {
-        if ($sql == null) {
-            $sql = $this->getStatement(false);
-            $this->clear();
-        }
-        return new MySqlCoroutine($this->mysql_pool, $bind_id, $sql);
-    }
-
-    /**
-     * 开始事务
-     */
-    public function pdoBeginTrans()
-    {
-        $this->PdoConnection->beginTransaction();
-    }
-
-    /**
-     * 提交事务
-     */
-    public function pdoCommitTrans()
-    {
-        $this->PdoConnection->commit();
-    }
 }
-
-?>
