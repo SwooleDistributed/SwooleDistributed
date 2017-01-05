@@ -88,6 +88,14 @@ class TestController extends Controller
     }
 
     /**
+     * 获取mysql语句
+     */
+    public function http_mysqlStatement()
+    {
+        $value = $this->mysql_pool->dbQueryBuilder->insertInto('account')->intoColumns(['uid', 'static'])->intoValues([[36, 0], [37, 0]])->getStatement(true);
+        $this->http_output->end($value);
+    }
+    /**
      * http测试
      */
     public function http_test()
