@@ -2,6 +2,7 @@
 namespace Server\CoreBase;
 
 use Server\SwooleMarco;
+use Server\SwooleServer;
 
 /**
  * Controller 控制器
@@ -63,6 +64,12 @@ class Controller extends CoreBase
      * @var \swoole_http_response
      */
     protected $response;
+
+    /**
+     * 用于单元测试模拟捕获服务器发出的消息
+     * @var array
+     */
+    protected $testUnitSendStack = [];
 
     /**
      * Controller constructor.
@@ -149,7 +156,11 @@ class Controller extends CoreBase
             throw new SwooleException('controller is destory can not send data');
         }
         $data = get_instance()->encode($this->pack->pack($data));
-        get_instance()->send($this->fd, $data);
+        if (SwooleServer::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'send', 'fd' => $this->fd, 'data' => $data];
+        } else {
+            get_instance()->send($this->fd, $data);
+        }
         if ($destory) {
             $this->destroy();
         }
@@ -172,6 +183,17 @@ class Controller extends CoreBase
     }
 
     /**
+     * 获取单元测试捕获的数据
+     * @return array
+     */
+    public function getTestUnitResult()
+    {
+        $stack = $this->testUnitSendStack;
+        $this->testUnitSendStack = [];
+        return $stack;
+    }
+
+    /**
      * sendToUid
      * @param $uid
      * @param $data
@@ -182,7 +204,11 @@ class Controller extends CoreBase
         if ($this->is_destroy) {
             throw new SwooleException('controller is destory can not send data');
         }
-        get_instance()->sendToUid($uid, $data);
+        if (SwooleServer::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'sendToUid', 'uid' => $this->uid, 'data' => $data];
+        } else {
+            get_instance()->sendToUid($uid, $data);
+        }
         if ($destory) {
             $this->destroy();
         }
@@ -200,7 +226,11 @@ class Controller extends CoreBase
         if ($this->is_destroy) {
             throw new SwooleException('controller is destory can not send data');
         }
-        get_instance()->sendToUids($uids, $data);
+        if (SwooleServer::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'sendToUids', 'uids' => $uids, 'data' => $data];
+        } else {
+            get_instance()->sendToUids($uids, $data);
+        }
         if ($destory) {
             $this->destroy();
         }
@@ -217,7 +247,11 @@ class Controller extends CoreBase
         if ($this->is_destroy) {
             throw new SwooleException('controller is destory can not send data');
         }
-        get_instance()->sendToAll($data);
+        if (SwooleServer::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'sendToAll', 'data' => $data];
+        } else {
+            get_instance()->sendToAll($data);
+        }
         if ($destory) {
             $this->destroy();
         }
@@ -235,7 +269,11 @@ class Controller extends CoreBase
         if ($this->is_destroy) {
             throw new SwooleException('controller is destory can not send data');
         }
-        get_instance()->sendToGroup($groupId, $data);
+        if (SwooleServer::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'sendToGroup', 'groupId' => $groupId, 'data' => $data];
+        } else {
+            get_instance()->sendToGroup($groupId, $data);
+        }
         if ($destory) {
             $this->destroy();
         }
@@ -247,6 +285,38 @@ class Controller extends CoreBase
      */
     protected function kickUid($uid)
     {
-        get_instance()->kickUid($uid);
+        if (SwooleServer::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'kickUid', 'uid' => $uid];
+        } else {
+            get_instance()->kickUid($uid);
+        }
+    }
+
+    /**
+     * bindUid
+     * @param $fd
+     * @param $uid
+     * @param bool $isKick
+     */
+    protected function bindUid($fd, $uid, $isKick = true)
+    {
+        if (SwooleServer::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'bindUid', 'fd' => $fd, 'uid' => $uid];
+        } else {
+            get_instance()->bindUid($fd, $uid, $isKick);
+        }
+    }
+
+    /**
+     * unBindUid
+     * @param $uid
+     */
+    protected function unBindUid($uid)
+    {
+        if (SwooleServer::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'unBindUid', 'uid' => $uid];
+        } else {
+            get_instance()->unBindUid($uid);
+        }
     }
 }

@@ -21,13 +21,23 @@ use Server\Route\IRoute;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "1.6";
+    const version = "1.7";
     /**
      * Daemonize.
      *
      * @var bool
      */
     public static $daemonize = false;
+    /**
+     * 单元测试
+     * @var bool
+     */
+    public static $testUnity = false;
+    /**
+     * 单元测试文件目录
+     * @var string
+     */
+    public static $testUnityDir = '';
     /**
      * The file to store master process PID.
      *
@@ -248,7 +258,7 @@ abstract class SwooleServer extends Child
     public static function setProcessTitle($title)
     {
         // >=php 5.5
-        if (function_exists('cli_set_process_title')) {
+        if (function_exists('cli_set_process_title') && !isMac()) {
             @cli_set_process_title($title);
         } // Need proctitle when php<=5.5 .
         else {
@@ -268,7 +278,7 @@ abstract class SwooleServer extends Child
         // Check argv;
         $start_file = $argv[0];
         if (!isset($argv[1])) {
-            exit("Usage: php yourfile.php {start|stop|reload|restart}\n");
+            exit("Usage: php yourfile.php {start|stop|reload|restart|test}\n");
         }
 
         // Get command.
@@ -296,11 +306,11 @@ abstract class SwooleServer extends Child
         }
         // Master is still alive?
         if ($master_is_alive) {
-            if ($command === 'start') {
+            if ($command === 'start' || $command === 'test') {
                 echo("Swoole[$start_file] already running\n");
                 exit;
             }
-        } elseif ($command !== 'start') {
+        } elseif ($command !== 'start' && $command !== 'test') {
             echo("Swoole[$start_file] not run\n");
             exit;
         }
@@ -370,8 +380,12 @@ abstract class SwooleServer extends Child
                 }
                 self::$daemonize = true;
                 break;
+            case 'test':
+                self::$testUnity = true;
+                self::$testUnityDir = $command2;
+                break;
             default :
-                exit("Usage: php yourfile.php {start|stop|reload|restart}\n");
+                exit("Usage: php yourfile.php {start|stop|reload|restart|test}\n");
         }
     }
 
@@ -417,6 +431,7 @@ abstract class SwooleServer extends Child
         $setConfig = self::$_worker->setServerSet();
         echo "\033[2J";
         echo "\033[1A\n\033[K-------------\033[47;30m SWOOLE_DISTRIBUTED \033[0m--------------\n\033[0m";
+        echo 'System:', PHP_OS, "\n";
         echo 'SwooleDistributed version:', self::version, "\n";
         echo 'Swoole version: ', SWOOLE_VERSION, "\n";
         echo 'PHP version: ', PHP_VERSION, "\n";
@@ -602,6 +617,7 @@ abstract class SwooleServer extends Child
      * @param $fd
      * @param $from_id
      * @param $data
+     * @return CoreBase\Controller|void
      */
     public function onSwooleReceive($serv, $fd, $from_id, $data)
     {
@@ -611,14 +627,19 @@ abstract class SwooleServer extends Child
             $client_data = $this->pack->unPack($data);
         } catch (\Exception $e) {
             $serv->close($fd);
-            return;
+            return null;
         }
         //client_data进行处理
         $client_data = $this->route->handleClientData($client_data);
         $controller_name = $this->route->getControllerName();
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
         if ($controller_instance != null) {
-            $uid = $serv->connection_info($fd)['uid']??0;
+            if (SwooleServer::$testUnity) {
+                $fd = 'self';
+                $uid = $fd;
+            } else {
+                $uid = $serv->connection_info($fd)['uid']??0;
+            }
             $method_name = $this->config->get('tcp.method_prefix', '') . $this->route->getMethodName();
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
@@ -636,6 +657,7 @@ abstract class SwooleServer extends Child
                 call_user_func([$controller_instance, 'onExceptionHandle'], $e);
             }
         }
+        return $controller_instance;
     }
 
     /**

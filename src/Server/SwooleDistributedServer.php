@@ -11,6 +11,7 @@ use Server\DataBase\Miner;
 use Server\DataBase\MysqlAsynPool;
 use Server\DataBase\RedisAsynPool;
 use Server\DataBase\RedisCoroutine;
+use Server\Test\TestModule;
 
 define("SERVER_DIR", __DIR__);
 define("APP_DIR", __DIR__ . "/../app");
@@ -359,6 +360,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if ($fd != null) {
             $this->server->send($fd, $this->encode($send_data));
         } else {
+            //如果没有dispatch那么MSG_TYPE_SEND_BATCH这个消息不需要发出，因为本机已经处理过可以发送的uid了
+            if ($type == SwooleMarco::MSG_TYPE_SEND_BATCH) return;
             if ($this->isTaskWorker()) {
                 $this->onSwooleTask($this->server, 0, 0, $send_data);
             } else {
@@ -547,6 +550,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $generatorContext = new GeneratorContext();
                 $generatorContext->setController(null, 'SwooleDistributedServer', 'onSwooleWorkerStart');
                 $this->coroutine->start($generator, $generatorContext);
+            }
+            if (SwooleServer::$testUnity) {
+                new TestModule(SwooleServer::$testUnityDir, $this->coroutine);
             }
             $this->initLock->lock_read();
         }

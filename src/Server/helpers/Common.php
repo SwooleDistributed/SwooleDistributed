@@ -73,9 +73,20 @@ function get_extension($file)
 /**
  * 获取绝对地址
  * @param $path
+ * @return string
  */
 function get_www($path)
 {
     $normal = 'http://localhost:' . get_instance()->config['http_server']['port'];
     return get_instance()->config->get('http.domain', $normal) . '/' . $path;
+}
+
+function isMac()
+{
+    $str = PHP_OS;
+    if ($str == 'Darwin') {
+        return true;
+    } else {
+        return false;
+    }
 }

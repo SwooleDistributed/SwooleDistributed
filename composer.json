@@ -5,13 +5,13 @@
     "voku/anti-xss": "2.0.1",
     "league/plates": "3.*",
     "protobuf-php/protobuf": "~0.1.2",
-    "protobuf-php/protobuf-plugin": "^0.1.2",
-    "php": ">=7.0.0"
+    "protobuf-php/protobuf-plugin": "^0.1.2"
   },
   "autoload": {
     "psr-4": {
       "Server\\": "src/Server",
-      "app\\": "src/app"
+      "app\\": "src/app",
+      "test\\": "src/test"
     },
     "files": [
       "src/Server/helpers/Common.php"
@@ -24,11 +24,5 @@
       "homepage": "https://github.com/tmtbe",
       "role": "Developer"
     }
-  ],
-  "repositories": {
-    "packagist": {
-      "type": "composer",
-      "url": "https://packagist.phpcomposer.com"
-    }
-  }
+  ]
 }
