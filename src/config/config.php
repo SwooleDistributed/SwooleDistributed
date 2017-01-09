@@ -47,7 +47,13 @@ $config['server']['set'] = [
     'heartbeat_idle_time' => 120,//2分钟后没消息自动释放连接
     'heartbeat_check_interval' => 60,//1分钟检测一次
 ];
-
+$config['server']['probuf_set'] = [
+    'open_length_check' => 1,
+    'package_length_type' => 'N',
+    'package_length_offset' => 0,       //第N个字节是包长度的值
+    'package_body_offset' => 0,       //第几个字节开始计算长度
+    'package_max_length' => 2000000,  //协议最大长度)
+];
 /**
  * dispatch服务器设置
  */

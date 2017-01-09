@@ -70,8 +70,8 @@ class ServerControllerTest extends TestCase
         if ($this->config['server']['pack_tool'] != 'JsonPack') {
             $this->markTestSkipped('协议解包不是JsonPack');
         }
-        $data = ['controller_name' => 'TestController', 'method_name' => 'test', 'data' => 'helloWorld'];
+        $data = ['controller_name' => 'TestController', 'method_name' => 'testTcp', 'data' => 'helloWorld'];
         $reusult = yield $this->coroutineRequestTcpController($data);
-        $this->assertCount(2, $reusult);
+        $this->assertCount(1, $reusult);
     }
 }

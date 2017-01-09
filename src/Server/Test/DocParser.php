@@ -77,6 +77,7 @@ class DocParser
 
     private function setParam($param, $value)
     {
+        $value = trim($value);
         if ($param == 'param' || $param == 'return')
             $value = $this->formatParamOrReturn($value);
         if ($param == 'class')

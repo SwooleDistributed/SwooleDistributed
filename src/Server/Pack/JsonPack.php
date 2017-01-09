@@ -8,6 +8,8 @@
 
 namespace Server\Pack;
 
+use Server\CoreBase\SwooleException;
+
 class JsonPack implements IPack
 {
     public function pack($data)
@@ -17,6 +19,10 @@ class JsonPack implements IPack
 
     public function unPack($data)
     {
-        return json_decode($data);
+        $value = json_decode($data);
+        if (empty($value)) {
+            throw new SwooleException('json unPack 失败');
+        }
+        return $value;
     }
 }

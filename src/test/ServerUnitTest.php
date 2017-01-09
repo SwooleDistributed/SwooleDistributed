@@ -73,8 +73,8 @@ class ServerUnitTest extends TestCase
      * 测试数据供给器与依赖
      * @dataProvider dataProvider
      * @depends      testDepend
-     * @param $data1
-     * @param $data2
+     * @param   $data1
+     * @param   $data2
      */
     public function testDataProvider($data1, $data2, $data3)
     {

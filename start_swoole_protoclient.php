@@ -39,7 +39,8 @@ $client->on("close", function ($cli) {
 
 $client->connect($ip, $port, 0.5);
 
-function connect($cli){
+function connect($cli)
+{
     print_r('send');
     $message = new \app\Protobuf\Message();
     $message->setRequest(new \app\Protobuf\Request());
@@ -53,7 +54,9 @@ function connect($cli){
     $message->setToken(time());
     $cli->send(encode($message->toStream()->getContents()));
 }
-function receive($cli, $data){
+
+function receive($cli, $data)
+{
     print_r('get');
     $message = new \app\Protobuf\Message(substr($data, 4));
     print_r($message->getCmdMethod());

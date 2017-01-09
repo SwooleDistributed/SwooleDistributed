@@ -44,11 +44,12 @@ class ControllerFactory
     public function getController($controller)
     {
         if ($controller == null) return null;
-        if (!key_exists($controller, $this->pool)) {
-            $this->pool[$controller] = new \SplQueue();
+        $controllers = $this->pool[$controller]??null;
+        if ($controllers == null) {
+            $controllers = $this->pool[$controller] = new \SplQueue();
         }
-        if (count($this->pool[$controller]) > 0) {
-            $controller_instance = $this->pool[$controller]->shift();
+        if (!$controllers->isEmpty()) {
+            $controller_instance = $controllers->shift();
             $controller_instance->reUse();
             return $controller_instance;
         }

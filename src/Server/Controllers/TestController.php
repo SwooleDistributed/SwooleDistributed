@@ -26,9 +26,8 @@ class TestController extends Controller
     /**
      * tcp的测试
      */
-    public function test()
+    public function testTcp()
     {
-        $this->bindUid($this->fd, 1000);
         $this->send($this->client_data->data);
     }
 
@@ -103,6 +102,33 @@ class TestController extends Controller
         $this->http_output->end('helloworld', false);
     }
 
+    /**
+     * http redis 测试
+     */
+    public function http_redis()
+    {
+        $value = $this->redis_pool->getCoroutine()->get('test');
+        yield $value;
+        $value1 = $this->redis_pool->getCoroutine()->get('test1');
+        yield $value1;
+        $value2 = $this->redis_pool->getCoroutine()->get('test2');
+        yield $value2;
+        $value3 = $this->redis_pool->getCoroutine()->get('test3');
+        yield $value3;
+        $this->http_output->end(1, false);
+    }
+
+    /**
+     * http 同步redis 测试
+     */
+    public function http_aredis()
+    {
+        $value = get_instance()->getRedis()->get('test');
+        $value1 = get_instance()->getRedis()->get('test1');
+        $value2 = get_instance()->getRedis()->get('test2');
+        $value3 = get_instance()->getRedis()->get('test3');
+        $this->http_output->end(1, false);
+    }
     /**
      * html测试
      */

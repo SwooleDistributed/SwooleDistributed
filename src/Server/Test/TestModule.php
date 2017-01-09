@@ -195,7 +195,6 @@ class TestModule
                         if (is_array($methodInfo['depends'])) {//多个依赖
                             $error = false;
                             foreach ($methodInfo['depends'] as $methodName) {
-                                $methodName = trim($methodName);
                                 $result = $classData[$methodName]['result']??null;
                                 if ($result == null) {//依赖获取失败
                                     $error = true;
@@ -208,7 +207,7 @@ class TestModule
                                 continue;
                             }
                         } else {
-                            $methodName = trim($methodInfo['depends']);
+                            $methodName = $methodInfo['depends'];
                             $result = $classData[$methodName]['result']??null;
                             if ($result == null) {// 依赖获取失败
                                 $this->printFail('依赖获取失败');

@@ -39,7 +39,7 @@ class TestTcpCoroutine extends CoroutineBase
 
     public function getResult()
     {
-        parent::getResult();
+        $result = parent::getResult();
         if ($this->controller == CoroutineNull::getInstance()) {
             return null;
         }

@@ -12,10 +12,6 @@ namespace Server;
 class SwooleMarco
 {
     /**
-     * encode 头长度
-     */
-    const HEADER_LENGTH = 4;
-    /**
      * 获取服务器ID
      */
     const MSG_TYPE_USID = -1;

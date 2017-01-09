@@ -319,4 +319,21 @@ class Controller extends CoreBase
             get_instance()->unBindUid($uid);
         }
     }
+
+    /**
+     * 断开链接
+     * @param $fd
+     * @param bool $autoDestory
+     */
+    protected function close($fd, $autoDestory = true)
+    {
+        if (SwooleServer::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'close', 'fd' => $fd];
+        } else {
+            get_instance()->close($fd);
+        }
+        if ($autoDestory) {
+            $this->destroy();
+        }
+    }
 }

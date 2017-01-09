@@ -21,7 +21,7 @@ use Server\Route\IRoute;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "1.7";
+    const version = "1.7.2";
     /**
      * Daemonize.
      *
@@ -138,6 +138,22 @@ abstract class SwooleServer extends Child
      * @var bool
      */
     public $tcp_enable;
+
+    /**
+     * @var
+     */
+    public $package_length_type;
+
+    /**
+     * @var int
+     */
+    public $package_length_type_length;
+
+    /**
+     * @var
+     */
+    public $package_body_offset;
+
     /**
      * 协议设置
      * @var
@@ -154,6 +170,10 @@ abstract class SwooleServer extends Child
         self::$_worker = $this;
         // 加载配置
         $this->config = new Config(__DIR__ . '/../config');
+        $this->probuf_set = $this->config->get('server.probuf_set', $this->probuf_set);
+        $this->package_length_type = $this->probuf_set['package_length_type'];
+        $this->package_length_type_length = strlen(pack($this->package_length_type, 1));
+        $this->package_body_offset = $this->probuf_set['package_body_offset'];
         $this->setConfig();
         $this->log = new Logger($this->name);
         $this->log->pushHandler(new RotatingFileHandler(__DIR__ . $this->config['server']['log_path'] . $this->name . '.log',
@@ -565,8 +585,8 @@ abstract class SwooleServer extends Child
      */
     public function encode($buffer)
     {
-        $total_length = SwooleMarco::HEADER_LENGTH + strlen($buffer);
-        return pack('N', $total_length) . $buffer;
+        $total_length = $this->package_length_type_length + strlen($buffer) - $this->package_body_offset;
+        return pack($this->package_length_type, $total_length) . $buffer;
     }
 
     /**
@@ -621,7 +641,7 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleReceive($serv, $fd, $from_id, $data)
     {
-        $data = substr($data, SwooleMarco::HEADER_LENGTH);//去掉头
+        $data = substr($data, $this->package_length_type_length);
         //反序列化，出现异常断开连接
         try {
             $client_data = $this->pack->unPack($data);

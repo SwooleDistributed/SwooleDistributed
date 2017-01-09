@@ -257,7 +257,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             });
 
             $this->dispatch_port->on('receive', function ($serv, $fd, $from_id, $data) {
-                $data = substr($data, SwooleMarco::HEADER_LENGTH);
+                $data = unpack($this->package_length_type . "1length/a*data", $data)['data'];
                 $unserialize_data = unserialize($data);
                 $type = $unserialize_data['type'];
                 $message = $unserialize_data['message'];
