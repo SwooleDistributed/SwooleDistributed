@@ -145,6 +145,9 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         if ($controller_instance != null) {
             $uid = $serv->connection_info($fd)['uid']??0;
             $method_name = $this->config->get('websocket.method_prefix', '') . $this->route->getMethodName();
+            if (!method_exists($controller_instance, $method_name)) {
+                $method_name = 'defaultMethod';
+            }
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
                 $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());

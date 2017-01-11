@@ -194,6 +194,20 @@ class Controller extends CoreBase
     }
 
     /**
+     * 当控制器方法不存在的时候的默认方法
+     */
+    public function defaultMethod()
+    {
+        if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
+            $this->http_output->set_header('HTTP/1.1', '404 Not Found');
+            $template = $this->loader->view('server::error_404');
+            $this->http_output->end($template->render());
+        } else {
+            throw new SwooleException('method not exist');
+        }
+    }
+
+    /**
      * sendToUid
      * @param $uid
      * @param $data

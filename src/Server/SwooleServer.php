@@ -21,7 +21,7 @@ use Server\Route\IRoute;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "1.7.2";
+    const version = "1.7.3";
     /**
      * Daemonize.
      *
@@ -100,6 +100,12 @@ abstract class SwooleServer extends Child
     public $socket_type;
 
     /**
+     * 服务器到现在的毫秒数
+     * @var int
+     */
+    public $tickTime;
+
+    /**
      * 封包器
      * @var IPack
      */
@@ -167,6 +173,7 @@ abstract class SwooleServer extends Child
 
     public function __construct()
     {
+        $this->onErrorHandel = [$this, 'onErrorHandel'];
         self::$_worker = $this;
         // 加载配置
         $this->config = new Config(__DIR__ . '/../config');
@@ -663,15 +670,14 @@ abstract class SwooleServer extends Child
             $method_name = $this->config->get('tcp.method_prefix', '') . $this->route->getMethodName();
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
-                if (method_exists($controller_instance, $method_name)) {
-                    $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
-                    if ($generator instanceof \Generator) {
-                        $generatorContext = new GeneratorContext();
-                        $generatorContext->setController($controller_instance, $controller_name, $method_name);
-                        $this->coroutine->start($generator, $generatorContext);
-                    }
-                } else {
-                    throw new \Exception('method not exists');
+                if (!method_exists($controller_instance, $method_name)) {
+                    $method_name = 'defaultMethod';
+                }
+                $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
+                if ($generator instanceof \Generator) {
+                    $generatorContext = new GeneratorContext();
+                    $generatorContext->setController($controller_instance, $controller_name, $method_name);
+                    $this->coroutine->start($generator, $generatorContext);
                 }
             } catch (\Exception $e) {
                 call_user_func([$controller_instance, 'onExceptionHandle'], $e);
@@ -933,4 +939,17 @@ abstract class SwooleServer extends Child
     {
         $this->server->close($fd);
     }
+
+
+    /**
+     * 错误处理函数
+     * @param $msg
+     * @param $log
+     */
+    public function onErrorHandel($msg, $log)
+    {
+        print_r($msg . "\n");
+        print_r($log . "\n");
+    }
+
 }

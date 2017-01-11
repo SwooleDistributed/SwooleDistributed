@@ -89,6 +89,7 @@ class SwooleDispatchClient extends SwooleServer
     public function setServerSet()
     {
         $set = $this->config['dispatch_server']['set'];
+        $set = array_merge($set, $this->probuf_set);
         return $set;
     }
 

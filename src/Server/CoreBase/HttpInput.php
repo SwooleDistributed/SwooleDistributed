@@ -18,8 +18,7 @@ class HttpInput
     public $request;
 
     /**
-     * 设置
-     * @param $response
+     * @param $request
      */
     public function set($request)
     {
@@ -144,5 +143,44 @@ class HttpInput
         } else {
             return $this->request->header[$index]??'';
         }
+    }
+
+    /**
+     * 获取Server相关的数据
+     * @param $index
+     * @param bool $xss_clean
+     * @return array|bool|string
+     */
+    public function server($index, $xss_clean = true)
+    {
+        if ($xss_clean) {
+            return XssClean::getXssClean()->xss_clean($this->request->server[$index]??'');
+        } else {
+            return $this->request->server[$index]??'';
+        }
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getRequestMethod()
+    {
+        return $this->request->server['request_method'];
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getRequestUri()
+    {
+        return $this->request->server['request_uri'];
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPathInfo()
+    {
+        return $this->request->server['path_info'];
     }
 }

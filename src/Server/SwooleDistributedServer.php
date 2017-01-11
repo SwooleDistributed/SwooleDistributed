@@ -54,11 +54,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @var string
      */
     public $cache404;
-    /**
-     * 服务器到现在的毫秒数
-     * @var int
-     */
-    public $tickTime;
+
     /**
      * @var \Redis
      */
@@ -117,7 +113,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function __construct()
     {
-        $this->onErrorHandel = [$this,'onErrorHandel'];
         self::$instance =& $this;
         $this->name = self::SERVER_NAME;
         parent::__construct();
@@ -179,17 +174,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
-     * 错误处理函数
-     * @param $msg
-     * @param $log
-     */
-    public function onErrorHandel($msg, $log)
-    {
-        print_r($msg . "\n");
-        print_r($log . "\n");
-    }
-
-    /**
      * 获取同步mysql
      * @return Miner
      */
@@ -244,7 +228,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if ($this->config->get('use_dispatch')) {
             //创建dispatch端口用于连接dispatch
             $this->dispatch_port = $this->server->listen($this->config['tcp']['socket'], $this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
-            $dispatch_set = $this->setServerSet();
             $this->dispatch_port->set($this->setServerSet());
             $this->dispatch_port->on('close', function ($serv, $fd) {
                 print_r("Remove a dispatcher.\n");

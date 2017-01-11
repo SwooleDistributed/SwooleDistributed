@@ -139,21 +139,20 @@ abstract class SwooleHttpServer extends SwooleServer
             $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
             if ($controller_instance != null) {
                 $method_name = $this->config->get('http.method_prefix', '') . $this->route->getMethodName();
-                if (method_exists($controller_instance, $method_name)) {
-                    try {
-                        $controller_instance->setRequestResponse($request, $response, $controller_name, $method_name);
-                        $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
-                        if ($generator instanceof \Generator) {
-                            $generatorContext = new GeneratorContext();
-                            $generatorContext->setController($controller_instance, $controller_name, $method_name);
-                            $this->coroutine->start($generator, $generatorContext);
-                        }
-                        return;
-                    } catch (\Exception $e) {
-                        call_user_func([$controller_instance, 'onExceptionHandle'], $e);
+                if (!method_exists($controller_instance, $method_name)) {
+                    $method_name = 'defaultMethod';
+                }
+                try {
+                    $controller_instance->setRequestResponse($request, $response, $controller_name, $method_name);
+                    $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
+                    if ($generator instanceof \Generator) {
+                        $generatorContext = new GeneratorContext();
+                        $generatorContext->setController($controller_instance, $controller_name, $method_name);
+                        $this->coroutine->start($generator, $generatorContext);
                     }
-                } else {
-                    $error_404 = true;
+                    return;
+                } catch (\Exception $e) {
+                    call_user_func([$controller_instance, 'onExceptionHandle'], $e);
                 }
             } else {
                 $error_404 = true;

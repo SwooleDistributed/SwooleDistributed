@@ -49,9 +49,9 @@ class TestModel extends Model
 
     public function test_task()
     {
-        yield $this->redis_pool->coroutineSend('set', 'test', 'test_task');
-        $result = yield $this->redis_pool->coroutineSend('get', 'test');
-        return $result;
+        $testTask = $this->loader->task('TestTask');
+        $testTask->test();
+        $testTask->startTask(null);
     }
 
     public function test_pdo()
