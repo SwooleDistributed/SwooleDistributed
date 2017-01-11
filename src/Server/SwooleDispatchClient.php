@@ -41,6 +41,8 @@ class SwooleDispatchClient extends SwooleServer
     public function __construct()
     {
         $this->name = self::SERVER_NAME;
+        //关闭协程
+        $this->needCoroutine = false;
         parent::__construct();
     }
 

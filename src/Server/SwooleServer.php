@@ -171,6 +171,12 @@ abstract class SwooleServer extends Child
         'package_max_length' => 2000000,  //协议最大长度)
     ];
 
+    /**
+     * 是否需要协程支持(默认开启)
+     * @var bool
+     */
+    protected $needCoroutine = true;
+
     public function __construct()
     {
         $this->onErrorHandel = [$this, 'onErrorHandel'];
@@ -620,7 +626,7 @@ abstract class SwooleServer extends Child
             apc_clear_cache();
         }
         file_put_contents(self::$pidFile, ',' . $serv->worker_pid, FILE_APPEND);
-        if (!$serv->taskworker) {//worker进程启动协程调度器
+        if (!$serv->taskworker && $this->needCoroutine) {//worker进程启动协程调度器
             $this->coroutine = new Coroutine();
             self::setProcessTitle('SWD-Worker');
         } else {
