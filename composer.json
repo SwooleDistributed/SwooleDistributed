@@ -1,6 +1,6 @@
 {
   "require": {
-    "monolog/monolog": "1.22.o",
+    "monolog/monolog": "2.0.x-dev",
     "hassankhan/config": "~0.10",
     "voku/anti-xss": "2.0.1",
     "league/plates": "3.*",
