@@ -23,10 +23,8 @@ class ProtoPack implements IPack
     }
 
     /**
-     * unPack
-     * @param $data
-     * @return \stdClass
-     * @throws SwooleException
+     * @param $data string
+     * @return mixed
      */
     public function unPack($data)
     {
