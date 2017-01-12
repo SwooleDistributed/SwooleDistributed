@@ -128,7 +128,7 @@ abstract class SwooleHttpServer extends SwooleServer
         $this->route->handleClientRequest($request);
         if ($this->route->getPath() == '/') {
             $www_path = WWW_DIR . '/' . $this->config->get('http.index', 'index.html');
-            $result = httpEndFile($www_path, $response);
+            $result = httpEndFile($www_path, $request, $response);
             if (!$result) {
                 $error_404 = true;
             } else {
@@ -164,7 +164,7 @@ abstract class SwooleHttpServer extends SwooleServer
             }
             //先根据path找下www目录
             $www_path = WWW_DIR . $this->route->getPath();
-            $result = httpEndFile($www_path, $response);
+            $result = httpEndFile($www_path, $request, $response);
             if (!$result) {
                 $response->header('HTTP/1.1', '404 Not Found');
                 if (!isset($this->cache404)) {//内存缓存404页面
