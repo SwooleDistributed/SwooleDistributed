@@ -17,12 +17,17 @@ class AppController extends Controller
      */
     public $AppModel;
 
+    public function initialization($controller_name, $method_name)
+    {
+        parent::initialization($controller_name, $method_name);
+        $this->AppModel = $this->loader->model('AppModel', $this);
+    }
+
     /**
      * http测试
      */
     public function http_test()
     {
-        $this->AppModel = $this->loader->model('AppModel', $this);
         $this->http_output->end($this->AppModel->test());
     }
 
