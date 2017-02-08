@@ -179,6 +179,7 @@ abstract class SwooleServer extends Child
 
     public function __construct()
     {
+        $this->afterConstruct();
         $this->onErrorHandel = [$this, 'onErrorHandel'];
         self::$_worker = $this;
         // 加载配置
