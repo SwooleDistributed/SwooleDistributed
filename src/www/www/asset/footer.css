@@ -1,0 +1,243 @@
+/**
+*  Stylesheet for the footer.
+*  It is used in each mini website as their footers have the same styles
+*/
+
+/**
+ *  Custom grid for the footer because
+ *  all of our other product sites (SMTPeter, AMQPipe, etc etc)
+ *  use the same layout.
+ */
+.cop-column {
+    float: left;
+}
+
+.cop-column.full {
+    width: 100%;
+}
+
+.cop-column.cop-two-thirds {
+    width: 66.7%;
+}
+
+.cop-column.cop-third {
+    width: 33.3%;
+}
+
+.cop-column.cop-fourth {
+    width: 25%;
+}
+
+@media (max-width: 50em) {
+    .cop-column {
+        width: 100% !important;
+    }
+}
+
+/* Columns are wrapped inside rows
+ * to prevent float issues
+ */
+.cop-row:before,
+.cop-row:after {
+    content: " ";
+    display: table;
+}
+
+.cop-row:after {
+    clear: both;
+}
+
+.cop-row {
+    *zoom: 1;
+}
+
+.cop-row {
+    width: 100%;
+    margin: 0 auto;
+    max-width: 70rem;
+}
+
+/* sometimes we need to use some padding */
+.cop-footer-padding {
+    padding: 1.5rem;
+}
+
+/**
+ *  Footer of the site
+ *  Make it stick to the bottom of the page
+ *  and work well responsive. Only downside
+ *  is that you cannot style the footer properly.
+ *  So style following class: .footer-branding.
+ */
+.cop-footer-sticky {
+    display: table-row;
+    height: 1px;
+}
+
+/**
+ *  Brand the footer (because of the sticky footer technique used)
+ */
+.cop-footer-branding {
+    padding: 1rem 0;
+    width: 100%;
+    color: #fff;
+    font-size: 14px;
+}
+
+.cop-footer-branding h4 {
+    text-transform: uppercase;
+    font-size: 14px;
+}
+
+.cop-footer-branding a {
+    color: #fff;
+    transition: all .3s;
+}
+
+.cop-footer-branding ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+/* 
+ * Section in the footer, where we show more information about the product
+ * It is a column that contains some text and links in the text
+ */
+.footer-information a {
+    font-weight: 600;
+    text-decoration: underline;
+}
+
+/* Menu in the footer
+ * usually it shows the rest of our products
+ * It is just a list of links
+ */
+
+.cop-footer-menu li {
+    line-height: 2.3;
+    transition: all .3s;
+}
+
+.cop-footer-menu li a {
+    padding-left: 5px;
+}
+
+.cop-footer-menu li a:hover {
+    text-decoration: none;
+}
+
+.cop-social {
+    margin-top: .8em;
+}
+
+.cop-social i {
+    font-size: 30px;
+    margin: 0 .5rem;
+}
+
+/* a part on the footer that is a bit different in order to capture attention */
+.cop-job-positions {
+    padding: 1em;
+    border-radius: 0.3em;
+    box-shadow: inset 0px 0px 8px 0px rgba(0, 0, 0, 0.2);
+}
+
+.cop-job-positions h4 {
+    font-size: 15px;
+}
+
+.cop-job-positions a {
+    padding: 0.2em 1.5em;
+    text-decoration: none;
+}
+
+.cop-job-positions a:hover {
+    color: #fff;
+    text-decoration: none;
+}
+
+.cop-job-positions p {
+    margin-bottom: 1em;
+}
+
+address {
+    font-style: normal;
+}
+
+/*
+ * Footer logos
+ */
+.footer-logos a {
+    display: inline-block;
+}
+
+.footer-logos img {
+    width: 8rem;
+}
+
+.footer-logos a.footer-website-logo {
+
+    padding-right: 1em;
+    border-right: 1px solid #dedede;
+}
+
+.footer-logos a.footer-by-copernica-logo {
+    padding-left: 1em;
+}
+
+@media (min-width: 50em) and (max-width: 75em) {
+    .footer-logos {
+        margin-top: .4rem;
+    }
+
+    .footer-logos a img {
+        width: 6rem;
+    }
+}
+
+/* 
+ * Footer navigation
+ * It's the same menu with the one that we show in the top of the page (main menu) 
+ */
+
+.footer-nav {
+    text-align: right;
+}
+
+@media (max-width: 55em) {
+    .footer-nav-container {
+        text-align: center;
+    }
+
+    .footer-nav {
+        text-align: center;
+        margin: 0 auto;
+        width: 100%;
+    }
+}
+
+.footer-bottom-menu {
+    margin-top: .8rem;
+}
+
+.footer-nav li {
+    display: inline-block;
+    padding: 0 4px;
+}
+
+.footer-nav li a:hover {
+    text-decoration: underline;
+}
+
+.footer-nav li:last-of-type {
+    border-right: 0;
+}
+
+.footer-nav li:last-child {
+    margin-right: 0;
+}
+
+.cop-collect-subscribers {
+    margin-top: 1rem;
+}

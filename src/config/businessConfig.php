@@ -34,8 +34,8 @@ $config['autoClearGroup'] = true;
 $config['http']['root'] = [
     'localhost' =>
         [
-            'root' => 'localhost',
-            'index' => 'index.html'
+            'root' => 'www',
+            'index' => 'Index.html'
         ]
 ];
 
