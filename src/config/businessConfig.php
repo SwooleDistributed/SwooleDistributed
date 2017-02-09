@@ -37,6 +37,16 @@ $config['http']['root'] = [
             'root' => 'www',
             'index' => 'Index.html'
         ],
+    'sder.xin' =>
+        [
+            'root' => 'www',
+            'index' => 'Index.html'
+        ],
+    'www.sder.xin' =>
+        [
+            'root' => 'www',
+            'index' => 'Index.html'
+        ],
     '182.92.224.125' =>
         [
             'root' => 'docs',
