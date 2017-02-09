@@ -28,6 +28,7 @@
     <!-- load highligh.js -->
     <script src="./asset/highlight.min.js"></script>
     <script>hljs.initHighlightingOnLoad();</script>
+
 </head>
 <body>
 
@@ -143,6 +144,21 @@
             </div>
         </div>
     </div>
+
+    <script>
+        /* Toggle menu for small screens */
+        $(document).ready(function () {
+            $("#toggle").click(function () {
+
+                /* Start transition on the toggle (little animation) */
+                $("#toggle").toggleClass('on');
+
+                /* Show or hide the main menu */
+                $(".nav").slideToggle(200);
+            });
+        });
+
+    </script>
 
 
 </div>
