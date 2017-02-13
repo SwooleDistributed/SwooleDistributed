@@ -1,8 +1,13 @@
 # SwooleDistributed v1.7 更新
-文档已更新至1.7版本  
-最新文档 
+文档已更新至1.7.6版本  
 
-http://182.92.224.125/
+最新文档
+ 
+http://docs.sder.xin
+
+官网
+
+http://www.sder.xin
 
 注意事项
 
