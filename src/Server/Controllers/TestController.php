@@ -190,6 +190,12 @@ class TestController extends Controller
         get_instance()->interruptedTask($task_id);
         $this->http_output->end("ok");
     }
+
+    public function http_getAllTask()
+    {
+        $messages = get_instance()->getServerAllTaskMessage();
+        $this->http_output->end(json_encode($messages));
+    }
     /**
      * @return boolean
      */

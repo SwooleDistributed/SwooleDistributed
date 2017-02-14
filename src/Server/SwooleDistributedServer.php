@@ -197,9 +197,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $this->uid_fd_table->create();
         //创建task用的taskid
         $this->task_atomic = new \swoole_atomic(0);
-        //创建task用的id->pid共享内存表
-        $this->tid_pid_table = new \swoole_table(65536);
+        //创建task用的id->pid共享内存表不至于同时超过1024个任务吧
+        $this->tid_pid_table = new \swoole_table(1024);
         $this->tid_pid_table->column('pid', \swoole_table::TYPE_INT, 8);
+        $this->tid_pid_table->column('des', \swoole_table::TYPE_STRING, 50);
+        $this->tid_pid_table->column('st', \swoole_table::TYPE_INT, 8);
         $this->tid_pid_table->create();
         //创建task用的锁
         $this->task_lock = new \swoole_lock(SWOOLE_MUTEX);
@@ -412,7 +414,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $task_id = $message['task_id'];
                 if (method_exists($task, $task_fuc_name)) {
                     //给task做初始化操作
-                    $task->initialization($task_id, $this->server->worker_pid);
+                    $task->initialization($task_id, $this->server->worker_pid, $task_name, $task_fuc_name);
                     $result = call_user_func_array(array($task, $task_fuc_name), $task_data);
                     if ($result instanceof \Generator) {
                         $corotineTask = new CoroutineTask($result, new GeneratorContext());
@@ -938,5 +940,20 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         } else {
             throw new SwooleException('interruptedTask 获得锁失败，中断操作正在进行请稍后。');
         }
+    }
+
+    /**
+     * 获取服务器上正在运行的Task
+     */
+    public function getServerAllTaskMessage()
+    {
+        $tasks = [];
+        foreach ($this->tid_pid_table as $id => $row) {
+            if ($id != 0) {
+                $row['task_id'] = $id;
+                $tasks[] = $row;
+            }
+        }
+        return $tasks;
     }
 }
