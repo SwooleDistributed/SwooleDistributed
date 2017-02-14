@@ -18,10 +18,6 @@ class Task extends TaskProxy
 
     public function initialization($task_id, $worker_pid, $task_name, $method_name)
     {
-        //注册中断信号
-        pcntl_signal(SIGUSR1, function () {
-
-        });
         $this->task_id = $task_id;
         get_instance()->tid_pid_table->set($this->task_id, ['pid' => $worker_pid, 'des' => "$task_name::$method_name", 'st' => time()]);
     }

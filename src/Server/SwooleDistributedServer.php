@@ -573,6 +573,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             }
             //初始化异步Client
             $this->client = new Client();
+        } else {
+            //注册中断信号
+            pcntl_signal(SIGUSR1, function () {
+
+            });
         }
         //进程锁
         if (!$this->isTaskWorker()&&$this->initLock->trylock()) {
