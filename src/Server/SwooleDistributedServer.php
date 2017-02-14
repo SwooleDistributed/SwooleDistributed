@@ -54,7 +54,18 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @var string
      */
     public $cache404;
-
+    /**
+     * 生成task_id的原子
+     */
+    public $task_atomic;
+    /**
+     * task_id和pid的映射
+     */
+    public $tid_pid_table;
+    /**
+     * 中断task的id内存锁
+     */
+    public $task_lock;
     /**
      * @var \Redis
      */
@@ -184,6 +195,14 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $this->uid_fd_table = new \swoole_table(65536);
         $this->uid_fd_table->column('fd', \swoole_table::TYPE_INT, 8);
         $this->uid_fd_table->create();
+        //创建task用的taskid
+        $this->task_atomic = new \swoole_atomic(0);
+        //创建task用的id->pid共享内存表
+        $this->tid_pid_table = new \swoole_table(65536);
+        $this->tid_pid_table->column('pid', \swoole_table::TYPE_INT, 8);
+        $this->tid_pid_table->create();
+        //创建task用的锁
+        $this->task_lock = new \swoole_lock(SWOOLE_MUTEX);
         //创建异步连接池进程
         if ($this->config->get('asyn_process_enable', false)) {//代表启动单独进程进行管理
             $this->pool_process = new \swoole_process(function ($process) {
@@ -390,7 +409,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $task = $this->loader->task($task_name);
                 $task_fuc_name = $message['task_fuc_name'];
                 $task_data = $message['task_fuc_data'];
+                $task_id = $message['task_id'];
                 if (method_exists($task, $task_fuc_name)) {
+                    //给task做初始化操作
+                    $task->initialization($task_id, $this->server->worker_pid);
                     $result = call_user_func_array(array($task, $task_fuc_name), $task_data);
                     if ($result instanceof \Generator) {
                         $corotineTask = new CoroutineTask($result, new GeneratorContext());
@@ -893,5 +915,28 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         $data = $this->encode($this->pack->pack($data));
         $this->sendToDispatchMessage(SwooleMarco::MSG_TYPE_SEND_GROUP, ['data' => $data, 'groupId' => $groupId]);
+    }
+
+    /**
+     * 向task发送中断信号
+     * @param $task_id
+     * @throws SwooleException
+     */
+    public function interruptedTask($task_id)
+    {
+        $ok = $this->task_lock->trylock();
+        if ($ok) {
+            get_instance()->tid_pid_table->set(0, ['pid' => $task_id]);
+            $task_pid = get_instance()->tid_pid_table->get($task_id)['pid'];
+            if ($task_pid == false) {
+                $this->task_lock->unlock();
+                throw new SwooleException('中断Task 失败，可能是task已运行完，或者task_id不存在。');
+            }
+            //发送信号
+            posix_kill($task_pid, SIGUSR1);
+            print_r("向TaskID=$task_id ,PID=$task_pid 的进程发送中断信号\n");
+        } else {
+            throw new SwooleException('interruptedTask 获得锁失败，中断操作正在进行请稍后。');
+        }
     }
 }
