@@ -14,7 +14,7 @@ $config['redis']['active'] = 'test';
 /**
  * 本地环境
  */
-$config['redis']['test']['ip'] = '192.168.21.10';
+$config['redis']['test']['ip'] = '192.168.8.48';
 $config['redis']['test']['port'] = 6379;
 $config['redis']['test']['select'] = 1;
 $config['redis']['test']['password'] = '123456';
@@ -23,7 +23,7 @@ $config['redis']['asyn_max_count'] = 10;
 /**
  * 本地环境2
  */
-$config['redis']['test2']['ip'] = '192.168.21.10';
+$config['redis']['test2']['ip'] = '192.168.8.48';
 $config['redis']['test2']['port'] = 6379;
 $config['redis']['test2']['select'] = 2;
 $config['redis']['test2']['password'] = '123456';

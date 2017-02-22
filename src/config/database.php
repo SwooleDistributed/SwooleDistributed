@@ -6,7 +6,7 @@
  * Time: 下午4:49
  */
 $config['database']['active'] = 'test';
-$config['database']['test']['host'] = '192.168.20.196';
+$config['database']['test']['host'] = '192.168.8.196';
 $config['database']['test']['port'] = '3306';
 $config['database']['test']['user'] = 'root';
 $config['database']['test']['password'] = '123456';

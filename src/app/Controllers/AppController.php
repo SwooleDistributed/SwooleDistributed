@@ -46,7 +46,7 @@ class AppController extends Controller
 
     public function http_test_task()
     {
-        $AppTask = $this->loader->task('AppTask');
+        $AppTask = $this->loader->task('AppTask', $this);
         $AppTask->testTask();
         $AppTask->startTask(function ($serv, $task_id, $data) {
             $this->http_output->end($data);

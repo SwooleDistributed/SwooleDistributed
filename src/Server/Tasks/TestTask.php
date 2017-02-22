@@ -27,6 +27,11 @@ class TestTask extends Task
         return 123;
     }
 
+    public function contextTest()
+    {
+        print_r($this->getContext());
+    }
+
     public function test_task()
     {
         $testModel = $this->loader->model('TestModel', $this);
