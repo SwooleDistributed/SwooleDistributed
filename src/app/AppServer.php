@@ -1,11 +1,14 @@
 <?php
 namespace app;
 
+use Server\Asyn\HttpClient\HttpClientPool;
+use Server\Asyn\TcpClient\SdTcpRpcPool;
+use Server\Asyn\TcpClient\TcpClientPool;
 use Server\SwooleDistributedServer;
 
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-9-19
  * Time: 下午2:36
  */
@@ -38,5 +41,8 @@ class AppServer extends SwooleDistributedServer
     {
         parent::initAsynPools();
         //$this->addAsynPool('redis2', new RedisAsynPool($this->config, 'test2'));
+        $this->addAsynPool('httpClient', new HttpClientPool($this->config, 'http://192.168.8.48:8081'));
+        $this->addAsynPool('tcpClient', new TcpClientPool($this->config, '192.168.8.48:9093'));
+        $this->addAsynPool('rpc', new SdTcpRpcPool($this->config, '192.168.8.48:9093'));
     }
 }

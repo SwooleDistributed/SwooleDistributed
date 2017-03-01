@@ -2,7 +2,7 @@
 /**
  * Loader 加载器
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 下午12:21
  */
@@ -34,10 +34,6 @@ class Loader
      */
     public function model($model, Child $parent)
     {
-        if (!$parent->isConstruct) {
-            $parentName = get_class($parent);
-            throw new SwooleException("class:$parentName,error:loader model 方法不允许在__construct内使用！");
-        }
         if (empty($model)) {
             return null;
         }
@@ -85,7 +81,7 @@ class Loader
             }
             return $this->_task_proxy;
         }
-        if (key_exists($task, $this->_tasks)) {
+        if (array_key_exists($task, $this->_tasks)) {
             $task_instance = $this->_tasks[$task];
             $task_instance->reUse();
             return $task_instance;

@@ -9,8 +9,8 @@
 namespace Server\Test;
 
 
-use Server\CoreBase\CoroutineBase;
-use Server\CoreBase\CoroutineNull;
+use Server\Coroutine\CoroutineBase;
+use Server\Coroutine\CoroutineNull;
 
 class TestTcpCoroutine extends CoroutineBase
 {

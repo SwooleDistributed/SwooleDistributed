@@ -1,16 +1,15 @@
 <?php
 namespace Server;
 
-use Server\Client\Client;
-use Server\CoreBase\CoroutineTask;
-use Server\CoreBase\GeneratorContext;
+use Server\Asyn\AsynPool;
+use Server\Asyn\AsynPoolManager;
+use Server\Asyn\Mysql\Miner;
+use Server\Asyn\Mysql\MysqlAsynPool;
+use Server\Asyn\Redis\RedisAsynPool;
 use Server\CoreBase\InotifyProcess;
 use Server\CoreBase\SwooleException;
-use Server\DataBase\AsynPool;
-use Server\DataBase\AsynPoolManager;
-use Server\DataBase\Miner;
-use Server\DataBase\MysqlAsynPool;
-use Server\DataBase\RedisAsynPool;
+use Server\CoreBase\TimerTask;
+use Server\Coroutine\Coroutine;
 use Server\Test\TestModule;
 
 define("SERVER_DIR", __DIR__);
@@ -19,7 +18,7 @@ define("WWW_DIR", __DIR__ . "/../www");
 
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-14
  * Time: 上午9:18
  */
@@ -39,11 +38,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @var MysqlAsynPool
      */
     public $mysql_pool;
-    /**
-     * 各种client
-     * @var Client
-     */
-    public $client;
     /**
      * 覆盖set配置
      * @var array
@@ -108,11 +102,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @var
      */
     private $send_use_task_num;
-    /**
-     * 定时器
-     * @var array
-     */
-    private $timer_tasks_used;
     /**
      * 初始化的锁
      * @var \swoole_lock
@@ -205,19 +194,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $this->tid_pid_table->create();
         //创建task用的锁
         $this->task_lock = new \swoole_lock(SWOOLE_MUTEX);
-        //创建异步连接池进程
-        if ($this->config->get('asyn_process_enable', false)) {//代表启动单独进程进行管理
-            $this->pool_process = new \swoole_process(function ($process) {
-                $process->name('SWD-ASYN');
-                $this->asnyPoolManager = new AsynPoolManager($process, $this);
-                $this->asnyPoolManager->event_add();
-                $this->initAsynPools();
-                foreach ($this->asynPools as $pool) {
-                    $this->asnyPoolManager->registAsyn($pool);
-                }
-            }, false, 2);
-            $this->server->addProcess($this->pool_process);
-        }
         //reload监控进程
         if ($this->config->get('auto_reload_enable', false)) {//代表启动单独进程进行reload管理
             $reload_process = new \swoole_process(function ($process) {
@@ -275,17 +251,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             });
         }
         $this->initLock = new \swoole_lock(SWOOLE_RWLOCK);
-    }
-
-    /**
-     * 初始化各种连接池
-     */
-    public function initAsynPools()
-    {
-        $this->asynPools = [
-            'redisPool' => new RedisAsynPool($this->config, $this->config->get('redis.active')),
-            'mysqlPool' => new MysqlAsynPool($this->config, $this->config->get('database.active')),
-        ];
     }
 
     /**
@@ -416,18 +381,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 if (method_exists($task, $task_fuc_name)) {
                     //给task做初始化操作
                     $task->initialization($task_id, $this->server->worker_pid, $task_name, $task_fuc_name, $task_context);
-                    $result = call_user_func_array(array($task, $task_fuc_name), $task_data);
-                    if ($result instanceof \Generator) {
-                        $corotineTask = new CoroutineTask($result, new GeneratorContext());
-                        while (1) {
-                            if ($corotineTask->isFinished()) {
-                                $result = $result->getReturn();
-                                $corotineTask->destroy();
-                                break;
-                            }
-                            $corotineTask->run();
-                        }
-                    }
+                    $result = Coroutine::startCoroutine([$task, $task_fuc_name], $task_data);
                 } else {
                     throw new SwooleException("method $task_fuc_name not exist in $task_name");
                 }
@@ -519,9 +473,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             case SwooleMarco::REMOVE_DISPATCH_CLIENT:
                 $this->removeDispatch($data['message']);
                 break;
-            case SwooleMarco::MSG_TYPR_ASYN:
-                $this->asnyPoolManager->distribute($data['message']);
-                break;
         }
     }
 
@@ -533,7 +484,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function addAsynPool($name, AsynPool $pool)
     {
-        if (key_exists($name, $this->asynPools)) {
+        if (array_key_exists($name, $this->asynPools)) {
             throw  new SwooleException('pool key is exists!');
         }
         $this->asynPools[$name] = $pool;
@@ -564,84 +515,40 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if (!$serv->taskworker) {
             //注册
             $this->asnyPoolManager = new AsynPoolManager($this->pool_process, $this);
-            if (!$this->config['asyn_process_enable']) {
-                $this->asnyPoolManager->no_event_add();
-            }
             foreach ($this->asynPools as $pool) {
-
-                $pool->worker_init($workerId);
                 $this->asnyPoolManager->registAsyn($pool);
             }
-            //初始化异步Client
-            $this->client = new Client();
         } else {
-            //注册中断信号
+            //注册任务中断信号
             pcntl_signal(SIGUSR1, function () {
 
             });
         }
-        //进程锁
-        if (!$this->isTaskWorker()&&$this->initLock->trylock()) {
+        //进程锁保证只有一个进程会执行以下的代码
+        if (!$this->isTaskWorker() && $this->initLock->trylock()) {
             //进程启动后进行开服的初始化
-            $generator = $this->onOpenServiceInitialization();
-            if ($generator instanceof \Generator) {
-                $generatorContext = new GeneratorContext();
-                $generatorContext->setController(null, 'SwooleDistributedServer', 'onSwooleWorkerStart');
-                $this->coroutine->start($generator, $generatorContext);
-            }
+            Coroutine::startCoroutine([$this, 'onOpenServiceInitialization']);
             if (SwooleServer::$testUnity) {
-                new TestModule(SwooleServer::$testUnityDir, $this->coroutine);
+                new TestModule(SwooleServer::$testUnityDir);
             }
             $this->initLock->lock_read();
         }
         //最后一个worker处理启动定时器
         if ($workerId == $this->worker_num - 1) {
-            //重新读入timerTask配置
-            $timerTaskConfig = $this->config->load(__DIR__ . '/../config/timerTask.php');
-            $timer_tasks = $timerTaskConfig->get('timerTask');
-            $this->timer_tasks_used = array();
-
-            foreach ($timer_tasks as $timer_task) {
-                $task_name = $timer_task['task_name']??'';
-                $model_name = $timer_task['model_name']??'';
-                if (empty($task_name) && empty($model_name)) {
-                    throw new SwooleException('定时任务配置错误，缺少task_name或者model_name.');
-                }
-                $method_name = $timer_task['method_name'];
-                if (!key_exists('start_time', $timer_task)) {
-                    $start_time = -1;
-                } else {
-                    $start_time = strtotime(date($timer_task['start_time']));
-                }
-                if (!key_exists('end_time', $timer_task)) {
-                    $end_time = -1;
-                } else {
-                    $end_time = strtotime(date($timer_task['end_time']));
-                }
-                if (!key_exists('delay', $timer_task)) {
-                    $delay = false;
-                } else {
-                    $delay = $timer_task['delay'];
-                }
-                $interval_time = $timer_task['interval_time'] < 1 ? 1 : $timer_task['interval_time'];
-                $max_exec = $timer_task['max_exec']??-1;
-                $this->timer_tasks_used[] = [
-                    'task_name' => $task_name,
-                    'model_name' => $model_name,
-                    'method_name' => $method_name,
-                    'start_time' => $start_time,
-                    'end_time' => $end_time,
-                    'interval_time' => $interval_time,
-                    'max_exec' => $max_exec,
-                    'now_exec' => 0,
-                    'delay' => $delay
-                ];
-            }
-            if (count($this->timer_tasks_used) > 0) {
-                $this->timerTask();
-                $serv->tick(1000, [$this, 'timerTask']);
-            }
+            //启动定时器任务
+            new TimerTask($this->config);
         }
+    }
+
+    /**
+     * 初始化各种连接池
+     */
+    public function initAsynPools()
+    {
+        $this->asynPools = [
+            'redisPool' => new RedisAsynPool($this->config, $this->config->get('redis.active')),
+            'mysqlPool' => new MysqlAsynPool($this->config, $this->config->get('mysql.active')),
+        ];
     }
 
     /**
@@ -696,47 +603,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
-     * 定时任务
-     */
-    public function timerTask()
-    {
-        $time = time();
-        foreach ($this->timer_tasks_used as &$timer_task) {
-            if ($timer_task['start_time'] < $time && $timer_task['start_time'] != -1) {
-                $count = round(($time - $timer_task['start_time']) / $timer_task['interval_time']);
-                $timer_task['start_time'] += $count * $timer_task['interval_time'];
-            }
-            if (($time == $timer_task['start_time'] || $timer_task['start_time'] == -1) &&
-                ($time < $timer_task['end_time'] || $timer_task['end_time'] = -1) &&
-                ($timer_task['now_exec'] < $timer_task['max_exec'] || $timer_task['max_exec'] == -1)
-            ) {
-                if ($timer_task['delay']) {
-                    if ($timer_task['start_time'] == -1) $timer_task['start_time'] = $time;
-                    $timer_task['start_time'] += $timer_task['interval_time'];
-                    $timer_task['delay'] = false;
-                    continue;
-                }
-                $timer_task['now_exec']++;
-                if ($timer_task['start_time'] == -1) $timer_task['start_time'] = $time;
-                $timer_task['start_time'] += $timer_task['interval_time'];
-                if (!empty($timer_task['task_name'])) {
-                    $task = $this->loader->task($timer_task['task_name'], $this);
-                    call_user_func([$task, $timer_task['method_name']]);
-                    $task->startTask(null);
-                } else {
-                    $model = $this->loader->model($timer_task['model_name'], $this);
-                    $generator = call_user_func([$model, $timer_task['method_name']]);
-                    if ($generator instanceof \Generator) {
-                        $generatorContext = new GeneratorContext();
-                        $generatorContext->setController(null, $timer_task['model_name'], $timer_task['method_name']);
-                        $this->coroutine->start($generator, $generatorContext);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * 连接断开
      * @param $serv
      * @param $fd
@@ -746,23 +612,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $info = $serv->connection_info($fd, 0, true);
         $uid = $info['uid']??0;
         if (!empty($uid)) {
-            $generator = $this->onUidCloseClear($uid);
-            if ($generator instanceof \Generator) {
-                $generatorContext = new GeneratorContext();
-                $generatorContext->setController(null, 'SwooleDistributedServer', 'onSwooleClose');
-                $this->coroutine->start($generator, $generatorContext);
-            }
+            Coroutine::startCoroutine([$this, 'onUidCloseClear'], [$uid]);
             $this->unBindUid($uid);
         }
         parent::onSwooleClose($serv, $fd);
     }
-
-    /**
-     * 当一个绑定uid的连接close后的清理
-     * 支持协程
-     * @param $uid
-     */
-    abstract public function onUidCloseClear($uid);
 
     /**
      * 解绑uid，链接断开自动解绑
@@ -777,6 +631,13 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $this->getRedis()->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
         }
     }
+
+    /**
+     * 当一个绑定uid的连接close后的清理
+     * 支持协程
+     * @param $uid
+     */
+    abstract public function onUidCloseClear($uid);
 
     /**
      * 将fd绑定到uid,uid不能为0

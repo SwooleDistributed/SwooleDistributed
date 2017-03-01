@@ -2,7 +2,7 @@
 /**
  * 文件后缀名映射表
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 下午4:49
  */

@@ -1,12 +1,13 @@
 <?php
 namespace Server\CoreBase;
 
+use Server\Memory\Pool;
 use Server\SwooleMarco;
 
 /**
  * Task的代理
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 下午12:11
  */
@@ -25,7 +26,6 @@ class TaskProxy extends CoreBase
     public function __construct()
     {
         parent::__construct();
-        $this->afterConstruct();
     }
 
     public function initialization($task_id, $worker_pid, $task_name, $method_name, $context)
@@ -77,7 +77,7 @@ class TaskProxy extends CoreBase
      */
     public function coroutineSend()
     {
-        return new TaskCoroutine($this->task_proxy_data, -1);
+        return Pool::getInstance()->get(TaskCoroutine::class)->init($this->task_proxy_data, -1);
     }
 
     /**

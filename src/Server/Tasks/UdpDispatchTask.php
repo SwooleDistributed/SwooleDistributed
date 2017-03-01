@@ -6,7 +6,7 @@ use Server\CoreBase\Task;
 /**
  * dispatch 的udp广播，用于通知dispatch
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 下午1:06
  */

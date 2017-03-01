@@ -9,7 +9,7 @@
 namespace Server\Test;
 
 
-use Server\CoreBase\CoroutineBase;
+use Server\Coroutine\CoroutineBase;
 
 class TestHttpCoroutine extends CoroutineBase
 {

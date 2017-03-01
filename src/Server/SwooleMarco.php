@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-20
  * Time: 下午1:39
  */
@@ -39,10 +39,6 @@ class SwooleMarco
      * 踢uid下线
      */
     const MSG_TYPE_KICK_UID = 4;
-    /**
-     * ASYN
-     */
-    const MSG_TYPR_ASYN = 9000;
     /**
      * 添加server
      */

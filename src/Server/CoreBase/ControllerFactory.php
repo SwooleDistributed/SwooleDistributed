@@ -4,7 +4,7 @@ namespace Server\CoreBase;
 /**
  * 控制器工厂模式
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 下午12:03
  */
@@ -57,14 +57,12 @@ class ControllerFactory
         if (class_exists($class_name)) {
             $controller_instance = new $class_name;
             $controller_instance->core_name = $controller;
-            $controller_instance->afterConstruct();
             return $controller_instance;
         } else {
             $class_name = "\\Server\\Controllers\\$controller";
             if (class_exists($class_name)) {
                 $controller_instance = new $class_name;
                 $controller_instance->core_name = $controller;
-                $controller_instance->afterConstruct();
                 return $controller_instance;
             } else {
                 return null;

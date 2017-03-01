@@ -9,7 +9,7 @@
 namespace Server\Test;
 
 
-use Server\CoreBase\CoroutineNull;
+use Server\Coroutine\CoroutineNull;
 
 class TestResponse
 {

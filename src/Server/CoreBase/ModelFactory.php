@@ -3,7 +3,7 @@ namespace Server\CoreBase;
 /**
  * Model工厂模式
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 下午12:03
  */
@@ -44,7 +44,7 @@ class ModelFactory
     public function getModel($model)
     {
         $model = str_replace('/', '\\', $model);
-        if (!key_exists($model, $this->pool)) {
+        if (!array_key_exists($model, $this->pool)) {
             $this->pool[$model] = [];
         }
         if (count($this->pool[$model]) > 0) {
@@ -56,13 +56,11 @@ class ModelFactory
         if (class_exists($class_name)) {
             $model_instance = new $class_name;
             $model_instance->core_name = $model;
-            $model_instance->afterConstruct();
         } else {
             $class_name = "\\Server\\Models\\$model";
             if (class_exists($class_name)) {
                 $model_instance = new $class_name;
                 $model_instance->core_name = $model;
-                $model_instance->afterConstruct();
             } else {
                 throw new SwooleException("class $model is not exist");
             }

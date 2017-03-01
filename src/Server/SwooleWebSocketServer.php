@@ -2,7 +2,7 @@
 /**
  * 包含http服务器
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-29
  * Time: 上午9:42
  */
@@ -11,7 +11,7 @@ namespace Server;
 
 
 use Server\CoreBase\ControllerFactory;
-use Server\CoreBase\GeneratorContext;
+use Server\Coroutine\Coroutine;
 
 abstract class SwooleWebSocketServer extends SwooleHttpServer
 {
@@ -88,7 +88,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      */
     public function send($fd, $data)
     {
-        if(!$this->server->exist($fd)){
+        if (!$this->server->exist($fd)) {
             return;
         }
         if (!$this->websocket_enable) {
@@ -150,12 +150,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             }
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
-                $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
-                if ($generator instanceof \Generator) {
-                    $generatorContext = new GeneratorContext();
-                    $generatorContext->setController($controller_instance, $controller_name, $method_name);
-                    $this->coroutine->start($generator, $generatorContext);
-                }
+                Coroutine::startCoroutine([$controller_instance, $method_name], $this->route->getParams());
             } catch (\Exception $e) {
                 call_user_func([$controller_instance, 'onExceptionHandle'], $e);
             }

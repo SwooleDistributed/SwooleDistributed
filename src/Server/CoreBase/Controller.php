@@ -1,6 +1,7 @@
 <?php
 namespace Server\CoreBase;
 
+use Monolog\Logger;
 use Server\SwooleMarco;
 use Server\SwooleServer;
 
@@ -8,20 +9,12 @@ use Server\SwooleServer;
  * Controller 控制器
  * 对象池模式，实例会被反复使用，成员变量缓存数据记得在销毁时清理
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 上午11:59
  */
 class Controller extends CoreBase
 {
-    /**
-     * @var \Server\DataBase\RedisAsynPool
-     */
-    public $redis_pool;
-    /**
-     * @var \Server\DataBase\MysqlAsynPool
-     */
-    public $mysql_pool;
     /**
      * @var HttpInPut
      */
@@ -35,10 +28,6 @@ class Controller extends CoreBase
      * @var string
      */
     public $request_type;
-    /**
-     * @var \Server\Client\Client
-     */
-    public $client;
     /**
      * fd
      * @var int
@@ -72,6 +61,23 @@ class Controller extends CoreBase
     protected $testUnitSendStack = [];
 
     /**
+     * 判断是不是RPC
+     * @var bool
+     */
+    protected $isRPC;
+
+    /**
+     * rpc的token
+     * @var string
+     */
+    protected $rpc_token;
+
+    /**
+     * @var string
+     */
+    protected $rpc_request_id;
+
+    /**
      * Controller constructor.
      */
     final public function __construct()
@@ -79,12 +85,10 @@ class Controller extends CoreBase
         parent::__construct();
         $this->http_input = new HttpInput();
         $this->http_output = new HttpOutput($this);
-        $this->redis_pool = get_instance()->redis_pool;
-        $this->mysql_pool = get_instance()->mysql_pool;
-        $this->client = get_instance()->client;
     }
 
     /**
+     * 来自Tcp
      * 设置客户端协议数据
      * @param $uid
      * @param $fd
@@ -97,22 +101,36 @@ class Controller extends CoreBase
         $this->uid = $uid;
         $this->fd = $fd;
         $this->client_data = $client_data;
+        if (isset($client_data->rpc_request_id)) {
+            $this->isRPC = true;
+            $this->rpc_token = $client_data->rpc_token??'';
+            $this->rpc_request_id = $client_data->rpc_request_id??'';
+        } else {
+            $this->isRPC = false;
+        }
         $this->request_type = SwooleMarco::TCP_REQUEST;
         $this->initialization($controller_name, $method_name);
     }
 
     /**
      * 初始化每次执行方法之前都会执行initialization
-     * @param $controller_name 准备执行的controller名称
-     * @param $method_name 准备执行的method名称
+     * @param string $controller_name 准备执行的controller名称
+     * @param string $method_name 准备执行的method名称
+     * @throws \Exception
      */
-    public function initialization($controller_name, $method_name)
+    protected function initialization($controller_name, $method_name)
     {
-        $context = ['request_id' => crc32($controller_name . $method_name . time())];
+        if ($this->isRPC && !empty($this->rpc_request_id)) {
+            //全链路监控保证调用的request_id唯一
+            $context = ['request_id' => $this->rpc_request_id];
+        } else {
+            $context = ['request_id' => time() . crc32($controller_name . $method_name . getTickTime() . rand(1, 10000000))];
+        }
         $this->setContext($context);
     }
 
     /**
+     * 来自Http
      * set http Request Response
      * @param $request
      * @param $response
@@ -125,6 +143,8 @@ class Controller extends CoreBase
         $this->response = $response;
         $this->http_input->set($request);
         $this->http_output->set($request, $response);
+        $this->rpc_request_id = $this->http_input->header('rpc_request_id');
+        $this->isRPC = empty($this->rpc_request_id) ? false : true;
         $this->request_type = SwooleMarco::HTTP_REQUEST;
         $this->initialization($controller_name, $method_name);
     }
@@ -135,6 +155,10 @@ class Controller extends CoreBase
      */
     public function onExceptionHandle(\Exception $e)
     {
+        $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
+        if ($e instanceof SwooleException) {
+            $this->log($e->others, Logger::NOTICE);
+        }
         switch ($this->request_type) {
             case SwooleMarco::HTTP_REQUEST:
                 $this->http_output->end($e->getMessage());
@@ -155,6 +179,11 @@ class Controller extends CoreBase
     {
         if ($this->is_destroy) {
             throw new SwooleException('controller is destroy can not send data');
+        }
+        if ($this->isRPC && !empty($this->rpc_token)) {
+            $rpc_data['rpc_token'] = $this->rpc_token;
+            $rpc_data['rpc_result'] = $data;
+            $data = $rpc_data;
         }
         $data = get_instance()->encode($this->pack->pack($data));
         if (SwooleServer::$testUnity) {

@@ -1,13 +1,15 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-9-1
  * Time: 下午4:25
  */
 
 namespace Server\CoreBase;
 
+use Server\Coroutine\CoroutineBase;
+use Server\Coroutine\CoroutineNull;
 
 /**
  * 用于并发选择1个结果，相当于go的select
@@ -16,7 +18,6 @@ namespace Server\CoreBase;
  */
 class SelectCoroutine extends CoroutineBase
 {
-
     /**
      * @var array
      */

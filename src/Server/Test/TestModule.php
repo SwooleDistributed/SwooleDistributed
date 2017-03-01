@@ -8,9 +8,10 @@
 
 namespace Server\Test;
 
-use Server\CoreBase\Coroutine;
-use Server\CoreBase\CoroutineTask;
-use Server\CoreBase\GeneratorContext;
+use Server\Coroutine\Coroutine;
+use Server\Coroutine\CoroutineTask;
+use Server\Coroutine\GeneratorContext;
+use Server\Memory\Pool;
 
 /**
  * 单元测试组件
@@ -27,9 +28,11 @@ class TestModule
     private $tests;
     private $asyn = false;
     private $dir = '';
-    public function __construct($dir, Coroutine $coroutine = null)
+
+    public function __construct($dir)
     {
         $this->dir = $dir;
+        $coroutine = Coroutine::getInstance();
         if (empty($dir)) {
             $dir = __DIR__ . "/../../test";
         }
@@ -71,12 +74,12 @@ class TestModule
                 }
             }
         }
-        $generatorContext = new GeneratorContext();
+        $generatorContext = Pool::getInstance()->get(GeneratorContext::class)->init();
         $generatorContext->setController($this, 'SwooleDistributedServer', 'TestModule');
         if ($coroutine != null) {
             $coroutine->start($this->runTests(), $generatorContext);
         } else {
-            $coroutineTask = new CoroutineTask($this->runTests(), $generatorContext);
+            $coroutineTask = Pool::getInstance()->get(CoroutineTask::class)->init($this->runTests(), $generatorContext);
             while (true) {
                 $coroutineTask->run();
                 if ($coroutineTask->isFinished()) {

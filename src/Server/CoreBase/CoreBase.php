@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 下午1:24
  */
@@ -41,7 +41,14 @@ class CoreBase extends Child
      * @var IPack
      */
     public $pack;
-
+    /**
+     * @var \Server\Asyn\Redis\RedisAsynPool
+     */
+    public $redis_pool;
+    /**
+     * @var \Server\Asyn\Mysql\MysqlAsynPool
+     */
+    public $mysql_pool;
 
     /**
      * Task constructor.
@@ -54,6 +61,8 @@ class CoreBase extends Child
             $this->server = get_instance()->server;
             $this->config = get_instance()->config;
             $this->pack = get_instance()->pack;
+            $this->redis_pool = get_instance()->redis_pool;
+            $this->mysql_pool = get_instance()->mysql_pool;
         }
     }
 
@@ -72,5 +81,15 @@ class CoreBase extends Child
     public function reUse()
     {
         $this->is_destroy = false;
+    }
+
+    /**
+     * 打印日志
+     * @param $message
+     * @param int $level
+     */
+    protected function log($message, $level = Logger::DEBUG)
+    {
+        $this->logger->addRecord($level, $message, $this->getContext());
     }
 }

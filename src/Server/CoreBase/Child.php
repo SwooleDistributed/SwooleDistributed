@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-29
  * Time: 上午11:05
  */
@@ -27,24 +27,12 @@ class Child
      * @var array
      */
     public $child_list = [];
-    /**
-     * 判断是否执行了__construct
-     */
-    public $isConstruct = false;
+
     /**
      * 上下文
      * @var array
      */
     protected $context;
-
-    /**
-     * after constructor
-     */
-    public function afterConstruct()
-    {
-        $this->isConstruct = true;
-    }
-
 
     /**
      * 加入一个插件
@@ -72,7 +60,7 @@ class Child
      */
     public function hasChild($name)
     {
-        return key_exists($name, $this->child_list);
+        return array_key_exists($name, $this->child_list);
     }
 
     /**

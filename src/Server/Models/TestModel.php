@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 下午1:44
  */
@@ -26,6 +26,7 @@ class TestModel extends Model
         $testTask->contextTest();
         $testTask->startTask(null);
     }
+
     public function test_coroutine()
     {
         $redisCoroutine = $this->redis_pool->coroutineSend('get', 'test');
@@ -63,9 +64,9 @@ class TestModel extends Model
 
     public function test_pdo()
     {
-        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid',36)->coroutineSend();
-        $result = yield $this->mysql_pool->dbQueryBuilder->update('account')->where('uid',36)->set(['status'=>1])->coroutineSend();
-        $result = yield $this->mysql_pool->dbQueryBuilder->replace('account')->where('uid',91)->set(['status'=>1])->coroutineSend();
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 36)->coroutineSend();
+        $result = yield $this->mysql_pool->dbQueryBuilder->update('account')->where('uid', 36)->set(['status' => 1])->coroutineSend();
+        $result = yield $this->mysql_pool->dbQueryBuilder->replace('account')->where('uid', 91)->set(['status' => 1])->coroutineSend();
         print_r($result);
     }
 }

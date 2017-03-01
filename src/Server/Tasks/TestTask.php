@@ -5,7 +5,7 @@ use Server\CoreBase\Task;
 
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 下午1:06
  */
@@ -23,7 +23,7 @@ class TestTask extends Task
 
     public function test()
     {
-        print_r("test\n");
+        print_r(date('y-m-d H:i:s', time()) . "\n");
         return 123;
     }
 
@@ -41,7 +41,7 @@ class TestTask extends Task
 
     public function testPdo()
     {
-        $testModel = $this->loader->model('TestModel',$this);
+        $testModel = $this->loader->model('TestModel', $this);
         yield $testModel->test_pdo();
     }
 

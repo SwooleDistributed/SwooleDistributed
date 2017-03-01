@@ -2,12 +2,12 @@
 namespace Server;
 
 use Noodlehaus\Exception;
-use Server\DataBase\AsynPoolManager;
-use Server\DataBase\RedisAsynPool;
+use Server\Asyn\AsynPoolManager;
+use Server\Asyn\Redis\RedisAsynPool;
 
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-14
  * Time: 上午9:18
  */
@@ -96,36 +96,6 @@ class SwooleDispatchClient extends SwooleServer
     }
 
     /**
-     * beforeSwooleStart
-     */
-    public function beforeSwooleStart()
-    {
-        //创建异步连接池进程
-        if ($this->config->get('asyn_process_enable', false)) {//代表启动单独进程进行管理
-            $this->pool_process = new \swoole_process(function ($process) {
-                $process->name('SWD-ASYN');
-                $this->asnyPoolManager = new AsynPoolManager($process, $this);
-                $this->asnyPoolManager->event_add();
-                $this->initAsynPools();
-                foreach ($this->asynPools as $pool) {
-                    $this->asnyPoolManager->registAsyn($pool);
-                }
-            }, false, 2);
-            $this->server->addProcess($this->pool_process);
-        }
-    }
-
-    /**
-     * 初始化各种连接池
-     */
-    public function initAsynPools()
-    {
-        $this->asynPools = [
-            'redisPool' => new RedisAsynPool($this->config, 'dispatch')
-        ];
-    }
-
-    /**
      * onStart
      * @param $serv
      * @throws Exception
@@ -143,14 +113,20 @@ class SwooleDispatchClient extends SwooleServer
         if (!$serv->taskworker) {
             //注册
             $this->asnyPoolManager = new AsynPoolManager($this->pool_process, $this);
-            if (!$this->config['asyn_process_enable']) {
-                $this->asnyPoolManager->no_event_add();
-            }
             foreach ($this->asynPools as $pool) {
-                $pool->worker_init($workerId);
                 $this->asnyPoolManager->registAsyn($pool);
             }
         }
+    }
+
+    /**
+     * 初始化各种连接池
+     */
+    public function initAsynPools()
+    {
+        $this->asynPools = [
+            'redisPool' => new RedisAsynPool($this->config, 'dispatch')
+        ];
     }
 
     /**
@@ -178,7 +154,7 @@ class SwooleDispatchClient extends SwooleServer
      */
     private function addServerClient($address)
     {
-        if (key_exists(ip2long($address), $this->server_clients)) {
+        if (array_key_exists(ip2long($address), $this->server_clients)) {
             return;
         }
         $client = new \swoole_client(SWOOLE_TCP, SWOOLE_SOCK_ASYNC);
@@ -206,9 +182,6 @@ class SwooleDispatchClient extends SwooleServer
             case SwooleMarco::ADD_SERVER:
                 $address = $data['message'];
                 $this->addServerClient($address);
-                break;
-            case SwooleMarco::MSG_TYPR_ASYN:
-                $this->asnyPoolManager->distribute($data['message']);
                 break;
         }
     }
@@ -296,7 +269,7 @@ class SwooleDispatchClient extends SwooleServer
                 break;
             case SwooleMarco::MSG_TYPE_SEND://发送给uid
                 $this->redis_pool->hGet(SwooleMarco::redis_uid_usid_hash_name, $message['uid'], function ($usid) use ($client_data) {
-                    if (empty($usid) || !key_exists($usid, $this->server_clients)) {
+                    if (empty($usid) || !array_key_exists($usid, $this->server_clients)) {
                         return;
                     }
                     $client = $this->server_clients[$usid];
@@ -305,7 +278,7 @@ class SwooleDispatchClient extends SwooleServer
                 break;
             case SwooleMarco::MSG_TYPE_KICK_UID://踢人
                 $usid = $message['usid'];
-                if (empty($usid) || !key_exists($usid, $this->server_clients)) {
+                if (empty($usid) || !array_key_exists($usid, $this->server_clients)) {
                     return;
                 }
                 $client = $this->server_clients[$usid];

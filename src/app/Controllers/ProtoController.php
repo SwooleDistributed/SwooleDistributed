@@ -8,7 +8,7 @@ use Server\CoreBase\Controller;
 
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 下午3:51
  */
@@ -19,12 +19,18 @@ class ProtoController extends Controller
      */
     public $Message;
 
+    public function destroy()
+    {
+        parent::destroy();
+        $this->Message = null;
+    }
+
     /**
      * 构建Message
      * @param AbstractMessage $responseMessage
      * @return String
      */
-    public function makeMessageData(AbstractMessage $responseMessage)
+    protected function makeMessageData(AbstractMessage $responseMessage)
     {
         $cmdMethod = $responseMessage->getCmdMethod();
         $cmdService = $responseMessage->getCmdService();
@@ -43,11 +49,5 @@ class ProtoController extends Controller
         }
         call_user_func([$response, $method], $responseMessage);
         return $this->Message;
-    }
-
-    public function destroy()
-    {
-        parent::destroy();
-        $this->Message = null;
     }
 }

@@ -4,7 +4,7 @@ namespace Server\CoreBase;
 
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-29
  * Time: 上午11:22
  */
@@ -110,6 +110,9 @@ class HttpOutput
             $this->response->header('Vary', 'Accept-Encoding');
             $output = gzencode($output . " \n", 9);
         }*/
+        if (!is_string($output)) {
+            $output = json_encode($output);
+        }
         $this->response->end($output);
         if ($destroy) {
             $this->controller->destroy();

@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-9-19
  * Time: 上午9:17
  */
@@ -65,7 +65,6 @@ class InotifyProcess
                     $wd = inotify_add_watch($inotify_fd, $file, IN_MODIFY);
                     $monitor_files[$wd] = $file;
                 }
-                //reload
                 $this->server->reload();
             }
         }, null, SWOOLE_EVENT_READ);

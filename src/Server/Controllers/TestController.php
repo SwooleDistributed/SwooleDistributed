@@ -1,17 +1,18 @@
 <?php
+/**
+ * Created by PhpStorm.
+ * User: zhangjincheng
+ * Date: 16-7-15
+ * Time: 下午3:51
+ */
 namespace Server\Controllers;
 
 use Server\CoreBase\Controller;
 use Server\CoreBase\SelectCoroutine;
+use Server\Memory\Lock;
 use Server\Models\TestModel;
 use Server\Tasks\TestTask;
 
-/**
- * Created by PhpStorm.
- * User: tmtbe
- * Date: 16-7-15
- * Time: 下午3:51
- */
 class TestController extends Controller
 {
     /**
@@ -39,6 +40,7 @@ class TestController extends Controller
         $this->testModel = $this->loader->model('TestModel', $this);
         $this->testModel->contextTest();
     }
+
     /**
      * mysql 事务协程测试
      */
@@ -55,6 +57,7 @@ class TestController extends Controller
             yield $this->mysql_pool->coroutineRollback($id);
         }
     }
+
     /**
      * 绑定uid
      */
@@ -102,12 +105,21 @@ class TestController extends Controller
         $value = $this->mysql_pool->dbQueryBuilder->insertInto('account')->intoColumns(['uid', 'static'])->intoValues([[36, 0], [37, 0]])->getStatement(true);
         $this->http_output->end($value);
     }
+
     /**
      * http测试
      */
     public function http_test()
     {
-        $this->http_output->end('helloworld', false);
+        $max = $this->http_input->get('max');
+        if (empty($max)) {
+            $max = 100;
+        }
+        $sum = 0;
+        for ($i = 0; $i < $max; $i++) {
+            $sum += $i;
+        }
+        $this->http_output->end($sum);
     }
 
     /**
@@ -115,15 +127,8 @@ class TestController extends Controller
      */
     public function http_redis()
     {
-        $value = $this->redis_pool->getCoroutine()->get('test');
-        yield $value;
-        $value1 = $this->redis_pool->getCoroutine()->get('test1');
-        yield $value1;
-        $value2 = $this->redis_pool->getCoroutine()->get('test2');
-        yield $value2;
-        $value3 = $this->redis_pool->getCoroutine()->get('test3');
-        yield $value3;
-        $this->http_output->end(1, false);
+        $value = yield $this->redis_pool->getCoroutine()->get('test');
+        $this->http_output->end(1);
     }
 
     /**
@@ -132,11 +137,9 @@ class TestController extends Controller
     public function http_aredis()
     {
         $value = get_instance()->getRedis()->get('test');
-        $value1 = get_instance()->getRedis()->get('test1');
-        $value2 = get_instance()->getRedis()->get('test2');
-        $value3 = get_instance()->getRedis()->get('test3');
-        $this->http_output->end(1, false);
+        $this->http_output->end(1);
     }
+
     /**
      * html测试
      */
@@ -152,17 +155,6 @@ class TestController extends Controller
     public function http_html_file_test()
     {
         $this->http_output->endFile(SERVER_DIR, 'Views/test.html');
-    }
-
-
-    /**
-     * 协程的httpclient测试
-     */
-    public function http_test_httpClient()
-    {
-        $httpClient = yield $this->client->coroutineGetHttpClient('http://localhost:8081');
-        $result = yield $httpClient->coroutineGet("/TestController/test_request", ['id' => 123]);
-        $this->http_output->end($result);
     }
 
     /**
@@ -203,6 +195,7 @@ class TestController extends Controller
         $messages = get_instance()->getServerAllTaskMessage();
         $this->http_output->end(json_encode($messages));
     }
+
     /**
      * @return boolean
      */
@@ -211,4 +204,24 @@ class TestController extends Controller
         return $this->is_destroy;
     }
 
+    public function http_lock()
+    {
+        $lock = new Lock('test1');
+        $result = yield $lock->coroutineLock();
+        $this->http_output->end($result);
+    }
+
+    public function http_unlock()
+    {
+        $lock = new Lock('test1');
+        $result = yield $lock->coroutineUnlock();
+        $this->http_output->end($result);
+    }
+
+    public function http_destroylock()
+    {
+        $lock = new Lock('test1');
+        $lock->destroy();
+        $this->http_output->end(1);
+    }
 }

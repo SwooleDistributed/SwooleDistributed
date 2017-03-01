@@ -2,7 +2,7 @@
 /**
  * 包含http服务器
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-29
  * Time: 上午9:42
  */
@@ -12,7 +12,7 @@ namespace Server;
 
 use League\Plates\Engine;
 use Server\CoreBase\ControllerFactory;
-use Server\CoreBase\GeneratorContext;
+use Server\Coroutine\Coroutine;
 
 abstract class SwooleHttpServer extends SwooleServer
 {
@@ -114,7 +114,6 @@ abstract class SwooleHttpServer extends SwooleServer
         $this->templateEngine = new Engine();
         $this->templateEngine->addFolder('server', __DIR__ . '/Views');
         $this->templateEngine->addFolder('app', __DIR__ . '/../app/Views');
-        $this->templateEngine->registerFunction('get_www', 'get_www');
     }
 
     /**
@@ -146,12 +145,7 @@ abstract class SwooleHttpServer extends SwooleServer
                 }
                 try {
                     $controller_instance->setRequestResponse($request, $response, $controller_name, $method_name);
-                    $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
-                    if ($generator instanceof \Generator) {
-                        $generatorContext = new GeneratorContext();
-                        $generatorContext->setController($controller_instance, $controller_name, $method_name);
-                        $this->coroutine->start($generator, $generatorContext);
-                    }
+                    Coroutine::startCoroutine([$controller_instance, $method_name], $this->route->getParams());
                     return;
                 } catch (\Exception $e) {
                     call_user_func([$controller_instance, 'onExceptionHandle'], $e);
@@ -186,6 +180,9 @@ abstract class SwooleHttpServer extends SwooleServer
     public function getHostRoot($host)
     {
         $root_path = $this->config['http']['root'][$host]['root']??'';
+        if (empty($root_path)) {
+            $root_path = $this->config['http']['root']['default']['root']??'';
+        }
         if (!empty($root_path)) {
             $root_path = WWW_DIR . "/$root_path/";
         } else {

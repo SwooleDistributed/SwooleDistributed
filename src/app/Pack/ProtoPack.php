@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 下午2:43
  */
@@ -25,6 +25,7 @@ class ProtoPack implements IPack
     /**
      * @param $data string
      * @return mixed
+     * @throws SwooleException
      */
     public function unPack($data)
     {
@@ -46,7 +47,7 @@ class ProtoPack implements IPack
         if (!method_exists($request, $method)) {
             throw new SwooleException('unpack method error');
         }
-        $clientData->params = call_user_func([$request, $method]);
+        $clientData->params = [call_user_func([$request, $method])];
         return $clientData;
     }
 }

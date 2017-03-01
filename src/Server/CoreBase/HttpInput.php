@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-29
  * Time: 上午11:02
  */
@@ -95,6 +95,20 @@ class HttpInput
     public function getAllPostGet()
     {
         return $this->request->post??$this->request->get??[];
+    }
+
+    /**
+     * @param $index
+     * @param bool $xss_clean
+     * @return array|bool|string
+     */
+    public function header($index, $xss_clean = true)
+    {
+        if ($xss_clean) {
+            return XssClean::getXssClean()->xss_clean($this->request->header[$index]??'');
+        } else {
+            return $this->request->header[$index]??'';
+        }
     }
 
     /**

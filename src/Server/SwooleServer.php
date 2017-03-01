@@ -6,22 +6,21 @@ use Monolog\Logger;
 use Noodlehaus\Config;
 use Server\CoreBase\Child;
 use Server\CoreBase\ControllerFactory;
-use Server\CoreBase\Coroutine;
-use Server\CoreBase\GeneratorContext;
 use Server\CoreBase\Loader;
 use Server\CoreBase\SwooleException;
+use Server\Coroutine\Coroutine;
 use Server\Pack\IPack;
 use Server\Route\IRoute;
 
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-6-28
  * Time: 上午11:37
  */
 abstract class SwooleServer extends Child
 {
-    const version = "1.7.8";
+    const version = "2.0.0-beta";
     /**
      * Daemonize.
      *
@@ -74,11 +73,6 @@ abstract class SwooleServer extends Child
      * @var int
      */
     protected static $_maxShowLength = 12;
-    /**
-     * 协程调度器
-     * @var Coroutine
-     */
-    public $coroutine;
     /**
      * server name
      * @var string
@@ -179,7 +173,6 @@ abstract class SwooleServer extends Child
 
     public function __construct()
     {
-        $this->afterConstruct();
         $this->onErrorHandel = [$this, 'onErrorHandel'];
         self::$_worker = $this;
         // 加载配置
@@ -292,7 +285,7 @@ abstract class SwooleServer extends Child
     public static function setProcessTitle($title)
     {
         // >=php 5.5
-        if (function_exists('cli_set_process_title') && !isMac()) {
+        if (function_exists('cli_set_process_title')) {
             @cli_set_process_title($title);
         } // Need proctitle when php<=5.5 .
         else {
@@ -627,9 +620,11 @@ abstract class SwooleServer extends Child
             apc_clear_cache();
         }
         file_put_contents(self::$pidFile, ',' . $serv->worker_pid, FILE_APPEND);
+        // 重新加载配置
+        $this->config = $this->config->load(__DIR__ . '/../config');
         if (!$serv->taskworker) {//worker进程
             if ($this->needCoroutine) {//启动协程调度器
-                $this->coroutine = new Coroutine();
+                Coroutine::init();
             }
             self::setProcessTitle('SWD-Worker');
         } else {
@@ -682,12 +677,7 @@ abstract class SwooleServer extends Child
                 if (!method_exists($controller_instance, $method_name)) {
                     $method_name = 'defaultMethod';
                 }
-                $generator = call_user_func([$controller_instance, $method_name], $this->route->getParams());
-                if ($generator instanceof \Generator) {
-                    $generatorContext = new GeneratorContext();
-                    $generatorContext->setController($controller_instance, $controller_name, $method_name);
-                    $this->coroutine->start($generator, $generatorContext);
-                }
+                Coroutine::startCoroutine([$controller_instance, $method_name], $this->route->getParams());
             } catch (\Exception $e) {
                 call_user_func([$controller_instance, 'onExceptionHandle'], $e);
             }
@@ -911,10 +901,10 @@ abstract class SwooleServer extends Child
     public function isWebSocket($fd)
     {
         $fdinfo = $this->server->connection_info($fd);
-        if(empty($fdinfo)){
+        if (empty($fdinfo)) {
             throw new \Exception('fd not exist');
         }
-        if (key_exists('websocket_status', $fdinfo) && $fdinfo['websocket_status'] == WEBSOCKET_STATUS_FRAME) {
+        if (array_key_exists('websocket_status', $fdinfo) && $fdinfo['websocket_status'] == WEBSOCKET_STATUS_FRAME) {
             return true;
         }
         return false;

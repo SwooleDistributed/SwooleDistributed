@@ -1,7 +1,7 @@
 <?php
 /**
  * Created by PhpStorm.
- * User: tmtbe
+ * User: zhangjincheng
  * Date: 16-7-15
  * Time: 上午11:38
  */
@@ -23,9 +23,10 @@ function getTickTime()
     return \Server\SwooleDistributedServer::get_instance()->tickTime;
 }
 
-function getMillisecond() {
+function getMillisecond()
+{
     list($t1, $t2) = explode(' ', microtime());
-    return (float)sprintf('%.0f',(floatval($t1)+floatval($t2))*1000);
+    return (float)sprintf('%.0f', (floatval($t1) + floatval($t2)) * 1000);
 }
 
 function shell_read()
@@ -77,25 +78,4 @@ function get_extension($file)
 {
     $info = pathinfo($file);
     return strtolower($info['extension']??'');
-}
-
-/**
- * 获取绝对地址
- * @param $path
- * @return string
- */
-function get_www($path)
-{
-    $normal = 'http://localhost:' . get_instance()->config['http_server']['port'];
-    return get_instance()->config->get('http.domain', $normal) . '/' . $path;
-}
-
-function isMac()
-{
-    $str = PHP_OS;
-    if ($str == 'Darwin') {
-        return true;
-    } else {
-        return false;
-    }
 }
