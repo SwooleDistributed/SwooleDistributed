@@ -15,5 +15,4 @@ class AppTask extends Task
     {
         return "test task\n";
     }
-
 }

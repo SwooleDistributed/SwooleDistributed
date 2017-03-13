@@ -25,15 +25,23 @@ class CoroutineTask
 
     public function __construct()
     {
-        $this->stack = new \SplStack();
+
     }
 
+    /**
+     * 对象池模式代替__construct
+     * @param \Generator $routine
+     * @param GeneratorContext $generatorContext
+     * @return $this
+     */
     public function init(\Generator $routine, GeneratorContext $generatorContext)
     {
+        $this->stack = new \SplStack();
         $this->routine = $routine;
         $this->generatorContext = $generatorContext;
         return $this;
     }
+
     /**
      * 协程调度
      */
@@ -62,7 +70,7 @@ class CoroutineTask
                 $result = $value->getResult();
                 if ($result !== CoroutineNull::getInstance()) {
                     $routine->send($result);
-                    $value->destory();
+                    $value->destroy();
                 } else {
                     $value->setCoroutineTask($this);
                     return;
@@ -86,9 +94,7 @@ class CoroutineTask
                 }
             }
         } catch (\Exception $e) {
-            if ($value != null && $value instanceof ICoroutineBase) {
-                $value->destory();
-            }
+            //这里$value如果是ICoroutineBase不需要进行销毁，否则有可能重复销毁
             $this->isError = true;
             if ($flag) {
                 $this->generatorContext->addYieldStack($routine->key());
@@ -135,11 +141,9 @@ class CoroutineTask
     public function destroy()
     {
         $this->generatorContext->destroy();
-        unset($this->generatorContext);
-        unset($this->routine);
-        while ($this->stack->count() != 0) {
-            $this->stack->pop();
-        }
+        $this->generatorContext = null;
+        $this->routine = null;
+        $this->stack = null;
         $this->isError = false;
         Pool::getInstance()->push(CoroutineTask::class, $this);
     }

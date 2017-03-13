@@ -99,7 +99,7 @@ class MysqlAsynPool extends AsynPool
             'sql' => $sql
         ];
         $data['token'] = $this->addTokenCallback($callback);
-        if (!empty($bind_id)) {
+        if ($bind_id != null) {
             $data['bind_id'] = $bind_id;
         }
         $this->execute($data);
@@ -217,8 +217,9 @@ class MysqlAsynPool extends AsynPool
      */
     public function prepareOne()
     {
-        parent::prepareOne();
-        $this->reconnect();
+        if (parent::prepareOne()) {
+            $this->reconnect();
+        }
     }
 
     /**

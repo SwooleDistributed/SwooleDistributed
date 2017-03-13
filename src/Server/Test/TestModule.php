@@ -74,7 +74,7 @@ class TestModule
                 }
             }
         }
-        $generatorContext = Pool::getInstance()->get(GeneratorContext::class)->init();
+        $generatorContext = Pool::getInstance()->get(GeneratorContext::class);
         $generatorContext->setController($this, 'SwooleDistributedServer', 'TestModule');
         if ($coroutine != null) {
             $coroutine->start($this->runTests(), $generatorContext);

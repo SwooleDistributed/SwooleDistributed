@@ -793,12 +793,14 @@ abstract class SwooleServer extends Child
      * 包装SerevrMessageBody消息
      * @param $type
      * @param $message
+     * @param string $func
      * @return string
      */
-    public function packSerevrMessageBody($type, $message)
+    public function packSerevrMessageBody($type, $message, string $func = null)
     {
         $data['type'] = $type;
         $data['message'] = $message;
+        $data['func'] = $func;
         return serialize($data);
     }
 

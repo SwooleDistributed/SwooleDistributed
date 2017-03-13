@@ -24,7 +24,7 @@ class ServerMysqlTest extends TestCase
      */
     public function setUpBeforeClass()
     {
-        $this->mysql_pool->dbQueryBuilder->coroutineSend(null, "
+        yield $this->mysql_pool->dbQueryBuilder->coroutineSend(null, "
             CREATE TABLE IF NOT EXISTS `MysqlTest` (
               `peopleid` smallint(6) NOT NULL AUTO_INCREMENT,
               `firstname` char(50) NOT NULL,
@@ -43,7 +43,7 @@ class ServerMysqlTest extends TestCase
      */
     public function tearDownAfterClass()
     {
-        $this->mysql_pool->dbQueryBuilder->coroutineSend(null, "
+        yield $this->mysql_pool->dbQueryBuilder->coroutineSend(null, "
             DROP TABLE  `MysqlTest`;
         ");
     }

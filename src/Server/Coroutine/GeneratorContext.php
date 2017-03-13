@@ -30,6 +30,10 @@ class GeneratorContext
 
     }
 
+    /**
+     * 对象池模式代替__construct
+     * @return $this
+     */
     public function init()
     {
         $this->stack = [];
@@ -111,8 +115,8 @@ class GeneratorContext
      */
     public function destroy()
     {
-        unset($this->controller);
-        unset($this->stack);
+        $this->controller = null;
+        $this->stack = null;
         Pool::getInstance()->push(GeneratorContext::class, $this);
     }
 }

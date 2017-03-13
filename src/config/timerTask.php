@@ -23,7 +23,7 @@ $config['timerTask'][] = [
 ];
 //下面例子表示在每天的14点到20点间每隔1秒执行一次
 $config['timerTask'][] = [
-    'start_time' => 'Y-m-d 14:00:00',
+    'start_time' => 'Y-m-d 19:00:00',
     'end_time' => 'Y-m-d 20:00:00',
     'task_name' => 'TestTask',
     'method_name' => 'test',

@@ -10,7 +10,7 @@ $total_num = 100000;
 $GLOBALS['package_length_type'] = 'N';
 $GLOBALS['package_length_type_len'] = 4;
 $GLOBALS['package_length_offset'] = 0;
-$ips = ['127.0.0.1', '192.168.21.10'];
+$ips = ['127.0.0.1'];
 $GLOBALS['total_num'] = $total_num;
 $GLOBALS['worker_num'] = $worker_num;
 $GLOBALS['count'] = 0;
@@ -65,7 +65,7 @@ function connect($cli)
     swoole_timer_after(1000, function () use ($cli) {
         $GLOBALS['start_time'] = getMillisecond();
         for ($i = 0; $i < $cli->total_num; $i++) {
-            $cli->send(encode(json_pack('TestController', 'efficiency_test', $GLOBALS['test_count'])));
+            $cli->send(encode(json_pack('TestController', 'redis', $GLOBALS['test_count'])));
             $GLOBALS['test_count']++;
         }
     });

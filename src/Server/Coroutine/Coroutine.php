@@ -96,7 +96,7 @@ class Coroutine
         $generator = call_user_func_array($function, $params);
         if ($generator instanceof \Generator) {
             if ($generatorContext == null) {
-                $generatorContext = Pool::getInstance()->get(GeneratorContext::class)->init();
+                $generatorContext = Pool::getInstance()->get(GeneratorContext::class);
                 if (is_array($function)) {//代表不是匿名函数
                     $generatorContext->setController($function[0], get_class($function[0]), $function[1]);
                 }

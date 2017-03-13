@@ -41,43 +41,64 @@ class HttpClient
 
     /**
      * @param $headers
+     * @return $this
      */
     public function setHeaders($headers)
     {
         $this->headers = $headers;
+        return $this;
+    }
+
+    /**
+     * @param $key
+     * @param $value
+     * @return $this
+     */
+    public function addHeader($key, $value)
+    {
+        $this->headers[$key] = $value;
+        return $this;
     }
 
     /**
      * @param $cookies
+     * @return $this
      */
     public function setCookies($cookies)
     {
         $this->cookies = $cookies;
+        return $this;
     }
 
     /**
      * @param $data
+     * @return $this
      */
     public function setData($data)
     {
         $this->data = $data;
+        return $this;
     }
 
     /**
      * @param $method
+     * @return $this
      */
     public function setMethod($method)
     {
         $this->method = $method;
+        return $this;
     }
 
     /**
      * 设置get的query
      * @param array $query
+     * @return $this
      */
     public function setQuery(array $query)
     {
         $this->query = http_build_query($query);
+        return $this;
     }
 
     /**
@@ -86,11 +107,13 @@ class HttpClient
      * @param string|null $filename
      * @param string|null $mimeType
      * @param int $offset
+     * @return $this
      */
     public function addFile(string $path, string $name, string $filename = null,
                             string $mimeType = null, int $offset = 0)
     {
         $this->addFiles[] = [$path, $name, $filename, $mimeType, $offset];
+        return $this;
     }
 
     /**

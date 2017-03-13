@@ -19,13 +19,19 @@ class RedisCoroutine extends CoroutineBase
     public $redisAsynPool;
     public $name;
     public $arguments;
-    public $token;
 
     public function __construct()
     {
         parent::__construct();
     }
 
+    /**
+     * 对象池模式用来代替__construct
+     * @param $redisAsynPool
+     * @param $name
+     * @param $arguments
+     * @return $this
+     */
     public function init($redisAsynPool, $name, $arguments)
     {
         $this->redisAsynPool = $redisAsynPool;
@@ -38,17 +44,20 @@ class RedisCoroutine extends CoroutineBase
         });
         return $this;
     }
-
     public function send($callback)
     {
         $this->arguments[] = $callback;
         $this->token = $this->redisAsynPool->__call($this->name, $this->arguments);
     }
 
-    public function destory()
+    public function destroy()
     {
-        parent::destory();
-        unset($this->token);
+        parent::destroy();
+        $this->redisAsynPool->removeTokenCallback($this->token);
+        $this->token = null;
+        $this->redisAsynPool = null;
+        $this->name = null;
+        $this->arguments = null;
         Pool::getInstance()->push(RedisCoroutine::class, $this);
     }
 

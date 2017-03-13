@@ -10,6 +10,9 @@
 namespace Server\Asyn;
 
 
+use Noodlehaus\Config;
+use Server\Coroutine\CoroutineChangeToken;
+
 abstract class AsynPool implements IAsynPool
 {
     const MAX_TOKEN = 65536 * 8;
@@ -22,15 +25,10 @@ abstract class AsynPool implements IAsynPool
     protected $callBacks;
     protected $clients;
     protected $worker_id;
-    protected $server;
-    protected $swoole_server;
     protected $token = 1;
     protected $client_max_count;
     protected $client_count;
-    /**
-     * @var AsynPoolManager
-     */
-    protected $asyn_manager;
+    private $isDestroy;
 
     public function __construct($config)
     {
@@ -39,6 +37,19 @@ abstract class AsynPool implements IAsynPool
         $this->commands = new \SplQueue();
         $this->pool = new \SplQueue();
         $this->config = $config;
+    }
+
+    /**
+     * 迁移工作,将别的相同pool的命令迁移到此处
+     * @param $migrate
+     */
+    public function migrates($migrate)
+    {
+        $token = $this->addTokenCallback($migrate['callback']);
+        call_user_func($migrate['callback'], new CoroutineChangeToken($token));
+        unset($migrate['callback']);
+        $migrate['token'] = $token;
+        $this->execute($migrate);
     }
 
     /**
@@ -58,6 +69,15 @@ abstract class AsynPool implements IAsynPool
     }
 
     /**
+     * 移除token回调
+     * @param $token
+     */
+    public function removeTokenCallback($token)
+    {
+        unset($this->callBacks[$token]);
+    }
+
+    /**
      * 超时时需要处理下
      * 销毁垃圾
      * @param $token
@@ -65,7 +85,7 @@ abstract class AsynPool implements IAsynPool
     public function destoryGarbage($token)
     {
         unset($this->callBacks[$token]);
-        if (array_key_exists($token, $this->clients)) {
+        if ($this->clients != null && array_key_exists($token, $this->clients)) {
             $this->destoryClient($this->clients[$token]);
         }
         $this->client_count--;
@@ -84,9 +104,10 @@ abstract class AsynPool implements IAsynPool
      */
     public function distribute($data)
     {
-        $callback = $this->callBacks[$data['token']]??null;
-        unset($this->callBacks[$data['token']]);
-        unset($this->clients[$data['token']]);
+        $token = $data['token'];
+        $callback = $this->callBacks[$token]??null;
+        unset($this->callBacks[$token]);
+        unset($this->clients[$token]);
         if ($callback != null) {
             call_user_func($callback, $data['result']);
         }
@@ -115,9 +136,10 @@ abstract class AsynPool implements IAsynPool
     public function prepareOne()
     {
         if ($this->client_count >= $this->client_max_count) {
-            return;
+            return false;
         }
         $this->client_count++;
+        return true;
     }
 
     /**
@@ -125,9 +147,11 @@ abstract class AsynPool implements IAsynPool
      */
     public function pushToPool($client)
     {
-        if (!(isset($client->isclose) && $client->isclose)) {
-            $this->pool->push($client);
+        if ($this->isDestroy) {
+            $this->destoryClient($client);
+            return;
         }
+        $this->pool->push($client);
         if (count($this->commands) > 0) {//有残留的任务
             $command = $this->commands->shift();
             $this->execute($command);
@@ -139,4 +163,27 @@ abstract class AsynPool implements IAsynPool
      * @return mixed
      */
     abstract public function getSync();
+
+    /**
+     * 销毁,返回需要迁移的命令
+     * @param array $migrate
+     * @return array
+     */
+    public function destroy(&$migrate = [])
+    {
+        $this->isDestroy = true;
+        foreach ($this->pool as $client) {
+            $this->destoryClient($client);
+        }
+        foreach ($this->commands as $command) {
+            $command['callback'] = $this->callBacks[$command['token']];
+            $migrate[] = $command;
+        }
+        $this->callBacks = null;
+        $this->clients = null;
+        $this->pool = null;
+        $this->commands = null;
+        $this->config = null;
+        return $migrate;
+    }
 }

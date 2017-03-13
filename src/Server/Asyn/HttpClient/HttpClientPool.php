@@ -19,8 +19,13 @@ class HttpClientPool extends AsynPool
      * @var HttpClient
      */
     public $httpClient;
-    protected $baseUrl;
+    public $baseUrl;
     protected $httpClient_max_count;
+    /**
+     * 一直向服务器发请求，这里需要针对返回结果验证请求是否成功
+     * @var array
+     */
+    private $command_backup;
 
     public function __construct($config, $baseUrl)
     {
@@ -67,6 +72,7 @@ class HttpClientPool extends AsynPool
         $client = $this->shiftFromPool($data);
         if ($client) {
             $token = $data['token'];
+            $this->command_backup[$token] = $data;
             switch ($data['callMethod']) {
                 case 'execute':
                     $client->setMethod($data['method']);
@@ -89,6 +95,7 @@ class HttpClientPool extends AsynPool
                     $client->execute($path, function ($client) use ($token) {
                         //分发消息
                         $data['token'] = $token;
+                        unset($this->command_backup[$token]);
                         $data['result']['headers'] = $client->headers;
                         $data['result']['body'] = $client->body;
                         $data['result']['statusCode'] = $client->statusCode;
@@ -116,25 +123,43 @@ class HttpClientPool extends AsynPool
      */
     public function prepareOne()
     {
-        parent::prepareOne();
-        $data = [];
-        $arr = parse_url($this->baseUrl);
-        $scheme = $arr['scheme'];
-        $host = $arr['host'];
-        if ($scheme == "https") {
-            $data['ssl'] = true;
-            $data['port'] = 443;
-        } else {
-            $data['ssl'] = false;
-            $data['port'] = 80;
+        if (parent::prepareOne()) {
+            $data = [];
+            $arr = parse_url($this->baseUrl);
+            $scheme = $arr['scheme'];
+            $host = $arr['host'];
+            if ($scheme == "https") {
+                $data['ssl'] = true;
+                $data['port'] = 443;
+            } else {
+                $data['ssl'] = false;
+                $data['port'] = 80;
+            }
+            if (array_key_exists('port', $arr)) {
+                $data['port'] = $arr['port'];
+            }
+            swoole_async_dns_lookup($host, function ($host, $ip) use (&$data) {
+                $client = new \swoole_http_client($ip, $data['port'], $data['ssl']);
+                $this->pushToPool($client);
+            });
         }
-        if (array_key_exists('port', $arr)) {
-            $data['port'] = $arr['port'];
+    }
+
+    /**
+     * 销毁整个池子
+     */
+    public function destroy(&$migrate = null)
+    {
+        if ($this->command_backup != null) {
+            foreach ($this->command_backup as $command) {
+                $command['callback'] = $this->callBacks[$command['token']];
+                $migrate[] = $command;
+            }
         }
-        swoole_async_dns_lookup($host, function ($host, $ip) use (&$data) {
-            $client = new \swoole_http_client($ip, $data['port'], $data['ssl']);
-            $this->pushToPool($client);
-        });
+        $migrate = parent::destroy($migrate);
+        $this->httpClient = null;
+        $this->command_backup = null;
+        return $migrate;
     }
 
     /**

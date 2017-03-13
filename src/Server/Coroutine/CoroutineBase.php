@@ -11,6 +11,11 @@ namespace Server\Coroutine;
 
 use Server\CoreBase\SwooleException;
 
+/**
+ * 这里抛出异常之前请销毁自身
+ * Class CoroutineBase
+ * @package Server\Coroutine
+ */
 abstract class CoroutineBase implements ICoroutineBase
 {
     /**
@@ -39,6 +44,7 @@ abstract class CoroutineBase implements ICoroutineBase
      * @var callable
      */
     protected $downgrade;
+    protected $token;
     /**
      * @var CoroutineTask
      */
@@ -47,12 +53,18 @@ abstract class CoroutineBase implements ICoroutineBase
      * @var bool
      */
     private $isFaile;
+    /**
+     * @var bool
+     */
+    private $noException;
+    private $noExceptionReturn;
 
     public function __construct()
     {
         $this->MAX_TIMERS = get_instance()->config->get('coroution.timerOut', 1000);
         $this->result = CoroutineNull::getInstance();
         $this->getCount = 0;
+        $this->noException = false;
     }
 
     public abstract function send($callback);
@@ -68,11 +80,23 @@ abstract class CoroutineBase implements ICoroutineBase
                 return $this->result;
             }
         }
+        //迁移操作
+        if ($this->result instanceof CoroutineChangeToken) {
+            $this->token = $this->result->token;
+            $this->getCount = 0;
+            $this->result = CoroutineNull::getInstance();
+        }
         $this->getCount++;
         if ($this->getCount > $this->MAX_TIMERS && $this->result == CoroutineNull::getInstance()) {
             $this->isFaile = true;
             $this->onTimerOutHandle();
-            throw new SwooleException("[CoroutineTask]: Time Out!, [Request]: $this->request");
+            if (!$this->noException) {
+                $ex = new SwooleException("[CoroutineTask]: Time Out!, [Request]: $this->request");
+                $this->destroy();
+                throw $ex;
+            } else {
+                $this->result = null;
+            }
         }
         return $this->result;
     }
@@ -94,6 +118,29 @@ abstract class CoroutineBase implements ICoroutineBase
     }
 
     /**
+     * destroy
+     */
+    public function destroy()
+    {
+        if ($this->useFuse) {
+            if ($this->isFaile) {
+                Fuse::getInstance()->commitTimeOutOrFaile($this->request);
+            } else {
+                Fuse::getInstance()->commitSuccess($this->request);
+            }
+        }
+        $this->result = CoroutineNull::getInstance();
+        $this->MAX_TIMERS = get_instance()->config->get('coroution.timerOut', 1000);
+        $this->getCount = 0;
+        $this->coroutineTask = null;
+        $this->request = null;
+        $this->downgrade = null;
+        $this->isFaile = false;
+        $this->noException = false;
+        $this->noExceptionReturn = null;
+    }
+
+    /**
      * 设置协程任务
      * @param $coroutineTask
      */
@@ -110,27 +157,6 @@ abstract class CoroutineBase implements ICoroutineBase
         if (isset($this->coroutineTask)) {
             $this->coroutineTask->run();
         }
-    }
-
-    /**
-     * destory
-     */
-    public function destory()
-    {
-        if ($this->useFuse) {
-            if ($this->isFaile) {
-                Fuse::getInstance()->commitTimeOutOrFaile($this->request);
-            } else {
-                Fuse::getInstance()->commitSuccess($this->request);
-            }
-        }
-        $this->result = CoroutineNull::getInstance();
-        $this->MAX_TIMERS = get_instance()->config->get('coroution.timerOut', 1000);
-        $this->getCount = 0;
-        unset($this->coroutineTask);
-        unset($this->request);
-        $this->downgrade = null;
-        $this->isFaile = false;
     }
 
     /**
@@ -156,6 +182,18 @@ abstract class CoroutineBase implements ICoroutineBase
             throw new SwooleException('not supper fuse');
         }
         $this->downgrade = $func;
+        return $this;
+    }
+
+    /**
+     * 不返回超时异常，直接返回$return的值
+     * @param null $return
+     * @return $this
+     */
+    public function noException($return = null)
+    {
+        $this->noException = true;
+        $this->noExceptionReturn = $return;
         return $this;
     }
 

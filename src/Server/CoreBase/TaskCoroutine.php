@@ -28,6 +28,7 @@ class TaskCoroutine extends CoroutineBase
         $this->send(function ($serv, $task_id, $data) {
             $this->result = $data;
         });
+        return $this;
     }
 
     public function send($callback)
@@ -35,9 +36,9 @@ class TaskCoroutine extends CoroutineBase
         get_instance()->server->task($this->task_proxy_data, $this->id, $callback);
     }
 
-    public function destory()
+    public function destroy()
     {
-        parent::destory();
+        parent::destroy();
         Pool::getInstance()->push(TaskCoroutine::class, $this);
     }
 }

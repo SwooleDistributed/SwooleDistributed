@@ -7,7 +7,6 @@ use Server\Asyn\Redis\RedisAsynPool;
 use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\Asyn\TcpClient\TcpClientPool;
 use Server\CoreBase\Controller;
-use Server\CoreBase\SwooleException;
 
 /**
  * Created by PhpStorm.
@@ -73,7 +72,6 @@ class AppController extends Controller
         $reuslt = yield $this->httpClientPool->httpClient->coroutineExecute('/TestController/test')->setTimeout(100)->setDowngrade(function () {
             return ['body' => 'test'];
         });
-        throw new SwooleException('myex');
         $this->http_output->end($reuslt['body']);
     }
 

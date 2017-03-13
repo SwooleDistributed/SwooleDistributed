@@ -360,8 +360,9 @@ class RedisAsynPool extends AsynPool
      */
     public function prepareOne()
     {
-        parent::prepareOne();
-        $this->reconnect();
+        if (parent::prepareOne()) {
+            $this->reconnect();
+        }
     }
 
     /**

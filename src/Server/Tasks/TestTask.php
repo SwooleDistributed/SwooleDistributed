@@ -45,6 +45,14 @@ class TestTask extends Task
         yield $testModel->test_pdo();
     }
 
+    public function testLong()
+    {
+        var_dump(time());
+        sleep(4);
+        var_dump(time());
+        return 1;
+    }
+
     /**
      * 测试中断
      */
@@ -56,5 +64,30 @@ class TestTask extends Task
                 break;
             }
         }
+    }
+
+    public function testRedis()
+    {
+        yield $this->helpRedis();
+        yield $this->helpRedis();
+        yield $this->helpRedis();
+        return 1;
+    }
+
+    public function helpRedis()
+    {
+        $result = yield $this->redis_pool->getCoroutine()->get('test');
+        $result = yield $this->redis_pool->getCoroutine()->get('test2');
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('task')
+            ->whereIn('type', [0, 1])->where('status', 1)->coroutineSend();
+        yield $this->testMysql();
+        return 1;
+    }
+
+    public function testMysql()
+    {
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('task')
+            ->whereIn('type', [0, 1])->where('status', 1)->coroutineSend();
+        return $result;
     }
 }

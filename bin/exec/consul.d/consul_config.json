@@ -1,0 +1,16 @@
+{
+  "node_name": "SD-1",
+  "start_join": [
+    "192.168.9.38"
+  ],
+  "data_dir": "\/tmp\/consul",
+  "bind_addr": "192.168.8.47",
+  "watches": [
+    {
+      "type": "service",
+      "passingonly": true,
+      "service": "MathService",
+      "handler": "php \/home\/zhangjincheng\/Documents\/SwooleDistributed2.0\/bin\/start_service_handle.php MathService"
+    }
+  ]
+}

@@ -24,7 +24,7 @@ class SdTcpRpcPool extends AsynPool
 {
     const AsynName = 'tcp_rpc_client';
 
-    protected $connect;
+    public $connect;
     protected $port;
     protected $host;
     protected $set;
@@ -34,6 +34,11 @@ class SdTcpRpcPool extends AsynPool
      */
     protected $pack;
     protected $package_length_type_length;
+    /**
+     * 因为这里是流rpc，会一直向服务器发请求，这里需要针对返回结果验证请求是否成功
+     * @var array
+     */
+    private $command_backup;
 
     public function __construct($config, $connect)
     {
@@ -87,28 +92,9 @@ class SdTcpRpcPool extends AsynPool
      */
     public function send($send, $callback)
     {
-        $send['rpc_token'] = $this->addTokenCallback($callback);
-        $data = $this->encode($this->pack->pack($send));
-        $this->execute($data);
-        return $send['rpc_token'];
-    }
-
-    /**
-     * 数据包编码
-     * @param $buffer
-     * @return string
-     * @throws SwooleException
-     */
-    public function encode($buffer)
-    {
-        if ($this->set['open_length_check']??0 == 1) {
-            $total_length = $this->package_length_type_length + strlen($buffer) - $this->set['package_body_offset'];
-            return pack($this->set['package_length_type'], $total_length) . $buffer;
-        } else if ($this->set['open_eof_check']??0 == 1) {
-            return $buffer . $this->set['package_eof'];
-        } else {
-            throw new SwooleException("tcpClient won't support set");
-        }
+        $send['token'] = $this->addTokenCallback($callback);
+        $this->execute($send);
+        return $send['token'];
     }
 
     /**
@@ -126,6 +112,10 @@ class SdTcpRpcPool extends AsynPool
                 $this->commands->push($data);
                 return;
             }
+            $this->command_backup[$data['token']] = $data;
+            $data['rpc_token'] = $data['token'];
+            unset($data['token']);
+            $data = $this->encode($this->pack->pack($data));
             $this->client->send($data);
         }
     }
@@ -149,14 +139,19 @@ class SdTcpRpcPool extends AsynPool
             if (isset($packdata->rpc_token)) {
                 $data['token'] = $packdata->rpc_token;
                 $data['result'] = $packdata->rpc_result;
+                unset($this->command_backup[$packdata->rpc_token]);
                 $this->distribute($data);
             }
         });
         $client->on("error", function ($cli) {
-            $cli->close();
+            if ($cli->isConnected()) {
+                $cli->close();
+            } else {
+                $this->client = null;
+            }
         });
         $client->on("close", function ($cli) {
-
+            $this->client = null;
         });
         $client->connect($this->host, $this->port);
     }
@@ -177,9 +172,27 @@ class SdTcpRpcPool extends AsynPool
     }
 
     /**
+     * 数据包编码
+     * @param $buffer
+     * @return string
+     * @throws SwooleException
+     */
+    public function encode($buffer)
+    {
+        if ($this->set['open_length_check']??0 == 1) {
+            $total_length = $this->package_length_type_length + strlen($buffer) - $this->set['package_body_offset'];
+            return pack($this->set['package_length_type'], $total_length) . $buffer;
+        } else if ($this->set['open_eof_check']??0 == 1) {
+            return $buffer . $this->set['package_eof'];
+        } else {
+            throw new SwooleException("tcpClient won't support set");
+        }
+    }
+
+    /**
      * 协程的发送
      * @param $send
-     * @return mixed
+     * @return TcpClientRequestCoroutine
      */
     public function coroutineSend($send)
     {
@@ -191,7 +204,18 @@ class SdTcpRpcPool extends AsynPool
      */
     public function helpToBuildSDControllerQuest($context, $controllerName, $method)
     {
-        return ['path' => $controllerName . '/' . $method, 'controller_name' => $controllerName, 'method_name' => $method, 'rpc_request_id' => $context['request_id']];
+        return ['path' => '/' . $controllerName . '/' . $method, 'controller_name' => $controllerName, 'method_name' => $method, 'rpc_request_id' => $context['request_id']];
+    }
+
+    /**
+     * 超时时需要处理下
+     * 销毁垃圾
+     * @param $token
+     */
+    public function destoryGarbage($token)
+    {
+        unset($this->callBacks[$token]);
+        $this->destoryClient($this->client);
     }
 
     /**
@@ -200,7 +224,23 @@ class SdTcpRpcPool extends AsynPool
      */
     protected function destoryClient($client)
     {
-        $client->close();
+        if ($client != null && $this->client->isConnected()) {
+            $client->close();
+        }
         $this->client = null;
+    }
+
+    public function destroy(&$migrate = [])
+    {
+        if ($this->command_backup != null) {
+            foreach ($this->command_backup as $command) {
+                $command['callback'] = $this->callBacks[$command['token']];
+                $migrate[] = $command;
+            }
+        }
+        $migrate = parent::destroy($migrate);
+        $this->command_backup = null;
+        $this->destoryClient($this->client);
+        return $migrate;
     }
 }

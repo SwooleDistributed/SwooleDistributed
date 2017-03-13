@@ -55,6 +55,11 @@ class SwooleMarco
     const REMOVE_DISPATCH_CLIENT = 2002;
 
     /**
+     * consul 服务变更
+     */
+    const CONSUL_SERVICES_CHANGE = 8500;
+
+    /**
      * redis uid和全局usid映射表的hashkey
      * @var string
      */

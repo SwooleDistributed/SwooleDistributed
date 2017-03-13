@@ -157,7 +157,9 @@ class Controller extends CoreBase
     {
         $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
         if ($e instanceof SwooleException) {
-            $this->log($e->others, Logger::NOTICE);
+            if ($e->others != null) {
+                $this->log($e->others, Logger::NOTICE);
+            }
         }
         switch ($this->request_type) {
             case SwooleMarco::HTTP_REQUEST:
@@ -378,6 +380,32 @@ class Controller extends CoreBase
         }
         if ($autoDestroy) {
             $this->destroy();
+        }
+    }
+
+    /**
+     * @param $uid
+     * @param $groupID
+     */
+    protected function addToGroup($uid, $groupID)
+    {
+        if (SwooleServer::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'addToGroup', '$uid' => $uid, 'groupId' => $groupID];
+        } else {
+            get_instance()->addToGroup($uid, $groupID);
+        }
+    }
+
+    /**
+     * @param $uid
+     * @param $groupID
+     */
+    protected function removeFromGroup($uid, $groupID)
+    {
+        if (SwooleServer::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'removeFromGroup', '$uid' => $uid, 'groupId' => $groupID];
+        } else {
+            get_instance()->removeFromGroup($uid, $groupID);
         }
     }
 }

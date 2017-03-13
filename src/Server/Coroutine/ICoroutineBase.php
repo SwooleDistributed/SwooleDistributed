@@ -15,7 +15,7 @@ interface ICoroutineBase
 
     function getResult();
 
-    function destory();
+    function destroy();
 
     function setCoroutineTask($coroutineTask);
 

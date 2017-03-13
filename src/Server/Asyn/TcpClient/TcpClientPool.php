@@ -23,7 +23,7 @@ class TcpClientPool extends AsynPool
 {
     const AsynName = 'tcp_client';
 
-    protected $connect;
+    public $connect;
     protected $port;
     protected $host;
     protected $set;
@@ -134,29 +134,30 @@ class TcpClientPool extends AsynPool
      */
     public function prepareOne()
     {
-        parent::prepareOne();
-        $client = new \swoole_client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC);
-        $client->set($this->config->get('tcpClient.set', []));
-        $client->on("connect", function ($cli) {
-            $this->pushToPool($cli);
-        });
-        $client->on("receive", function ($cli, $recdata) {
-            if (isset($cli->token)) {
-                $packdata = $this->pack->unPack($this->unEncode($recdata));
-                $data['token'] = $cli->token;
-                $data['result'] = $packdata;
-                $this->distribute($data);
-                unset($cli->token);
+        if (parent::prepareOne()) {
+            $client = new \swoole_client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC);
+            $client->set($this->config->get('tcpClient.set', []));
+            $client->on("connect", function ($cli) {
                 $this->pushToPool($cli);
-            }
-        });
-        $client->on("error", function ($cli) {
-            $cli->close();
-        });
-        $client->on("close", function ($cli) {
+            });
+            $client->on("receive", function ($cli, $recdata) {
+                if (isset($cli->token)) {
+                    $packdata = $this->pack->unPack($this->unEncode($recdata));
+                    $data['token'] = $cli->token;
+                    $data['result'] = $packdata;
+                    $this->distribute($data);
+                    unset($cli->token);
+                    $this->pushToPool($cli);
+                }
+            });
+            $client->on("error", function ($cli) {
+                $cli->close();
+            });
+            $client->on("close", function ($cli) {
 
-        });
-        $client->connect($this->host, $this->port);
+            });
+            $client->connect($this->host, $this->port);
+        }
     }
 
     /**
@@ -202,6 +203,7 @@ class TcpClientPool extends AsynPool
      */
     protected function destoryClient($client)
     {
-        // TODO: Implement destoryClient() method.
+        $client->close();
     }
+
 }
