@@ -74,11 +74,11 @@ $config['dispatch_server']['set'] = [
 $config['coroution']['timerOut'] = 5000;
 
 //是否启动集群模式
-$config['use_dispatch'] = true;
+$config['use_dispatch'] = false;
 
 //是否启用自动reload
 $config['auto_reload_enable'] = true;
 
 //是否启用consul
-$config['consul_enable'] = true;
+$config['consul_enable'] = false;
 return $config;
