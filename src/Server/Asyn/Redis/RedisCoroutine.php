@@ -24,7 +24,6 @@ class RedisCoroutine extends CoroutineBase
     {
         parent::__construct();
     }
-
     /**
      * 对象池模式用来代替__construct
      * @param $redisAsynPool

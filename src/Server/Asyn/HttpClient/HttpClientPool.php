@@ -148,7 +148,7 @@ class HttpClientPool extends AsynPool
     /**
      * 销毁整个池子
      */
-    public function destroy(&$migrate = null)
+    public function destroy(&$migrate = [])
     {
         if ($this->command_backup != null) {
             foreach ($this->command_backup as $command) {

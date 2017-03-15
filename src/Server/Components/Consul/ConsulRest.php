@@ -27,7 +27,6 @@ class ConsulRest extends HttpClientPool
         $this->context = $context;
         return $this;
     }
-
     /**
      * @param $headers
      * @return $this

@@ -7,7 +7,6 @@
  */
 
 namespace Server\Controllers;
-
 use Server\Components\Consul\ConsulHelp;
 use Server\CoreBase\Controller;
 use Server\SwooleMarco;
