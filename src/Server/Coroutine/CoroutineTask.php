@@ -95,7 +95,6 @@ class CoroutineTask
             }
         } catch (\Exception $e) {
             //这里$value如果是ICoroutineBase不需要进行销毁，否则有可能重复销毁
-            $this->isError = true;
             if ($flag) {
                 $this->generatorContext->addYieldStack($routine->key());
             }
@@ -107,6 +106,7 @@ class CoroutineTask
                     $this->routine->throw($e);
                     break;
                 } catch (\Exception $e) {
+                    $this->isError = true;
                     if ($e instanceof SwooleException) {
                         $e->setShowOther($this->generatorContext->getTraceStack());
                     }
