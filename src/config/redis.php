@@ -17,7 +17,7 @@ $config['redis']['active'] = 'local';
 $config['redis']['local']['ip'] = 'localhost';
 $config['redis']['local']['port'] = 6379;
 $config['redis']['local']['select'] = 1;
-$config['redis']['local']['password'] = '123456';
+//$config['redis']['local']['password'] = '123456';
 
 /**
  * 这个不要删除，dispatch使用的redis环境
@@ -26,7 +26,7 @@ $config['redis']['local']['password'] = '123456';
 $config['redis']['dispatch']['ip'] = 'unix:/var/run/redis/redis.sock';
 $config['redis']['dispatch']['port'] = 0;
 $config['redis']['dispatch']['select'] = 1;
-$config['redis']['dispatch']['password'] = '123456';
+//$config['redis']['dispatch']['password'] = '123456';
 
 $config['redis']['asyn_max_count'] = 10;
 
