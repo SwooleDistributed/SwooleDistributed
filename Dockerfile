@@ -5,8 +5,8 @@ MAINTAINER Jincheng Zhang 896369042@qq.com
 #复制SD的一些文件
 COPY . /home/SwooleDistributed
 #覆盖supervisord和redis的配置
-COPY ./conf.d/supervisord.conf /etc/supervisor/conf.d/sd.conf
-COPY ./conf.d/redis.conf /etc/redis
+RUN cp -rf /home/SwooleDistributed/conf.d/supervisord.conf /etc/supervisor/conf.d/sd.conf \
+    && cp -rf /home/SwooleDistributed/conf.d/redis.conf /etc/redis/redis.conf
 #如果你确定你的依赖都ok就不需要运行这些了
 RUN cd /home/SwooleDistributed \
 	&& composer install \
