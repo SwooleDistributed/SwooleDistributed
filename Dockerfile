@@ -8,12 +8,12 @@ COPY . /home/SwooleDistributed
 COPY ./conf.d/supervisord.conf /etc/supervisor/conf.d/sd.conf
 COPY ./conf.d/redis.conf /etc/redis
 #如果你确定你的依赖都ok就不需要运行这些了
-#RUN cd /home/SwooleDistributed \
-#	&& composer install \
-#	&& cd /home/SwooleDistributed/bin/exec \
-#	&& wget https://releases.hashicorp.com/consul/0.7.5/consul_0.7.5_linux_amd64.zip --no-check-certificate\
-#	&& unzip consul_0.7.5_linux_amd64.zip \
-#	&& rm consul_0.7.5_linux_amd64.zip
+RUN cd /home/SwooleDistributed \
+	&& composer install \
+	&& cd /home/SwooleDistributed/bin/exec \
+	&& wget https://releases.hashicorp.com/consul/0.7.5/consul_0.7.5_linux_amd64.zip --no-check-certificate\
+	&& unzip consul_0.7.5_linux_amd64.zip \
+	&& rm consul_0.7.5_linux_amd64.zip
 #声明端口，和你开启的HTTP，TCP端口保持一致
 EXPOSE 8081
 EXPOSE 9093
