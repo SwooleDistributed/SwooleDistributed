@@ -55,6 +55,12 @@ class TestController extends Controller
             yield $this->mysql_pool->coroutineRollback($id);
         }
     }
+    public function http_ex()
+    {
+        $testModel = $this->loader->model('TestModel',$this);
+        yield $testModel->test_exception();
+        $this->http_output->end(123);
+    }
     /**
      * 绑定uid
      */

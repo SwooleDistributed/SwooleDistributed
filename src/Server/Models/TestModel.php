@@ -45,7 +45,8 @@ class TestModel extends Model
 
     public function test_exception()
     {
-        throw new SwooleException('test');
+        $result = yield $this->redis_pool->coroutineSend('get', 'test');
+        throw new \Exception('error');
     }
 
     public function test_exceptionII()

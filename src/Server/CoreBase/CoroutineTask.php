@@ -14,6 +14,7 @@ class CoroutineTask
     protected $stack;
     protected $routine;
     protected $generatorContext;
+    protected $isError;
 
     public function __construct(\Generator $routine, GeneratorContext $generatorContext)
     {
@@ -27,6 +28,9 @@ class CoroutineTask
      */
     public function run()
     {
+        if ($this->isError) {//已经出错了就直接return
+            return;
+        }
         $routine = &$this->routine;
         $flag = false;
         try {
@@ -66,27 +70,35 @@ class CoroutineTask
                 }
             }
         } catch (\Exception $e) {
+            //这里$value如果是ICoroutineBase不需要进行销毁，否则有可能重复销毁
             if ($flag) {
                 $this->generatorContext->addYieldStack($routine->key());
             }
             $this->generatorContext->setErrorFile($e->getFile(), $e->getLine());
             $this->generatorContext->setErrorMessage($e->getMessage());
+            if($this->stack->isEmpty()){
+                if ($this->generatorContext->getController() != null && method_exists($this->generatorContext->getController(), 'onExceptionHandle')) {
+                    call_user_func([$this->generatorContext->getController(), 'onExceptionHandle'], $e);
+                } else {
+                    $routine->throw($e);
+                }
+            }
             while (!$this->stack->isEmpty()) {
                 $this->routine = $this->stack->pop();
                 try {
                     $this->routine->throw($e);
                     break;
                 } catch (\Exception $e) {
-
+                    $this->isError = true;
+                    if ($e instanceof SwooleException) {
+                        $e->setShowOther($this->generatorContext->getTraceStack());
+                    }
+                    if ($this->generatorContext->getController() != null && method_exists($this->generatorContext->getController(), 'onExceptionHandle')) {
+                        call_user_func([$this->generatorContext->getController(), 'onExceptionHandle'], $e);
+                    } else {
+                        $routine->throw($e);
+                    }
                 }
-            }
-            if ($e instanceof SwooleException) {
-                $e->setShowOther($this->generatorContext->getTraceStack());
-            }
-            if ($this->generatorContext->getController() != null) {
-                call_user_func([$this->generatorContext->getController(), 'onExceptionHandle'], $e);
-            } else {
-                $routine->throw($e);
             }
         }
     }
@@ -97,7 +109,7 @@ class CoroutineTask
      */
     public function isFinished()
     {
-        return $this->stack->isEmpty() && !$this->routine->valid();
+        return $this->isError || ($this->stack->isEmpty() && !$this->routine->valid());
     }
 
     public function getRoutine()
