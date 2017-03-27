@@ -86,10 +86,15 @@ class CoroutineTask
                 if ($routine->valid()) {
                     $routine->send($value);
                 } else {
-                    $result = $routine->getReturn();
-                    if (count($this->stack) > 0) {
-                        $this->routine = $this->stack->pop();
-                        $this->routine->send($result);
+                    //获得不到return说明可能是抛出了异常，这里可以停止了
+                    try {
+                        $result = $routine->getReturn();
+                        if (count($this->stack) > 0) {
+                            $this->routine = $this->stack->pop();
+                            $this->routine->send($result);
+                        }
+                    }catch (\Exception $e){
+                        $this->isError = true;
                     }
                 }
             }
@@ -100,39 +105,28 @@ class CoroutineTask
             }
             $this->generatorContext->setErrorFile($e->getFile(), $e->getLine());
             $this->generatorContext->setErrorMessage($e->getMessage());
-            if($this->stack->isEmpty()){
-                try {
-                    $routine->throw($e);
-                }catch (\Exception $e) {
-                    $this->isError = true;
-                    if ($e instanceof SwooleException) {
-                        $e->setShowOther($this->generatorContext->getTraceStack());
-                    }
-                    if ($this->generatorContext->getController() != null && method_exists($this->generatorContext->getController(), 'onExceptionHandle')) {
-                        call_user_func([$this->generatorContext->getController(), 'onExceptionHandle'], $e);
-                    }
-                }
-            }
-            while (!$this->stack->isEmpty()) {
-                $this->routine = $this->stack->pop();
-                try {
-                    $this->routine->throw($e);
-                    break;
-                } catch (\Exception $e) {
-                    $this->isError = true;
-                    if ($e instanceof SwooleException) {
-                        $e->setShowOther($this->generatorContext->getTraceStack());
-                    }
-                    if ($this->generatorContext->getController() != null && method_exists($this->generatorContext->getController(), 'onExceptionHandle')) {
-                        call_user_func([$this->generatorContext->getController(), 'onExceptionHandle'], $e);
-                    } else {
-                        $routine->throw($e);
-                    }
-                }
-            }
+            $this->throwEx($routine,$e);
         }
     }
 
+    protected function throwEx($routine,$e){
+        try {
+            $routine->throw($e);
+        }catch (\Exception $e){
+            if($this->stack->isEmpty()){
+                $this->isError = true;
+                if ($e instanceof SwooleException) {
+                    $e->setShowOther($this->generatorContext->getTraceStack());
+                }
+                if ($this->generatorContext->getController() != null && method_exists($this->generatorContext->getController(), 'onExceptionHandle')) {
+                    call_user_func([$this->generatorContext->getController(), 'onExceptionHandle'], $e);
+                }
+                return;
+            }
+            $routine = $this->stack->pop();
+            $this->throwEx($routine,$e);
+        }
+    }
     /**
      * [isFinished 判断该task是否完成]
      * @return boolean [description]

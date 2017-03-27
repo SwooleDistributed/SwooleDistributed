@@ -12,6 +12,7 @@ namespace Server\Components\Consul;
 use Server\Asyn\HttpClient\HttpClientPool;
 use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\CoreBase\SwooleException;
+use Server\SwooleMarco;
 
 class ConsulServices
 {
@@ -40,7 +41,8 @@ class ConsulServices
         foreach ($watches as $watch) {
             $result = yield $this->httpClientPool->httpClient->setQuery(['passing'=>true])->coroutineExecute('/v1/health/service/'.$watch)->setTimeout(1000)->noException();
             if($result!=null) {
-                $this->updateServies($watch, $result['body']);
+                $data = $watch."@".$result['body'];
+                get_instance()->sendToAllWorks(SwooleMarco::CONSUL_SERVICES_CHANGE,$data,ConsulHelp::class."::getMessgae");
             }else{
                 break;
             }

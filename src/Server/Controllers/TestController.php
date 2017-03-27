@@ -7,7 +7,6 @@
  */
 namespace Server\Controllers;
 
-use Monolog\Logger;
 use Server\Components\Consul\ConsulServices;
 use Server\CoreBase\Controller;
 use Server\CoreBase\SelectCoroutine;
@@ -29,15 +28,11 @@ class TestController extends Controller
 
     public function http_mysql()
     {
-
-        $value = yield $this->mysql_pool->dbQueryBuilder->insert('MysqlTest')
-            ->option('HIGH_PRIORITY')
-            ->set('firstname', 'White')
-            ->set('lastname', 'Cat')
-            ->set('age', '25')
-            ->set('townid', '10000')->coroutineSend();
-        $this->http_output->end(1);
+        $model = $this->loader->model('TestModel', $this);
+        $result = yield $model->testMysql();
+        $this->http_output->end($result);
     }
+
     /**
      * tcp的测试
      */
@@ -270,16 +265,17 @@ class TestController extends Controller
 
     public function http_testConsul()
     {
-        $rest = ConsulServices::getInstance()->getRESTService('MathService',$this->context);
-        $rest->setQuery(['one' => 1,'two' => 2]);
+        $rest = ConsulServices::getInstance()->getRESTService('MathService', $this->context);
+        $rest->setQuery(['one' => 1, 'two' => 2]);
         $reuslt = yield $rest->add();
         $this->http_output->end($reuslt['body']);
     }
 
     public function http_testConsul2()
     {
-        $rest = ConsulServices::getInstance()->getRPCService('MathService',$this->context);
-        $reuslt = yield $rest->add(1,2);
+        $rest = ConsulServices::getInstance()->getRPCService('MathService', $this->context);
+        $reuslt = yield $rest->add(1, 2);
         $this->http_output->end($reuslt);
     }
+
 }

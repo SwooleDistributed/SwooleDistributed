@@ -37,4 +37,23 @@ class MathService extends Controller
         $two = $this->http_input->get('two');
         $this->http_output->end($one+$two);
     }
+
+    public function sum($sum)
+    {
+        $sum_q = 0;
+        for($i=0;$i<$sum;$i++){
+            $sum_q+=$i;
+        }
+        $this->send($sum_q);
+    }
+
+    public function http_sum()
+    {
+        $sum = $this->http_input->get('sum');
+        $sum_q = 0;
+        for($i=0;$i<$sum;$i++){
+            $sum_q+=$i;
+        }
+        $this->http_output->end($sum_q);
+    }
 }
