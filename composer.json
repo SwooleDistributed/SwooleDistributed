@@ -5,7 +5,8 @@
     "voku/anti-xss": "2.0.1",
     "league/plates": "3.*",
     "protobuf-php/protobuf": "~0.1.2",
-    "protobuf-php/protobuf-plugin": "^0.1.2"
+    "protobuf-php/protobuf-plugin": "^0.1.2",
+    "graylog2/gelf-php": "^1.4.2"
   },
   "autoload": {
     "psr-4": {
