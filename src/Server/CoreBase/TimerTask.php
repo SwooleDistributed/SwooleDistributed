@@ -58,12 +58,10 @@ class TimerTask extends CoreBase
                 'delay' => $delay
             ];
         }
-        if (count($this->timer_tasks_used) > 0) {
+        $this->timerTask();
+        swoole_timer_tick(1000, function () {
             $this->timerTask();
-            swoole_timer_tick(1000, function () {
-                $this->timerTask();
-            });
-        }
+        });
     }
 
     /**

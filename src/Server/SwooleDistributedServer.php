@@ -188,7 +188,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $this->tid_pid_table = new \swoole_table(1024);
         $this->tid_pid_table->column('pid', \swoole_table::TYPE_INT, 8);
         $this->tid_pid_table->column('des', \swoole_table::TYPE_STRING, 50);
-        $this->tid_pid_table->column('st', \swoole_table::TYPE_INT, 8);
+        $this->tid_pid_table->column('start_time', \swoole_table::TYPE_INT, 8);
         $this->tid_pid_table->create();
         //创建task用的锁
         $this->task_lock = new \swoole_lock(SWOOLE_MUTEX);
@@ -196,6 +196,12 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         ReloadHelp::startProcess();
         //consul进程
         ConsulHelp::startProcess();
+        //开启一个UDP用于发graylog
+        if ($this->config->get('log.active') == 'graylog') {
+            $udp_port = $this->server->listen($this->config['tcp']['socket'], $this->config['log']['graylog']['udp_send_port'], SWOOLE_SOCK_UDP);
+            $udp_port->on('packet', function () {
+            });
+        }
         if ($this->config->get('use_dispatch')) {
             //创建dispatch端口用于连接dispatch
             $this->dispatch_port = $this->server->listen($this->config['tcp']['socket'], $this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
@@ -815,6 +821,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
 
     /**
      * 获取服务器上正在运行的Task
+     * @return array
      */
     public function getServerAllTaskMessage()
     {
@@ -822,6 +829,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         foreach ($this->tid_pid_table as $id => $row) {
             if ($id != 0) {
                 $row['task_id'] = $id;
+                $row['run_time'] = time() - $row['start_time'];
                 $tasks[] = $row;
             }
         }

@@ -374,7 +374,13 @@ class RedisAsynPool extends AsynPool
     public function coroutineSend($name, ...$arg)
     {
         if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式
-            return call_user_func_array([$this->getSync(), $name], $arg);
+            try {
+                $value = call_user_func_array([$this->getSync(), $name], $arg);
+            } catch (\RedisException $e) {
+                $this->redis_client = null;
+                $value = call_user_func_array([$this->getSync(), $name], $arg);
+            }
+            return $value;
         } else {
             return Pool::getInstance()->get(RedisCoroutine::class)->init($this, $name, $arg);
         }
@@ -387,14 +393,16 @@ class RedisAsynPool extends AsynPool
      */
     public function getSync()
     {
-        if (isset($this->redis_client)) return $this->redis_client;
+        if ($this->redis_client != null) return $this->redis_client;
         //同步redis连接，给task使用
         $this->redis_client = new \Redis();
         if ($this->redis_client->connect($this->config['redis'][$this->active]['ip'], $this->config['redis'][$this->active]['port']) == false) {
+            $this->redis_client = null;
             throw new SwooleException($this->redis_client->getLastError());
         }
         if ($this->config->has('redis.' . $this->active . '.password')) {//存在验证
             if ($this->redis_client->auth($this->config['redis'][$this->active]['password']) == false) {
+                $this->redis_client = null;
                 throw new SwooleException($this->redis_client->getLastError());
             }
         }

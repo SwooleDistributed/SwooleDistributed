@@ -43,7 +43,7 @@ class ConsulServices
      */
     public function serviceHealthCheck()
     {
-        $watches = $this->config->get('consul.watches');
+        $watches = $this->config->get('consul.watches', []);
         foreach ($watches as $watch) {
             $result = yield $this->httpClientPool->httpClient->setQuery(['passing' => true])->coroutineExecute('/v1/health/service/' . $watch)->setTimeout(1000)->noException();
             if ($result != null) {

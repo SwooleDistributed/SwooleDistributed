@@ -7,6 +7,7 @@
  */
 namespace Server\Controllers;
 
+use Monolog\Logger;
 use Server\Components\Consul\ConsulServices;
 use Server\CoreBase\Controller;
 use Server\CoreBase\SelectCoroutine;
@@ -25,6 +26,15 @@ class TestController extends Controller
      * @var TestModel
      */
     public $testModel;
+
+    /**
+     * 测试log
+     */
+    public function http_log()
+    {
+        $this->log('this is test log', Logger::ERROR);
+        $this->http_output->end('1');
+    }
 
     /**
      * tcp的测试
@@ -251,8 +261,8 @@ class TestController extends Controller
     public function http_testTask()
     {
         $testTask = $this->loader->task('TestTask', $this);
-        $testTask->testLong();
-        $result = yield $testTask->coroutineSend()->setTimeout(20000);
+        $testTask->testMysql();
+        $result = yield $testTask->coroutineSend();
         $this->http_output->end($result);
     }
 

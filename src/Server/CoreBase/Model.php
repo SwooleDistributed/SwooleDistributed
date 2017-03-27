@@ -18,7 +18,7 @@ class Model extends CoreBase
     /**
      * 当被loader时会调用这个方法进行初始化
      */
-    public function initialization($context)
+    public function initialization(&$context)
     {
         $this->setContext($context);
     }

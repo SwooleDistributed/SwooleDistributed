@@ -20,7 +20,7 @@ use Server\SwooleMarco;
 class ConsulController extends Controller
 {
     /**
-     * 收到消息后广播给所有的woker，更新服务
+     * 收到消息后广播给所有的worker，更新服务
      */
     public function http_ServiceChange()
     {

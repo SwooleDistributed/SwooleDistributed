@@ -111,7 +111,9 @@ class HttpOutput
             $output = gzencode($output . " \n", 9);
         }*/
         if (!is_string($output)) {
-            $output = json_encode($output);
+            $this->setHeader('Content-Type', 'text/html; charset=UTF-8');
+            $output = json_encode($output, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            $output = "<pre>$output</pre>";
         }
         $this->response->end($output);
         if ($destroy) {

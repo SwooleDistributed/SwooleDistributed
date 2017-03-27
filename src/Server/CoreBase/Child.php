@@ -32,7 +32,7 @@ class Child
      * 上下文
      * @var array
      */
-    protected $context;
+    protected $context = [];
 
     /**
      * 加入一个插件
@@ -86,9 +86,9 @@ class Child
      * 设置上下文
      * @param $context
      */
-    public function setContext($context)
+    public function setContext(&$context)
     {
-        $this->context = $context;
+        $this->context = &$context;
     }
 
     /**
@@ -100,8 +100,8 @@ class Child
             $core_child->destroy();
         }
         $this->child_list = [];
-        unset($this->parent);
-        unset($this->context);
+        $this->parent = null;
+        $this->context = [];
     }
 
 }

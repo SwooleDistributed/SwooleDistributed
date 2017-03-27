@@ -50,6 +50,8 @@ class CoreBase extends Child
      */
     public $mysql_pool;
 
+    protected $start_run_time;
+
     /**
      * Task constructor.
      */
@@ -90,6 +92,10 @@ class CoreBase extends Child
      */
     protected function log($message, $level = Logger::DEBUG)
     {
-        $this->logger->addRecord($level, $message, $this->getContext());
+        try {
+            $this->logger->addRecord($level, $message, $this->getContext());
+        } catch (\Exception $e) {
+
+        }
     }
 }

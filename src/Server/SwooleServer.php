@@ -1,9 +1,12 @@
 <?php
 namespace Server;
 
+use Gelf\Publisher;
+use Monolog\Handler\GelfHandler;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Noodlehaus\Config;
+use Server\Components\GrayLog\UdpTransport;
 use Server\CoreBase\Child;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Loader;
@@ -182,10 +185,7 @@ abstract class SwooleServer extends Child
         $this->package_length_type_length = strlen(pack($this->package_length_type, 1));
         $this->package_body_offset = $this->probuf_set['package_body_offset'];
         $this->setConfig();
-        $this->log = new Logger($this->name);
-        $this->log->pushHandler(new RotatingFileHandler(__DIR__ . $this->config['server']['log_path'] . $this->name . '.log',
-            $this->config['server']['log_max_files'],
-            $this->config['server']['log_level']));
+        $this->setLogHandler();
         register_shutdown_function(array($this, 'checkErrors'));
         set_error_handler(array($this, 'displayErrorHandler'));
         //pack class
@@ -226,6 +226,25 @@ abstract class SwooleServer extends Child
         $this->socket_name = $this->config['tcp']['socket'];
         $this->port = $this->config['tcp']['port'];
         $this->user = $this->config->get('server.set.user', '');
+    }
+
+    /**
+     * 设置monolog的loghandler
+     */
+    public function setLogHandler()
+    {
+        $this->log = new Logger($this->config->get('log.log_name', 'SD'));
+        switch ($this->config['log']['active']) {
+            case "graylog":
+                $this->log->setHandlers([new GelfHandler(new Publisher(new UdpTransport($this->config['log']['graylog']['ip'], $this->config['log']['graylog']['port'])),
+                    $this->config['log']['log_level'])]);
+                break;
+            case "file":
+                $this->log->pushHandler(new RotatingFileHandler(__DIR__ . $this->config['log']['file']['log_path'] . $this->name . '.log',
+                    $this->config['log']['file']['log_max_files'],
+                    $this->config['log']['log_level']));
+                break;
+        }
     }
 
     /**
@@ -754,7 +773,7 @@ abstract class SwooleServer extends Child
             'exit_code' => $exit_code];
         $log = "WORKER Error ";
         $log .= json_encode($data);
-        $this->log->error($log);
+        $this->log->alert($log);
         if ($this->onErrorHandel != null) {
             call_user_func($this->onErrorHandel, '【！！！】服务器进程异常退出', $log);
         }
@@ -872,7 +891,7 @@ abstract class SwooleServer extends Child
                     if (isset($_SERVER['REQUEST_URI'])) {
                         $log .= '[QUERY] ' . $_SERVER['REQUEST_URI'];
                     }
-                    $this->log->alert($log);
+                $this->log->error($log);
                     if ($this->onErrorHandel != null) {
                         call_user_func($this->onErrorHandel, '服务器发生崩溃事件', $log);
                     }

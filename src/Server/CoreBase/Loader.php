@@ -47,7 +47,6 @@ class Loader
             }
             $root = $root->parent??null;
         }
-
         $model_instance = $this->_model_factory->getModel($model, $parent);
         $parent->addChild($model_instance);
         $model_instance->initialization($parent->getContext());

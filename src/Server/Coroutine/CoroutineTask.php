@@ -100,6 +100,17 @@ class CoroutineTask
             }
             $this->generatorContext->setErrorFile($e->getFile(), $e->getLine());
             $this->generatorContext->setErrorMessage($e->getMessage());
+            if ($this->stack->isEmpty()) {
+                $this->isError = true;
+                if ($e instanceof SwooleException) {
+                    $e->setShowOther($this->generatorContext->getTraceStack());
+                }
+                if ($this->generatorContext->getController() != null && method_exists($this->generatorContext->getController(), 'onExceptionHandle')) {
+                    call_user_func([$this->generatorContext->getController(), 'onExceptionHandle'], $e);
+                } else {
+                    $routine->throw($e);
+                }
+            }
             while (!$this->stack->isEmpty()) {
                 $this->routine = $this->stack->pop();
                 try {

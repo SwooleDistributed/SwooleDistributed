@@ -86,8 +86,7 @@ class TestTask extends Task
 
     public function testMysql()
     {
-        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('task')
-            ->whereIn('type', [0, 1])->where('status', 1)->coroutineSend();
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->coroutineSend();
         return $result;
     }
 }

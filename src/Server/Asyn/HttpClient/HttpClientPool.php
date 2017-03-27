@@ -20,6 +20,7 @@ class HttpClientPool extends AsynPool
      */
     public $httpClient;
     public $baseUrl;
+    protected $host;
     protected $httpClient_max_count;
     /**
      * 一直向服务器发请求，这里需要针对返回结果验证请求是否成功
@@ -80,9 +81,9 @@ class HttpClientPool extends AsynPool
                     if (!empty($data['query'])) {
                         $path = $data['path'] . '?' . $data['query'];
                     }
-                    if (count($data['headers']) != 0) {
-                        $client->setHeaders($data['headers']);
-                    }
+                    $data['headers']['Host'] = $this->host;
+                    $client->setHeaders($data['headers']);
+
                     if (count($data['cookies']) != 0) {
                         $client->setCookies($data['cookies']);
                     }
@@ -140,6 +141,7 @@ class HttpClientPool extends AsynPool
             }
             swoole_async_dns_lookup($host, function ($host, $ip) use (&$data) {
                 $client = new \swoole_http_client($ip, $data['port'], $data['ssl']);
+                $this->host = $host;
                 $this->pushToPool($client);
             });
         }
