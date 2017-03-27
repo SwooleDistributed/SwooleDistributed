@@ -54,7 +54,7 @@ class HttpClient
      * @param $value
      * @return $this
      */
-    public function addHeader($key, $value)
+    public function addHeader($key,$value)
     {
         $this->headers[$key] = $value;
         return $this;

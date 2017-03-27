@@ -27,15 +27,17 @@ class TestController extends Controller
      */
     public $testModel;
 
-    /**
-     * 测试log
-     */
-    public function http_log()
+    public function http_mysql()
     {
-        $this->log('this is test log', Logger::ERROR);
-        $this->http_output->end('1');
-    }
 
+        $value = yield $this->mysql_pool->dbQueryBuilder->insert('MysqlTest')
+            ->option('HIGH_PRIORITY')
+            ->set('firstname', 'White')
+            ->set('lastname', 'Cat')
+            ->set('age', '25')
+            ->set('townid', '10000')->coroutineSend();
+        $this->http_output->end(1);
+    }
     /**
      * tcp的测试
      */
@@ -268,16 +270,16 @@ class TestController extends Controller
 
     public function http_testConsul()
     {
-        $rest = ConsulServices::getInstance()->getRESTService('MathService', $this->context);
-        $rest->setQuery(['one' => 1, 'two' => 2]);
+        $rest = ConsulServices::getInstance()->getRESTService('MathService',$this->context);
+        $rest->setQuery(['one' => 1,'two' => 2]);
         $reuslt = yield $rest->add();
         $this->http_output->end($reuslt['body']);
     }
 
     public function http_testConsul2()
     {
-        $rest = ConsulServices::getInstance()->getRPCService('MathService', $this->context);
-        $reuslt = yield $rest->add(1, 2);
+        $rest = ConsulServices::getInstance()->getRPCService('MathService',$this->context);
+        $reuslt = yield $rest->add(1,2);
         $this->http_output->end($reuslt);
     }
 }

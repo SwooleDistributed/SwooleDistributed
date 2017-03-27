@@ -39,7 +39,7 @@ class TcpClientRequestCoroutine extends CoroutineBase
         if (!array_key_exists('path', $data)) {
             throw new SwooleException('tcp data must has path');
         }
-        $this->request = '[tcpClient]' . $pool->connect . $data['path'];
+        $this->request = '[tcpClient]' .$pool->connect. $data['path'];
         unset($this->data['path']);
         if ($this->fuse()) {//启动断路器
             $this->send(function ($result) {
@@ -62,7 +62,7 @@ class TcpClientRequestCoroutine extends CoroutineBase
         $this->data = null;
         $this->pool = null;
         $this->token = null;
-        Pool::getInstance()->push(TcpClientRequestCoroutine::class, $this);
+        Pool::getInstance()->push(TcpClientRequestCoroutine::class,$this);
     }
 
     protected function onTimerOutHandle()

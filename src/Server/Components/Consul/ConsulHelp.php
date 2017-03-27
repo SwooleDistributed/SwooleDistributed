@@ -14,23 +14,8 @@ class ConsulHelp
 {
     public static function getMessgae($message)
     {
-        list($name, $data) = explode('@', $message);
-        ConsulServices::getInstance()->updateServies($name, $data);
-    }
-
-    /**
-     * 开启进程
-     */
-    public static function startProcess()
-    {
-        if (get_instance()->config->get('consul_enable', false)) {
-            self::jsonFormatHandler();
-            $consul_process = new \swoole_process(function ($process) {
-                $process->name('SWD-CONSUL');
-                $process->exec(BIN_DIR . "/exec/consul", ['agent', '-ui', '-config-dir', BIN_DIR . '/exec/consul.d']);
-            }, false, false);
-            get_instance()->server->addProcess($consul_process);
-        }
+        list($name,$data) = explode('@',$message);
+        ConsulServices::getInstance()->updateServies($name,$data);
     }
 
     /**
@@ -49,13 +34,13 @@ class ConsulHelp
                 $newConfig['watches'][] = ['type' => 'service', 'passingonly' => true, 'service' => $watch, 'handler' => "php $path $watch"];
             }
         }
-        $enableTcp = get_instance()->config->get('tcp.enable', false);
-        $tcpPort = get_instance()->config->get('tcp.port', 0);
-        $enableHttp = get_instance()->config->get('http_server.enable', false);
-        $httpPort = get_instance()->config->get('http_server.port', 0);
+        $enableTcp = get_instance()->config->get('tcp.enable',false);
+        $tcpPort = get_instance()->config->get('tcp.port',0);
+        $enableHttp = get_instance()->config->get('http_server.enable',false);
+        $httpPort = get_instance()->config->get('http_server.port',0);
         if (array_key_exists('services', $config)) {
             foreach ($config['services'] as $service) {
-                if ($enableHttp) {
+                if($enableHttp) {
                     $newConfig['services'][] = [
                         'id' => "Http_$service",
                         'name' => $service,
@@ -69,7 +54,7 @@ class ConsulHelp
                             'timeout' => "1s"
                         ]];
                 }
-                if ($enableTcp) {
+                if($enableTcp){
                     $newConfig['services'][] = [
                         'id' => "Tcp_$service",
                         'name' => $service,
@@ -86,5 +71,20 @@ class ConsulHelp
             }
         }
         file_put_contents(BIN_DIR . "/exec/consul.d/consul_config.json", json_encode($newConfig));
+    }
+
+    /**
+     * 开启进程
+     */
+    public static function startProcess()
+    {
+        if (get_instance()->config->get('consul_enable', false)) {
+            self::jsonFormatHandler();
+            $consul_process = new \swoole_process(function ($process) {
+                $process->name('SWD-CONSUL');
+                $process->exec(BIN_DIR . "/exec/consul", ['agent', '-ui', '-config-dir', BIN_DIR . '/exec/consul.d']);
+            }, false, false);
+            get_instance()->server->addProcess($consul_process);
+        }
     }
 }

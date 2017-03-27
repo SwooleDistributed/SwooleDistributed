@@ -30,15 +30,15 @@ class SdTcpRpcPool extends AsynPool
     protected $set;
     protected $client;
     /**
-     * @var IPack
-     */
-    protected $pack;
-    protected $package_length_type_length;
-    /**
      * 因为这里是流rpc，会一直向服务器发请求，这里需要针对返回结果验证请求是否成功
      * @var array
      */
     private $command_backup;
+    /**
+     * @var IPack
+     */
+    protected $pack;
+    protected $package_length_type_length;
 
     public function __construct($config, $connect)
     {
@@ -98,6 +98,24 @@ class SdTcpRpcPool extends AsynPool
     }
 
     /**
+     * 数据包编码
+     * @param $buffer
+     * @return string
+     * @throws SwooleException
+     */
+    public function encode($buffer)
+    {
+        if ($this->set['open_length_check']??0 == 1) {
+            $total_length = $this->package_length_type_length + strlen($buffer) - $this->set['package_body_offset'];
+            return pack($this->set['package_length_type'], $total_length) . $buffer;
+        } else if ($this->set['open_eof_check']??0 == 1) {
+            return $buffer . $this->set['package_eof'];
+        } else {
+            throw new SwooleException("tcpClient won't support set");
+        }
+    }
+
+    /**
      * @param $data
      */
     public function execute($data)
@@ -144,9 +162,9 @@ class SdTcpRpcPool extends AsynPool
             }
         });
         $client->on("error", function ($cli) {
-            if ($cli->isConnected()) {
+            if($cli->isConnected()) {
                 $cli->close();
-            } else {
+            }else{
                 $this->client = null;
             }
         });
@@ -168,24 +186,6 @@ class SdTcpRpcPool extends AsynPool
         } else if ($this->set['open_eof_check']??0 == 1) {
             $data = $buffer;
             return $data;
-        }
-    }
-
-    /**
-     * 数据包编码
-     * @param $buffer
-     * @return string
-     * @throws SwooleException
-     */
-    public function encode($buffer)
-    {
-        if ($this->set['open_length_check']??0 == 1) {
-            $total_length = $this->package_length_type_length + strlen($buffer) - $this->set['package_body_offset'];
-            return pack($this->set['package_length_type'], $total_length) . $buffer;
-        } else if ($this->set['open_eof_check']??0 == 1) {
-            return $buffer . $this->set['package_eof'];
-        } else {
-            throw new SwooleException("tcpClient won't support set");
         }
     }
 
@@ -232,7 +232,7 @@ class SdTcpRpcPool extends AsynPool
 
     public function destroy(&$migrate = [])
     {
-        if ($this->command_backup != null) {
+        if($this->command_backup!=null) {
             foreach ($this->command_backup as $command) {
                 $command['callback'] = $this->callBacks[$command['token']];
                 $migrate[] = $command;

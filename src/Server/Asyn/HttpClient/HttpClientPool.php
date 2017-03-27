@@ -21,12 +21,12 @@ class HttpClientPool extends AsynPool
     public $httpClient;
     public $baseUrl;
     protected $host;
-    protected $httpClient_max_count;
     /**
      * 一直向服务器发请求，这里需要针对返回结果验证请求是否成功
      * @var array
      */
     private $command_backup;
+    protected $httpClient_max_count;
 
     public function __construct($config, $baseUrl)
     {
@@ -148,6 +148,15 @@ class HttpClientPool extends AsynPool
     }
 
     /**
+     * 销毁Client
+     * @param $client
+     */
+    protected function destoryClient($client)
+    {
+        $client->close();
+    }
+
+    /**
      * 销毁整个池子
      */
     public function destroy(&$migrate = [])
@@ -162,14 +171,5 @@ class HttpClientPool extends AsynPool
         $this->httpClient = null;
         $this->command_backup = null;
         return $migrate;
-    }
-
-    /**
-     * 销毁Client
-     * @param $client
-     */
-    protected function destoryClient($client)
-    {
-        $client->close();
     }
 }

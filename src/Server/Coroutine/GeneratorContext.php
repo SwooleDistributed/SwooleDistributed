@@ -117,6 +117,6 @@ class GeneratorContext
     {
         $this->controller = null;
         $this->stack = null;
-        Pool::getInstance()->push(GeneratorContext::class, $this);
+        Pool::getInstance()->push(GeneratorContext::class,$this);
     }
 }

@@ -34,7 +34,7 @@ $config['server']['send_use_task_num'] = 20;
 $config['server']['pack_tool'] = 'JsonPack';
 $config['server']['route_tool'] = 'NormalRoute';
 $config['server']['set'] = [
-    'log_file' => __DIR__ . "/../../swoole.log",
+    'log_file' => __DIR__."/../../swoole.log",
     'log_level' => 5,
     'reactor_num' => 2, //reactor thread num
     'worker_num' => 4,    //worker process num
@@ -80,5 +80,5 @@ $config['use_dispatch'] = false;
 $config['auto_reload_enable'] = true;
 
 //是否启用consul
-$config['consul_enable'] = true;
+$config['consul_enable'] = false;
 return $config;

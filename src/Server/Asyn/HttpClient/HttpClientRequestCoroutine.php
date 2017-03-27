@@ -34,7 +34,7 @@ class HttpClientRequestCoroutine extends CoroutineBase
     {
         $this->pool = $pool;
         $this->data = $data;
-        $this->request = '[httpClient]' . $pool->baseUrl . $data['path'];
+        $this->request = '[httpClient]' . $pool->baseUrl.$data['path'];
         if ($this->fuse()) {//启动断路器
             $this->send(function ($result) {
                 $this->result = $result;
@@ -55,7 +55,7 @@ class HttpClientRequestCoroutine extends CoroutineBase
         $this->pool = null;
         $this->data = null;
         $this->token = null;
-        Pool::getInstance()->push(HttpClientRequestCoroutine::class, $this);
+        Pool::getInstance()->push(HttpClientRequestCoroutine::class,$this);
     }
 
     protected function onTimerOutHandle()

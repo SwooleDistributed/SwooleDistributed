@@ -25,7 +25,7 @@ class ConsulController extends Controller
     public function http_ServiceChange()
     {
         $data = $this->http_input->getRawContent();
-        get_instance()->sendToAllWorks(SwooleMarco::CONSUL_SERVICES_CHANGE, $data, ConsulHelp::class . "::getMessgae");
+        get_instance()->sendToAllWorks(SwooleMarco::CONSUL_SERVICES_CHANGE,$data,ConsulHelp::class."::getMessgae");
         $this->http_output->end('ok');
     }
 

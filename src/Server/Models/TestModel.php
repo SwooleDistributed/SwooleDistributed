@@ -44,19 +44,19 @@ class TestModel extends Model
         });
     }
 
-    public function test_exceptionII()
-    {
-        try {
-            yield $this->test_exception();
-        } catch (\Exception $e) {
-            print_r(1);
-        }
-    }
-
     public function test_exception()
     {
         $result = yield $this->redis_pool->coroutineSend('get', 'test');
         throw new SwooleException('test');
+    }
+
+    public function test_exceptionII()
+    {
+        try{
+            yield $this->test_exception();
+        }catch (\Exception $e){
+            print_r(1);
+        }
     }
 
     public function test_task()

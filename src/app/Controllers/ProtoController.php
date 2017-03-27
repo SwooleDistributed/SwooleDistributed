@@ -19,12 +19,6 @@ class ProtoController extends Controller
      */
     public $Message;
 
-    public function destroy()
-    {
-        parent::destroy();
-        $this->Message = null;
-    }
-
     /**
      * 构建Message
      * @param AbstractMessage $responseMessage
@@ -49,5 +43,11 @@ class ProtoController extends Controller
         }
         call_user_func([$response, $method], $responseMessage);
         return $this->Message;
+    }
+
+    public function destroy()
+    {
+        parent::destroy();
+        $this->Message = null;
     }
 }

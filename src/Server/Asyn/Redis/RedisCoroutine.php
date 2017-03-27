@@ -57,7 +57,7 @@ class RedisCoroutine extends CoroutineBase
         $this->redisAsynPool = null;
         $this->name = null;
         $this->arguments = null;
-        Pool::getInstance()->push(RedisCoroutine::class, $this);
+        Pool::getInstance()->push(RedisCoroutine::class,$this);
     }
 
     protected function onTimerOutHandle()

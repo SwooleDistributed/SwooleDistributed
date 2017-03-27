@@ -23,9 +23,9 @@ class MathService extends Controller
      * @param $one
      * @param $two
      */
-    public function add($one, $two)
+    public function add($one,$two)
     {
-        $this->send($one + $two);
+        $this->send($one+$two);
     }
 
     /**
@@ -35,6 +35,6 @@ class MathService extends Controller
     {
         $one = $this->http_input->get('one');
         $two = $this->http_input->get('two');
-        $this->http_output->end($one + $two);
+        $this->http_output->end($one+$two);
     }
 }

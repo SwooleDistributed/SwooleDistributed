@@ -40,19 +40,6 @@ abstract class AsynPool implements IAsynPool
     }
 
     /**
-     * 迁移工作,将别的相同pool的命令迁移到此处
-     * @param $migrate
-     */
-    public function migrates($migrate)
-    {
-        $token = $this->addTokenCallback($migrate['callback']);
-        call_user_func($migrate['callback'], new CoroutineChangeToken($token));
-        unset($migrate['callback']);
-        $migrate['token'] = $token;
-        $this->execute($migrate);
-    }
-
-    /**
      * 添加一个callback获得一个token
      * @param $callback
      * @return int
@@ -66,6 +53,19 @@ abstract class AsynPool implements IAsynPool
             $this->token = 1;
         }
         return $token;
+    }
+
+    /**
+     * 迁移工作,将别的相同pool的命令迁移到此处
+     * @param $migrate
+     */
+    public function migrates($migrate)
+    {
+        $token = $this->addTokenCallback($migrate['callback']);
+        call_user_func($migrate['callback'],new CoroutineChangeToken($token));
+        unset($migrate['callback']);
+        $migrate['token'] = $token;
+        $this->execute($migrate);
     }
 
     /**
@@ -85,7 +85,7 @@ abstract class AsynPool implements IAsynPool
     public function destoryGarbage($token)
     {
         unset($this->callBacks[$token]);
-        if ($this->clients != null && array_key_exists($token, $this->clients)) {
+        if ($this->clients!=null&&array_key_exists($token, $this->clients)) {
             $this->destoryClient($this->clients[$token]);
         }
         $this->client_count--;
@@ -147,7 +147,7 @@ abstract class AsynPool implements IAsynPool
      */
     public function pushToPool($client)
     {
-        if ($this->isDestroy) {
+        if($this->isDestroy){
             $this->destoryClient($client);
             return;
         }
@@ -169,13 +169,12 @@ abstract class AsynPool implements IAsynPool
      * @param array $migrate
      * @return array
      */
-    public function destroy(&$migrate = [])
-    {
+    public function destroy(&$migrate = []){
         $this->isDestroy = true;
-        foreach ($this->pool as $client) {
+        foreach ($this->pool as $client){
             $this->destoryClient($client);
         }
-        foreach ($this->commands as $command) {
+        foreach ($this->commands as $command){
             $command['callback'] = $this->callBacks[$command['token']];
             $migrate[] = $command;
         }

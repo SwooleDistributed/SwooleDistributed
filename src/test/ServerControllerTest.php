@@ -57,7 +57,7 @@ class ServerControllerTest extends TestCase
     public function testHttpController()
     {
         $testRequest = new TestRequest('/TestController/test');
-        $testRequest->get = ['max' => 10];
+        $testRequest->get =['max'=>10];
         $testResponse = yield $this->coroutineRequestHttpController($testRequest);
         $this->assertEquals($testResponse->data, '45');
     }

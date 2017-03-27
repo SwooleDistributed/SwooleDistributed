@@ -42,9 +42,9 @@ class ConsulRest extends HttpClientPool
      * @param $value
      * @return $this
      */
-    public function addHeader($key, $value)
+    public function addHeader($key,$value)
     {
-        $this->httpClient->addHeader($key, $value);
+        $this->httpClient->addHeader($key,$value);
         return $this;
     }
 
@@ -86,7 +86,7 @@ class ConsulRest extends HttpClientPool
      */
     public function __call($name, $arguments)
     {
-        $this->httpClient->addHeader('rpc_request_id', $this->context['request_id']);
+        $this->httpClient->addHeader('rpc_request_id',$this->context['request_id']);
         return $this->httpClient->coroutineExecute("/$this->service/$name");
     }
 }

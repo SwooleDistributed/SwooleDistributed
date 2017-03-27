@@ -44,7 +44,6 @@ abstract class CoroutineBase implements ICoroutineBase
      * @var callable
      */
     protected $downgrade;
-    protected $token;
     /**
      * @var CoroutineTask
      */
@@ -57,6 +56,9 @@ abstract class CoroutineBase implements ICoroutineBase
      * @var bool
      */
     private $noException;
+
+    protected $token;
+
     private $noExceptionReturn;
 
     public function __construct()
@@ -118,6 +120,25 @@ abstract class CoroutineBase implements ICoroutineBase
     }
 
     /**
+     * 设置协程任务
+     * @param $coroutineTask
+     */
+    public function setCoroutineTask($coroutineTask)
+    {
+        $this->coroutineTask = $coroutineTask;
+    }
+
+    /**
+     * 立即执行任务的下一个步骤
+     */
+    public function immediateExecution()
+    {
+        if (isset($this->coroutineTask)) {
+            $this->coroutineTask->run();
+        }
+    }
+
+    /**
      * destroy
      */
     public function destroy()
@@ -138,25 +159,6 @@ abstract class CoroutineBase implements ICoroutineBase
         $this->isFaile = false;
         $this->noException = false;
         $this->noExceptionReturn = null;
-    }
-
-    /**
-     * 设置协程任务
-     * @param $coroutineTask
-     */
-    public function setCoroutineTask($coroutineTask)
-    {
-        $this->coroutineTask = $coroutineTask;
-    }
-
-    /**
-     * 立即执行任务的下一个步骤
-     */
-    public function immediateExecution()
-    {
-        if (isset($this->coroutineTask)) {
-            $this->coroutineTask->run();
-        }
     }
 
     /**
@@ -186,18 +188,6 @@ abstract class CoroutineBase implements ICoroutineBase
     }
 
     /**
-     * 不返回超时异常，直接返回$return的值
-     * @param null $return
-     * @return $this
-     */
-    public function noException($return = null)
-    {
-        $this->noException = true;
-        $this->noExceptionReturn = $return;
-        return $this;
-    }
-
-    /**
      * 断路器依赖$request
      * 使用断路器
      */
@@ -210,5 +200,17 @@ abstract class CoroutineBase implements ICoroutineBase
             return false;
         }
         return true;
+    }
+
+    /**
+     * 不返回超时异常，直接返回$return的值
+     * @param null $return
+     * @return $this
+     */
+    public function noException($return = null)
+    {
+        $this->noException = true;
+        $this->noExceptionReturn = $return;
+        return $this;
     }
 }

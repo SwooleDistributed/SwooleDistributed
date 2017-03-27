@@ -10,6 +10,7 @@ namespace Server\Components\Consul;
 
 
 use Server\Asyn\HttpClient\HttpClientPool;
+use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\CoreBase\SwooleException;
 
 class ConsulServices
@@ -29,6 +30,23 @@ class ConsulServices
         $this->httpClientPool = new HttpClientPool($this->config, "http://0.0.0.0:8500");
     }
 
+    /**
+     * 服务器启动后正常情况是会超时的，因为consul服务器还未完全启动好，这地方只是为了reload的时候不会丢失而做的请求。。
+     * 开始健康检查
+     */
+    public function serviceHealthCheck()
+    {
+        $watches = $this->config->get('consul.watches',[]);
+        foreach ($watches as $watch) {
+            $result = yield $this->httpClientPool->httpClient->setQuery(['passing'=>true])->coroutineExecute('/v1/health/service/'.$watch)->setTimeout(1000)->noException();
+            if($result!=null) {
+                $this->updateServies($watch, $result['body']);
+            }else{
+                break;
+            }
+        }
+    }
+
     public static function getInstance()
     {
         if (self::$instance == null) {
@@ -38,29 +56,12 @@ class ConsulServices
     }
 
     /**
-     * 服务器启动后正常情况是会超时的，因为consul服务器还未完全启动好，这地方只是为了reload的时候不会丢失而做的请求。。
-     * 开始健康检查
-     */
-    public function serviceHealthCheck()
-    {
-        $watches = $this->config->get('consul.watches', []);
-        foreach ($watches as $watch) {
-            $result = yield $this->httpClientPool->httpClient->setQuery(['passing' => true])->coroutineExecute('/v1/health/service/' . $watch)->setTimeout(1000)->noException();
-            if ($result != null) {
-                $this->updateServies($watch, $result['body']);
-            } else {
-                break;
-            }
-        }
-    }
-
-    /**
      * 一次只会有一个服务变更
      * 更新服务列表
      * @param $serviceName
      * @param $checks
      */
-    public function updateServies($serviceName, $checks)
+    public function updateServies($serviceName,$checks)
     {
         if (get_instance()->isTaskWorker()) return;
         if (!array_key_exists($serviceName, $this->tcp_services)) {
@@ -117,13 +118,13 @@ class ConsulServices
             }
             if (!$find) {
                 $_migrates = $this->removeServices($serviceName, $address, "tcp");
-                foreach ($_migrates as $migrate) {
+                foreach ($_migrates as $migrate){
                     $migrates[] = $migrate;
                 }
             }
         }
         //处理下迁移问题，将命令迁移到其他可用的连接中
-        while (count($migrates) != 0) {
+        while (count($migrates)!=0) {
             foreach ($this->tcp_services[$serviceName] as $address => $pool) {
                 if (count($migrates) == 0) {
                     break;
@@ -146,19 +147,38 @@ class ConsulServices
             }
             if (!$find) {
                 $_migrates = $this->removeServices($serviceName, $address, "http");
-                foreach ($_migrates as $migrate) {
+                foreach ($_migrates as $migrate){
                     $migrates[] = $migrate;
                 }
             }
         }
         //处理下迁移问题，将命令迁移到其他可用的连接中
-        while (count($migrates) != 0) {
+        while (count($migrates)!=0) {
             foreach ($this->http_services[$serviceName] as $address => $pool) {
                 if (count($migrates) == 0) {
                     break;
                 }
                 $pool->migrates(array_shift($migrates));
             }
+        }
+    }
+
+    /**
+     * 添加一个服务
+     * @param $name
+     * @param $address
+     * @param $port
+     * @param $type
+     */
+    private function addServices($name, $address, $port, $type)
+    {
+        switch ($type) {
+            case "tcp":
+                $this->tcp_services[$name][$address] = new ConsulRpc($this->config, "$address:$port");
+                break;
+            case "http":
+                $this->http_services[$name][$address] = new ConsulRest($this->config, "http://$address:$port");
+                break;
         }
     }
 
@@ -185,30 +205,11 @@ class ConsulServices
     }
 
     /**
-     * 添加一个服务
-     * @param $name
-     * @param $address
-     * @param $port
-     * @param $type
-     */
-    private function addServices($name, $address, $port, $type)
-    {
-        switch ($type) {
-            case "tcp":
-                $this->tcp_services[$name][$address] = new ConsulRpc($this->config, "$address:$port");
-                break;
-            case "http":
-                $this->http_services[$name][$address] = new ConsulRest($this->config, "http://$address:$port");
-                break;
-        }
-    }
-
-    /**
      * @param $serviceName
      * @return ConsulRest
      * @throws SwooleException
      */
-    public function getRESTService($serviceName, $context)
+    public function getRESTService($serviceName,$context)
     {
         if (!array_key_exists($serviceName, $this->http_services)) {
             throw new SwooleException("$serviceName No service available");
@@ -217,7 +218,7 @@ class ConsulServices
             throw new SwooleException("$serviceName No service available");
         }
         $address = array_rand($this->http_services[$serviceName]);
-        return $this->http_services[$serviceName][$address]->init($serviceName, $context);
+        return $this->http_services[$serviceName][$address]->init($serviceName,$context);
     }
 
     /**
@@ -225,7 +226,7 @@ class ConsulServices
      * @return ConsulRpc
      * @throws SwooleException
      */
-    public function getRPCService($serviceName, $context)
+    public function getRPCService($serviceName,$context)
     {
         if (!array_key_exists($serviceName, $this->tcp_services)) {
             throw new SwooleException("$serviceName No service available");
@@ -234,6 +235,6 @@ class ConsulServices
             throw new SwooleException("$serviceName No service available");
         }
         $address = array_rand($this->tcp_services[$serviceName]);
-        return $this->tcp_services[$serviceName][$address]->init($serviceName, $context);
+        return $this->tcp_services[$serviceName][$address]->init($serviceName,$context);
     }
 }

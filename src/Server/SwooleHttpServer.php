@@ -139,7 +139,7 @@ abstract class SwooleHttpServer extends SwooleServer
             $controller_name = $this->route->getControllerName();
             $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
             if ($controller_instance != null) {
-                if ($this->route->getMethodName() == '_consul_health') {//健康检查
+                if($this->route->getMethodName()=='_consul_health'){//健康检查
                     $response->end('ok');
                     $controller_instance->destroy();
                     return;

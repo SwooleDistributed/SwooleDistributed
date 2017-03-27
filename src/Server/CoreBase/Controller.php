@@ -160,7 +160,7 @@ class Controller extends CoreBase
     {
         $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
         if ($e instanceof SwooleException) {
-            if ($e->others != null) {
+            if($e->others!=null) {
                 $this->log($e->others, Logger::NOTICE);
             }
         }
@@ -206,8 +206,8 @@ class Controller extends CoreBase
      */
     public function destroy()
     {
-        $this->context['execution_time'] = (microtime(true) - $this->start_run_time) * 1000;
-        $this->log('Efficiency monitor', Logger::INFO);
+        $this->context['execution_time'] = (microtime(true) - $this->start_run_time)*1000;
+        $this->log('Efficiency monitor',Logger::INFO);
         parent::destroy();
         $this->fd = null;
         $this->uid = null;
