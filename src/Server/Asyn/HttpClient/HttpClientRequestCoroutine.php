@@ -55,7 +55,7 @@ class HttpClientRequestCoroutine extends CoroutineBase
         $this->pool = null;
         $this->data = null;
         $this->token = null;
-        Pool::getInstance()->push(HttpClientRequestCoroutine::class,$this);
+        Pool::getInstance()->push($this);
     }
 
     protected function onTimerOutHandle()

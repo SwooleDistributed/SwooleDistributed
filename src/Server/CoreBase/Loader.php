@@ -9,13 +9,10 @@
 
 namespace Server\CoreBase;
 
+use Server\Memory\Pool;
+
 class Loader
 {
-    /**
-     * Tasks list
-     * @var array
-     */
-    private $_tasks = [];
     private $_task_proxy;
     private $_model_factory;
 
@@ -66,9 +63,9 @@ class Loader
             return null;
         }
         $task = str_replace('/', '\\', $task);
-        $task_class = "\\app\\Tasks\\" . $task;
+        $task_class = "app\\Tasks\\" . $task;
         if (!class_exists($task_class)) {
-            $task_class = "\\Server\\Tasks\\" . $task;
+            $task_class = "Server\\Tasks\\" . $task;
             if (!class_exists($task_class)) {
                 throw new SwooleException("class task_class not exists");
             }
@@ -80,15 +77,9 @@ class Loader
             }
             return $this->_task_proxy;
         }
-        if (array_key_exists($task, $this->_tasks)) {
-            $task_instance = $this->_tasks[$task];
-            $task_instance->reUse();
-            return $task_instance;
-        } else {
-            $task_instance = new $task_class;
-            $this->_tasks[$task] = $task_instance;
-            return $task_instance;
-        }
+        $task_instance = Pool::getInstance()->get($task_class);
+        $task_instance->reUse();
+        return $task_instance;
     }
 
     /**

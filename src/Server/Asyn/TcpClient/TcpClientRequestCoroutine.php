@@ -62,7 +62,7 @@ class TcpClientRequestCoroutine extends CoroutineBase
         $this->data = null;
         $this->pool = null;
         $this->token = null;
-        Pool::getInstance()->push(TcpClientRequestCoroutine::class,$this);
+        Pool::getInstance()->push($this);
     }
 
     protected function onTimerOutHandle()

@@ -52,12 +52,12 @@ class ModelFactory
             $model_instance->reUse();
             return $model_instance;
         }
-        $class_name = "\\app\\Models\\$model";
+        $class_name = "app\\Models\\$model";
         if (class_exists($class_name)) {
             $model_instance = new $class_name;
             $model_instance->core_name = $model;
         } else {
-            $class_name = "\\Server\\Models\\$model";
+            $class_name = "Server\\Models\\$model";
             if (class_exists($class_name)) {
                 $model_instance = new $class_name;
                 $model_instance->core_name = $model;

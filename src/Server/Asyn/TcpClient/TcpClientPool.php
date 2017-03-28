@@ -47,11 +47,11 @@ class TcpClientPool extends AsynPool
         ]);
         $this->package_length_type_length = strlen(pack($this->set['package_length_type'], 1));
         //pack class
-        $pack_class_name = "\\app\\Pack\\" . $this->config['tcpClient']['pack_tool'];
+        $pack_class_name = "app\\Pack\\" . $this->config['tcpClient']['pack_tool'];
         if (class_exists($pack_class_name)) {
             $this->pack = new $pack_class_name;
         } else {
-            $pack_class_name = "\\Server\\Pack\\" . $this->config['tcpClient']['pack_tool'];
+            $pack_class_name = "Server\\Pack\\" . $this->config['tcpClient']['pack_tool'];
             if (class_exists($pack_class_name)) {
                 $this->pack = new $pack_class_name;
             } else {

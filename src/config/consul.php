@@ -5,6 +5,9 @@
  * Date: 17-3-10
  * Time: 下午5:58
  */
+//是否启用consul
+$config['consul_enable'] = false;
+
 //node的名字，每一个都必须不一样
 $config['consul']['node_name'] = 'SD-1';
 //consul的data_dir默认放在临时文件下

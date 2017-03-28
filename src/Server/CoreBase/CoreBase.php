@@ -53,6 +53,12 @@ class CoreBase extends Child
     protected $start_run_time;
 
     /**
+     * 是否开启效率检测
+     * @var bool
+     */
+    protected $isEfficiencyMonitorEnable;
+
+    /**
      * Task constructor.
      */
     public function __construct()
@@ -66,6 +72,7 @@ class CoreBase extends Child
             $this->redis_pool = get_instance()->redis_pool;
             $this->mysql_pool = get_instance()->mysql_pool;
         }
+        $this->isEfficiencyMonitorEnable = $this->config->get("log.{$this->config['log']['active']}.efficiency_monitor_enable",false);
     }
 
     /**

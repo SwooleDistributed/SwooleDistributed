@@ -20,7 +20,7 @@ class CoroutineTask
      * @var GeneratorContext
      */
     protected $generatorContext;
-    protected $isError;
+    protected $isError = false;
 
 
     public function __construct()
@@ -112,6 +112,7 @@ class CoroutineTask
     protected function throwEx($routine,$e){
         try {
             $routine->throw($e);
+            $this->routine = $routine;
         }catch (\Exception $e){
             if($this->stack->isEmpty()){
                 $this->isError = true;
@@ -151,6 +152,6 @@ class CoroutineTask
         $this->routine = null;
         $this->stack = null;
         $this->isError = false;
-        Pool::getInstance()->push(CoroutineTask::class, $this);
+        Pool::getInstance()->push($this);
     }
 }

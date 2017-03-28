@@ -39,6 +39,6 @@ class TaskCoroutine extends CoroutineBase
     public function destroy()
     {
         parent::destroy();
-        Pool::getInstance()->push(TaskCoroutine::class, $this);
+        Pool::getInstance()->push($this);
     }
 }

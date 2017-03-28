@@ -1,6 +1,7 @@
 <?php
 namespace Server\CoreBase;
 use Monolog\Logger;
+use Server\Memory\Pool;
 
 /**
  * Task 异步任务
@@ -29,11 +30,14 @@ class Task extends TaskProxy
 
     public function destroy()
     {
-        $this->context['execution_time'] = (microtime(true) - $this->start_run_time)*1000;
-        $this->log('Efficiency monitor',Logger::INFO);
+        if($this->isEfficiencyMonitorEnable) {
+            $this->context['execution_time'] = (microtime(true) - $this->start_run_time) * 1000;
+            $this->log('Efficiency monitor', Logger::INFO);
+        }
         get_instance()->tid_pid_table->del($this->task_id);
         parent::destroy();
         $this->task_id = 0;
+        Pool::getInstance()->push($this);
     }
 
     /**

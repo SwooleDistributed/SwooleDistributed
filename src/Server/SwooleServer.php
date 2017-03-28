@@ -23,7 +23,7 @@ use Server\Route\IRoute;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "2.0.0-beta";
+    const version = "2.0.0";
     /**
      * Daemonize.
      *
@@ -209,11 +209,11 @@ abstract class SwooleServer extends Child
         register_shutdown_function(array($this, 'checkErrors'));
         set_error_handler(array($this, 'displayErrorHandler'));
         //pack class
-        $pack_class_name = "\\app\\Pack\\" . $this->config['server']['pack_tool'];
+        $pack_class_name = "app\\Pack\\" . $this->config['server']['pack_tool'];
         if (class_exists($pack_class_name)) {
             $this->pack = new $pack_class_name;
         } else {
-            $pack_class_name = "\\Server\\Pack\\" . $this->config['server']['pack_tool'];
+            $pack_class_name = "Server\\Pack\\" . $this->config['server']['pack_tool'];
             if (class_exists($pack_class_name)) {
                 $this->pack = new $pack_class_name;
             } else {
@@ -221,11 +221,11 @@ abstract class SwooleServer extends Child
             }
         }
         //route class
-        $route_class_name = "\\app\\Route\\" . $this->config['server']['route_tool'];
+        $route_class_name = "app\\Route\\" . $this->config['server']['route_tool'];
         if (class_exists($route_class_name)) {
             $this->route = new $route_class_name;
         } else {
-            $route_class_name = "\\Server\\Route\\" . $this->config['server']['route_tool'];
+            $route_class_name = "Server\\Route\\" . $this->config['server']['route_tool'];
             if (class_exists($route_class_name)) {
                 $this->route = new $route_class_name;
             } else {

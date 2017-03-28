@@ -78,7 +78,4 @@ $config['use_dispatch'] = false;
 
 //是否启用自动reload
 $config['auto_reload_enable'] = true;
-
-//是否启用consul
-$config['consul_enable'] = false;
 return $config;

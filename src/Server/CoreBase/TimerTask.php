@@ -73,7 +73,7 @@ class TimerTask extends CoreBase
         foreach ($this->timer_tasks_used as &$timer_task) {
             if ($timer_task['next_time'] < $time) {
                 $count = round(($time - $timer_task['start_time']) / $timer_task['interval_time']);
-                $timer_task['next_time'] += $count * $timer_task['interval_time'];
+                $timer_task['next_time'] = $timer_task['start_time'] + $count * $timer_task['interval_time'];
             }
             if ($timer_task['end_time'] != -1 && $time > $timer_task['end_time']) {//说明执行完了一轮，开始下一轮的初始化
                 $timer_task['end_time'] += 86400;

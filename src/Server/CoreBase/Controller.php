@@ -206,8 +206,10 @@ class Controller extends CoreBase
      */
     public function destroy()
     {
-        $this->context['execution_time'] = (microtime(true) - $this->start_run_time)*1000;
-        $this->log('Efficiency monitor',Logger::INFO);
+        if($this->isEfficiencyMonitorEnable) {
+            $this->context['execution_time'] = (microtime(true) - $this->start_run_time) * 1000;
+            $this->log('Efficiency monitor', Logger::INFO);
+        }
         parent::destroy();
         $this->fd = null;
         $this->uid = null;

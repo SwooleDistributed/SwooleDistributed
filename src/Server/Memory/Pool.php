@@ -62,11 +62,11 @@ class Pool
 
     /**
      * 返还一个
-     * @param $class
      * @param $classInstance
      */
-    public function push($class, $classInstance)
+    public function push($classInstance)
     {
+        $class = get_class($classInstance);
         $pool = $this->map[$class]??null;
         if ($pool == null) {
             $pool = $this->applyNewPool($class);
