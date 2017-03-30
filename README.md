@@ -1,4 +1,4 @@
-# SwooleDistributed v2.0.0-beta 更新
+# SwooleDistributed v2.0.0 更新
 
 swoole 分布式通讯框架  
 开发交流群：569037921  
