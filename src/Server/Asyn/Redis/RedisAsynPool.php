@@ -255,6 +255,15 @@ class RedisAsynPool extends AsynPool
                         }
                     }
                     break;
+                case 'eval':
+                case 'evalsha':
+                    $sha1 = $arguments[0];
+                    $args = $arguments[1];
+                    $keynum =  $arguments[2]??0;
+                    $arguments = $args;
+                    array_unshift($arguments, $keynum);
+                    array_unshift($arguments, $sha1);
+                    break;
             }
             $arguments[] = function ($client, $result) use ($data) {
                 switch (strtolower($data['name'])) {

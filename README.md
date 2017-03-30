@@ -1,5 +1,12 @@
 # SwooleDistributed v2.0.0-beta 更新
 
+swoole 分布式通讯框架  
+开发交流群：569037921  
+
+官网：http://www.sder.xin
+
+文档：http://docs.sder.xin
+
 微服务框架SD2.0.0-beta版
 
 1.协程优化，速度更快，功能更强大

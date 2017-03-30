@@ -7,6 +7,7 @@
  */
 namespace Server\Controllers;
 
+use Server\Asyn\Redis\RedisLuaManager;
 use Server\Components\Consul\ConsulServices;
 use Server\CoreBase\Controller;
 use Server\CoreBase\SelectCoroutine;
@@ -205,21 +206,6 @@ class TestController extends Controller
         $this->http_output->end($result);
     }
 
-    public function http_startInterruptedTask()
-    {
-        $testTask = $this->loader->task('TestTask', $this);
-        $task_id = $testTask->testInterrupted();
-        $testTask->startTask(null);
-        $this->http_output->end("task_id = $task_id");
-    }
-
-    public function http_interruptedTask()
-    {
-        $task_id = $this->http_input->getPost('task_id');
-        get_instance()->interruptedTask($task_id);
-        $this->http_output->end("ok");
-    }
-
     public function http_getAllTask()
     {
         $messages = get_instance()->getServerAllTaskMessage();
@@ -278,4 +264,17 @@ class TestController extends Controller
         $this->http_output->end($reuslt);
     }
 
+
+    public function http_testRedisLua()
+    {
+        $value = yield $this->redis_pool->getCoroutine()->evalSha(getLuaSha1('sadd_from_count'),['testlua',100],2);
+        $this->http_output->end($value);
+    }
+
+    public function http_testTaskStop()
+    {
+        $task = $this->loader->task('TestTask',$this);
+        $task->testStop();
+        yield $task->coroutineSend();
+    }
 }

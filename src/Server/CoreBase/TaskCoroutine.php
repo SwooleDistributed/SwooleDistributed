@@ -15,6 +15,7 @@ class TaskCoroutine extends CoroutineBase
 {
     public $id;
     public $task_proxy_data;
+    public $task_id;
 
     public function __construct()
     {
@@ -33,12 +34,19 @@ class TaskCoroutine extends CoroutineBase
 
     public function send($callback)
     {
-        get_instance()->server->task($this->task_proxy_data, $this->id, $callback);
+        $this->task_id = get_instance()->server->worker_id . get_instance()->server->task($this->task_proxy_data, $this->id, $callback);
     }
 
     public function destroy()
     {
         parent::destroy();
+        $this->task_id = null;
         Pool::getInstance()->push($this);
+    }
+
+    protected function onTimerOutHandle()
+    {
+        parent::onTimerOutHandle();
+        get_instance()->stopTask($this->task_id);
     }
 }

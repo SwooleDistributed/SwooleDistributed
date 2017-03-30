@@ -79,3 +79,29 @@ function get_extension($file)
     $info = pathinfo($file);
     return strtolower($info['extension']??'');
 }
+
+/**
+ * php在指定目录中查找指定扩展名的文件
+ * @param $path
+ * @param $ext
+ * @return array
+ */
+function get_files_by_ext($path, $ext){
+    $files = array();
+    if (is_dir($path)){
+        $handle = opendir($path);
+        while ($file = readdir($handle)) {
+            if ($file[0] == '.'){ continue; }
+            if (is_file($path.$file) and preg_match('/\.'.$ext.'$/', $file)){
+                $files[] = $file;
+            }
+        }
+        closedir($handle);
+    }
+    return $files;
+}
+
+function getLuaSha1($name)
+{
+    return \Server\Asyn\Redis\RedisLuaManager::getLuaSha1($name);
+}

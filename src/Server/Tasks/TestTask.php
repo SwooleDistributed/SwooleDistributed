@@ -54,15 +54,13 @@ class TestTask extends Task
     }
 
     /**
-     * 测试中断
+     * 测试停止
      */
-    public function testInterrupted()
+    public function testStop()
     {
         while (true) {
-            if ($this->checkInterrupted()) {
-                print_r("task已中断\n");
-                break;
-            }
+            sleep(1);
+            var_dump(1);
         }
     }
 

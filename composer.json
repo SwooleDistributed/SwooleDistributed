@@ -1,5 +1,6 @@
 {
   "require": {
+    "php": ">=7.0.0",
     "monolog/monolog": "2.0.x-dev",
     "hassankhan/config": "~0.10",
     "voku/anti-xss": "2.0.1",
@@ -22,8 +23,10 @@
     {
       "name": "tmtbe",
       "email": "896369042@qq.com",
-      "homepage": "https://github.com/tmtbe",
-      "role": "Developer"
+      "homepage": "https://github.com/tmtbe"
     }
-  ]
+  ],
+  "name": "tmtbe/swooledistributed",
+  "description": "In order to develop the api server",
+  "license": "MIT"
 }
