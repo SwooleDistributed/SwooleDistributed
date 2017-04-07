@@ -158,6 +158,9 @@ class Controller extends CoreBase
      */
     public function onExceptionHandle(\Exception $e)
     {
+        if($e instanceof SwooleRedirectException){
+            return;
+        }
         $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
         if ($e instanceof SwooleException) {
             if($e->others!=null) {
@@ -414,5 +417,19 @@ class Controller extends CoreBase
         } else {
             get_instance()->removeFromGroup($uid, $groupID);
         }
+    }
+
+    /**
+     * Http重定向
+     * @param $location
+     * @param int $code
+     * @throws SwooleRedirectException
+     */
+    protected function redirect($location,$code=302)
+    {
+        $this->http_output->setStatusHeader($code);
+        $this->http_output->setHeader('Location',$location);
+        $this->http_output->end('');
+        throw new SwooleRedirectException();
     }
 }

@@ -94,6 +94,9 @@ class CoroutineTask
                             $this->routine->send($result);
                         }
                     }catch (\Exception $e){
+                        if(!$this->isError) {
+                            $this->routine->throw($e);
+                        }
                         $this->isError = true;
                     }
                 }

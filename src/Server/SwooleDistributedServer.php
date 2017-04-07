@@ -136,7 +136,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         //加载redis的lua脚本
         $redis_pool = new RedisAsynPool($this->config, $this->config->get('redis.active'));
         $redisLuaManager = new RedisLuaManager($redis_pool->getSync());
-        $redisLuaManager->registerFile(__DIR__."/../lua");
+        $redisLuaManager->registerFile(__DIR__ . "/../lua");
         $redis_pool->getSync()->close();
         $redis_pool = null;
         return parent::start();

@@ -187,7 +187,11 @@ class HttpInput
      */
     public function getRequestUri()
     {
-        return $this->request->server['request_uri'];
+        if (array_key_exists('query_string', $this->request->server)) {
+            return $this->request->server['request_uri'] . "?" . $this->request->server['query_string'];
+        } else {
+            return $this->request->server['request_uri'];
+        }
     }
 
     /**
