@@ -1,8 +1,9 @@
 <?php
 namespace Server;
 
+use Monolog\Handler\RotatingFileHandler;
+use Monolog\Logger;
 use Noodlehaus\Exception;
-use Server\Asyn\AsynPoolManager;
 use Server\Asyn\Redis\RedisAsynPool;
 
 /**
@@ -26,15 +27,10 @@ class SwooleDispatchClient extends SwooleServer
      */
     protected $redis_pool;
     /**
-     * @var AsynPoolManager
-     */
-    protected $asnyPoolManager;
-    /**
-     * 异步进程
+     * 连接池
      * @var
      */
-    protected $pool_process;
-
+    private $asynPools;
     /**
      * SwooleDispatchClient constructor.
      */
@@ -110,13 +106,6 @@ class SwooleDispatchClient extends SwooleServer
         parent::onSwooleWorkerStart($serv, $workerId);
         $this->initAsynPools();
         $this->redis_pool = $this->asynPools['redisPool'];
-        if (!$serv->taskworker) {
-            //注册
-            $this->asnyPoolManager = new AsynPoolManager($this->pool_process, $this);
-            foreach ($this->asynPools as $pool) {
-                $this->asnyPoolManager->registAsyn($pool);
-            }
-        }
     }
 
     /**
@@ -315,5 +304,17 @@ class SwooleDispatchClient extends SwooleServer
         }
         unset($this->server_clients[ip2long($cli->address)]);
         unset($cli);
+    }
+
+    /**
+     * 设置monolog的loghandler
+     */
+    public function setLogHandler()
+    {
+        $this->log = new Logger($this->name);
+        $this->log->pushHandler(new RotatingFileHandler(__DIR__ . $this->config['log']['file']['log_path'] . $this->name . '.log',
+            $this->config['log']['file']['log_max_files'],
+            $this->config['log']['log_level']));
+
     }
 }

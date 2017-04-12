@@ -161,8 +161,8 @@ class Controller extends CoreBase
         if($e instanceof SwooleRedirectException){
             return;
         }
-        $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
         if ($e instanceof SwooleException) {
+            $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
             if($e->others!=null) {
                 $this->log($e->others, Logger::NOTICE);
             }
