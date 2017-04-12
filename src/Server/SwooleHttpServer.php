@@ -127,7 +127,9 @@ abstract class SwooleHttpServer extends SwooleServer
         $controller_instance = null;
         $this->route->handleClientRequest($request);
         list($host) = explode(':', $request->header['host']??'');
-        if (!empty(pathinfo($this->route->getPath(), PATHINFO_EXTENSION))) {
+        $path = $this->route->getPath();
+        $extension = pathinfo($this->route->getPath(), PATHINFO_EXTENSION);
+        if ($path=="/") {//寻找主页
             $www_path = $this->getHostRoot($host) . $this->getHostIndex($host);
             $result = httpEndFile($www_path, $request, $response);
             if (!$result) {
@@ -135,7 +137,14 @@ abstract class SwooleHttpServer extends SwooleServer
             } else {
                 return;
             }
-        } else {
+        }else if(!empty($extension)){//有后缀
+            $www_path = $this->getHostRoot($host) . $this->route->getPath();
+            $result = httpEndFile($www_path, $request, $response);
+            if (!$result) {
+                $error_404 = true;
+            }
+        }
+        else {
             $controller_name = $this->route->getControllerName();
             $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
             if ($controller_instance != null) {
@@ -163,17 +172,12 @@ abstract class SwooleHttpServer extends SwooleServer
             if ($controller_instance != null) {
                 $controller_instance->destroy();
             }
-            //先根据path找下www目录
-            $www_path = $this->getHostRoot($host) . $this->route->getPath();
-            $result = httpEndFile($www_path, $request, $response);
-            if (!$result) {
-                $response->header('HTTP/1.1', '404 Not Found');
-                if (!isset($this->cache404)) {//内存缓存404页面
-                    $template = $this->loader->view('server::error_404');
-                    $this->cache404 = $template->render();
-                }
-                $response->end($this->cache404);
+            $response->header('HTTP/1.1', '404 Not Found');
+            if (!isset($this->cache404)) {//内存缓存404页面
+                $template = $this->loader->view('server::error_404');
+                $this->cache404 = $template->render();
             }
+            $response->end($this->cache404);
         }
     }
 
