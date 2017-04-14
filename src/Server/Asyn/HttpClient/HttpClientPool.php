@@ -74,7 +74,6 @@ class HttpClientPool extends AsynPool
         if ($client) {
             $token = $data['token'];
             $this->command_backup[$token] = $data;
-
             switch ($data['callMethod']) {
                 case 'execute':
                     $client->setMethod($data['method']);
@@ -102,8 +101,12 @@ class HttpClientPool extends AsynPool
                         $data['result']['body'] = $client->body;
                         $data['result']['statusCode'] = $client->statusCode;
                         $this->distribute($data);
-                        //回归连接
-                        $this->pushToPool($client);
+                        if(strtolower($client->headers['connection'])=='keep-alive') {//代表是keepalive可以直接回归
+                            //回归连接
+                            $this->pushToPool($client);
+                        }else{//需要延迟回归
+                            $client->delay = true;
+                        }
                     });
                     break;
                 case 'download':
@@ -144,6 +147,12 @@ class HttpClientPool extends AsynPool
                 $client = new \swoole_http_client($ip, $data['port'], $data['ssl']);
                 $this->host = $host;
                 $this->pushToPool($client);
+                $client->on('close', function ($cli){
+                    if(isset($cli->delay)) {
+                        $this->pushToPool($cli);
+                        unset($cli->delay);
+                    }
+                });
             });
         }
     }
