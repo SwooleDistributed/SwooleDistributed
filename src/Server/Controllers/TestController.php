@@ -144,6 +144,11 @@ class TestController extends Controller
         $this->http_output->end($sum);
     }
 
+    public function http_redirect()
+    {
+        $this->redirectController('TestController','test');
+    }
+
     /**
      * health
      */

@@ -153,12 +153,17 @@ class Controller extends CoreBase
     }
 
     /**
-     * 异常的回调
+     * 异常的回调(如果需要继承$autoSendAndDestroy传flase)
      * @param \Exception $e
+     * @param bool $autoSendAndDestroy
      */
-    public function onExceptionHandle(\Exception $e)
+    public function onExceptionHandle(\Exception $e,$autoSendAndDestroy = true)
     {
+        //必须的代码
         if($e instanceof SwooleRedirectException){
+            $this->http_output->setStatusHeader($e->getCode());
+            $this->http_output->setHeader('Location',$e->getMessage());
+            $this->http_output->end('');
             return;
         }
         if ($e instanceof SwooleException) {
@@ -167,13 +172,16 @@ class Controller extends CoreBase
                 $this->log($e->others, Logger::NOTICE);
             }
         }
-        switch ($this->request_type) {
-            case SwooleMarco::HTTP_REQUEST:
-                $this->http_output->end($e->getMessage());
-                break;
-            case SwooleMarco::TCP_REQUEST:
-                $this->send($e->getMessage());
-                break;
+        //可以重写的代码
+        if($autoSendAndDestroy) {
+            switch ($this->request_type) {
+                case SwooleMarco::HTTP_REQUEST:
+                    $this->http_output->end($e->getMessage());
+                    break;
+                case SwooleMarco::TCP_REQUEST:
+                    $this->send($e->getMessage());
+                    break;
+            }
         }
     }
 
@@ -209,6 +217,9 @@ class Controller extends CoreBase
      */
     public function destroy()
     {
+        if($this->is_destroy){
+            return;
+        }
         if($this->isEfficiencyMonitorEnable) {
             $this->context['execution_time'] = (microtime(true) - $this->start_run_time) * 1000;
             $this->log('Efficiency monitor', Logger::INFO);
@@ -241,9 +252,7 @@ class Controller extends CoreBase
     public function defaultMethod()
     {
         if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
-            $this->http_output->setHeader('HTTP/1.1', '404 Not Found');
-            $template = $this->loader->view('server::error_404');
-            $this->http_output->end($template->render());
+            $this->redirect404();
         } else {
             throw new SwooleException('method not exist');
         }
@@ -423,13 +432,37 @@ class Controller extends CoreBase
      * Http重定向
      * @param $location
      * @param int $code
+     * @throws SwooleException
      * @throws SwooleRedirectException
      */
     protected function redirect($location,$code=302)
     {
-        $this->http_output->setStatusHeader($code);
-        $this->http_output->setHeader('Location',$location);
-        $this->http_output->end('');
-        throw new SwooleRedirectException();
+        if($this->request_type==SwooleMarco::HTTP_REQUEST) {
+            throw new SwooleRedirectException($location, $code);
+        }else{
+            throw new SwooleException('重定向只能在http请求中使用');
+        }
+    }
+
+    /**
+     * 重定向到404
+     * @param int $code
+     */
+    protected function redirect404($code=302)
+    {
+        $location = 'http://'.$this->request->header['host']."/".'404';
+        $this->redirect($location,$code);
+    }
+
+    /**
+     * 重定向到控制器，这里的方法名不填前缀
+     * @param $controllerName
+     * @param $methodName
+     * @param int $code
+     */
+    protected function redirectController($controllerName,$methodName,$code=302)
+    {
+        $location = 'http://'.$this->request->header['host']."/".$controllerName."/".$methodName;
+        $this->redirect($location,$code);
     }
 }

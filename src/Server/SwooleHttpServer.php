@@ -128,6 +128,15 @@ abstract class SwooleHttpServer extends SwooleServer
         $this->route->handleClientRequest($request);
         list($host) = explode(':', $request->header['host']??'');
         $path = $this->route->getPath();
+        if($path=='/404'){
+            $response->header('HTTP/1.1', '404 Not Found');
+            if (!isset($this->cache404)) {//内存缓存404页面
+                $template = $this->loader->view('server::error_404');
+                $this->cache404 = $template->render();
+            }
+            $response->end($this->cache404);
+            return;
+        }
         $extension = pathinfo($this->route->getPath(), PATHINFO_EXTENSION);
         if ($path=="/") {//寻找主页
             $www_path = $this->getHostRoot($host) . $this->getHostIndex($host);
@@ -172,12 +181,11 @@ abstract class SwooleHttpServer extends SwooleServer
             if ($controller_instance != null) {
                 $controller_instance->destroy();
             }
-            $response->header('HTTP/1.1', '404 Not Found');
-            if (!isset($this->cache404)) {//内存缓存404页面
-                $template = $this->loader->view('server::error_404');
-                $this->cache404 = $template->render();
-            }
-            $response->end($this->cache404);
+            //重定向到404
+            $response->status(302);
+            $location = 'http://'.$request->header['host']."/".'404';
+            $response->header('Location',$location);
+            $response->end('');
         }
     }
 
