@@ -72,8 +72,16 @@ class HttpClientPool extends AsynPool
     {
         $client = $this->shiftFromPool($data);
         if ($client) {
+            if (!$client->isConnected()) {
+                unset($client);
+                $this->prepareOne();
+                $this->commands->push($data);
+                return;
+            }
+
             $token = $data['token'];
             $this->command_backup[$token] = $data;
+
             switch ($data['callMethod']) {
                 case 'execute':
                     $client->setMethod($data['method']);
@@ -143,6 +151,12 @@ class HttpClientPool extends AsynPool
                 $client = new \swoole_http_client($ip, $data['port'], $data['ssl']);
                 $this->host = $host;
                 $this->pushToPool($client);
+                $client->on("error", function ($cli) {
+                    $cli->close();
+                });
+                $client->on("close", function ($cli) {
+
+                });
             });
         }
     }
