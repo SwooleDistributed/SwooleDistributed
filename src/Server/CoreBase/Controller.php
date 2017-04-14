@@ -155,9 +155,9 @@ class Controller extends CoreBase
     /**
      * 异常的回调(如果需要继承$autoSendAndDestroy传flase)
      * @param \Exception $e
-     * @param bool $autoSendAndDestroy
+     * @param callable $handle
      */
-    public function onExceptionHandle(\Exception $e,$autoSendAndDestroy = true)
+    public function onExceptionHandle(\Exception $e,$handle = null)
     {
         //必须的代码
         if($e instanceof SwooleRedirectException){
@@ -173,7 +173,7 @@ class Controller extends CoreBase
             }
         }
         //可以重写的代码
-        if($autoSendAndDestroy) {
+        if($handle==null) {
             switch ($this->request_type) {
                 case SwooleMarco::HTTP_REQUEST:
                     $this->http_output->end($e->getMessage());
@@ -182,6 +182,8 @@ class Controller extends CoreBase
                     $this->send($e->getMessage());
                     break;
             }
+        }else{
+            call_user_func($handle,$e);
         }
     }
 
