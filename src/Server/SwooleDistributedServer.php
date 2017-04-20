@@ -629,6 +629,16 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
+     * ｗｅｂｓｏｃｋｅｔ的连接断开
+     * @param $serv
+     * @param $fd
+     */
+    public function onSwooleWSClose($serv, $fd)
+    {
+        $this->onSwooleClose($serv,$fd);
+    }
+
+    /**
      * 解绑uid，链接断开自动解绑
      * @param $uid
      */
