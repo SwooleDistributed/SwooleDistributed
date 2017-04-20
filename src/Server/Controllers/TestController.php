@@ -27,6 +27,13 @@ class TestController extends Controller
      */
     public $testModel;
 
+
+    public function http_ex()
+    {
+        throw new \Exception("1");
+        $value = yield $this->redis_pool->getCoroutine()->ping();
+
+    }
     public function http_mysql()
     {
         $model = $this->loader->model('TestModel', $this);

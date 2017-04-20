@@ -211,7 +211,13 @@ class CoroutineTask
      */
     public function isFinished()
     {
-        return $this->isError || ($this->stack->isEmpty() && !$this->routine->valid());
+        try {
+            $result = $this->isError || ($this->stack->isEmpty() && !$this->routine->valid());
+        }catch (\Exception $e){
+            $this->throwEx($this->routine,$e);
+            $result = true;
+        }
+        return $result;
     }
 
     public function getRoutine()
