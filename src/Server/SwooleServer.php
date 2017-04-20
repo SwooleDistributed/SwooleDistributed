@@ -2,10 +2,10 @@
 namespace Server;
 
 use Gelf\Publisher;
-use Monolog\Handler\GelfHandler;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Noodlehaus\Config;
+use Server\Components\GrayLog\GelfHandler;
 use Server\Components\GrayLog\UdpTransport;
 use Server\CoreBase\Child;
 use Server\CoreBase\ControllerFactory;
