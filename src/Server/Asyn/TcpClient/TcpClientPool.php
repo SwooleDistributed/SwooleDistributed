@@ -34,11 +34,11 @@ class TcpClientPool extends AsynPool
     protected $tcpClient_max_count;
     protected $package_length_type_length;
 
-    public function __construct($config, $connect)
+    public function __construct($config, $config_name, $connect)
     {
         parent::__construct($config);
         $this->connect = $connect;
-        $this->set = $this->config->get('tcpClient.set', [
+        $this->set = $this->config->get("tcpClient.$config_name.set", [
             'open_length_check' => 1,
             'package_length_type' => 'N',
             'package_length_offset' => 0,       //第N个字节是包长度的值
@@ -47,15 +47,15 @@ class TcpClientPool extends AsynPool
         ]);
         $this->package_length_type_length = strlen(pack($this->set['package_length_type'], 1));
         //pack class
-        $pack_class_name = "app\\Pack\\" . $this->config['tcpClient']['pack_tool'];
+        $pack_class_name = "app\\Pack\\" . $this->config['tcpClient'][$config_name]['pack_tool'];
         if (class_exists($pack_class_name)) {
             $this->pack = new $pack_class_name;
         } else {
-            $pack_class_name = "Server\\Pack\\" . $this->config['tcpClient']['pack_tool'];
+            $pack_class_name = "Server\\Pack\\" . $this->config['tcpClient'][$config_name]['pack_tool'];
             if (class_exists($pack_class_name)) {
                 $this->pack = new $pack_class_name;
             } else {
-                throw new SwooleException("class {$this->config['server']['pack_tool']} is not exist.");
+                throw new SwooleException("class {$this->config['server'][$config_name]['pack_tool']} is not exist.");
             }
         }
         list($this->host, $this->port) = explode(':', $connect);
@@ -82,13 +82,15 @@ class TcpClientPool extends AsynPool
     /**
      * @param $send
      * @param $callback
-     * @internal param $data
+     * @param bool $oneway
      * @return int
+     * @internal param $data
      */
-    public function send($send, $callback)
+    public function send($send, $callback, $oneway = false)
     {
         $data['token'] = $this->addTokenCallback($callback);
         $data['send'] = $this->encode($this->pack->pack($send));
+        $data['oneway'] = $oneway;
         $this->execute($data);
         return $data['token'];
     }
@@ -126,6 +128,14 @@ class TcpClientPool extends AsynPool
             }
             $client->token = $data['token'];
             $client->send($data['send']);
+            //单向的返回null直接回收
+            if ($data['oneway']??false) {
+                $result['token'] = $data['token'];
+                $result['result'] = null;
+                $this->distribute($result);
+                unset($client->token);
+                $this->pushToPool($client);
+            }
         }
     }
 
@@ -178,11 +188,12 @@ class TcpClientPool extends AsynPool
     /**
      * 协程的发送
      * @param $send
+     * @param bool $oneway
      * @return TcpClientRequestCoroutine
      */
-    public function coroutineSend($send)
+    public function coroutineSend($send, $oneway = false)
     {
-        return Pool::getInstance()->get(TcpClientRequestCoroutine::class)->init($this, $send);
+        return Pool::getInstance()->get(TcpClientRequestCoroutine::class)->init($this, $send, $oneway);
     }
 
     /**

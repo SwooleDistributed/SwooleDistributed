@@ -19,6 +19,7 @@ class TcpClientRequestCoroutine extends CoroutineBase
      */
     public $pool;
     public $data;
+    public $oneway;
 
     public function __construct()
     {
@@ -29,13 +30,15 @@ class TcpClientRequestCoroutine extends CoroutineBase
      * 对象池模式代替__construct
      * @param $pool
      * @param $data
+     * @param $oneway
      * @return $this
      * @throws SwooleException
      */
-    public function init($pool, $data)
+    public function init($pool, $data, $oneway=false)
     {
         $this->pool = $pool;
         $this->data = $data;
+        $this->oneway = $oneway;
         if (!array_key_exists('path', $data)) {
             throw new SwooleException('tcp data must has path');
         }
@@ -52,7 +55,7 @@ class TcpClientRequestCoroutine extends CoroutineBase
 
     public function send($callback)
     {
-        $this->token = $this->pool->send($this->data, $callback);
+        $this->token = $this->pool->send($this->data, $callback, $this->oneway);
     }
 
     public function destroy()

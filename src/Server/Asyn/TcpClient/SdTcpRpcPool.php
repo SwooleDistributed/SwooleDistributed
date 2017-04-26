@@ -40,11 +40,11 @@ class SdTcpRpcPool extends AsynPool
     protected $pack;
     protected $package_length_type_length;
 
-    public function __construct($config, $connect)
+    public function __construct($config, $config_name, $connect)
     {
         parent::__construct($config);
         $this->connect = $connect;
-        $this->set = $this->config->get('tcpClient.set', [
+        $this->set = $this->config->get("tcpClient.$config_name.set", [
             'open_length_check' => 1,
             'package_length_type' => 'N',
             'package_length_offset' => 0,       //第N个字节是包长度的值
@@ -53,15 +53,15 @@ class SdTcpRpcPool extends AsynPool
         ]);
         $this->package_length_type_length = strlen(pack($this->set['package_length_type'], 1));
         //pack class
-        $pack_class_name = "app\\Pack\\" . $this->config['tcpClient']['pack_tool'];
+        $pack_class_name = "app\\Pack\\" . $this->config['tcpClient'][$config_name]['pack_tool'];
         if (class_exists($pack_class_name)) {
             $this->pack = new $pack_class_name;
         } else {
-            $pack_class_name = "Server\\Pack\\" . $this->config['tcpClient']['pack_tool'];
+            $pack_class_name = "Server\\Pack\\" . $this->config['tcpClient'][$config_name]['pack_tool'];
             if (class_exists($pack_class_name)) {
                 $this->pack = new $pack_class_name;
             } else {
-                throw new SwooleException("class {$this->config['server']['pack_tool']} is not exist.");
+                throw new SwooleException("class {$this->config['server'][$config_name]['pack_tool']} is not exist.");
             }
         }
         list($this->host, $this->port) = explode(':', $connect);
@@ -87,12 +87,14 @@ class SdTcpRpcPool extends AsynPool
     /**
      * @param $send
      * @param $callback
-     * @internal param $data
+     * @param bool $oneway
      * @return int
+     * @internal param $data
      */
-    public function send($send, $callback)
+    public function send($send, $callback, $oneway = false)
     {
         $send['token'] = $this->addTokenCallback($callback);
+        $send['oneway'] = $oneway;
         $this->execute($send);
         return $send['token'];
     }
@@ -132,9 +134,18 @@ class SdTcpRpcPool extends AsynPool
             }
             $this->command_backup[$data['token']] = $data;
             $data['rpc_token'] = $data['token'];
+            $token = $data['token'];
             unset($data['token']);
+            $oneway = $data['oneway'];
+            unset($data['oneway']);
             $data = $this->encode($this->pack->pack($data));
             $this->client->send($data);
+            if ($oneway) {
+                $result['token'] = $token;
+                $result['result'] = null;
+                unset($this->command_backup[$token]);
+                $this->distribute($result);
+            }
         }
     }
 
@@ -162,9 +173,9 @@ class SdTcpRpcPool extends AsynPool
             }
         });
         $client->on("error", function ($cli) {
-            if($cli->isConnected()) {
+            if ($cli->isConnected()) {
                 $cli->close();
-            }else{
+            } else {
                 $this->client = null;
             }
         });
@@ -192,11 +203,12 @@ class SdTcpRpcPool extends AsynPool
     /**
      * 协程的发送
      * @param $send
+     * @param bool $oneway
      * @return TcpClientRequestCoroutine
      */
-    public function coroutineSend($send)
+    public function coroutineSend($send, $oneway = false)
     {
-        return Pool::getInstance()->get(TcpClientRequestCoroutine::class)->init($this, $send);
+        return Pool::getInstance()->get(TcpClientRequestCoroutine::class)->init($this, $send, $oneway);
     }
 
     /**
@@ -232,7 +244,7 @@ class SdTcpRpcPool extends AsynPool
 
     public function destroy(&$migrate = [])
     {
-        if($this->command_backup!=null) {
+        if ($this->command_backup != null) {
             foreach ($this->command_backup as $command) {
                 $command['callback'] = $this->callBacks[$command['token']];
                 $migrate[] = $command;

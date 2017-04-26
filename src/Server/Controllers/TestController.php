@@ -275,7 +275,12 @@ class TestController extends Controller
         $reuslt = yield $rest->add(1, 2);
         $this->http_output->end($reuslt);
     }
-
+    public function http_testConsul3()
+    {
+        $rest = ConsulServices::getInstance()->getRPCService('MathService', $this->context);
+        $reuslt = yield $rest->call('add',[1, 2],true);
+        $this->http_output->end($reuslt);
+    }
 
     public function http_testRedisLua()
     {
