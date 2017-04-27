@@ -211,7 +211,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if ($this->config->get('use_dispatch')) {
             //创建dispatch端口用于连接dispatch
             $this->dispatch_port = $this->server->listen($this->config['tcp']['socket'], $this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
-            $this->dispatch_port->set($this->setServerSet());
+            $this->dispatch_port->set($this->probuf_set);
             $this->dispatch_port->on('close', function ($serv, $fd) {
                 print_r("Remove a dispatcher.\n");
                 for ($i = 0; $i < $this->worker_num + $this->task_num; $i++) {

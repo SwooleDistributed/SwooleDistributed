@@ -26,7 +26,7 @@ class ConsulController extends Controller
     {
         $data = $this->http_input->getRawContent();
         get_instance()->sendToAllWorks(SwooleMarco::CONSUL_SERVICES_CHANGE,$data,ConsulHelp::class."::getMessgae");
-        $this->http_output->end('ok');
+        $this->destroy();
     }
 
 }
