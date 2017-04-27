@@ -122,6 +122,7 @@ class TcpClientPool extends AsynPool
         if ($client) {
             if (!$client->isConnected()) {
                 unset($client);
+                $this->client_count--;
                 $this->prepareOne();
                 $this->commands->push($data);
                 return;

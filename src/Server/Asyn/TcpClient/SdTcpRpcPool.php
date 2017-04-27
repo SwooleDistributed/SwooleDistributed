@@ -155,7 +155,7 @@ class SdTcpRpcPool extends AsynPool
     public function prepareOne()
     {
         $client = new \swoole_client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC);
-        $client->set($this->config->get('tcpClient.set', []));
+        $client->set($this->set);
         $client->on("connect", function ($cli) {
             $this->client = $cli;
             if (count($this->commands) > 0) {//有残留的任务

@@ -2,6 +2,7 @@
 namespace app;
 
 use Server\Asyn\HttpClient\HttpClientPool;
+use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\SwooleDistributedServer;
 
 /**
@@ -38,6 +39,8 @@ class AppServer extends SwooleDistributedServer
     public function initAsynPools()
     {
         parent::initAsynPools();
+        //都是测试的，实际应用中可以删除
         $this->addAsynPool('DingDingRest', new HttpClientPool($this->config, $this->config->get('dingding.url')));
+        $this->addAsynPool('RPC',new SdTcpRpcPool($this->config,'test',"192.168.8.48:9093"));
     }
 }

@@ -7,7 +7,7 @@
  */
 namespace Server\Controllers;
 
-use Server\Asyn\Redis\RedisLuaManager;
+use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\Components\Consul\ConsulServices;
 use Server\CoreBase\Controller;
 use Server\CoreBase\SelectCoroutine;
@@ -27,6 +27,20 @@ class TestController extends Controller
      */
     public $testModel;
 
+    /**
+     * @var SdTcpRpcPool
+     */
+    public $sdrpc;
+
+
+    public function http_tcp()
+    {
+        $this->sdrpc = get_instance()->getAsynPool('RPC');
+        $data = $this->sdrpc->helpToBuildSDControllerQuest($this->context, 'MathService', 'add');
+        $data['params'] = [1, 2];
+        $result = yield $this->sdrpc->coroutineSend($data);
+        $this->http_output->end($result);
+    }
 
     public function http_ex()
     {
@@ -34,6 +48,7 @@ class TestController extends Controller
         $value = yield $this->redis_pool->getCoroutine()->ping();
 
     }
+
     public function http_mysql()
     {
         $model = $this->loader->model('TestModel', $this);
@@ -153,7 +168,7 @@ class TestController extends Controller
 
     public function http_redirect()
     {
-        $this->redirectController('TestController','test');
+        $this->redirectController('TestController', 'test');
     }
 
     /**
@@ -275,22 +290,23 @@ class TestController extends Controller
         $reuslt = yield $rest->add(1, 2);
         $this->http_output->end($reuslt);
     }
+
     public function http_testConsul3()
     {
         $rest = ConsulServices::getInstance()->getRPCService('MathService', $this->context);
-        $reuslt = yield $rest->call('add',[1, 2],true);
+        $reuslt = yield $rest->call('add', [1, 2], true);
         $this->http_output->end($reuslt);
     }
 
     public function http_testRedisLua()
     {
-        $value = yield $this->redis_pool->getCoroutine()->evalSha(getLuaSha1('sadd_from_count'),['testlua',100],2);
+        $value = yield $this->redis_pool->getCoroutine()->evalSha(getLuaSha1('sadd_from_count'), ['testlua', 100], 2);
         $this->http_output->end($value);
     }
 
     public function http_testTaskStop()
     {
-        $task = $this->loader->task('TestTask',$this);
+        $task = $this->loader->task('TestTask', $this);
         $task->testStop();
         yield $task->coroutineSend();
     }
