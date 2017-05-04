@@ -12,6 +12,8 @@ define('BIN_DIR', realpath(__DIR__ . "/../../../../bin/"));
 
 class ConsulHelp
 {
+    protected static $is_leader = null;
+    protected static $session_id;
     public static function getMessgae($message)
     {
         list($name,$data) = explode('@',$message);
@@ -86,5 +88,48 @@ class ConsulHelp
             }, false, false);
             get_instance()->server->addProcess($consul_process);
         }
+    }
+
+    /**
+     * leader变更
+     * @param $is_leader
+     */
+    public static function leaderChange($is_leader)
+    {
+        if(get_instance()->server->worker_id==0) {
+            if($is_leader!==self::$is_leader) {
+                if ($is_leader) {
+                    print_r("Leader变更，被选举为Leader\n");
+                } else {
+                    print_r("Leader变更，本机不是Leader\n");
+                }
+            }
+        }
+        self::$is_leader = $is_leader;
+    }
+
+    /**
+     * @param $session_id
+     */
+    public static function setSession($session_id)
+    {
+        self::$session_id = $session_id;
+    }
+
+    /**
+     * 是否是leader
+     * @return bool
+     */
+    public static function isLeader()
+    {
+        if(self::$is_leader==null){
+            return false;
+        }
+        return self::$is_leader;
+    }
+
+    public static function getSessionID()
+    {
+        return self::$session_id;
     }
 }

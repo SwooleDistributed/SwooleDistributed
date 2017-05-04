@@ -203,7 +203,7 @@ class SwooleDispatchClient extends SwooleServer
      */
     public function onClientReceive($cli, $client_data)
     {
-        $data = substr($client_data, $this->package_length_type_length);
+        $data = $this->unEncode($client_data);
         $unserialize_data = unserialize($data);
         $type = $unserialize_data['type']??'';
         $message = $unserialize_data['message']??'';

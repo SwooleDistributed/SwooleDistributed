@@ -101,7 +101,7 @@ class HttpClientPool extends AsynPool
                         $data['result']['body'] = $client->body;
                         $data['result']['statusCode'] = $client->statusCode;
                         $this->distribute($data);
-                        if(strtolower($client->headers['connection']??'close')=='keep-alive') {//代表是keepalive可以直接回归
+                        if(strtolower($client->headers['connection']??'keep-alive')=='keep-alive') {//代表是keepalive可以直接回归
                             //回归连接
                             $this->pushToPool($client);
                         }else{//需要延迟回归

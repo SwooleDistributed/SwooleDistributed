@@ -175,10 +175,20 @@ class ConsulServices
     {
         switch ($type) {
             case "tcp":
-                $this->tcp_services[$name][$address] = new ConsulRpc($this->config, "consul", "$address:$port");
+                $config_name = 'consul_'.$name;
+                if(!$this->config->has("tcpClient.$config_name")){
+                    $config_name = 'consul';
+                }
+                $this->tcp_services[$name][$address] = new ConsulRpc($this->config, $config_name, "$address:$port");
+                if(get_instance()->server->worker_id==0) {
+                    print_r("发现$name($address:$port) TCP服务，应用配置$config_name\n");
+                }
                 break;
             case "http":
                 $this->http_services[$name][$address] = new ConsulRest($this->config, "http://$address:$port");
+                if(get_instance()->server->worker_id==0) {
+                    print_r("发现$name($address:$port) HTTP服务\n");
+                }
                 break;
         }
     }

@@ -310,4 +310,12 @@ class TestController extends Controller
         $task->testStop();
         yield $task->coroutineSend();
     }
+
+    public function http_testLeader()
+    {
+        $ConsulModel = $this->loader->model('ConsulModel',$this);
+        $result = yield $ConsulModel->leader();
+        var_dump($result);
+        $this->http_output->end($result);
+    }
 }

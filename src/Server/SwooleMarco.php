@@ -58,7 +58,14 @@ class SwooleMarco
      * consul 服务变更
      */
     const CONSUL_SERVICES_CHANGE = 8500;
-
+    /**
+     * consul Leader变更
+     */
+    const CONSUL_SERVICES_LEADER_CHANGE = 8600;
+    /**
+     * consul_session
+     */
+    const CONSUL_SERVICES_SESSION = 8700;
     /**
      * redis uid和全局usid映射表的hashkey
      * @var string
