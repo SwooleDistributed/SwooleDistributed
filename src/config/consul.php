@@ -6,8 +6,9 @@
  * Time: 下午5:58
  */
 //是否启用consul
-$config['consul_enable'] = false;
-
+$config['consul_enable'] = true;
+//服务器名称，同种服务应该设置同样的名称，用于leader选举
+$config['consul']['leader_service_name'] = 'Test';
 //node的名字，每一个都必须不一样
 $config['consul']['node_name'] = 'SD-1';
 //consul的data_dir默认放在临时文件下

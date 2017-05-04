@@ -21,6 +21,7 @@ $config['timerTask'][] = [
     'method_name' => 'send',
     'interval_time' => '30'
 ];
+
 //下面例子表示在每天的14点到20点间每隔1秒执行一次
 $config['timerTask'][] = [
     'start_time' => 'Y-m-d 19:00:00',
