@@ -45,7 +45,7 @@ class DocParser
                 $desc [] = $parsedLine; // Store the line in the long description
             }
         }
-        $desc = implode(' ', $desc??[]);
+        $desc = implode(' ', $desc?:[]);
         if (!empty ($desc))
             $this->params ['long_description'] = $desc;
     }

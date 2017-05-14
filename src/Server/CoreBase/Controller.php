@@ -103,8 +103,8 @@ class Controller extends CoreBase
         $this->client_data = $client_data;
         if (isset($client_data->rpc_request_id)) {
             $this->isRPC = true;
-            $this->rpc_token = $client_data->rpc_token??'';
-            $this->rpc_request_id = $client_data->rpc_request_id??'';
+            $this->rpc_token = $client_data->rpc_token?:'';
+            $this->rpc_request_id = $client_data->rpc_request_id?:'';
         } else {
             $this->isRPC = false;
         }

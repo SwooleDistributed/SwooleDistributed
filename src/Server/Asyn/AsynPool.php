@@ -105,7 +105,7 @@ abstract class AsynPool implements IAsynPool
     public function distribute($data)
     {
         $token = $data['token'];
-        $callback = $this->callBacks[$token]??null;
+        $callback = $this->callBacks[$token]?:null;
         unset($this->callBacks[$token]);
         unset($this->clients[$token]);
         if ($callback != null) {

@@ -55,9 +55,9 @@ class HttpInput
     public function post($index, $xss_clean = true)
     {
         if ($xss_clean) {
-            return XssClean::getXssClean()->xss_clean($this->request->post[$index]??'');
+            return XssClean::getXssClean()->xss_clean($this->request->post[$index]?:'');
         } else {
-            return $this->request->post[$index]??'';
+            return $this->request->post[$index]?:'';
         }
     }
 
@@ -70,9 +70,9 @@ class HttpInput
     public function get($index, $xss_clean = true)
     {
         if ($xss_clean) {
-            return XssClean::getXssClean()->xss_clean($this->request->get[$index]??'');
+            return XssClean::getXssClean()->xss_clean($this->request->get[$index]?:'');
         } else {
-            return $this->request->get[$index]??'';
+            return $this->request->get[$index]?:'';
         }
     }
 
@@ -94,7 +94,7 @@ class HttpInput
      */
     public function getAllPostGet()
     {
-        return $this->request->post??$this->request->get??[];
+        return $this->request->post?:$this->request->get?:[];
     }
 
     /**
@@ -105,9 +105,9 @@ class HttpInput
     public function header($index, $xss_clean = true)
     {
         if ($xss_clean) {
-            return XssClean::getXssClean()->xss_clean($this->request->header[$index]??'');
+            return XssClean::getXssClean()->xss_clean($this->request->header[$index]?:'');
         } else {
-            return $this->request->header[$index]??'';
+            return $this->request->header[$index]?:'';
         }
     }
 
@@ -138,9 +138,9 @@ class HttpInput
     public function cookie($index, $xss_clean = true)
     {
         if ($xss_clean) {
-            return XssClean::getXssClean()->xss_clean($this->request->cookie[$index]??'');
+            return XssClean::getXssClean()->xss_clean($this->request->cookie[$index]?:'');
         } else {
-            return $this->request->cookie[$index]??'';
+            return $this->request->cookie[$index]?:'';
         }
     }
 
@@ -153,9 +153,9 @@ class HttpInput
     public function getRequestHeader($index, $xss_clean = true)
     {
         if ($xss_clean) {
-            return XssClean::getXssClean()->xss_clean($this->request->header[$index]??'');
+            return XssClean::getXssClean()->xss_clean($this->request->header[$index]?:'');
         } else {
-            return $this->request->header[$index]??'';
+            return $this->request->header[$index]?:'';
         }
     }
 
@@ -168,9 +168,9 @@ class HttpInput
     public function server($index, $xss_clean = true)
     {
         if ($xss_clean) {
-            return XssClean::getXssClean()->xss_clean($this->request->server[$index]??'');
+            return XssClean::getXssClean()->xss_clean($this->request->server[$index]?:'');
         } else {
-            return $this->request->server[$index]??'';
+            return $this->request->server[$index]?:'';
         }
     }
 

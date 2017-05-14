@@ -114,9 +114,9 @@ class MysqlAsynPool extends AsynPool
     public function execute($data)
     {
         $client = null;
-        $bind_id = $data['bind_id']??null;
+        $bind_id = $data['bind_id']?:null;
         if ($bind_id != null) {//绑定
-            $client = $this->bind_pool[$bind_id]['client']??null;
+            $client = $this->bind_pool[$bind_id]['client']?:null;
             $sql = strtolower($data['sql']);
             if ($sql != 'begin' && $client == null) {
                 throw new SwooleException('error mysql affairs not begin.');
@@ -125,7 +125,7 @@ class MysqlAsynPool extends AsynPool
         if ($client == null) {
             $client = $this->shiftFromPool($data);
             if ($client) {
-                if ($client->isClose??false) {
+                if ($client->isClose?:false) {
                     $this->reconnect($client);
                     $this->commands->push($data);
                     return;

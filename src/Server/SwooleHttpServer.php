@@ -126,7 +126,7 @@ abstract class SwooleHttpServer extends SwooleServer
         $error_404 = false;
         $controller_instance = null;
         $this->route->handleClientRequest($request);
-        list($host) = explode(':', $request->header['host']??'');
+        list($host) = explode(':', $request->header['host']?:'');
         $path = $this->route->getPath();
         if($path=='/404'){
             $response->header('HTTP/1.1', '404 Not Found');
@@ -196,9 +196,9 @@ abstract class SwooleHttpServer extends SwooleServer
      */
     public function getHostRoot($host)
     {
-        $root_path = $this->config['http']['root'][$host]['root']??'';
+        $root_path = $this->config['http']['root'][$host]['root']?:'';
         if (empty($root_path)) {
-            $root_path = $this->config['http']['root']['default']['root']??'';
+            $root_path = $this->config['http']['root']['default']['root']?:'';
         }
         if (!empty($root_path)) {
             $root_path = WWW_DIR . "/$root_path/";
@@ -215,7 +215,7 @@ abstract class SwooleHttpServer extends SwooleServer
      */
     public function getHostIndex($host)
     {
-        $index = $this->config['http']['root'][$host]['index']??'index.html';
+        $index = $this->config['http']['root'][$host]['index']?:'index.html';
         return $index;
     }
 }

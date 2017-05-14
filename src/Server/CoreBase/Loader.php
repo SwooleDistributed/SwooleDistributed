@@ -42,7 +42,7 @@ class Loader
             if ($root->hasChild($model)) {
                 return $root->getChild($model);
             }
-            $root = $root->parent??null;
+            $root = $root->parent?:null;
         }
         $model_instance = $this->_model_factory->getModel($model, $parent);
         $parent->addChild($model_instance);

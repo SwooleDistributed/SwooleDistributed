@@ -86,7 +86,7 @@ class ConsulServices
         foreach ($nodes as $node) {
             $service = $node['Service'];
             $address = $service['Address'];
-            $tags = $service['Tags']??[];
+            $tags = $service['Tags']?:[];
             $port = $service['Port'];
             if (empty($address)) {
                 $address = $node['Node']['Address'];
