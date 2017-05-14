@@ -40,7 +40,7 @@ class Pool
      */
     public function get($class)
     {
-        $pool = $this->map[$class]??null;
+        $pool = $this->map[$class]?:null;
         if ($pool == null) {
             $pool = $this->applyNewPool($class);
         }
@@ -67,7 +67,7 @@ class Pool
     public function push($classInstance)
     {
         $class = get_class($classInstance);
-        $pool = $this->map[$class]??null;
+        $pool = $this->map[$class]?:null;
         if ($pool == null) {
             $pool = $this->applyNewPool($class);
         }

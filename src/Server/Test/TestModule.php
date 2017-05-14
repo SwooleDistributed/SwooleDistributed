@@ -102,7 +102,7 @@ class TestModule
             }
             $count = count($classData) - 1;
             $this->totalCount += $count;
-            $description = $classData['@info']['description']??'';
+            $description = $classData['@info']['description']?:'';
             if ($this->asyn) {
                 print_r("├──\e[30;43m[异步]\e[0m测试类[$className]:$description");
             } else {
@@ -147,7 +147,7 @@ class TestModule
             }
 
             foreach ($classData as $method => $methodInfo) {
-                $description = $methodInfo['description']??'';
+                $description = $methodInfo['description']?:'';
                 if ($this->asyn) {
                     print_r("│   ├──\e[30;43m[异步]\e[0m测试方法[$method]:$description->");
                 } else {
@@ -198,7 +198,7 @@ class TestModule
                         if (is_array($methodInfo['depends'])) {//多个依赖
                             $error = false;
                             foreach ($methodInfo['depends'] as $methodName) {
-                                $result = $classData[$methodName]['result']??null;
+                                $result = $classData[$methodName]['result']?:null;
                                 if ($result == null) {//依赖获取失败
                                     $error = true;
                                     break;
@@ -211,7 +211,7 @@ class TestModule
                             }
                         } else {
                             $methodName = $methodInfo['depends'];
-                            $result = $classData[$methodName]['result']??null;
+                            $result = $classData[$methodName]['result']?:null;
                             if ($result == null) {// 依赖获取失败
                                 $this->printFail('依赖获取失败');
                                 continue;

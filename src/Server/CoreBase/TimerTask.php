@@ -22,8 +22,8 @@ class TimerTask extends CoreBase
         $this->timer_tasks_used = [];
 
         foreach ($timer_tasks as $timer_task) {
-            $task_name = $timer_task['task_name']??'';
-            $model_name = $timer_task['model_name']??'';
+            $task_name = $timer_task['task_name']?:'';
+            $model_name = $timer_task['model_name']?:'';
             if (empty($task_name) && empty($model_name)) {
                 throw new SwooleException('定时任务配置错误，缺少task_name或者model_name.');
             }
@@ -44,7 +44,7 @@ class TimerTask extends CoreBase
                 $delay = $timer_task['delay'];
             }
             $interval_time = $timer_task['interval_time'] < 1 ? 1 : $timer_task['interval_time'];
-            $max_exec = $timer_task['max_exec']??-1;
+            $max_exec = $timer_task['max_exec']?:-1;
             $this->timer_tasks_used[] = [
                 'task_name' => $task_name,
                 'model_name' => $model_name,

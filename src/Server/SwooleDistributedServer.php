@@ -367,8 +367,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         } else {
             $unserialize_data = $data;
         }
-        $type = $unserialize_data['type']??'';
-        $message = $unserialize_data['message']??'';
+        $type = $unserialize_data['type']?:'';
+        $message = $unserialize_data['message']?:'';
         switch ($type) {
             case SwooleMarco::MSG_TYPE_SEND_BATCH://发送消息
                 foreach ($message['fd'] as $fd) {
@@ -627,7 +627,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function onSwooleClose($serv, $fd)
     {
         $info = $serv->connection_info($fd, 0, true);
-        $uid = $info['uid']??0;
+        $uid = $info['uid']?:0;
         if (!empty($uid)) {
             Coroutine::startCoroutine([$this, 'onUidCloseClear'], [$uid]);
             $this->unBindUid($uid);

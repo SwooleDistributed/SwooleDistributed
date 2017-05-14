@@ -39,7 +39,7 @@ class ProtoPack implements IPack
         $clientData->controller_name = $cmd_service->name();
         $clientData->method_name = $cmd_method->name();
         $clientData->data = $message;
-        $request = $message->getRequest()??null;
+        $request = $message->getRequest()?:null;
         if (empty($request)) {
             throw new SwooleException('unpack error');
         }

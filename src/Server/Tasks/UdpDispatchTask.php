@@ -14,7 +14,7 @@ class UdpDispatchTask extends Task
 {
     public function send()
     {
-        if ($this->config['use_dispatch']??false) {
+        if ($this->config['use_dispatch']?:false) {
             //广播
             $sock = socket_create(AF_INET, SOCK_DGRAM, SOL_UDP);
             socket_set_option($sock, SOL_SOCKET, SO_BROADCAST, 1);

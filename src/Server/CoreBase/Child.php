@@ -70,7 +70,7 @@ class Child
      */
     public function getChild($name)
     {
-        return $this->child_list[$name]??null;
+        return $this->child_list[$name]?:null;
     }
 
     /**

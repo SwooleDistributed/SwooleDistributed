@@ -78,7 +78,7 @@ class RedisLuaManager
      */
     public static function getLuaSha1($name)
     {
-        return self::$registerMap[$name]??false;
+        return self::$registerMap[$name]?:false;
     }
 
 }

@@ -205,8 +205,8 @@ class SwooleDispatchClient extends SwooleServer
     {
         $data = $this->unEncode($client_data);
         $unserialize_data = unserialize($data);
-        $type = $unserialize_data['type']??'';
-        $message = $unserialize_data['message']??'';
+        $type = $unserialize_data['type']?:'';
+        $message = $unserialize_data['message']?:'';
         switch ($type) {
             case SwooleMarco::MSG_TYPE_SEND_GROUP://发送群消息
                 //转换为batch
@@ -220,7 +220,7 @@ class SwooleDispatchClient extends SwooleServer
                                 }
                             }
                             foreach ($temp_dic as $usid => $uids) {
-                                $client = $this->server_clients[$usid]??null;
+                                $client = $this->server_clients[$usid]?:null;
                                 if ($client == null) continue;
                                 $client->send($this->encode($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_BATCH, [
                                     'data' => $message['data'],
@@ -240,7 +240,7 @@ class SwooleDispatchClient extends SwooleServer
                         }
                     }
                     foreach ($temp_dic as $usid => $uids) {
-                        $client = $this->server_clients[$usid]??null;
+                        $client = $this->server_clients[$usid]?:null;
                         if ($client == null) {
                             continue;
                         }

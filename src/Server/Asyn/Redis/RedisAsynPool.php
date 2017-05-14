@@ -185,7 +185,7 @@ class RedisAsynPool extends AsynPool
                     if (count($arguments) == 4) {//存在额外参数
                         $arg = $arguments[3];
                         unset($arguments[3]);
-                        $data['withscores'] = $arg['withscores']??false;
+                        $data['withscores'] = $arg['withscores']?:false;
                         if ($data['withscores']) {
                             $arguments[] = 'withscores';
                         }
@@ -259,7 +259,7 @@ class RedisAsynPool extends AsynPool
                 case 'evalsha':
                     $sha1 = $arguments[0];
                     $args = $arguments[1];
-                    $keynum =  $arguments[2]??0;
+                    $keynum =  $arguments[2]?:0;
                     $arguments = $args;
                     array_unshift($arguments, $keynum);
                     array_unshift($arguments, $sha1);
@@ -285,7 +285,7 @@ class RedisAsynPool extends AsynPool
                     case 'zrangebyscore':
                     case 'zrevrange':
                     case 'zrange':
-                        if ($data['withscores']??false) {
+                        if ($data['withscores']?:false) {
                             $data['result'] = [];
                             $count = count($result);
                             for ($i = 0; $i < $count; $i = $i + 2) {

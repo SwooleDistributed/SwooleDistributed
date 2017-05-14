@@ -201,9 +201,9 @@ abstract class SwooleServer extends Child
         // 加载配置
         $this->config = new Config(__DIR__ . '/../config');
         $this->probuf_set = $this->config->get('server.probuf_set', $this->probuf_set);
-        $this->package_length_type = $this->probuf_set['package_length_type']??'N';
-        $this->package_length_type_length = strlen(pack($this->package_length_type, 1))??0;
-        $this->package_body_offset = $this->probuf_set['package_body_offset']??0;
+        $this->package_length_type = $this->probuf_set['package_length_type']?:'N';
+        $this->package_length_type_length = strlen(pack($this->package_length_type, 1))?:0;
+        $this->package_body_offset = $this->probuf_set['package_body_offset']?:0;
         $this->setConfig();
         $this->setLogHandler();
         register_shutdown_function(array($this, 'checkErrors'));
@@ -483,7 +483,7 @@ abstract class SwooleServer extends Child
         echo 'Swoole version: ', SWOOLE_VERSION, "\n";
         echo 'PHP version: ', PHP_VERSION, "\n";
         echo 'worker_num: ', $setConfig['worker_num'], "\n";
-        echo 'task_num: ', $setConfig['task_worker_num']??0, "\n";
+        echo 'task_num: ', $setConfig['task_worker_num']?:0, "\n";
         echo "-------------------\033[47;30m" . self::$_worker->name . "\033[0m----------------------\n";
         echo "\033[47;30mtype\033[0m", str_pad('',
             self::$_maxShowLength - strlen('type')), "\033[47;30msocket\033[0m", str_pad('',
@@ -506,7 +506,7 @@ abstract class SwooleServer extends Child
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('tcp.socket', '--'),
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('tcp.port', '--'),
                     self::$_maxShowLength - 2);
-                if (self::$_worker->tcp_enable??false) {
+                if (self::$_worker->tcp_enable?:false) {
                     echo " \033[32;40m [OPEN] \033[0m\n";
                 } else {
                     echo " \033[31;40m [CLOSE] \033[0m\n";
@@ -515,7 +515,7 @@ abstract class SwooleServer extends Child
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
                     self::$_maxShowLength - 2);
-                if (self::$_worker->http_enable??false) {
+                if (self::$_worker->http_enable?:false) {
                     echo " \033[32;40m [OPEN] \033[0m\n";
                 } else {
                     echo " \033[31;40m [CLOSE] \033[0m\n";
@@ -524,7 +524,7 @@ abstract class SwooleServer extends Child
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
                     self::$_maxShowLength - 2);
-                if (self::$_worker->websocket_enable??false) {
+                if (self::$_worker->websocket_enable?:false) {
                     echo " \033[32;40m [OPEN] \033[0m\n";
                 } else {
                     echo " \033[31;40m [CLOSE] \033[0m\n";
@@ -613,10 +613,10 @@ abstract class SwooleServer extends Child
      */
     public function encode($buffer)
     {
-        if ($this->probuf_set['open_length_check']??0 == 1) {
+        if ($this->probuf_set['open_length_check']?:0 == 1) {
             $total_length = $this->package_length_type_length + strlen($buffer) - $this->package_body_offset;
             return pack($this->package_length_type, $total_length) . $buffer;
-        } else if ($this->probuf_set['open_eof_check']??0 == 1) {
+        } else if ($this->probuf_set['open_eof_check']?:0 == 1) {
             return $buffer . $this->probuf_set['package_eof'];
         } else {
             throw new SwooleException("tcpServer won't support set");
@@ -628,10 +628,10 @@ abstract class SwooleServer extends Child
      */
     public function unEncode($buffer)
     {
-        if ($this->probuf_set['open_length_check']??0 == 1) {
+        if ($this->probuf_set['open_length_check']?:0 == 1) {
             $data = substr($buffer, $this->package_length_type_length);
             return $data;
-        } else if ($this->probuf_set['open_eof_check']??0 == 1) {
+        } else if ($this->probuf_set['open_eof_check']?:0 == 1) {
             $data = $buffer;
             return $data;
         }
@@ -709,7 +709,7 @@ abstract class SwooleServer extends Child
                 $fd = 'self';
                 $uid = $fd;
             } else {
-                $uid = $serv->connection_info($fd)['uid']??0;
+                $uid = $serv->connection_info($fd)['uid']?:0;
             }
             $method_name = $this->config->get('tcp.method_prefix', '') . $this->route->getMethodName();
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);

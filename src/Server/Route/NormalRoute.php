@@ -37,8 +37,8 @@ class NormalRoute implements IRoute
     {
         $this->client_data->path = $request->server['path_info'];
         $route = explode('/', $request->server['path_info']);
-        $this->client_data->controller_name = $route[1]??null;
-        $this->client_data->method_name = $route[2]??null;
+        $this->client_data->controller_name = $route[1]?:null;
+        $this->client_data->method_name = $route[2]?:null;
     }
 
     /**
@@ -66,6 +66,6 @@ class NormalRoute implements IRoute
 
     public function getParams()
     {
-        return $this->client_data->params??null;
+        return $this->client_data->params?:null;
     }
 }

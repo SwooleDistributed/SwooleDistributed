@@ -107,10 +107,10 @@ class SdTcpRpcPool extends AsynPool
      */
     public function encode($buffer)
     {
-        if ($this->set['open_length_check']??0 == 1) {
+        if ($this->set['open_length_check']?:0 == 1) {
             $total_length = $this->package_length_type_length + strlen($buffer) - $this->set['package_body_offset'];
             return pack($this->set['package_length_type'], $total_length) . $buffer;
-        } else if ($this->set['open_eof_check']??0 == 1) {
+        } else if ($this->set['open_eof_check']?:0 == 1) {
             return $buffer . $this->set['package_eof'];
         } else {
             throw new SwooleException("tcpClient won't support set");
@@ -191,10 +191,10 @@ class SdTcpRpcPool extends AsynPool
      */
     public function unEncode($buffer)
     {
-        if ($this->set['open_length_check']??0 == 1) {
+        if ($this->set['open_length_check']?:0 == 1) {
             $data = substr($buffer, $this->package_length_type_length);
             return $data;
-        } else if ($this->set['open_eof_check']??0 == 1) {
+        } else if ($this->set['open_eof_check']?:0 == 1) {
             $data = $buffer;
             return $data;
         }
