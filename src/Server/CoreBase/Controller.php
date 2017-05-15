@@ -163,7 +163,7 @@ class Controller extends CoreBase
         if($e instanceof SwooleRedirectException){
             $this->http_output->setStatusHeader($e->getCode());
             $this->http_output->setHeader('Location',$e->getMessage());
-            $this->http_output->end('');
+            $this->http_output->end('end');
             return;
         }
         if ($e instanceof SwooleException) {

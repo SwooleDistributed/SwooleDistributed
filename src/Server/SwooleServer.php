@@ -738,9 +738,9 @@ abstract class SwooleServer extends Child
     /**
      * onSwooleWorkerStop
      * @param $serv
-     * @param $fd
+     * @param $worker_id
      */
-    public function onSwooleWorkerStop($serv, $fd)
+    public function onSwooleWorkerStop($serv, $worker_id)
     {
 
     }
