@@ -83,6 +83,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     protected $dispatch_port;
     /**
+     * dispatch_udp_port 端口
+     * @var int
+     */
+    protected $dispatch_udp_port;
+    /**
      * 共享内存表
      * @var \swoole_table
      */
@@ -210,11 +215,14 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             });
         }
         if ($this->config->get('use_dispatch')) {
+            //创建一个udp端口
+            $this->dispatch_udp_port = $this->server->listen($this->config['tcp']['socket'], $this->config['server']['dispatch_udp_port'], SWOOLE_SOCK_UDP);
+
             //创建dispatch端口用于连接dispatch
             $this->dispatch_port = $this->server->listen($this->config['tcp']['socket'], $this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
             $this->dispatch_port->set($this->probuf_set);
             $this->dispatch_port->on('close', function ($serv, $fd) {
-                print_r("Remove a dispatcher.\n");
+                print_r("Remove a dispatcher: $fd.\n");
                 for ($i = 0; $i < $this->worker_num + $this->task_num; $i++) {
                     if ($i == $serv->worker_id) continue;
                     $data = $this->packSerevrMessageBody(SwooleMarco::REMOVE_DISPATCH_CLIENT, $fd);
@@ -230,9 +238,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $message = $unserialize_data['message'];
                 switch ($type) {
                     case SwooleMarco::MSG_TYPE_USID://获取服务器唯一id
-                        print_r("Find a new dispatcher.\n");
                         $uns_data = unserialize($message);
                         $uns_data['fd'] = $fd;
+                        if(!array_key_exists($fd,$this->dispatchClientFds)){
+                            print_r("Find a new dispatcher: $fd.\n");
+                        }
                         $fdinfo = $this->server->connection_info($fd);
                         $uns_data['remote_ip'] = $fdinfo['remote_ip'];
                         $this->sendToAllWorks($type, $uns_data, DispatchHelp::class . "::addDispatch");

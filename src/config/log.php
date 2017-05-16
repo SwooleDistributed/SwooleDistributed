@@ -6,7 +6,7 @@
  * Time: 下午5:58
  */
 //node的名字，每一个都必须不一样
-$config['log']['active'] = 'graylog';
+$config['log']['active'] = 'file';
 $config['log']['log_level'] = \Monolog\Logger::DEBUG;
 $config['log']['log_name'] = 'SD';
 

@@ -143,7 +143,12 @@ class SwooleDispatchClient extends SwooleServer
      */
     private function addServerClient($address)
     {
-        if (array_key_exists(ip2long($address), $this->server_clients)) {
+        $usid = ip2long($address);
+        if (array_key_exists($usid, $this->server_clients)) {
+            $write_data = ['wid' => $this->server->worker_id, 'usid' => $usid];
+            $data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_USID, serialize($write_data));
+            $cli = $this->server_clients[$usid];
+            $cli->send($this->encode($data));
             return;
         }
         $client = new \swoole_client(SWOOLE_TCP, SWOOLE_SOCK_ASYNC);
