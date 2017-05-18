@@ -61,6 +61,10 @@ class RedisLuaManager
     public function registerLuas($sha1s, $luas, $names)
     {
         $exists = $this->redis->script("exists", ...$sha1s);
+        if($exists==false){
+            print_r("该RedisServer不支持lua脚本。\n");
+            return;
+        }
         $count = count($exists);
         for ($i = 0; $i < $count; $i++) {
             if (!$exists[$i]) {
