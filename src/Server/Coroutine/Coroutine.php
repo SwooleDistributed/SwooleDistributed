@@ -31,21 +31,17 @@ class Coroutine
 
     private function startTick()
     {
+        $this->run();
         swoole_timer_tick(self::TICK_INTERVAL, function ($timerId) {
             $this->tickTime++;
             $this->tickId = $timerId;
-            $this->run();
             get_instance()->tickTime = $this->getTickTime();
         });
     }
 
 
-    private function run()
+    public function run()
     {
-        if (empty($this->routineList)) {
-            return;
-        }
-
         foreach ($this->routineList as $k => $task) {
             $task->run();
             if ($task->isFinished()) {
@@ -53,6 +49,7 @@ class Coroutine
                 unset($this->routineList[$k]);
             }
         }
+        swoole_timer_after(self::TICK_INTERVAL,[$this,'run']);
     }
 
     /**

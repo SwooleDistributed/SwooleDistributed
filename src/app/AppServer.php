@@ -2,6 +2,8 @@
 namespace app;
 
 use Server\Asyn\HttpClient\HttpClientPool;
+use Server\Asyn\Redis\RedisAsynPool;
+use Server\Asyn\Redis\RedisRoute;
 use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\SwooleDistributedServer;
 
@@ -19,7 +21,7 @@ class AppServer extends SwooleDistributedServer
      */
     public function onOpenServiceInitialization()
     {
-        parent::onOpenServiceInitialization();
+        yield parent::onOpenServiceInitialization();
     }
 
     /**
@@ -41,6 +43,9 @@ class AppServer extends SwooleDistributedServer
         parent::initAsynPools();
         //都是测试的，实际应用中可以删除
         $this->addAsynPool('DingDingRest', new HttpClientPool($this->config, $this->config->get('dingding.url')));
-        $this->addAsynPool('RPC',new SdTcpRpcPool($this->config,'test',"192.168.8.48:9093"));
+        $this->addAsynPool('RPC', new SdTcpRpcPool($this->config, 'test', "192.168.8.48:9093"));
+        $this->addAsynPool('redis_local2', new RedisAsynPool($this->config, "local2"));
+        //redis根据key进行自动路由
+        //RedisRoute::getInstance()->addRedisPoolRoute('testroute', 'redis_local2');
     }
 }

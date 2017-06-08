@@ -198,6 +198,8 @@ class CoroutineTask
                 }
                 if ($this->generatorContext->getController() != null && method_exists($this->generatorContext->getController(), 'onExceptionHandle')) {
                     call_user_func([$this->generatorContext->getController(), 'onExceptionHandle'], $e);
+                }else{
+                    $routine->throw($e);
                 }
                 return;
             }

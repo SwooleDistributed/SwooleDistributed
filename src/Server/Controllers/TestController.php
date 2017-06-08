@@ -184,11 +184,17 @@ class TestController extends Controller
      */
     public function http_redis()
     {
-        $testModel = $this->loader->model('TestModel', $this);
-        $result = yield $testModel->testRedis();
-        $this->http_output->end(1);
+        $result = yield $this->redis_pool->getCoroutine()->get('testroute');
+        $this->http_output->end($result);
     }
-
+    /**
+     * http redis 测试
+     */
+    public function http_setRedis()
+    {
+        $result = yield $this->redis_pool->getCoroutine()->set('testroute',1);
+        $this->http_output->end($result);
+    }
     /**
      * http 同步redis 测试
      */
