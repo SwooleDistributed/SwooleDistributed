@@ -86,13 +86,16 @@ function get_extension($file)
  * @param $ext
  * @return array
  */
-function get_files_by_ext($path, $ext){
+function get_files_by_ext($path, $ext)
+{
     $files = array();
-    if (is_dir($path)){
+    if (is_dir($path)) {
         $handle = opendir($path);
         while ($file = readdir($handle)) {
-            if ($file[0] == '.'){ continue; }
-            if (is_file($path.$file) and preg_match('/\.'.$ext.'$/', $file)){
+            if ($file[0] == '.') {
+                continue;
+            }
+            if (is_file($path . $file) and preg_match('/\.' . $ext . '$/', $file)) {
                 $files[] = $file;
             }
         }
@@ -104,4 +107,26 @@ function get_files_by_ext($path, $ext){
 function getLuaSha1($name)
 {
     return \Server\Asyn\Redis\RedisLuaManager::getLuaSha1($name);
+}
+
+/**
+ * 检查扩展
+ * @return bool
+ */
+function checkExtension()
+{
+    $check = true;
+    if (!extension_loaded('swoole')) {
+        print_r("[扩展依赖]缺少swoole扩展\n");
+        $check = false;
+    }
+    if (!extension_loaded('redis')) {
+        print_r("[扩展依赖]缺少redis扩展\n");
+        $check = false;
+    }
+    if (!extension_loaded('pdo')) {
+        print_r("[扩展依赖]缺少pdo扩展\n");
+        $check = false;
+    }
+    return $check;
 }

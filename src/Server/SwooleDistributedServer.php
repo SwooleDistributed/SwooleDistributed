@@ -125,6 +125,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         self::$instance =& $this;
         $this->name = self::SERVER_NAME;
+        if(!checkExtension()){
+            exit(-1);
+        }
         parent::__construct();
     }
 
@@ -504,10 +507,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     /**
      * 添加AsynPool
      * @param $name
-     * @param AsynPool $pool
+     * @param $pool
      * @throws SwooleException
      */
-    public function addAsynPool($name, AsynPool $pool)
+    public function addAsynPool($name, $pool)
     {
         if (array_key_exists($name, $this->asynPools)) {
             throw  new SwooleException('pool key is exists!');
@@ -518,7 +521,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     /**
      * 获取连接池
      * @param $name
-     * @return AsynPool
+     * @return
      */
     public function getAsynPool($name)
     {
@@ -534,7 +537,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function onSwooleWorkerStart($serv, $workerId)
     {
         parent::onSwooleWorkerStart($serv, $workerId);
-        $this->initAsynPools();
+        $this->initAsynPools($workerId);
         $this->redis_pool = $this->asynPools['redisPool'];
         $this->mysql_pool = $this->asynPools['mysqlPool'];
         //进程锁保证只有一个进程会执行以下的代码,reload也不会执行
