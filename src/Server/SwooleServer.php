@@ -325,7 +325,7 @@ abstract class SwooleServer extends Child
         // Check argv;
         $start_file = $argv[0];
         if (!isset($argv[1])) {
-            exit("Usage: php yourfile.php {start|stop|reload|restart|test}\n");
+            exit("Usage: php yourfile.php {start|stop|kill|reload|restart|test}\n");
         }
 
         // Get command.
@@ -368,6 +368,9 @@ abstract class SwooleServer extends Child
                 if ($command2 === '-d') {
                     self::$daemonize = true;
                 }
+                break;
+            case 'kill':
+                exec('ps -ef|grep SWD|grep -v grep|cut -c 9-15|xargs kill -9');
                 break;
             case 'stop':
                 @unlink(self::$pidFile);
@@ -432,7 +435,7 @@ abstract class SwooleServer extends Child
                 self::$testUnityDir = $command2;
                 break;
             default :
-                exit("Usage: php yourfile.php {start|stop|reload|restart|test}\n");
+                exit("Usage: php yourfile.php {start|stop|kill|reload|restart|test}\n");
         }
     }
 

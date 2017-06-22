@@ -566,8 +566,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
 
     /**
      * 初始化各种连接池
+     * @param $workerId
      */
-    public function initAsynPools()
+    public function initAsynPools($workerId)
     {
         $this->asynPools = [
             'redisPool' => new RedisAsynPool($this->config, $this->config->get('redis.active')),

@@ -3,7 +3,6 @@ namespace app;
 
 use Server\Asyn\HttpClient\HttpClientPool;
 use Server\Asyn\Redis\RedisAsynPool;
-use Server\Asyn\Redis\RedisRoute;
 use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\SwooleDistributedServer;
 
@@ -36,11 +35,12 @@ class AppServer extends SwooleDistributedServer
 
     /**
      * 这里可以进行额外的异步连接池，比如另一组redis/mysql连接
+     * @param $workerId
      * @return array
      */
-    public function initAsynPools()
+    public function initAsynPools($workerId)
     {
-        parent::initAsynPools();
+        parent::initAsynPools($workerId);
         //都是测试的，实际应用中可以删除
         $this->addAsynPool('DingDingRest', new HttpClientPool($this->config, $this->config->get('dingding.url')));
         $this->addAsynPool('RPC', new SdTcpRpcPool($this->config, 'test', "192.168.8.48:9093"));
