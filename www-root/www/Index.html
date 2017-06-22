@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <script type="text/javascript" async="" src="./asset/ga.js"></script>
+    <script src="./asset/core.7875838bbb68ca715aa63ecd494267be.js" type="text/javascript"></script>
+    <script src="./asset/JSON.js" type="text/javascript"></script>
+    <script src="./asset/XmlHttpRequest.js" type="text/javascript"></script>
+
+
+    <title>基于Swoole的服务器开发框架 | SwooleDistributed</title>
+    <meta name="description" content="SwooleDistributed是一个开源分布式服务框架">
+
+
+    <meta name="viewport" content="width=device-width">
+    <meta name="google-site-verification" content="8dA13WfD1MW_Ln7vNkGSJz1guQYNs7a-tAyrKfF7R2A">
+    <meta property="og:title" content="SwooleDistributed是一个开源分布式服务框架">
+    <meta property="og:url" content="http://www.sder.xin">
+    <meta property="og:image" content="http://www.php-cpp.com/Resources/Images/phpcpp-logo.png">
+    <meta property="og:description" content="SwooleDistributed是一个开源分布式服务框架.">
+    <link href="./asset/css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="./asset/footer.css">
+    <link rel="stylesheet" type="text/css" href="./asset/style.min.css">
+    <link rel="stylesheet" href="./asset/font-awesome.min.css">
+    <script src="./asset/jquery-2.2.1.min.js"></script>
+    <script type="text/javascript" src="./asset/jquery.timeago.js"></script>
+
+    <!-- load highligh.js -->
+    <script src="./asset/highlight.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+
+</head>
+<body>
+
+
+<div class="wrapper">
+    <div class="header">
+        <div class="row">
+            <div class="column half">
+                <div class="logo">
+                    <a href="http://www.sder.xin/" title="Home">
+                        <img class="website-logo" src="./asset/sd.svg" width="180" alt="SwooleDistributed,分布式Web服务器框架">
+                    </a>
+                    <a href="https://www.swoole.com/" title="Go to www.swoole.com">
+                        <img class="by-copernica" src="./asset/by-swoole.svg" alt="swoole.com" width="180">
+                    </a>
+                    <a id="toggle"><span></span></a>
+                </div>
+            </div>
+            <div class="column half">
+                <ul class="nav">
+                    <li><a href="" title="简介">简介</a></li>
+                    <li><a href="http://docs.sder.xin">文档</a></li>
+                    <li><a href="" title="About">关于</a></li>
+                    <li class="download"><a href="https://github.com/tmtbe/SwooleDistributed"
+                                            title="Download SwooleDistributed">下载</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="section-header">
+        <div class="row">
+            <header>
+                <h1>SwooleDistributed</h1>
+                <h2>一个高性能多协议支持分布式部署的服务器框架</h2>
+            </header>
+        </div>
+    </div>
+
+
+    <div class="section introduction">
+        <div class="row">
+            <div class="third column">
+                <h2>什么是 SwooleDistributed?</h2>
+                <p>
+                    SwooleDistributed是一款PHP结合swoole扩展开发的开源高性能的服务器框架。可以广泛应用于互联网、移动通信、企业软件、云计算、网络游戏、物联网（IOT）、车联网、智能家居等领域。
+                    支持TCP长连接，支持Websocket、HTTP等协议，支持自定义协议。拥有异步Mysql、异步Redis、异步Http、协程、分布式部署等众多功能。
+                </p>
+                <!--  <a class="btn secondary" href="http://www.php-cpp.com/documentation" title="Read the online documentation">Learn more</a> -->
+            </div>
+            <div class="third column">
+                <h2>我们的优势</h2>
+                <p>
+                    *超详细的技术文档 <br> *结合Swoole扩展性能极强 <br> *PHP特性开发迅速 <br> *支持协程编程不需要写回调方法 <br> *MVC架构清晰明了 <br>
+                    *拥有可扩展的异步连接池 <br> *拥有可配置的定时任务
+                </p>
+                <!--  <a class="btn secondary" href="http://www.php-cpp.com/documentation" title="Read the online documentation">Learn more</a> -->
+            </div>
+            <div class="third column">
+                <h2>上线运营的案例</h2>
+                <p>
+                    SD框架已经有几款线上作品，可以在文档的案例中看到。<br>
+                    使用SwooleDistributed，开发效率可以大大提升。<br>
+                    框架提供的API和功能足以满足日常的开发需求。
+                </p>
+                <!--  <a class="btn secondary" href="http://www.php-cpp.com/documentation" title="Read the online documentation">Learn more</a> -->
+            </div>
+        </div>
+    </div>
+    <div class="full-width section basics">
+        <div class="row">
+            <div class="column centered-content">
+                <h2>初衷</h2>
+                <div class="column half centered centered-content">
+                    <p>
+                        对开发者友好，提高开发效率一直以来是PHP的初衷，通过与Swoole的相结合我们不仅仅能够快速开发也能达到优秀的性能，SD将Swoole的性能表现的淋漓尽致，提供了更加友好的API丰富的功能，并且支持分布式部署。
+                    </p>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="half column">
+                <h3>如何使用</h3>
+                <p>
+                    安装完Swoole扩展后，下载项目源码，然后通过composer安装依赖，通过命令启动服务器。
+                </p>
+                <pre class="language-c++"><code class="hljs cpp">composer install</code></pre>
+                <p>
+                    启动服务器
+                </p>
+                <pre class="language-c++"><code class="hljs cpp">php (<span class="hljs-string">"start_swoole_server.php"</span>, start);</code></pre>
+            </div>
+
+            <div class="half column">
+                <h3>分布式的支持</h3>
+                <p>SwooleDistribute原生支持分布式部署<br>基本零配置使用</p>
+                <pre class="language-c++"><code class="hljs cpp">php (<span class="hljs-string">"start_swoole_dispatch.php"</span>, start);</code></pre>
+                <p>
+                    分布式部署时需要让所有的服务器都处于同一个网段环境，然后启动Dispatch组件，组件会自动发现服务器组并保持连接。在此之上可以使用LVS进行负载均衡，这样一来分布式环境就搭建好了，SD框架的所有与客户端交互的API都支持单机和集群环境，使用起来非常方便。</p>
+            </div>
+        </div>
+    </div>
+    <div class="section column centered centered-content">
+        <div class="row">
+            <div class="column centered">
+                <h2>项目由来</h2>
+                <div class="column half centered centered-content">
+                    <p>
+                        经历了一个又一个项目，也接触了很多的PHP框架，我欣赏CI的简约，又贪婪swoole的效率，我将CI和swoole很草率的结合到了一起。起初呢风平浪静，慢慢的就遇到了不少的瓶颈，毕竟CI的设计理念还是贴合FPM模式，如何更加得心应手的使用swoole，同时追求开发上和运行时的效率呢，最主要的还是要方便扩展，就萌生了SwooleDistributed这个开源框架的想法。
+                        在SwooleDistributed发布之前，开源社区还没有过针对swoole的分布式框架，起初的目的并不是一个完整的应用框架，而是一个简单的分布式通讯框架，后来需求变多了，框架也就慢慢的丰满了。--白猫
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* Toggle menu for small screens */
+        $(document).ready(function () {
+            $("#toggle").click(function () {
+
+                /* Start transition on the toggle (little animation) */
+                $("#toggle").toggleClass('on');
+
+                /* Show or hide the main menu */
+                $(".nav").slideToggle(200);
+            });
+        });
+
+    </script>
+
+
+</div>
+</body>
+</html>
