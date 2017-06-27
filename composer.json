@@ -7,7 +7,8 @@
     "league/plates": "3.*",
     "protobuf-php/protobuf": "~0.1.2",
     "protobuf-php/protobuf-plugin": "^0.1.2",
-    "graylog2/gelf-php": "~1.0"
+    "graylog2/gelf-php": "~1.0",
+    "php-amqplib/php-amqplib": "2.6.*"
   },
   "autoload": {
     "psr-4": {
