@@ -6,7 +6,7 @@
  * Time: 下午1:56
  */
 
-$ips = ['192.168.21.10', '192.168.21.11'];
+$ips = ['127.0.0.1'];
 function encode($buffer)
 {
     $total_length = 4 + strlen($buffer);
@@ -45,7 +45,7 @@ $client->connect($ips[array_rand($ips)], 9093, 0.5);
 
 function connect($cli)
 {
-    $cli->send(encode(json_pack('TestController', 'bind_uid', 1001)));
+    $cli->send(encode(json_pack('TestController', 'testTcp', 'abc')));
 }
 
 function receive($cli, $data)

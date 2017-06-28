@@ -317,7 +317,7 @@ class SwooleDispatchClient extends SwooleServer
     public function setLogHandler()
     {
         $this->log = new Logger($this->name);
-        $this->log->pushHandler(new RotatingFileHandler(__DIR__ . $this->config['log']['file']['log_path'] . $this->name . '.log',
+        $this->log->pushHandler(new RotatingFileHandler(LOG_DIR. $this->name . '.log',
             $this->config['log']['file']['log_max_files'],
             $this->config['log']['log_level']));
 

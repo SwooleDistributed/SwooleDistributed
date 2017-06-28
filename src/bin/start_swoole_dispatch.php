@@ -6,6 +6,6 @@
  * Time: 下午1:56
  */
 
-require_once __DIR__ . '/../vendor/autoload.php';
-$worker = new \app\AppServer();
+require_once 'define.php';
+$worker = new Server\SwooleDispatchClient();
 Server\SwooleServer::run();

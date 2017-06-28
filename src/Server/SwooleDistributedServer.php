@@ -16,10 +16,6 @@ use Server\CoreBase\TimerTask;
 use Server\Coroutine\Coroutine;
 use Server\Test\TestModule;
 
-define("SERVER_DIR", __DIR__);
-define("APP_DIR", __DIR__ . "/../app");
-define("WWW_DIR", __DIR__ . "/../www");
-
 /**
  * Created by PhpStorm.
  * User: zhangjincheng
@@ -145,7 +141,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         //加载redis的lua脚本
         $redis_pool = new RedisAsynPool($this->config, $this->config->get('redis.active'));
         $redisLuaManager = new RedisLuaManager($redis_pool->getSync());
-        $redisLuaManager->registerFile(__DIR__ . "/../lua");
+        $redisLuaManager->registerFile(LUA_DIR);
         $redis_pool->getSync()->close();
         $redis_pool = null;
         return parent::start();

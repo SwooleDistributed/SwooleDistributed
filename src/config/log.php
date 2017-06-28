@@ -17,7 +17,6 @@ $config['log']['graylog']['port'] = '12201';
 $config['log']['graylog']['api_port'] = '9000';
 $config['log']['graylog']['efficiency_monitor_enable'] = true;
 
-$config['log']['file']['log_path'] = '/../../';
 $config['log']['file']['log_max_files'] = 15;
 $config['log']['file']['efficiency_monitor_enable'] = false;
 return $config;

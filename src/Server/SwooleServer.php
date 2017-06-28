@@ -23,7 +23,7 @@ use Server\Route\IRoute;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "2.0.8";
+    const version = "2.1.0";
     /**
      * Daemonize.
      *
@@ -180,14 +180,13 @@ abstract class SwooleServer extends Child
     public function setLogHandler()
     {
         $this->log = new Logger($this->config->get('log.log_name', 'SD'));
-        switch ($this->config['log']['active'])
-        {
+        switch ($this->config['log']['active']) {
             case "graylog":
-                $this->log->setHandlers([new GelfHandler(new Publisher(new UdpTransport($this->config['log']['graylog']['ip'],$this->config['log']['graylog']['port'])),
+                $this->log->setHandlers([new GelfHandler(new Publisher(new UdpTransport($this->config['log']['graylog']['ip'], $this->config['log']['graylog']['port'])),
                     $this->config['log']['log_level'])]);
                 break;
             case "file":
-                $this->log->pushHandler(new RotatingFileHandler(__DIR__ . $this->config['log']['file']['log_path'] . $this->name . '.log',
+                $this->log->pushHandler(new RotatingFileHandler(LOG_DIR . "/" . $this->name . '.log',
                     $this->config['log']['file']['log_max_files'],
                     $this->config['log']['log_level']));
                 break;
@@ -199,7 +198,7 @@ abstract class SwooleServer extends Child
         $this->onErrorHandel = [$this, 'onErrorHandel'];
         self::$_worker = $this;
         // 加载配置
-        $this->config = new Config(__DIR__ . '/../config');
+        $this->config = new Config(CONFIG_DIR);
         $this->probuf_set = $this->config->get('server.probuf_set', $this->probuf_set);
         $this->package_length_type = $this->probuf_set['package_length_type']??'N';
         $this->package_length_type_length = strlen(pack($this->package_length_type, 1))??0;
@@ -289,7 +288,7 @@ abstract class SwooleServer extends Child
 
         // Pid file.
         if (empty(self::$pidFile)) {
-            self::$pidFile = __DIR__ . "/../" . str_replace('/', '_', self::$_startFile) . ".pid";
+            self::$pidFile = PID_DIR . "/" . str_replace('/', '_', self::$_startFile) . ".pid";
         }
 
         // Process title.
@@ -625,6 +624,7 @@ abstract class SwooleServer extends Child
             throw new SwooleException("tcpServer won't support set");
         }
     }
+
     /**
      * @param $buffer
      * @return string
@@ -639,6 +639,7 @@ abstract class SwooleServer extends Child
             return $data;
         }
     }
+
     /**
      * onSwooleStart
      * @param $serv
@@ -664,7 +665,7 @@ abstract class SwooleServer extends Child
         }
         file_put_contents(self::$pidFile, ',' . $serv->worker_pid, FILE_APPEND);
         // 重新加载配置
-        $this->config = $this->config->load(__DIR__ . '/../config');
+        $this->config = $this->config->load(CONFIG_DIR);
         if (!$serv->taskworker) {//worker进程
             if ($this->needCoroutine) {//启动协程调度器
                 Coroutine::init();

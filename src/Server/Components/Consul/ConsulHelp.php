@@ -8,8 +8,6 @@
 
 namespace Server\Components\Consul;
 
-define('BIN_DIR', realpath(__DIR__ . "/../../../../bin/"));
-
 class ConsulHelp
 {
     protected static $is_leader = null;

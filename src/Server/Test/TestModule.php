@@ -34,7 +34,7 @@ class TestModule
         $this->dir = $dir;
         $coroutine = Coroutine::getInstance();
         if (empty($dir)) {
-            $dir = __DIR__ . "/../../test";
+            $dir = TEST_DIR;
         }
         if ($coroutine != null) {
             $this->asyn = true;

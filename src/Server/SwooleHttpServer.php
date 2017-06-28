@@ -112,8 +112,8 @@ abstract class SwooleHttpServer extends SwooleServer
     public function setTemplateEngine()
     {
         $this->templateEngine = new Engine();
-        $this->templateEngine->addFolder('server', __DIR__ . '/Views');
-        $this->templateEngine->addFolder('app', __DIR__ . '/../app/Views');
+        $this->templateEngine->addFolder('server', SERVER_DIR . '/Views');
+        $this->templateEngine->addFolder('app', APP_DIR . '/Views');
     }
 
     /**

@@ -28,6 +28,8 @@
     }
   ],
   "name": "tmtbe/swooledistributed",
+  "type": "library",
+  "keywords": ["server", "swoole", "distributed"],
   "description": "In order to develop the api server",
   "license": "MIT"
 }
