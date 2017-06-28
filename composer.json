@@ -1,4 +1,5 @@
 {
+  "version": "2.1.0",
   "require": {
     "php": ">=7.0.0",
     "monolog/monolog": "1.22.1",
@@ -28,6 +29,8 @@
     }
   ],
   "name": "tmtbe/swooledistributed",
+  "type": "library",
+  "keywords": ["server", "swoole", "distributed"],
   "description": "In order to develop the api server",
   "license": "MIT"
 }
