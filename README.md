@@ -1,4 +1,4 @@
-# SwooleDistributed v2.0.0 更新
+# SwooleDistributed v2.1.0 更新
 
 swoole 分布式通讯框架  
 开发交流群：569037921  
@@ -7,7 +7,7 @@ swoole 分布式通讯框架
 
 文档：http://docs.sder.xin
 
-微服务框架SD2.0.0-beta版
+微服务框架SD2.1.0
 
 1.协程优化，速度更快，功能更强大
 
