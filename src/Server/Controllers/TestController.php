@@ -61,6 +61,7 @@ class TestController extends Controller
      */
     public function testTcp()
     {
+        var_dump($this->client_data->data);
         $this->send($this->client_data->data);
     }
 
