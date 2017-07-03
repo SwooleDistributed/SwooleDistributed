@@ -31,7 +31,7 @@ function getMillisecond()
 
 function shell_read()
 {
-    $fp = fopen('/dev/stdin', 'r');
+    $fp = fopen('php://stdin', 'r');
     $input = fgets($fp, 255);
     fclose($fp);
     $input = chop($input);

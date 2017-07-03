@@ -42,7 +42,7 @@ print_r("consul安装结束\n");
 exit();
 
 function read(){
-    $fp = fopen('/dev/stdin', 'r');
+    $fp = fopen('php://stdin', 'r');
     $input = fgets($fp, 255);
     fclose($fp);
     $input = chop($input);
