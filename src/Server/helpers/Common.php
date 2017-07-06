@@ -138,3 +138,27 @@ function checkExtension()
     }
     return $check;
 }
+
+/**
+ * 断点调试
+ */
+function breakpoint()
+{
+    $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+    print_r($backtrace);
+    print_r("断点中任意键继续:");
+    shell_read();
+}
+
+/**
+ * 是否是mac系统
+ * @return bool
+ */
+function isDarwin()
+{
+    if(PHP_OS=="Darwin"){
+        return true;
+    }else{
+        return false;
+    }
+}

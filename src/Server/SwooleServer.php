@@ -303,6 +303,9 @@ abstract class SwooleServer extends Child
      */
     public static function setProcessTitle($title)
     {
+        if(isDarwin()){
+            return;
+        }
         // >=php 5.5
         if (function_exists('cli_set_process_title')) {
             @cli_set_process_title($title);
