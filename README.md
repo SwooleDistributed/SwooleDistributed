@@ -3,9 +3,9 @@
 swoole 分布式通讯框架  
 开发交流群：569037921  
 
-官网：http://www.sder.xin
+官网：http://sd.youwoxing.net
 
-文档：http://docs.sder.xin
+文档：http://docs.youwoxing.net
 
 可以通过composer安装
 
