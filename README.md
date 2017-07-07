@@ -13,7 +13,7 @@ autoload必须要指定app和test。
 ```
 {
   "require": {
-    "tmtbe/swooledistributed":"2.1"
+    "tmtbe/swooledistributed":">2.0.0"
   },
  "autoload": {
     "psr-4": {
