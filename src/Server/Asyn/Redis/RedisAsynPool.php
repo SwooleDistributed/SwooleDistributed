@@ -323,7 +323,7 @@ class RedisAsynPool extends AsynPool
             if (!$result) {
                 throw new SwooleException($client->errMsg);
             }
-            if ($this->config->has('redis.' . $this->active . '.password')) {//存在验证
+            if (!empty($this->config->get('redis.' . $this->active . '.password',""))) {//存在验证
                 $client->auth($this->config['redis'][$this->active]['password'], function ($client, $result) {
                     if (!$result) {
                         $errMsg = $client->errMsg;
@@ -409,13 +409,15 @@ class RedisAsynPool extends AsynPool
             throw new SwooleException($this->redis_client->getLastError());
             $this->redis_client = null;
         }
-        if ($this->config->has('redis.' . $this->active . '.password')) {//存在验证
+        if (!empty($this->config->get('redis.' . $this->active . '.password',""))) {//存在验证
             if ($this->redis_client->auth($this->config['redis'][$this->active]['password']) == false) {
                 throw new SwooleException($this->redis_client->getLastError());
                 $this->redis_client = null;
             }
         }
-        $this->redis_client->select($this->config['redis'][$this->active]['select']);
+        if($this->config->has('redis.' . $this->active . '.select')) {//存在select
+            $this->redis_client->select($this->config['redis'][$this->active]['select']);
+        }
         return $this->redis_client;
     }
 

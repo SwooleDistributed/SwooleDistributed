@@ -1820,7 +1820,7 @@ class Miner
      * 协程的方式
      * @param null $bind_id
      * @param null $sql
-     * @return array|bool|int|string
+     * @return MySqlCoroutine
      */
     public function coroutineSend($bind_id = null, $sql = null)
     {

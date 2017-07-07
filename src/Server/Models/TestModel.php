@@ -88,7 +88,7 @@ class TestModel extends Model
                 ->set('firstname', 'White')
                 ->set('lastname', 'Cat')
                 ->set('age', '25')
-                ->set('townid', '10000')->coroutineSend();
+                ->set('townid', '10000')->coroutineSend()->dump();
             return $value;
         }catch (\Exception $e){
             return 1;

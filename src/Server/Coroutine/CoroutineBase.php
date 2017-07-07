@@ -104,6 +104,15 @@ abstract class CoroutineBase implements ICoroutineBase
     }
 
     /**
+     * dump
+     */
+    public function dump()
+    {
+        print_r("[dump] ".$this->request."\n");
+        return $this;
+    }
+
+    /**
      * 快速失败
      */
     protected function fastFail()

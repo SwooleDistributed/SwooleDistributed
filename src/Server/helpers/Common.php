@@ -31,7 +31,7 @@ function getMillisecond()
 
 function shell_read()
 {
-    $fp = fopen('/dev/stdin', 'r');
+    $fp = fopen('php://stdin', 'r');
     $input = fgets($fp, 255);
     fclose($fp);
     $input = chop($input);
@@ -120,6 +120,14 @@ function checkExtension()
         print_r("[扩展依赖]缺少swoole扩展\n");
         $check = false;
     }
+    if(SWOOLE_VERSION[0]==2){
+        print_r("[版本错误]不支持2.0版本swoole，请安装1.9版本\n");
+        $check = false;
+    }
+    if(!class_exists('swoole_redis')){
+        print_r("[编译错误]swoole编译缺少--enable-async-redis,具体参见文档http://docs.sder.xin/%E7%8E%AF%E5%A2%83%E8%A6%81%E6%B1%82.html");
+        $check = false;
+    }
     if (!extension_loaded('redis')) {
         print_r("[扩展依赖]缺少redis扩展\n");
         $check = false;
@@ -129,4 +137,28 @@ function checkExtension()
         $check = false;
     }
     return $check;
+}
+
+/**
+ * 断点调试
+ */
+function breakpoint()
+{
+    $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+    print_r($backtrace);
+    print_r("断点中任意键继续:");
+    shell_read();
+}
+
+/**
+ * 是否是mac系统
+ * @return bool
+ */
+function isDarwin()
+{
+    if(PHP_OS=="Darwin"){
+        return true;
+    }else{
+        return false;
+    }
 }
