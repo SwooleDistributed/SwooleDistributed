@@ -290,7 +290,7 @@ abstract class SwooleServer extends Child
         if (empty(self::$pidFile)) {
             self::$pidFile = PID_DIR . "/" . str_replace('/', '_', self::$_startFile) . ".pid";
         }
-
+        @unlink(self::$pidFile);
         // Process title.
         self::setProcessTitle('SWD');
     }
