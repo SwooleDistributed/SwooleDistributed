@@ -325,4 +325,9 @@ class TestController extends Controller
         var_dump($result);
         $this->http_output->end($result);
     }
+
+    public function http_echo()
+    {
+        $this->http_output->end(123);
+    }
 }
