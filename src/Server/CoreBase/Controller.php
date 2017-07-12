@@ -256,7 +256,7 @@ class Controller extends CoreBase
         if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
             $this->redirect404();
         } else {
-            throw new SwooleException('method not exist');
+            throw new SwooleException($this->context['method_name'].' method not exist');
         }
     }
 

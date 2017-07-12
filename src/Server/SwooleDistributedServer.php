@@ -844,11 +844,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         $tasks = [];
         foreach ($this->tid_pid_table as $id => $row) {
-            if ($id != 0) {
-                $row['task_id'] = $id;
-                $row['run_time'] = time() - $row['start_time'];
-                $tasks[] = $row;
-            }
+            $row['task_id'] = $id;
+            $row['run_time'] = time() - $row['start_time'];
+            $tasks[] = $row;
         }
         return $tasks;
     }
