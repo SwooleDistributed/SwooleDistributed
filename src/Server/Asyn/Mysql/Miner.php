@@ -2445,7 +2445,7 @@ class Miner
         $isSelect = false;
         if ($sql != null) {//代表手动执行的sql
             $str = strtolower(substr(trim($sql), 0, 6));
-            if ($str == 'select') {
+            if ($str == 'select' || strripos($sql, 'show') !== false) {
                 $isSelect = true;
             }
         }

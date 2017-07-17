@@ -201,4 +201,21 @@ class HttpInput
     {
         return $this->request->server['path_info'];
     }
+
+    /**
+     * 文件上传信息
+     * Array
+     * (
+     *   [name] => facepalm.jpg
+     *   [type] => image/jpeg
+     *   [tmp_name] => /tmp/swoole.upfile.n3FmFr
+     *   [error] => 0
+     *   [size] => 15476
+     * )
+     * @return mixed
+     */
+    public function getFiles()
+    {
+        return $this->request->files;
+    }
 }
