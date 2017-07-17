@@ -29,7 +29,7 @@ php vendor/tmtbe/swooledistributed/src/Install.php
 ```
 安装结束可以在bin中执行服务器。
 
-微服务框架SD2.1.0
+微服务框架SD2.1.2
 
 1.协程优化，速度更快，功能更强大
 
