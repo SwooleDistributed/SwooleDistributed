@@ -96,7 +96,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             return;
         }
         if ($this->isWebSocket($fd)) {
-            $data = substr($data, 4);
+            $data = $this->unEncode($data);
             $this->server->push($fd, $data, $this->opcode);
         } else {
             $this->server->send($fd, $data);
