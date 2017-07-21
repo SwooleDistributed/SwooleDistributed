@@ -138,7 +138,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
 
     public function start()
     {
-        if ($this->config->get('redis.enable', false)) {
+        if ($this->config->get('redis.enable', true)) {
             //加载redis的lua脚本
             $redis_pool = new RedisAsynPool($this->config, $this->config->get('redis.active'));
             $redisLuaManager = new RedisLuaManager($redis_pool->getSync());
@@ -155,7 +155,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function clearState()
     {
-        if (!$this->config->get('redis.enable', false)){
+        if (!$this->config->get('redis.enable', true)){
             return;
         }
         print("是否清除Redis上的用户状态信息(y/n)？");
@@ -485,7 +485,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $this->close($fd);
         } else {
             if ($fromDispatch) return;
-            if ($this->config->get('redis.enable', false)){
+            if ($this->config->get('redis.enable', true)){
                 $usid = $this->getRedis()->hGet(SwooleMarco::redis_uid_usid_hash_name, $uid);
                 $this->sendToDispatchMessage(SwooleMarco::MSG_TYPE_KICK_UID, ['usid' => $usid, 'uid' => $uid]);
             }
@@ -574,10 +574,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function initAsynPools($workerId)
     {
         $this->asynPools = [];
-        if ($this->config->get('redis.enable', false)) {
+        if ($this->config->get('redis.enable', true)) {
             $this->asynPools['redisPool'] = new RedisAsynPool($this->config, $this->config->get('redis.active'));
         }
-        if ($this->config->get('mysql.enable', false)) {
+        if ($this->config->get('mysql.enable', true)) {
             $this->asynPools['mysqlPool'] = new MysqlAsynPool($this->config, $this->config->get('mysql.active'));
         }
         if ($this->config->get('consul_enable', false)) {
@@ -607,7 +607,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function delAllGroups()
     {
-        if (!$this->config->get('redis.enable', false)){
+        if (!$this->config->get('redis.enable', true)){
             return;
         }
         if ($this->isTaskWorker()) {
@@ -637,7 +637,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function getAllGroups($callback)
     {
-        if (!$this->config->get('redis.enable', false)){
+        if (!$this->config->get('redis.enable', true)){
             return;
         }
         if ($this->isTaskWorker()) {
@@ -683,7 +683,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $ok = $this->uid_fd_table->del($uid);
         //更新映射表
         if ($ok) {//说明是本机绑定的uid
-            if ($this->config->get('redis.enable', false)) {
+            if ($this->config->get('redis.enable', true)) {
                 $this->getRedis()->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
             }
         }
@@ -707,7 +707,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if ($isKick) {
             $this->kickUid($uid, false);
         }
-        if ($this->config->get('redis.enable', false)){
+        if ($this->config->get('redis.enable', true)){
             $this->getRedis()->hSet(SwooleMarco::redis_uid_usid_hash_name, $uid, $this->USID);
         }
         //将这个fd与当前worker进行绑定
@@ -755,7 +755,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function addToGroup($uid, $group_id)
     {
-        if (!$this->config->get('redis.enable', false)){
+        if (!$this->config->get('redis.enable', true)){
             return;
         }
         if ($this->isTaskWorker()) {
@@ -779,7 +779,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function removeFromGroup($uid, $group_id)
     {
-        if (!$this->config->get('redis.enable', false)){
+        if (!$this->config->get('redis.enable', true)){
             return;
         }
         if ($this->isTaskWorker()) {
@@ -795,7 +795,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function delGroup($group_id)
     {
-        if (!$this->config->get('redis.enable', false)){
+        if (!$this->config->get('redis.enable', true)){
             return;
         }
         if ($this->isTaskWorker()) {
@@ -819,7 +819,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function coroutineGetGroupCount($group_id)
     {
-        if (!$this->config->get('redis.enable', false)){
+        if (!$this->config->get('redis.enable', true)){
             return;
         }
         return yield $this->redis_pool->getCoroutine()->sCard(SwooleMarco::redis_group_hash_name_prefix . $group_id);
@@ -833,7 +833,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function coroutineGetGroupUids($group_id)
     {
-        if (!$this->config->get('redis.enable', false)){
+        if (!$this->config->get('redis.enable', true)){
             return;
         }
         return yield $this->redis_pool->getCoroutine()->sMembers(SwooleMarco::redis_group_hash_name_prefix . $group_id);
@@ -856,7 +856,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function sendToGroup($groupId, $data)
     {
-        if (!$this->config->get('redis.enable', false)){
+        if (!$this->config->get('redis.enable', true)){
             return;
         }
         $data = $this->encode($this->pack->pack($data));
