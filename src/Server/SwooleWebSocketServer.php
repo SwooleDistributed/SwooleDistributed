@@ -67,7 +67,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $this->server->on('message', [$this, 'onSwooleWSMessage']);
         $this->server->on('close', [$this, 'onSwooleWSClose']);
         $set = $this->setServerSet();
-        $set['daemonize'] = self::$daemonize ? 1 : 0;
+        $set['daemonize'] = Start::getDaemonize();
         $this->server->set($set);
         if ($this->tcp_enable) {
             $this->port = $this->server->listen($this->socket_name, $this->port, $this->socket_type);
@@ -96,7 +96,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             return;
         }
         if ($this->isWebSocket($fd)) {
-            $data = $this->unEncode($data);
+            $data = $this->decode($data);
             $this->server->push($fd, $data, $this->opcode);
         } else {
             $this->server->send($fd, $data);

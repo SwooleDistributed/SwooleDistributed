@@ -72,7 +72,7 @@ class ConsulModel extends Model
      */
     public function checkLeader($index=0)
     {
-        if(!$this->config['consul_enable']){
+        if(!$this->config->get('consul.enable',false)){
             return;
         }
         $result = yield $this->consul->httpClient->setMethod('GET')

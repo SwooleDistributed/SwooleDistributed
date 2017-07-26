@@ -14,7 +14,7 @@ class UdpDispatchTask extends Task
 {
     public function send()
     {
-        if ($this->config['use_dispatch']??false) {
+        if ($this->config->get('dispatch.enable',false)) {
             $servers = $this->config->get('dispatch_server.dispatch_servers',[]);
             if(count($servers)!=0){
                 foreach ($servers as $ip) {

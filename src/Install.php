@@ -15,7 +15,7 @@ if(strtolower($read)!='y'){
     exit();
 }
 
-copy_dir(__DIR__."/bin",$path."/bin");
+copy_dir(__DIR__ . "/bin", $path . "/bin", true);
 @mkdir('src');
 copy_dir(__DIR__."/app",$path."/src/app");
 copy_dir(__DIR__."/config",$path."/src/config");
@@ -49,10 +49,11 @@ function read(){
     return $input;
 }
 
-function copy_dir($src,$dst) {
+function copy_dir($src, $dst, $force = false)
+{
     $dir = opendir($src);
 
-    if(file_exists($dst)){
+    if (file_exists($dst) && $force == false) {
         print_r("$dst 目录已存在（跳过）\n");
         return;
     }

@@ -15,7 +15,9 @@ class ReloadHelp
     {
         if (get_instance()->config->get('auto_reload_enable', false)) {//代表启动单独进程进行reload管理
             $reload_process = new \swoole_process(function ($process) {
-                $process->name('SWD-RELOAD');
+                if(!isDarwin()) {
+                    $process->name('SWD-RELOAD');
+                }
                 new InotifyProcess(get_instance()->server);
             }, false, 2);
             get_instance()->server->addProcess($reload_process);

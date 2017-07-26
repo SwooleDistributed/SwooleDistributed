@@ -56,8 +56,8 @@ class MysqlAsynPool extends AsynPool
     /**
      * 开启一个事务
      * @param $object
+     * @param $callback
      * @return string
-     * @throws SwooleException
      */
     public function begin($object, $callback)
     {

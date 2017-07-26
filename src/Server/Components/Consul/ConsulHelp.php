@@ -78,10 +78,12 @@ class ConsulHelp
      */
     public static function startProcess()
     {
-        if (get_instance()->config->get('consul_enable', false)) {
+        if (get_instance()->config->get('consul.enable', false)) {
             self::jsonFormatHandler();
             $consul_process = new \swoole_process(function ($process) {
-                $process->name('SWD-CONSUL');
+                if(!isDarwin()) {
+                    $process->name('SWD-CONSUL');
+                }
                 $process->exec(BIN_DIR . "/exec/consul", ['agent', '-ui', '-config-dir', BIN_DIR . '/exec/consul.d']);
             }, false, false);
             get_instance()->server->addProcess($consul_process);
