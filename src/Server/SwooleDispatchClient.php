@@ -78,7 +78,7 @@ class SwooleDispatchClient extends SwooleServer
         $this->server->on('ManagerStop', [$this, 'onSwooleManagerStop']);
         $this->server->on('Packet', [$this, 'onSwoolePacket']);
         $set = $this->setServerSet();
-        $set['daemonize'] = self::$daemonize ? 1 : 0;
+        $set['daemonize'] = Start::getDaemonize() ? 1 : 0;
         $this->server->set($set);
         $this->server->start();
     }
