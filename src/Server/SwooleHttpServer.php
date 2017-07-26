@@ -81,7 +81,7 @@ abstract class SwooleHttpServer extends SwooleServer
         $this->server->on('ManagerStop', [$this, 'onSwooleManagerStop']);
         $this->server->on('request', [$this, 'onSwooleRequest']);
         $set = $this->setServerSet();
-        $set['daemonize'] = self::$daemonize ? 1 : 0;
+        $set['daemonize'] = Start::getDaemonize() ? 1 : 0;
         $this->server->set($set);
         if ($this->tcp_enable) {
             $this->port = $this->server->listen($this->socket_name, $this->port, $this->socket_type);
