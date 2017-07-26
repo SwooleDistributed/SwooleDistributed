@@ -139,12 +139,15 @@ function checkExtension()
 
     if(get_instance()->config->has('consul_enable')){
         print_r("consul_enable配置已被弃用，请换成['consul']['enable']\n");
+        $check = false;
     }
     if(get_instance()->config->has('use_dispatch')){
         print_r("use_dispatch配置已被弃用，请换成['dispatch']['enable']\n");
+        $check = false;
     }
     if(get_instance()->config->has('dispatch_heart_time')){
         print_r("dispatch_heart_time配置已被弃用，请换成['dispatch']['heart_time']\n");
+        $check = false;
     }
 
     $dispatch_enable = get_instance()->config->get('dispatch.enable',false);
