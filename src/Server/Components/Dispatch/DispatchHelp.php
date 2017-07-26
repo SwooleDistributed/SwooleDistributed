@@ -15,13 +15,24 @@ namespace Server\Components\Dispatch;
  */
 class DispatchHelp
 {
+    /**
+     * @var Dispatch
+     */
+    public static $dispatch;
     public static function addDispatch($data)
     {
-        get_instance()->addDispatch($data);
+        self::$dispatch->addDispatch($data);
     }
 
     public static function removeDispatch($data)
     {
-        get_instance()->removeDispatch($data);
+        self::$dispatch->removeDispatch($data);
+    }
+
+    public static function init($config)
+    {
+        if(self::$dispatch==null) {
+            self::$dispatch = new Dispatch($config);
+        }
     }
 }

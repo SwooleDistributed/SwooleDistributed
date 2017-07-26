@@ -1,10 +1,12 @@
 <?php
+
 namespace Server;
 
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Noodlehaus\Exception;
 use Server\Asyn\Redis\RedisAsynPool;
+use Server\Components\Dispatch\DispatchHelp;
 
 /**
  * Created by PhpStorm.
@@ -31,6 +33,7 @@ class SwooleDispatchClient extends SwooleServer
      * @var
      */
     private $asynPools;
+
     /**
      * SwooleDispatchClient constructor.
      */
@@ -40,6 +43,7 @@ class SwooleDispatchClient extends SwooleServer
         //关闭协程
         $this->needCoroutine = false;
         parent::__construct();
+        DispatchHelp::init($this->config);
     }
 
     /**
@@ -76,7 +80,6 @@ class SwooleDispatchClient extends SwooleServer
         $set = $this->setServerSet();
         $set['daemonize'] = self::$daemonize ? 1 : 0;
         $this->server->set($set);
-        $this->beforeSwooleStart();
         $this->server->start();
     }
 
@@ -87,7 +90,7 @@ class SwooleDispatchClient extends SwooleServer
     public function setServerSet()
     {
         $set = $this->config['dispatch_server']['set'];
-        $set = array_merge($set, $this->probuf_set);
+        $set = array_merge($set, DispatchHelp::$dispatch->probuf_set);
         return $set;
     }
 
@@ -146,13 +149,13 @@ class SwooleDispatchClient extends SwooleServer
         $usid = ip2long($address);
         if (array_key_exists($usid, $this->server_clients)) {
             $write_data = ['wid' => $this->server->worker_id, 'usid' => $usid];
-            $data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_USID, serialize($write_data));
+            $data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_USID, $write_data);
             $cli = $this->server_clients[$usid];
-            $cli->send($this->encode($data));
+            $cli->send(DispatchHelp::$dispatch->dispatch_encode($data));
             return;
         }
         $client = new \swoole_client(SWOOLE_TCP, SWOOLE_SOCK_ASYNC);
-        $client->set($this->probuf_set);
+        $client->set(DispatchHelp::$dispatch->probuf_set);
         $client->on("connect", [$this, 'onClientConnect']);
         $client->on("receive", [$this, 'onClientReceive']);
         $client->on("close", [$this, 'onClientClose']);
@@ -171,7 +174,7 @@ class SwooleDispatchClient extends SwooleServer
     public function onSwoolePipeMessage($serv, $from_worker_id, $message)
     {
         parent::onSwoolePipeMessage($serv, $from_worker_id, $message);
-        $data = unserialize($message);
+        $data = \swoole_serialize::unpack($message);
         switch ($data['type']) {
             case SwooleMarco::ADD_SERVER:
                 $address = $data['message'];
@@ -189,13 +192,13 @@ class SwooleDispatchClient extends SwooleServer
         print_r("connect\n");
         $usid = ip2long($cli->address);
         $write_data = ['wid' => $this->server->worker_id, 'usid' => $usid];
-        $data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_USID, serialize($write_data));
+        $data = $this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_USID, $write_data);
         $cli->usid = $usid;
-        $cli->send($this->encode($data));
+        $cli->send(DispatchHelp::$dispatch->dispatch_encode($data));
         //心跳包
-        $heartData = $this->encode($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_HEART, null));
+        $heartData = DispatchHelp::$dispatch->dispatch_encode($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_HEART, null));
         if (!isset($cli->tick)) {
-            $cli->tick = swoole_timer_tick($this->config['dispatch_heart_time'], function () use ($cli, $heartData) {
+            $cli->tick = swoole_timer_tick($this->config->get('dispatch.heart_time',60), function () use ($cli, $heartData) {
                 $cli->send($heartData);
             });
         }
@@ -208,10 +211,10 @@ class SwooleDispatchClient extends SwooleServer
      */
     public function onClientReceive($cli, $client_data)
     {
-        $data = $this->unEncode($client_data);
-        $unserialize_data = unserialize($data);
-        $type = $unserialize_data['type']??'';
-        $message = $unserialize_data['message']??'';
+        $data = DispatchHelp::$dispatch->dispatch_decode($client_data);
+        $unserialize_data = \swoole_serialize::unpack($data);
+        $type = $unserialize_data['type'] ?? '';
+        $message = $unserialize_data['message'] ?? '';
         switch ($type) {
             case SwooleMarco::MSG_TYPE_SEND_GROUP://发送群消息
                 //转换为batch
@@ -225,9 +228,9 @@ class SwooleDispatchClient extends SwooleServer
                                 }
                             }
                             foreach ($temp_dic as $usid => $uids) {
-                                $client = $this->server_clients[$usid]??null;
+                                $client = $this->server_clients[$usid] ?? null;
                                 if ($client == null) continue;
-                                $client->send($this->encode($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_BATCH, [
+                                $client->send(DispatchHelp::$dispatch->dispatch_encode($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_BATCH, [
                                     'data' => $message['data'],
                                     'uids' => $uids
                                 ])));
@@ -245,11 +248,11 @@ class SwooleDispatchClient extends SwooleServer
                         }
                     }
                     foreach ($temp_dic as $usid => $uids) {
-                        $client = $this->server_clients[$usid]??null;
+                        $client = $this->server_clients[$usid] ?? null;
                         if ($client == null) {
                             continue;
                         }
-                        $client->send($this->encode($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_BATCH, [
+                        $client->send(DispatchHelp::$dispatch->dispatch_encode($this->packSerevrMessageBody(SwooleMarco::MSG_TYPE_SEND_BATCH, [
                             'data' => $message['data'],
                             'uids' => $uids
                         ])));
@@ -317,9 +320,8 @@ class SwooleDispatchClient extends SwooleServer
     public function setLogHandler()
     {
         $this->log = new Logger($this->name);
-        $this->log->pushHandler(new RotatingFileHandler(LOG_DIR. $this->name . '.log',
+        $this->log->pushHandler(new RotatingFileHandler(LOG_DIR . "/" . $this->name . '.log',
             $this->config['log']['file']['log_max_files'],
             $this->config['log']['log_level']));
-
     }
 }

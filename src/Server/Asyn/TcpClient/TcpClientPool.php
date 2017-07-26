@@ -153,7 +153,7 @@ class TcpClientPool extends AsynPool
             });
             $client->on("receive", function ($cli, $recdata) {
                 if (isset($cli->token)) {
-                    $packdata = $this->pack->unPack($this->unEncode($recdata));
+                    $packdata = $this->pack->unPack($this->decode($recdata));
                     $data['token'] = $cli->token;
                     $data['result'] = $packdata;
                     $this->distribute($data);
@@ -175,7 +175,7 @@ class TcpClientPool extends AsynPool
      * @param $buffer
      * @return string
      */
-    public function unEncode($buffer)
+    public function decode($buffer)
     {
         if ($this->set['open_length_check']??0 == 1) {
             $data = substr($buffer, $this->package_length_type_length);

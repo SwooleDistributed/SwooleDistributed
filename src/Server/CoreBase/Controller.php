@@ -1,9 +1,10 @@
 <?php
+
 namespace Server\CoreBase;
 
 use Monolog\Logger;
+use Server\Start;
 use Server\SwooleMarco;
-use Server\SwooleServer;
 
 /**
  * Controller 控制器
@@ -103,8 +104,8 @@ class Controller extends CoreBase
         $this->client_data = $client_data;
         if (isset($client_data->rpc_request_id)) {
             $this->isRPC = true;
-            $this->rpc_token = $client_data->rpc_token??'';
-            $this->rpc_request_id = $client_data->rpc_request_id??'';
+            $this->rpc_token = $client_data->rpc_token ?? '';
+            $this->rpc_request_id = $client_data->rpc_request_id ?? '';
         } else {
             $this->isRPC = false;
         }
@@ -157,23 +158,23 @@ class Controller extends CoreBase
      * @param \Exception $e
      * @param callable $handle
      */
-    public function onExceptionHandle(\Exception $e,$handle = null)
+    public function onExceptionHandle(\Exception $e, $handle = null)
     {
         //必须的代码
-        if($e instanceof SwooleRedirectException){
+        if ($e instanceof SwooleRedirectException) {
             $this->http_output->setStatusHeader($e->getCode());
-            $this->http_output->setHeader('Location',$e->getMessage());
+            $this->http_output->setHeader('Location', $e->getMessage());
             $this->http_output->end('end');
             return;
         }
         if ($e instanceof SwooleException) {
             $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
-            if($e->others!=null) {
+            if ($e->others != null) {
                 $this->log($e->others, Logger::NOTICE);
             }
         }
         //可以重写的代码
-        if($handle==null) {
+        if ($handle == null) {
             switch ($this->request_type) {
                 case SwooleMarco::HTTP_REQUEST:
                     $this->http_output->end($e->getMessage());
@@ -182,8 +183,8 @@ class Controller extends CoreBase
                     $this->send($e->getMessage());
                     break;
             }
-        }else{
-            call_user_func($handle,$e);
+        } else {
+            call_user_func($handle, $e);
         }
     }
 
@@ -204,7 +205,7 @@ class Controller extends CoreBase
             $data = $rpc_data;
         }
         $data = get_instance()->encode($this->pack->pack($data));
-        if (SwooleServer::$testUnity) {
+        if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'send', 'fd' => $this->fd, 'data' => $data];
         } else {
             get_instance()->send($this->fd, $data);
@@ -219,10 +220,10 @@ class Controller extends CoreBase
      */
     public function destroy()
     {
-        if($this->is_destroy){
+        if ($this->is_destroy) {
             return;
         }
-        if($this->isEfficiencyMonitorEnable) {
+        if ($this->isEfficiencyMonitorEnable) {
             $this->context['execution_time'] = (microtime(true) - $this->start_run_time) * 1000;
             $this->log('Efficiency monitor', Logger::INFO);
         }
@@ -256,7 +257,7 @@ class Controller extends CoreBase
         if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
             $this->redirect404();
         } else {
-            throw new SwooleException($this->context['method_name'].' method not exist');
+            throw new SwooleException($this->context['method_name'] . ' method not exist');
         }
     }
 
@@ -271,7 +272,7 @@ class Controller extends CoreBase
         if ($this->is_destroy) {
             throw new SwooleException('controller is destroy can not send data');
         }
-        if (SwooleServer::$testUnity) {
+        if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'sendToUid', 'uid' => $this->uid, 'data' => $data];
         } else {
             get_instance()->sendToUid($uid, $data);
@@ -293,7 +294,7 @@ class Controller extends CoreBase
         if ($this->is_destroy) {
             throw new SwooleException('controller is destroy can not send data');
         }
-        if (SwooleServer::$testUnity) {
+        if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'sendToUids', 'uids' => $uids, 'data' => $data];
         } else {
             get_instance()->sendToUids($uids, $data);
@@ -314,7 +315,7 @@ class Controller extends CoreBase
         if ($this->is_destroy) {
             throw new SwooleException('controller is destroy can not send data');
         }
-        if (SwooleServer::$testUnity) {
+        if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'sendToAll', 'data' => $data];
         } else {
             get_instance()->sendToAll($data);
@@ -336,7 +337,7 @@ class Controller extends CoreBase
         if ($this->is_destroy) {
             throw new SwooleException('controller is destroy can not send data');
         }
-        if (SwooleServer::$testUnity) {
+        if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'sendToGroup', 'groupId' => $groupId, 'data' => $data];
         } else {
             get_instance()->sendToGroup($groupId, $data);
@@ -352,7 +353,7 @@ class Controller extends CoreBase
      */
     protected function kickUid($uid)
     {
-        if (SwooleServer::$testUnity) {
+        if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'kickUid', 'uid' => $uid];
         } else {
             get_instance()->kickUid($uid);
@@ -367,7 +368,7 @@ class Controller extends CoreBase
      */
     protected function bindUid($fd, $uid, $isKick = true)
     {
-        if (SwooleServer::$testUnity) {
+        if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'bindUid', 'fd' => $fd, 'uid' => $uid];
         } else {
             get_instance()->bindUid($fd, $uid, $isKick);
@@ -380,7 +381,7 @@ class Controller extends CoreBase
      */
     protected function unBindUid($uid)
     {
-        if (SwooleServer::$testUnity) {
+        if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'unBindUid', 'uid' => $uid];
         } else {
             get_instance()->unBindUid($uid);
@@ -394,7 +395,7 @@ class Controller extends CoreBase
      */
     protected function close($fd, $autoDestroy = true)
     {
-        if (SwooleServer::$testUnity) {
+        if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'close', 'fd' => $fd];
         } else {
             get_instance()->close($fd);
@@ -410,7 +411,7 @@ class Controller extends CoreBase
      */
     protected function addToGroup($uid, $groupID)
     {
-        if (SwooleServer::$testUnity) {
+        if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'addToGroup', '$uid' => $uid, 'groupId' => $groupID];
         } else {
             get_instance()->addToGroup($uid, $groupID);
@@ -423,7 +424,7 @@ class Controller extends CoreBase
      */
     protected function removeFromGroup($uid, $groupID)
     {
-        if (SwooleServer::$testUnity) {
+        if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'removeFromGroup', '$uid' => $uid, 'groupId' => $groupID];
         } else {
             get_instance()->removeFromGroup($uid, $groupID);
@@ -437,11 +438,11 @@ class Controller extends CoreBase
      * @throws SwooleException
      * @throws SwooleRedirectException
      */
-    protected function redirect($location,$code=302)
+    protected function redirect($location, $code = 302)
     {
-        if($this->request_type==SwooleMarco::HTTP_REQUEST) {
+        if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
             throw new SwooleRedirectException($location, $code);
-        }else{
+        } else {
             throw new SwooleException('重定向只能在http请求中使用');
         }
     }
@@ -450,10 +451,10 @@ class Controller extends CoreBase
      * 重定向到404
      * @param int $code
      */
-    protected function redirect404($code=302)
+    protected function redirect404($code = 302)
     {
-        $location = 'http://'.$this->request->header['host']."/".'404';
-        $this->redirect($location,$code);
+        $location = 'http://' . $this->request->header['host'] . "/" . '404';
+        $this->redirect($location, $code);
     }
 
     /**
@@ -462,9 +463,9 @@ class Controller extends CoreBase
      * @param $methodName
      * @param int $code
      */
-    protected function redirectController($controllerName,$methodName,$code=302)
+    protected function redirectController($controllerName, $methodName, $code = 302)
     {
-        $location = 'http://'.$this->request->header['host']."/".$controllerName."/".$methodName;
-        $this->redirect($location,$code);
+        $location = 'http://' . $this->request->header['host'] . "/" . $controllerName . "/" . $methodName;
+        $this->redirect($location, $code);
     }
 }

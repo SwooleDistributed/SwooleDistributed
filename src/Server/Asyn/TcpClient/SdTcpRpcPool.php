@@ -164,7 +164,7 @@ class SdTcpRpcPool extends AsynPool
             }
         });
         $client->on("receive", function ($cli, $recdata) {
-            $packdata = $this->pack->unPack($this->unEncode($recdata));
+            $packdata = $this->pack->unPack($this->decode($recdata));
             if (isset($packdata->rpc_token)) {
                 $data['token'] = $packdata->rpc_token;
                 $data['result'] = $packdata->rpc_result;
@@ -189,7 +189,7 @@ class SdTcpRpcPool extends AsynPool
      * @param $buffer
      * @return string
      */
-    public function unEncode($buffer)
+    public function decode($buffer)
     {
         if ($this->set['open_length_check']??0 == 1) {
             $data = substr($buffer, $this->package_length_type_length);

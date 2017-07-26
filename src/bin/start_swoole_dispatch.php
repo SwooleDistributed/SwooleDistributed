@@ -8,4 +8,4 @@
 
 require_once 'define.php';
 $worker = new Server\SwooleDispatchClient();
-Server\SwooleServer::run();
+Server\Start::run();

@@ -1,4 +1,5 @@
 <?php
+
 namespace Server;
 
 use Gelf\Publisher;
@@ -23,59 +24,8 @@ use Server\Route\IRoute;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "2.1.4";
-    /**
-     * Daemonize.
-     *
-     * @var bool
-     */
-    public static $daemonize = false;
-    /**
-     * 单元测试
-     * @var bool
-     */
-    public static $testUnity = false;
-    /**
-     * 单元测试文件目录
-     * @var string
-     */
-    public static $testUnityDir = '';
-    /**
-     * The file to store master process PID.
-     *
-     * @var string
-     */
-    public static $pidFile = '';
-    /**
-     * The PID of master process.
-     *
-     * @var int
-     */
-    protected static $_masterPid = 0;
-    /**
-     * Log file.
-     *
-     * @var mixed
-     */
-    protected static $logFile = '';
-    /**
-     * Start file.
-     *
-     * @var string
-     */
-    protected static $_startFile = '';
-    /**
-     * worker instance.
-     *
-     * @var SwooleServer
-     */
-    protected static $_worker = null;
-    /**
-     * Maximum length of the show names.
-     *
-     * @var int
-     */
-    protected static $_maxShowLength = 12;
+    const version = "2.1.5";
+
     /**
      * server name
      * @var string
@@ -196,13 +146,13 @@ abstract class SwooleServer extends Child
     public function __construct()
     {
         $this->onErrorHandel = [$this, 'onErrorHandel'];
-        self::$_worker = $this;
+        Start::initServer($this);
         // 加载配置
         $this->config = new Config(CONFIG_DIR);
         $this->probuf_set = $this->config->get('server.probuf_set', $this->probuf_set);
-        $this->package_length_type = $this->probuf_set['package_length_type']??'N';
-        $this->package_length_type_length = strlen(pack($this->package_length_type, 1))??0;
-        $this->package_body_offset = $this->probuf_set['package_body_offset']??0;
+        $this->package_length_type = $this->probuf_set['package_length_type'] ?? 'N';
+        $this->package_length_type_length = strlen(pack($this->package_length_type, 1)) ?? 0;
+        $this->package_body_offset = $this->probuf_set['package_body_offset'] ?? 0;
         $this->setConfig();
         $this->setLogHandler();
         register_shutdown_function(array($this, 'checkErrors'));
@@ -247,329 +197,12 @@ abstract class SwooleServer extends Child
         $this->user = $this->config->get('server.set.user', '');
     }
 
-    /**
-     * Run all worker instances.
-     *
-     * @return void
-     */
-    public static function run()
-    {
-        self::checkSapiEnv();
-        self::init();
-        self::parseCommand();
-        self::initWorkers();
-        self::displayUI();
-        self::startSwooles();
-    }
-
-    /**
-     * Check sapi.
-     *
-     * @return void
-     */
-    protected static function checkSapiEnv()
-    {
-        // Only for cli.
-        if (php_sapi_name() != "cli") {
-            exit("only run in command line mode \n");
-        }
-    }
-
-    /**
-     * Init.
-     *
-     * @return void
-     */
-    protected static function init()
-    {
-        // Start file.
-        $backtrace = debug_backtrace();
-        self::$_startFile = $backtrace[count($backtrace) - 1]['file'];
-
-        // Pid file.
-        if (empty(self::$pidFile)) {
-            self::$pidFile = PID_DIR . "/" . str_replace('/', '_', self::$_startFile) . ".pid";
-        }
-
-        // Process title.
-        self::setProcessTitle('SWD');
-    }
-
-    /**
-     * Set process name.
-     *
-     * @param string $title
-     * @return void
-     */
-    public static function setProcessTitle($title)
-    {
-        if(isDarwin()){
-            return;
-        }
-        // >=php 5.5
-        if (function_exists('cli_set_process_title')) {
-            @cli_set_process_title($title);
-        } // Need proctitle when php<=5.5 .
-        else {
-            @swoole_set_process_name($title);
-        }
-    }
-
-    /**
-     * Parse command.
-     * php yourfile.php start | stop | reload
-     *
-     * @return void
-     */
-    protected static function parseCommand()
-    {
-        global $argv;
-        // Check argv;
-        $start_file = $argv[0];
-        if (!isset($argv[1])) {
-            exit("Usage: php yourfile.php {start|stop|kill|reload|restart|test}\n");
-        }
-
-        // Get command.
-        $command = trim($argv[1]);
-        $command2 = isset($argv[2]) ? $argv[2] : '';
-
-        // Start command.
-        $mode = '';
-        if ($command === 'start') {
-            if ($command2 === '-d') {
-                $mode = 'in DAEMON mode';
-            } else {
-                $mode = 'in DEBUG mode';
-            }
-        }
-        echo("Swoole[$start_file] $command $mode \n");
-        if (file_exists(self::$pidFile)) {
-            $pids = explode(',', file_get_contents(self::$pidFile));
-            // Get master process PID.
-            $master_pid = $pids[0];
-            $manager_pid = $pids[1];
-            $master_is_alive = $master_pid && @posix_kill($master_pid, 0);
-        } else {
-            $master_is_alive = false;
-        }
-        // Master is still alive?
-        if ($master_is_alive) {
-            if ($command === 'start' || $command === 'test') {
-                echo("Swoole[$start_file] already running\n");
-                exit;
-            }
-        } elseif ($command !== 'start' && $command !== 'test') {
-            echo("Swoole[$start_file] not run\n");
-            exit;
-        }
-
-        // execute command.
-        switch ($command) {
-            case 'start':
-                if ($command2 === '-d') {
-                    self::$daemonize = true;
-                }
-                break;
-            case 'kill':
-                exec('ps -ef|grep SWD|grep -v grep|cut -c 9-15|xargs kill -9');
-                break;
-            case 'stop':
-                @unlink(self::$pidFile);
-                echo("Swoole[$start_file] is stoping ...\n");
-                // Send stop signal to master process.
-                $master_pid && posix_kill($master_pid, SIGTERM);
-                // Timeout.
-                $timeout = 5;
-                $start_time = time();
-                // Check master process is still alive?
-                while (1) {
-                    $master_is_alive = $master_pid && posix_kill($master_pid, 0);
-                    if ($master_is_alive) {
-                        // Timeout?
-                        if (time() - $start_time >= $timeout) {
-                            echo("Swoole[$start_file] stop fail\n");
-                            exit;
-                        }
-                        // Waiting amoment.
-                        usleep(10000);
-                        continue;
-                    }
-                    // Stop success.
-                    echo("Swoole[$start_file] stop success\n");
-                    break;
-                }
-                exit(0);
-                break;
-            case 'reload':
-                posix_kill($manager_pid, SIGUSR1);
-                echo("Swoole[$start_file] reload\n");
-                exit;
-            case 'restart':
-                @unlink(self::$pidFile);
-                echo("Swoole[$start_file] is stoping ...\n");
-                // Send stop signal to master process.
-                $master_pid && posix_kill($master_pid, SIGTERM);
-                // Timeout.
-                $timeout = 5;
-                $start_time = time();
-                // Check master process is still alive?
-                while (1) {
-                    $master_is_alive = $master_pid && posix_kill($master_pid, 0);
-                    if ($master_is_alive) {
-                        // Timeout?
-                        if (time() - $start_time >= $timeout) {
-                            echo("Swoole[$start_file] stop fail\n");
-                            exit;
-                        }
-                        // Waiting amoment.
-                        usleep(10000);
-                        continue;
-                    }
-                    // Stop success.
-                    echo("Swoole[$start_file] stop success\n");
-                    break;
-                }
-                self::$daemonize = true;
-                break;
-            case 'test':
-                self::$testUnity = true;
-                self::$testUnityDir = $command2;
-                break;
-            default :
-                exit("Usage: php yourfile.php {start|stop|kill|reload|restart|test}\n");
-        }
-    }
-
-    /**
-     * Init All worker instances.
-     *
-     * @return void
-     */
-    protected static function initWorkers()
-    {
-        // Worker name.
-        if (empty(self::$_worker->name)) {
-            self::$_worker->name = 'none';
-        }
-        // Get unix user of the worker process.
-        if (empty(self::$_worker->user)) {
-            self::$_worker->user = self::getCurrentUser();
-        } else {
-            if (posix_getuid() !== 0 && self::$_worker->user != self::getCurrentUser()) {
-                echo('Warning: You must have the root privileges to change uid and gid.');
-            }
-        }
-    }
-
-    /**
-     * Get unix user of current porcess.
-     *
-     * @return string
-     */
-    protected static function getCurrentUser()
-    {
-        $user_info = posix_getpwuid(posix_getuid());
-        return $user_info['name'];
-    }
-
-    /**
-     * Display staring UI.
-     *
-     * @return void
-     */
-    protected static function displayUI()
-    {
-        $setConfig = self::$_worker->setServerSet();
-        echo "\033[2J";
-        echo "\033[1A\n\033[K-------------\033[47;30m SWOOLE_DISTRIBUTED \033[0m--------------\n\033[0m";
-        echo 'System:', PHP_OS, "\n";
-        echo 'SwooleDistributed version:', self::version, "\n";
-        echo 'Swoole version: ', SWOOLE_VERSION, "\n";
-        echo 'PHP version: ', PHP_VERSION, "\n";
-        echo 'worker_num: ', $setConfig['worker_num'], "\n";
-        echo 'task_num: ', $setConfig['task_worker_num']??0, "\n";
-        echo "-------------------\033[47;30m" . self::$_worker->name . "\033[0m----------------------\n";
-        echo "\033[47;30mtype\033[0m", str_pad('',
-            self::$_maxShowLength - strlen('type')), "\033[47;30msocket\033[0m", str_pad('',
-            self::$_maxShowLength - strlen('socket')), "\033[47;30mport\033[0m", str_pad('',
-            self::$_maxShowLength - strlen('port')), "\033[47;30m", "status\033[0m\n";
-        switch (self::$_worker->name) {
-            case SwooleDispatchClient::SERVER_NAME:
-                echo str_pad('TCP',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch_server.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch_server.port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->config->get('dispatch_server.port') == null) {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                } else {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                }
-                break;
-            case SwooleDistributedServer::SERVER_NAME:
-                echo str_pad('TCP',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('tcp.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('tcp.port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->tcp_enable??false) {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                } else {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                }
-                echo str_pad('HTTP',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->http_enable??false) {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                } else {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                }
-                echo str_pad('WEBSOCKET',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->websocket_enable??false) {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                } else {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                }
-                echo str_pad('DISPATCH',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('tcp.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.dispatch_port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->config->get('use_dispatch', false)) {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                } else {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                }
-                break;
-        }
-        echo "-----------------------------------------------\n";
-        if (self::$daemonize) {
-            global $argv;
-            $start_file = $argv[0];
-            echo "Input \"php $start_file stop\" to quit. Start success.\n";
-        } else {
-            echo "Press Ctrl-C to quit. Start success.\n";
-        }
-    }
 
     /**
      * 设置服务器配置参数
      * @return mixed
      */
     abstract public function setServerSet();
-
-    /**
-     * Fork some worker processes.
-     *
-     * @return void
-     */
-    protected static function startSwooles()
-    {
-        self::$_worker->start();
-    }
 
     /**
      * 启动
@@ -592,7 +225,7 @@ abstract class SwooleServer extends Child
             $this->server->on('ManagerStop', [$this, 'onSwooleManagerStop']);
             $this->server->on('Packet', [$this, 'onSwoolePacket']);
             $set = $this->setServerSet();
-            $set['daemonize'] = self::$daemonize ? 1 : 0;
+            $set['daemonize'] = Start::getDaemonize();
             $this->server->set($set);
             $this->beforeSwooleStart();
             $this->server->start();
@@ -618,10 +251,10 @@ abstract class SwooleServer extends Child
      */
     public function encode($buffer)
     {
-        if ($this->probuf_set['open_length_check']??0 == 1) {
+        if ($this->probuf_set['open_length_check'] ?? 0 == 1) {
             $total_length = $this->package_length_type_length + strlen($buffer) - $this->package_body_offset;
             return pack($this->package_length_type, $total_length) . $buffer;
-        } else if ($this->probuf_set['open_eof_check']??0 == 1) {
+        } else if ($this->probuf_set['open_eof_check'] ?? 0 == 1) {
             return $buffer . $this->probuf_set['package_eof'];
         } else {
             throw new SwooleException("tcpServer won't support set");
@@ -632,12 +265,12 @@ abstract class SwooleServer extends Child
      * @param $buffer
      * @return string
      */
-    public function unEncode($buffer)
+    public function decode($buffer)
     {
-        if ($this->probuf_set['open_length_check']??0 == 1) {
+        if ($this->probuf_set['open_length_check'] ?? 0 == 1) {
             $data = substr($buffer, $this->package_length_type_length);
             return $data;
-        } else if ($this->probuf_set['open_eof_check']??0 == 1) {
+        } else if ($this->probuf_set['open_eof_check'] ?? 0 == 1) {
             $data = $buffer;
             return $data;
         }
@@ -649,10 +282,7 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleStart($serv)
     {
-        self::$_masterPid = $serv->master_pid;
-        file_put_contents(self::$pidFile, self::$_masterPid);
-        file_put_contents(self::$pidFile, ',' . $serv->manager_pid, FILE_APPEND);
-        self::setProcessTitle('SWD-Master');
+        Start::setMasterPid($serv->master_pid, $serv->manager_pid);
     }
 
     /**
@@ -666,16 +296,16 @@ abstract class SwooleServer extends Child
         if (function_exists('apc_clear_cache')) {
             apc_clear_cache();
         }
-        file_put_contents(self::$pidFile, ',' . $serv->worker_pid, FILE_APPEND);
+        Start::setWorketPid($serv->worker_pid);
         // 重新加载配置
         $this->config = $this->config->load(CONFIG_DIR);
         if (!$serv->taskworker) {//worker进程
             if ($this->needCoroutine) {//启动协程调度器
                 Coroutine::init();
             }
-            self::setProcessTitle('SWD-Worker');
+            Start::setProcessTitle('SWD-Worker');
         } else {
-            self::setProcessTitle('SWD-Tasker');
+            Start::setProcessTitle('SWD-Tasker');
         }
     }
 
@@ -699,7 +329,7 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleReceive($serv, $fd, $from_id, $data)
     {
-        $data = $this->unEncode($data);
+        $data = $this->decode($data);
         //反序列化，出现异常断开连接
         try {
             $client_data = $this->pack->unPack($data);
@@ -712,11 +342,11 @@ abstract class SwooleServer extends Child
         $controller_name = $this->route->getControllerName();
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
         if ($controller_instance != null) {
-            if (SwooleServer::$testUnity) {
+            if (Start::$testUnity) {
                 $fd = 'self';
                 $uid = $fd;
             } else {
-                $uid = $serv->connection_info($fd)['uid']??0;
+                $uid = $serv->connection_info($fd)['uid'] ?? 0;
             }
             $method_name = $this->config->get('tcp.method_prefix', '') . $this->route->getMethodName();
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
@@ -813,7 +443,7 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleManagerStart($serv)
     {
-        self::setProcessTitle('SWD-Manager');
+        Start::setProcessTitle('SWD-Manager');
     }
 
     /**
@@ -848,7 +478,7 @@ abstract class SwooleServer extends Child
         $data['type'] = $type;
         $data['message'] = $message;
         $data['func'] = $func;
-        return serialize($data);
+        return \swoole_serialize::pack($data);
     }
 
     /**

@@ -136,6 +136,24 @@ function checkExtension()
         print_r("[扩展依赖]缺少pdo扩展\n");
         $check = false;
     }
+
+    if(get_instance()->config->has('consul_enable')){
+        print_r("consul_enable配置已被弃用，请换成['consul']['enable']\n");
+    }
+    if(get_instance()->config->has('use_dispatch')){
+        print_r("use_dispatch配置已被弃用，请换成['dispatch']['enable']\n");
+    }
+    if(get_instance()->config->has('dispatch_heart_time')){
+        print_r("dispatch_heart_time配置已被弃用，请换成['dispatch']['heart_time']\n");
+    }
+
+    $dispatch_enable = get_instance()->config->get('dispatch.enable',false);
+    if($dispatch_enable){
+        if(!get_instance()->config->get('redis.enable', true)){
+            print_r("开启dispatch，就必须启动redis的配置\n");
+            $check = false;
+        }
+    }
     return $check;
 }
 

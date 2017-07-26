@@ -73,6 +73,9 @@ class InotifyProcess
     public function unUseInotify()
     {
         echo "非inotify模式，性能极低，不建议在正式环境启用。\n";
+        if(isDarwin()){
+            echo "mac开启auto_reload可能会导致cpu占用过高。\n";
+        }
         swoole_timer_tick(1, function () {
             global $last_mtime;
             // recursive traversal directory
