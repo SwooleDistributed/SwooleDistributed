@@ -11,6 +11,7 @@ use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\Components\Consul\ConsulServices;
 use Server\CoreBase\Controller;
 use Server\CoreBase\SelectCoroutine;
+use Server\Memory\Cache;
 use Server\Memory\Lock;
 use Server\Models\TestModel;
 use Server\Tasks\TestTask;
@@ -32,7 +33,12 @@ class TestController extends Controller
      */
     public $sdrpc;
 
-
+    public function http_map_add()
+    {
+        $cache = Cache::getCache('TestCache');
+        $cache->addMap('123');
+        $this->http_output->end($cache->getAllMap());
+    }
     public function http_tcp()
     {
         $this->sdrpc = get_instance()->getAsynPool('RPC');

@@ -11,11 +11,13 @@
 $config['dispatch']['enable'] = true;
 //dispatch间的心跳时间
 $config['dispatch']['heart_time'] = 60;
-
+$config['dispatch']['dispatch_udp_port'] = 9991;
+$config['dispatch']['dispatch_port'] = 9992;
 /**
  * dispatch服务器设置
  */
 $config['dispatch_server']['socket'] = '0.0.0.0';
+//接收udp广播的端口
 $config['dispatch_server']['port'] = 60000;
 $config['dispatch_server']['password'] = 'Hello Dispatch2';
 $config['dispatch_server']['set'] = [

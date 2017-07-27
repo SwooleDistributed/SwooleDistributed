@@ -11,10 +11,8 @@ use Server\Components\GrayLog\UdpTransport;
 use Server\CoreBase\Child;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\Loader;
-use Server\CoreBase\SwooleException;
+use Server\CoreBase\PortManager;
 use Server\Coroutine\Coroutine;
-use Server\Pack\IPack;
-use Server\Route\IRoute;
 
 /**
  * Created by PhpStorm.
@@ -24,7 +22,7 @@ use Server\Route\IRoute;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "2.1.5";
+    const version = "2.2.0-beta";
 
     /**
      * server name
@@ -42,9 +40,6 @@ abstract class SwooleServer extends Child
      */
     public $worker_num = 0;
     public $task_num = 0;
-    public $socket_name;
-    public $port;
-    public $socket_type;
 
     /**
      * 服务器到现在的毫秒数
@@ -52,16 +47,6 @@ abstract class SwooleServer extends Child
      */
     public $tickTime;
 
-    /**
-     * 封包器
-     * @var IPack
-     */
-    public $pack;
-    /**
-     * 路由器
-     * @var IRoute
-     */
-    public $route;
     /**
      * 加载器
      * @var Loader
@@ -86,37 +71,11 @@ abstract class SwooleServer extends Child
      * @var Logger
      */
     public $log;
-    /**
-     * 是否开启tcp
-     * @var bool
-     */
-    public $tcp_enable;
 
     /**
-     * @var
+     * @var PortManager
      */
-    public $package_length_type;
-
-    /**
-     * @var int
-     */
-    public $package_length_type_length;
-
-    /**
-     * @var
-     */
-    public $package_body_offset;
-
-    /**
-     * 协议设置
-     * @var
-     */
-    protected $probuf_set = ['open_length_check' => 1,
-        'package_length_type' => 'N',
-        'package_length_offset' => 0,       //第N个字节是包长度的值
-        'package_body_offset' => 0,       //第几个字节开始计算长度
-        'package_max_length' => 2000000,  //协议最大长度)
-    ];
+    protected $portManager;
 
     /**
      * 是否需要协程支持(默认开启)
@@ -149,52 +108,12 @@ abstract class SwooleServer extends Child
         Start::initServer($this);
         // 加载配置
         $this->config = new Config(CONFIG_DIR);
-        $this->probuf_set = $this->config->get('server.probuf_set', $this->probuf_set);
-        $this->package_length_type = $this->probuf_set['package_length_type'] ?? 'N';
-        $this->package_length_type_length = strlen(pack($this->package_length_type, 1)) ?? 0;
-        $this->package_body_offset = $this->probuf_set['package_body_offset'] ?? 0;
-        $this->setConfig();
+        $this->user = $this->config->get('server.set.user', '');
         $this->setLogHandler();
         register_shutdown_function(array($this, 'checkErrors'));
         set_error_handler(array($this, 'displayErrorHandler'));
-        //pack class
-        $pack_class_name = "app\\Pack\\" . $this->config['server']['pack_tool'];
-        if (class_exists($pack_class_name)) {
-            $this->pack = new $pack_class_name;
-        } else {
-            $pack_class_name = "Server\\Pack\\" . $this->config['server']['pack_tool'];
-            if (class_exists($pack_class_name)) {
-                $this->pack = new $pack_class_name;
-            } else {
-                throw new SwooleException("class {$this->config['server']['pack_tool']} is not exist.");
-            }
-        }
-        //route class
-        $route_class_name = "app\\Route\\" . $this->config['server']['route_tool'];
-        if (class_exists($route_class_name)) {
-            $this->route = new $route_class_name;
-        } else {
-            $route_class_name = "Server\\Route\\" . $this->config['server']['route_tool'];
-            if (class_exists($route_class_name)) {
-                $this->route = new $route_class_name;
-            } else {
-                throw new SwooleException("class {$this->config['server']['route_tool']} is not exist.");
-            }
-        }
+        $this->portManager = new PortManager($this->config['ports']);
         $this->loader = new Loader();
-    }
-
-    /**
-     * 设置配置
-     * @return mixed
-     */
-    public function setConfig()
-    {
-        $this->socket_type = SWOOLE_SOCK_TCP;
-        $this->tcp_enable = $this->config->get('tcp.enable', true);
-        $this->socket_name = $this->config['tcp']['socket'];
-        $this->port = $this->config['tcp']['port'];
-        $this->user = $this->config->get('server.set.user', '');
     }
 
 
@@ -202,15 +121,26 @@ abstract class SwooleServer extends Child
      * 设置服务器配置参数
      * @return mixed
      */
-    abstract public function setServerSet();
+    public function setServerSet($probuf_set)
+    {
+        $set = $this->config->get('server.set', []);
+        if ($probuf_set != null) {
+            $set = array_merge($set, $probuf_set);
+        }
+        $this->worker_num = $set['worker_num'];
+        $this->task_num = $set['task_worker_num'];
+        $set['daemonize'] = Start::getDaemonize();
+        $this->server->set($set);
+    }
 
     /**
      * 启动
      */
     public function start()
     {
-        if ($this->tcp_enable) {
-            $this->server = new \swoole_server($this->socket_name, $this->port, SWOOLE_PROCESS, $this->socket_type);
+        if ($this->portManager->tcp_enable) {
+            $first_config = $this->portManager->getFirstTypePort();
+            $this->server = new \swoole_server($first_config['socket_name'], $first_config['socket_port'], SWOOLE_PROCESS, $first_config['socket_type']);
             $this->server->on('Start', [$this, 'onSwooleStart']);
             $this->server->on('WorkerStart', [$this, 'onSwooleWorkerStart']);
             $this->server->on('connect', [$this, 'onSwooleConnect']);
@@ -224,9 +154,8 @@ abstract class SwooleServer extends Child
             $this->server->on('ManagerStart', [$this, 'onSwooleManagerStart']);
             $this->server->on('ManagerStop', [$this, 'onSwooleManagerStop']);
             $this->server->on('Packet', [$this, 'onSwoolePacket']);
-            $set = $this->setServerSet();
-            $set['daemonize'] = Start::getDaemonize();
-            $this->server->set($set);
+            $this->setServerSet($first_config['probuf_set']);
+            $this->portManager->buildPort($this, $first_config['socket_port']);
             $this->beforeSwooleStart();
             $this->server->start();
         } else {
@@ -241,39 +170,6 @@ abstract class SwooleServer extends Child
     public function beforeSwooleStart()
     {
 
-    }
-
-    /**
-     * 数据包编码
-     * @param $buffer
-     * @return string
-     * @throws SwooleException
-     */
-    public function encode($buffer)
-    {
-        if ($this->probuf_set['open_length_check'] ?? 0 == 1) {
-            $total_length = $this->package_length_type_length + strlen($buffer) - $this->package_body_offset;
-            return pack($this->package_length_type, $total_length) . $buffer;
-        } else if ($this->probuf_set['open_eof_check'] ?? 0 == 1) {
-            return $buffer . $this->probuf_set['package_eof'];
-        } else {
-            throw new SwooleException("tcpServer won't support set");
-        }
-    }
-
-    /**
-     * @param $buffer
-     * @return string
-     */
-    public function decode($buffer)
-    {
-        if ($this->probuf_set['open_length_check'] ?? 0 == 1) {
-            $data = substr($buffer, $this->package_length_type_length);
-            return $data;
-        } else if ($this->probuf_set['open_eof_check'] ?? 0 == 1) {
-            $data = $buffer;
-            return $data;
-        }
     }
 
     /**
@@ -329,32 +225,37 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleReceive($serv, $fd, $from_id, $data)
     {
-        $data = $this->decode($data);
+        $fdinfo = $serv->connection_info($fd);
+        $server_port = $fdinfo['server_port'];
+        $route = $this->portManager->getRoute($server_port);
+        $pack = $this->portManager->getPack($server_port);
+
         //反序列化，出现异常断开连接
         try {
-            $client_data = $this->pack->unPack($data);
+            $client_data = $pack->unPack($data);
         } catch (\Exception $e) {
             $serv->close($fd);
             return null;
         }
+
         //client_data进行处理
-        $client_data = $this->route->handleClientData($client_data);
-        $controller_name = $this->route->getControllerName();
+        $client_data = $route->handleClientData($client_data);
+        $controller_name = $route->getControllerName();
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
         if ($controller_instance != null) {
             if (Start::$testUnity) {
                 $fd = 'self';
                 $uid = $fd;
             } else {
-                $uid = $serv->connection_info($fd)['uid'] ?? 0;
+                $uid = $fdinfo['uid'] ?? 0;
             }
-            $method_name = $this->config->get('tcp.method_prefix', '') . $this->route->getMethodName();
+            $method_name = $this->config->get('tcp.method_prefix', '') . $route->getMethodName();
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
                 if (!method_exists($controller_instance, $method_name)) {
                     $method_name = 'defaultMethod';
                 }
-                Coroutine::startCoroutine([$controller_instance, $method_name], $this->route->getParams());
+                Coroutine::startCoroutine([$controller_instance, $method_name], $route->getParams());
             } catch (\Exception $e) {
                 call_user_func([$controller_instance, 'onExceptionHandle'], $e);
             }
@@ -478,7 +379,7 @@ abstract class SwooleServer extends Child
         $data['type'] = $type;
         $data['message'] = $message;
         $data['func'] = $func;
-        return \swoole_serialize::pack($data);
+        return $data;
     }
 
     /**
@@ -571,25 +472,6 @@ abstract class SwooleServer extends Child
     }
 
     /**
-     * 判断这个fd是不是一个WebSocket连接，用于区分tcp和websocket
-     * 握手后才识别为websocket
-     * @param $fd
-     * @return bool
-     * @throws \Exception
-     */
-    public function isWebSocket($fd)
-    {
-        $fdinfo = $this->server->connection_info($fd);
-        if (empty($fdinfo)) {
-            throw new \Exception('fd not exist');
-        }
-        if (array_key_exists('websocket_status', $fdinfo) && $fdinfo['websocket_status'] == WEBSOCKET_STATUS_FRAME) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * 是否是task进程
      * @return bool
      */
@@ -602,9 +484,19 @@ abstract class SwooleServer extends Child
      * 判断是tcp还是websocket进行发送
      * @param $fd
      * @param $data
+     * @param bool $ifPack
      */
-    public function send($fd, $data)
+    public function send($fd, $data, $ifPack = false)
     {
+        if (!$this->server->exist($fd)) {
+            return;
+        }
+        if ($ifPack) {
+            $fdinfo = $this->server->connection_info($fd);
+            $server_port = $fdinfo['server_port'];
+            $pack = $this->portManager->getPack($server_port);
+            $data = $pack->pack($data);
+        }
         $this->server->send($fd, $data);
     }
 

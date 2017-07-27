@@ -7,7 +7,8 @@
  */
 $worker_num = 100;
 $total_num = 100000;
-$ips = ['127.0.0.1'];
+$GLOBALS['package_eof'] = "\r\n";
+$ips = ['127.0.0.1', '192.168.8.48'];
 $GLOBALS['total_num'] = $total_num;
 $GLOBALS['worker_num'] = $worker_num;
 $GLOBALS['count'] = 0;
@@ -16,6 +17,11 @@ $GLOBALS['test_count'] = 0;
 for ($i = 0; $i < $total_num; $i++) {
     $GLOBALS['test'][$i] = $i;
 }
+function encode($buffer)
+{
+    return $buffer . "\r\n";
+}
+
 function json_pack($controller_name, $method_name, $data)
 {
     $pdata['controller_name'] = $controller_name;
@@ -25,13 +31,19 @@ function json_pack($controller_name, $method_name, $data)
 }
 
 for ($i = 1; $i <= $worker_num; $i++) {
-    $client = new swoole_http_client($ips[array_rand($ips)], 8083);
+    $client = new swoole_client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC); //异步非阻塞
     $client->count = 0;
     $client->i = $i;
     $client->total_num = $total_num / $worker_num;
+    $client->set(array(
+        'open_eof_split' => true,
+        'package_eof' => $GLOBALS['package_eof'],
+        'package_max_length' => 2000000
+    ));
+    $client->on("connect", 'connect');
 
-    $client->on("message", 'message');
-    $client->upgrade('/', 'upgrade');
+    $client->on("receive", 'receive');
+
     $client->on("error", function ($cli) {
         exit("error\n");
     });
@@ -39,22 +51,24 @@ for ($i = 1; $i <= $worker_num; $i++) {
     $client->on("close", function ($cli) {
 
     });
+
+    $client->connect($ips[array_rand($ips)], 9092, 0.5);
 }
-function upgrade($cli)
+function connect($cli)
 {
-    $cli->push(json_pack('TestController', 'bind_uid', $cli->i));
+    $cli->send(encode(json_pack('TestController', 'bind_uid', $cli->i)));
     swoole_timer_after(1000, function () use ($cli) {
         $GLOBALS['start_time'] = getMillisecond();
         for ($i = 0; $i < $cli->total_num; $i++) {
-            $cli->push(json_pack('TestController', 'efficiency_test', $GLOBALS['test_count']));
+            $cli->send(encode(json_pack('TestController', 'efficiency_test', $GLOBALS['test_count'])));
             $GLOBALS['test_count']++;
         }
     });
 }
 
-function message($cli, $frame)
+function receive($cli, $data)
 {
-    $data = $frame->data;
+    $data = str_replace($GLOBALS['package_eof'], '', $data);
     $GLOBALS['count']++;
     unset($GLOBALS['test'][$data]);
     if ($GLOBALS['count'] >= ($GLOBALS['count_page'] + 1) * $GLOBALS['total_num'] / 5) {

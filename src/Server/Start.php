@@ -9,6 +9,8 @@
 namespace Server;
 
 
+use Server\CoreBase\PortManager;
+
 class Start
 {
     /**
@@ -286,66 +288,49 @@ class Start
      */
     protected static function displayUI()
     {
-        $setConfig = self::$_worker->setServerSet();
+        $config = self::$_worker->config;
         echo "\033[2J";
         echo "\033[1A\n\033[K-------------\033[47;30m SWOOLE_DISTRIBUTED \033[0m--------------\n\033[0m";
         echo 'System:', PHP_OS, "\n";
         echo 'SwooleDistributed version:', SwooleServer::version, "\n";
         echo 'Swoole version: ', SWOOLE_VERSION, "\n";
         echo 'PHP version: ', PHP_VERSION, "\n";
-        echo 'worker_num: ', $setConfig['worker_num'], "\n";
-        echo 'task_num: ', $setConfig['task_worker_num'] ?? 0, "\n";
+        echo 'worker_num: ', $config->get('server.set.worker_num', 0), "\n";
+        echo 'task_num: ', $config->get('server.set.task_worker_num', 0), "\n";
         echo "-------------------\033[47;30m" . self::$_worker->name . "\033[0m----------------------\n";
-        echo "\033[47;30mtype\033[0m", str_pad('',
-            self::$_maxShowLength - strlen('type')), "\033[47;30msocket\033[0m", str_pad('',
-            self::$_maxShowLength - strlen('socket')), "\033[47;30mport\033[0m", str_pad('',
-            self::$_maxShowLength - strlen('port')), "\033[47;30m", "status\033[0m\n";
+        echo "\033[47;30mS_TYPE\033[0m", str_pad('',
+            self::$_maxShowLength - strlen('S_TYPE')), "\033[47;30mS_NAME\033[0m", str_pad('',
+            self::$_maxShowLength - strlen('S_NAME')), "\033[47;30mS_PORT\033[0m", str_pad('',
+            self::$_maxShowLength - strlen('S_PORT')), "\033[47;30m", "S_PACK\033[0m\n";
         switch (self::$_worker->name) {
             case SwooleDispatchClient::SERVER_NAME:
-                echo str_pad('TCP',
+                echo str_pad('DISPATCH',
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch_server.socket', '--'),
                     self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch_server.port', '--'),
                     self::$_maxShowLength - 2);
                 if (self::$_worker->config->get('dispatch_server.port') == null) {
                     echo " \033[31;40m [CLOSE] \033[0m\n";
                 } else {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
+                    echo " \033[32;40m [DISPATCHPACK] \033[0m\n";
                 }
                 break;
             case SwooleDistributedServer::SERVER_NAME:
-                echo str_pad('TCP',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('tcp.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('tcp.port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->tcp_enable ?? false) {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                } else {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                }
-                echo str_pad('HTTP',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->http_enable ?? false) {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                } else {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                }
-                echo str_pad('WEBSOCKET',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('http_server.port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->websocket_enable ?? false) {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
-                } else {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
+                $ports = $config['ports'];
+                foreach ($ports as $key => $value) {
+                    echo str_pad(PortManager::getTypeName($value['socket_type']),
+                        self::$_maxShowLength), str_pad($value['socket_name'],
+                        self::$_maxShowLength), str_pad($value['socket_port'],
+                        self::$_maxShowLength - 2);
+                    $str = $value['pack_tool'] ?? $value['socket_type'];
+                    $str = strtoupper($str);
+                    echo " \033[32;40m [$str] \033[0m\n";
                 }
                 echo str_pad('DISPATCH',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('tcp.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('server.dispatch_port', '--'),
+                    self::$_maxShowLength), str_pad('0.0.0.0',
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch.dispatch_port', '--'),
                     self::$_maxShowLength - 2);
                 if (self::$_worker->config->get('dispatch.enable', false)) {
-                    echo " \033[32;40m [OPEN] \033[0m\n";
+                    echo " \033[32;40m [DISPATCHPACK] \033[0m\n";
                 } else {
                     echo " \033[31;40m [CLOSE] \033[0m\n";
                 }

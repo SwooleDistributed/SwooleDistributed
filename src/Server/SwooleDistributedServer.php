@@ -40,11 +40,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public $mysql_pool;
     /**
-     * 覆盖set配置
-     * @var array
-     */
-    public $overrideSetConfig = [];
-    /**
      * 404缓存
      * @var string
      */
@@ -103,6 +98,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         self::$instance =& $this;
         $this->name = self::SERVER_NAME;
         parent::__construct();
+        $this->send_use_task_num = $this->config['server']['send_use_task_num'];
         if (!checkExtension()) {
             exit(-1);
         }
@@ -161,15 +157,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
-     * 设置配置
-     */
-    public function setConfig()
-    {
-        parent::setConfig();
-        $this->send_use_task_num = $this->config['server']['send_use_task_num'];
-    }
-
-    /**
      * 开始前创建共享内存保存USID值
      */
     public function beforeSwooleStart()
@@ -220,20 +207,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
-     * 设置服务器配置参数
-     * @return array
-     */
-    public function setServerSet()
-    {
-        $set = $this->config->get('server.set', []);
-        $set = array_merge($set, $this->probuf_set);
-        $set = array_merge($set, $this->overrideSetConfig);
-        $this->worker_num = $set['worker_num'];
-        $this->task_num = $set['task_worker_num'];
-        return $set;
-    }
-
-    /**
      * 向uid发送消息
      * @param $uid
      * @param $data
@@ -241,12 +214,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function sendToUid($uid, $data, $fromDispatch = false)
     {
-        if (!$fromDispatch) {
-            $data = $this->encode($this->pack->pack($data));
-        }
         if ($this->uid_fd_table->exist($uid)) {//本机处理
             $fd = $this->uid_fd_table->get($uid)['fd'];
-            $this->send($fd, $data);
+            $this->send($fd, $data, true);
         } else {
             if ($fromDispatch) return;
             $this->sendToDispatchMessage(SwooleMarco::MSG_TYPE_SEND, ['data' => $data, 'uid' => $uid]);
@@ -283,17 +253,12 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function onSwooleTask($serv, $task_id, $from_id, $data)
     {
-        if (is_string($data)) {
-            $unserialize_data = \swoole_serialize::unpack($data);
-        } else {
-            $unserialize_data = $data;
-        }
-        $type = $unserialize_data['type'] ?? '';
-        $message = $unserialize_data['message'] ?? '';
+        $type = $data['type'] ?? '';
+        $message = $data['message'] ?? '';
         switch ($type) {
             case SwooleMarco::MSG_TYPE_SEND_BATCH://发送消息
                 foreach ($message['fd'] as $fd) {
-                    $this->send($fd, $message['data']);
+                    $this->send($fd, $message['data'], true);
                 }
                 return null;
             case SwooleMarco::MSG_TYPE_SEND_ALL://发送广播
@@ -301,7 +266,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                     if (DispatchHelp::$dispatch->isDispatchFd($fd)) {
                         continue;
                     }
-                    $this->send($fd, $message['data']);
+                    $this->send($fd, $message['data'], true);
                 }
                 return null;
             case SwooleMarco::MSG_TYPE_SEND_GROUP://群组
@@ -309,7 +274,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 foreach ($uids as $uid) {
                     if ($this->uid_fd_table->exist($uid)) {
                         $fd = $this->uid_fd_table->get($uid)['fd'];
-                        $this->send($fd, $message['data']);
+                        $this->send($fd, $message['data'], true);
                     }
                 }
                 return null;
@@ -351,9 +316,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function sendToUids($uids, $data, $fromDispatch = false)
     {
-        if (!$fromDispatch) {
-            $data = $this->encode($this->pack->pack($data));
-        }
         $current_fds = [];
         foreach ($uids as $key => $uid) {
             if ($this->uid_fd_table->exist($uid)) {
@@ -370,7 +332,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             }
         } else {
             foreach ($current_fds as $fd) {
-                $this->send($fd, $data);
+                $this->send($fd, $data, true);
             }
         }
         if ($fromDispatch) return;
@@ -408,9 +370,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function onSwoolePipeMessage($serv, $from_worker_id, $message)
     {
         parent::onSwoolePipeMessage($serv, $from_worker_id, $message);
-        $data = \swoole_serialize::unpack($message);
-        if (!empty($data['func'])) {
-            call_user_func($data['func'], $data['message']);
+        if (!empty($message['func'])) {
+            call_user_func($message['func'], $message['message']);
         }
     }
 
@@ -502,7 +463,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $this->delAllGroups();
             print_r("[初始化] 清除redis上所有群信息。\n");
         }
-        if ($this->config->get('consul.enable',false)) {
+        if ($this->config->get('consul.enable', false)) {
             //选举leader
             $ConsulModel = $this->loader->model('ConsulModel', $this);
             yield $ConsulModel->leader();
@@ -750,7 +711,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function sendToAll($data)
     {
-        $data = $this->encode($this->pack->pack($data));
         $this->sendToDispatchMessage(SwooleMarco::MSG_TYPE_SEND_ALL, ['data' => $data]);
     }
 
@@ -764,7 +724,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if (!$this->config->get('redis.enable', true)) {
             return;
         }
-        $data = $this->encode($this->pack->pack($data));
         $this->sendToDispatchMessage(SwooleMarco::MSG_TYPE_SEND_GROUP, ['data' => $data, 'groupId' => $groupId]);
     }
 
