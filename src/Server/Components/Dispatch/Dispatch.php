@@ -9,6 +9,8 @@
 namespace Server\Components\Dispatch;
 
 
+use Server\CoreBase\PortManager;
+use Server\Pack\IPack;
 use Server\SwooleMarco;
 
 class Dispatch
@@ -19,33 +21,31 @@ class Dispatch
     protected $enable;
     protected $config;
     /**
+     * @var IPack
+     */
+    public $pack;
+    /**
      * 分布式系统服务器唯一标识符
      * @var int
      */
     public $USID;
-    public $probuf_set = [
-        'open_length_check' => 1,
-        'package_length_type' => 'N',
-        'package_length_offset' => 0,       //第N个字节是包长度的值
-        'package_body_offset' => 0,       //第几个字节开始计算长度
-        'package_max_length' => 2000000,  //协议最大长度)
-    ];
 
     public function __construct($config)
     {
         $this->config = $config;
         $this->enable = $config->get('dispatch.enable',false);
+        $this->pack = PortManager::createPack('DispatchPack');
     }
 
     public function buildPort()
     {
         if ($this->enable) {
             //创建一个udp端口
-            $this->dispatch_udp_port = get_instance()->server->listen($this->config['tcp']['socket'], $this->config['server']['dispatch_udp_port'], SWOOLE_SOCK_UDP);
+            $this->dispatch_udp_port = get_instance()->server->listen('0.0.0.0', $this->config['dispatch']['dispatch_udp_port'], SWOOLE_SOCK_UDP);
 
             //创建dispatch端口用于连接dispatch
-            $this->dispatch_port = get_instance()->server->listen(get_instance()->config['tcp']['socket'],$this->config['server']['dispatch_port'], SWOOLE_SOCK_TCP);
-            $this->dispatch_port->set($this->probuf_set);
+            $this->dispatch_port = get_instance()->server->listen('0.0.0.0', $this->config['dispatch']['dispatch_port'], SWOOLE_SOCK_TCP);
+            $this->dispatch_port->set($this->pack->getProbufSet());
             $this->dispatch_port->on('close', function ($serv, $fd) {
                 print_r("Remove a dispatcher: $fd.\n");
                 for ($i = 0; $i < get_instance()->worker_num + get_instance()->task_num; $i++) {
@@ -57,8 +57,7 @@ class Dispatch
             });
 
             $this->dispatch_port->on('receive', function ($serv, $fd, $from_id, $data) {
-                $data = $this->dispatch_decode($data);
-                $unserialize_data = \swoole_serialize::unpack($data);
+                $unserialize_data = $this->pack->unPack($data);
                 $type = $unserialize_data['type'];
                 $message = $unserialize_data['message'];
                 switch ($type) {
@@ -111,27 +110,6 @@ class Dispatch
     }
 
     /**
-     * 数据包编码
-     * @param $buffer
-     * @return string
-     */
-    public function dispatch_encode($buffer)
-    {
-        $total_length = 4 + strlen($buffer);
-        return pack('N', $total_length) . $buffer;
-    }
-
-    /**
-     * @param $buffer
-     * @return string
-     */
-    public function dispatch_decode($buffer)
-    {
-        $data = substr($buffer, 4);
-        return $data;
-    }
-
-    /**
      * @return null
      */
     protected function getRamdomFd()
@@ -154,7 +132,7 @@ class Dispatch
         }
         $fd = $this->getRamdomFd();
         if($fd!=null) {
-            get_instance()->server->send($fd, $this->dispatch_encode($send_data));
+            get_instance()->server->send($fd, $this->pack->pack($send_data));
             return true;
         }
         return false;

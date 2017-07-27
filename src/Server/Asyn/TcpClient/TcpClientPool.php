@@ -10,6 +10,7 @@ namespace Server\Asyn\TcpClient;
 
 
 use Server\Asyn\AsynPool;
+use Server\CoreBase\PortManager;
 use Server\CoreBase\SwooleException;
 use Server\Memory\Pool;
 use Server\Pack\IPack;
@@ -38,26 +39,8 @@ class TcpClientPool extends AsynPool
     {
         parent::__construct($config);
         $this->connect = $connect;
-        $this->set = $this->config->get("tcpClient.$config_name.set", [
-            'open_length_check' => 1,
-            'package_length_type' => 'N',
-            'package_length_offset' => 0,       //第N个字节是包长度的值
-            'package_body_offset' => 0,       //第几个字节开始计算长度
-            'package_max_length' => 2000000,  //协议最大长度
-        ]);
-        $this->package_length_type_length = strlen(pack($this->set['package_length_type'], 1));
-        //pack class
-        $pack_class_name = "app\\Pack\\" . $this->config['tcpClient'][$config_name]['pack_tool'];
-        if (class_exists($pack_class_name)) {
-            $this->pack = new $pack_class_name;
-        } else {
-            $pack_class_name = "Server\\Pack\\" . $this->config['tcpClient'][$config_name]['pack_tool'];
-            if (class_exists($pack_class_name)) {
-                $this->pack = new $pack_class_name;
-            } else {
-                throw new SwooleException("class {$this->config['server'][$config_name]['pack_tool']} is not exist.");
-            }
-        }
+        $this->pack = PortManager::createPack($this->config->get("tcpClient.$config_name.pack_tool"));
+        $this->set = $this->pack->getProbufSet();
         list($this->host, $this->port) = explode(':', $connect);
         $this->client_max_count = $this->config->get('tcpClient.asyn_max_count', 10);
     }
@@ -89,28 +72,10 @@ class TcpClientPool extends AsynPool
     public function send($send, $callback, $oneway = false)
     {
         $data['token'] = $this->addTokenCallback($callback);
-        $data['send'] = $this->encode($this->pack->pack($send));
+        $data['send'] = $this->pack->pack($send);
         $data['oneway'] = $oneway;
         $this->execute($data);
         return $data['token'];
-    }
-
-    /**
-     * 数据包编码
-     * @param $buffer
-     * @return string
-     * @throws SwooleException
-     */
-    public function encode($buffer)
-    {
-        if ($this->set['open_length_check']??0 == 1) {
-            $total_length = $this->package_length_type_length + strlen($buffer) - $this->set['package_body_offset'];
-            return pack($this->set['package_length_type'], $total_length) . $buffer;
-        } else if ($this->set['open_eof_check']??0 == 1) {
-            return $buffer . $this->set['package_eof'];
-        } else {
-            throw new SwooleException("tcpClient won't support set");
-        }
     }
 
     /**
@@ -153,7 +118,7 @@ class TcpClientPool extends AsynPool
             });
             $client->on("receive", function ($cli, $recdata) {
                 if (isset($cli->token)) {
-                    $packdata = $this->pack->unPack($this->decode($recdata));
+                    $packdata = $this->pack->unPack($recdata);
                     $data['token'] = $cli->token;
                     $data['result'] = $packdata;
                     $this->distribute($data);
@@ -168,21 +133,6 @@ class TcpClientPool extends AsynPool
 
             });
             $client->connect($this->host, $this->port);
-        }
-    }
-
-    /**
-     * @param $buffer
-     * @return string
-     */
-    public function decode($buffer)
-    {
-        if ($this->set['open_length_check']??0 == 1) {
-            $data = substr($buffer, $this->package_length_type_length);
-            return $data;
-        } else if ($this->set['open_eof_check']??0 == 1) {
-            $data = $buffer;
-            return $data;
         }
     }
 

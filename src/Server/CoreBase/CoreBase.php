@@ -13,7 +13,6 @@ use Monolog\Logger;
 use Noodlehaus\Config;
 use Server\Asyn\Mysql\MysqlAsynPool;
 use Server\Asyn\Redis\RedisRoute;
-use Server\Pack\IPack;
 
 class CoreBase extends Child
 {
@@ -39,10 +38,6 @@ class CoreBase extends Child
      * @var Config
      */
     public $config;
-    /**
-     * @var IPack
-     */
-    public $pack;
     /**
      * @var RedisRoute
      */
@@ -70,7 +65,6 @@ class CoreBase extends Child
             $this->logger = get_instance()->log;
             $this->server = get_instance()->server;
             $this->config = get_instance()->config;
-            $this->pack = get_instance()->pack;
             $this->redis_pool = RedisRoute::getInstance();
             $this->mysql_pool = get_instance()->mysql_pool;
             $this->isEfficiencyMonitorEnable = $this->config->get("log.{$this->config['log']['active']}.efficiency_monitor_enable", false);

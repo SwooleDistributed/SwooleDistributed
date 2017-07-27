@@ -58,27 +58,32 @@ class TaskProxy extends CoreBase
 
     /**
      * 开始异步任务
+     * @param int $dst_worker_id
      * @param null $callback
      */
-    public function startTask($callback = null)
+    public function startTask($dst_worker_id = -1, $callback = null)
     {
-        get_instance()->server->task($this->task_proxy_data, -1, $callback);
+        get_instance()->server->task($this->task_proxy_data, $dst_worker_id, $callback);
     }
 
     /**
      * 异步的协程模式
+     * @param int $dst_worker_id
      * @return TaskCoroutine
      */
-    public function coroutineSend()
+    public function coroutineSend($dst_worker_id = -1)
     {
-        return Pool::getInstance()->get(TaskCoroutine::class)->init($this->task_proxy_data, -1);
+        return Pool::getInstance()->get(TaskCoroutine::class)->init($this->task_proxy_data, $dst_worker_id);
     }
 
     /**
      * 开始同步任务
+     * @param float $timeOut
+     * @param int $dst_worker_id
+     * @return
      */
-    public function startTaskWait($timeOut = 0.5)
+    public function startTaskWait($timeOut = 0.5, $dst_worker_id = -1)
     {
-        return get_instance()->server->taskwait($this->task_proxy_data, $timeOut, -1);
+        return get_instance()->server->taskwait($this->task_proxy_data, $timeOut, $dst_worker_id);
     }
 }

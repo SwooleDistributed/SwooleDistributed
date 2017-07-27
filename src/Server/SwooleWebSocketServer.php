@@ -15,17 +15,6 @@ use Server\Coroutine\Coroutine;
 
 abstract class SwooleWebSocketServer extends SwooleHttpServer
 {
-    /**
-     * opcode
-     * @var int
-     */
-    public $opcode;
-    /**
-     * websocket使能
-     * @var bool
-     */
-    public $websocket_enable;
-
     public function __construct()
     {
         parent::__construct();
@@ -33,26 +22,17 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
     }
 
     /**
-     * 设置配置
-     */
-    public function setConfig()
-    {
-        parent::setConfig();
-        $this->websocket_enable = $this->config->get('websocket.enable', false);
-        $this->opcode = $this->config->get('websocket.opcode', WEBSOCKET_OPCODE_TEXT);
-    }
-
-    /**
      * 启动
      */
     public function start()
     {
-        if (!$this->websocket_enable) {
+        if (!$this->portManager->websocket_enable) {
             parent::start();
             return;
         }
+        $first_config = $this->portManager->getFirstTypePort();
         //开启一个websocket服务器
-        $this->server = new \swoole_websocket_server($this->http_socket_name, $this->http_port);
+        $this->server = new \swoole_websocket_server($first_config['socket_name'], $first_config['socket_port']);
         $this->server->on('Start', [$this, 'onSwooleStart']);
         $this->server->on('WorkerStart', [$this, 'onSwooleWorkerStart']);
         $this->server->on('WorkerStop', [$this, 'onSwooleWorkerStop']);
@@ -66,38 +46,54 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $this->server->on('open', [$this, 'onSwooleWSOpen']);
         $this->server->on('message', [$this, 'onSwooleWSMessage']);
         $this->server->on('close', [$this, 'onSwooleWSClose']);
-        $set = $this->setServerSet();
-        $set['daemonize'] = Start::getDaemonize();
-        $this->server->set($set);
-        if ($this->tcp_enable) {
-            $this->port = $this->server->listen($this->socket_name, $this->port, $this->socket_type);
-            $this->port->set($set);
-            $this->port->on('connect', [$this, 'onSwooleConnect']);
-            $this->port->on('receive', [$this, 'onSwooleReceive']);
-            $this->port->on('close', [$this, 'onSwooleClose']);
-            $this->port->on('Packet', [$this, 'onSwoolePacket']);
-        }
+        $this->setServerSet($first_config['probuf_set'] ?? null);
+        $this->portManager->buildPort($this, $first_config['socket_port']);
         $this->beforeSwooleStart();
         $this->server->start();
+    }
+
+    /**
+     * 判断这个fd是不是一个WebSocket连接，用于区分tcp和websocket
+     * 握手后才识别为websocket
+     * @param $fdinfo
+     * @return bool
+     * @throws \Exception
+     * @internal param $fd
+     */
+    public function isWebSocket($fdinfo)
+    {
+        if (empty($fdinfo)) {
+            throw new \Exception('fd not exist');
+        }
+        if (array_key_exists('websocket_status', $fdinfo) && $fdinfo['websocket_status'] == WEBSOCKET_STATUS_FRAME) {
+            return $fdinfo['server_port'];
+        }
+        return false;
     }
 
     /**
      * 判断是tcp还是websocket进行发送
      * @param $fd
      * @param $data
+     * @param bool $ifPack
      */
-    public function send($fd, $data)
+    public function send($fd, $data, $ifPack = false)
     {
+        if (!$this->portManager->websocket_enable) {
+            parent::send($fd, $data, $ifPack);
+            return;
+        }
         if (!$this->server->exist($fd)) {
             return;
         }
-        if (!$this->websocket_enable) {
-            parent::send($fd, $data);
-            return;
+        $fdinfo = $this->server->connection_info($fd);
+        $server_port = $fdinfo['server_port'];
+        if ($ifPack) {
+            $pack = $this->portManager->getPack($server_port);
+            $data = $pack->pack($data);
         }
-        if ($this->isWebSocket($fd)) {
-            $data = $this->decode($data);
-            $this->server->push($fd, $data, $this->opcode);
+        if ($this->isWebSocket($fdinfo)) {
+            $this->server->push($fd, $data, $this->portManager->getOpCode($server_port));
         } else {
             $this->server->send($fd, $data);
         }
@@ -131,26 +127,30 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      */
     public function onSwooleWSAllMessage($serv, $fd, $data)
     {
+        $fdinfo = $serv->connection_info($fd);
+        $server_port = $fdinfo['server_port'];
+        $route = $this->portManager->getRoute($server_port);
+        $pack = $this->portManager->getPack($server_port);
         //反序列化，出现异常断开连接
         try {
-            $client_data = $this->pack->unPack($data);
+            $client_data = $pack->unPack($data);
         } catch (\Exception $e) {
             $serv->close($fd);
             return;
         }
         //client_data进行处理
-        $client_data = $this->route->handleClientData($client_data);
-        $controller_name = $this->route->getControllerName();
+        $client_data = $route->handleClientData($client_data);
+        $controller_name = $route->getControllerName();
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
         if ($controller_instance != null) {
             $uid = $serv->connection_info($fd)['uid']??0;
-            $method_name = $this->config->get('websocket.method_prefix', '') . $this->route->getMethodName();
+            $method_name = $this->config->get('websocket.method_prefix', '') . $route->getMethodName();
             if (!method_exists($controller_instance, $method_name)) {
                 $method_name = 'defaultMethod';
             }
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
-                Coroutine::startCoroutine([$controller_instance, $method_name], $this->route->getParams());
+                Coroutine::startCoroutine([$controller_instance, $method_name], $route->getParams());
             } catch (\Exception $e) {
                 call_user_func([$controller_instance, 'onExceptionHandle'], $e);
             }

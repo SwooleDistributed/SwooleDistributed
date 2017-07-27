@@ -204,11 +204,10 @@ class Controller extends CoreBase
             $rpc_data['rpc_result'] = $data;
             $data = $rpc_data;
         }
-        $data = get_instance()->encode($this->pack->pack($data));
         if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'send', 'fd' => $this->fd, 'data' => $data];
         } else {
-            get_instance()->send($this->fd, $data);
+            get_instance()->send($this->fd, $data, true);
         }
         if ($destroy) {
             $this->destroy();
