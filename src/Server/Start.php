@@ -321,7 +321,7 @@ class Start
                         self::$_maxShowLength), str_pad($value['socket_name'],
                         self::$_maxShowLength), str_pad($value['socket_port'],
                         self::$_maxShowLength - 2);
-                    $str = $value['pack_tool'] ?? $value['socket_type'];
+                    $str = $value['pack_tool'] ?? PortManager::getTypeName($value['socket_type']);
                     $str = strtoupper($str);
                     echo " \033[32;40m [$str] \033[0m\n";
                 }
