@@ -17,4 +17,6 @@ interface IPack
     function unPack($data);
 
     function getProbufSet();
+
+    function errorHandle($fd);
 }

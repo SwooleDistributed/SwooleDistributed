@@ -66,7 +66,7 @@ class ConsulModel extends Model
     }
 
     /**
-     * 定时器调用
+     * 调用
      * @param int $index
      * @return \Generator|void
      */
@@ -77,7 +77,11 @@ class ConsulModel extends Model
         }
         $result = yield $this->consul->httpClient->setMethod('GET')
             ->setQuery(['index'=>$index])
-            ->coroutineExecute("/v1/kv/servers/$this->leader_name/leader")->setTimeout(10*60*1000);
+            ->coroutineExecute("/v1/kv/servers/$this->leader_name/leader")->setTimeout(11 * 60 * 1000)->noException(null);
+        if ($result == null) {
+            Coroutine::startCoroutine([$this, 'checkLeader'], [$index]);
+            return;
+        }
         $body = json_decode($result['body'],true)[0];
         $index = $result['headers']['x-consul-index'];
         if(!isset($body['Session']))//代表没有Leader

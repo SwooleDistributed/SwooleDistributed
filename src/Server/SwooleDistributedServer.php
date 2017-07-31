@@ -430,6 +430,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             if (get_instance()->config->get('consul.enable', false)) {
                 Coroutine::startCoroutine(function () {
                     yield ConsulServices::getInstance()->serviceHealthCheck();
+                    //选举leader
+                    $ConsulModel = $this->loader->model('ConsulModel', $this);
+                    yield $ConsulModel->leader();
                 });
             }
         }
@@ -462,11 +465,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if ($this->config->get('autoClearGroup', false)) {
             $this->delAllGroups();
             print_r("[初始化] 清除redis上所有群信息。\n");
-        }
-        if ($this->config->get('consul.enable', false)) {
-            //选举leader
-            $ConsulModel = $this->loader->model('ConsulModel', $this);
-            yield $ConsulModel->leader();
         }
     }
 

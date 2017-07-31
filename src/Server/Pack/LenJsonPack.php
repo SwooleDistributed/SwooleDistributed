@@ -70,4 +70,9 @@ class LenJsonPack implements IPack
             'package_max_length' => 2000000,  //协议最大长度)
         ];
     }
+
+    public function errorHandle($fd)
+    {
+        get_instance()->close($fd);
+    }
 }

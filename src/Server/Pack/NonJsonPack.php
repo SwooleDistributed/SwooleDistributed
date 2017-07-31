@@ -48,4 +48,9 @@ class NonJsonPack implements IPack
     {
         return null;
     }
+
+    public function errorHandle($fd)
+    {
+        //get_instance()->close($fd);
+    }
 }

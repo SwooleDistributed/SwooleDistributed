@@ -467,4 +467,14 @@ class Controller extends CoreBase
         $location = 'http://' . $this->request->header['host'] . "/" . $controllerName . "/" . $methodName;
         $this->redirect($location, $code);
     }
+
+    /**
+     * 获取fd的信息
+     * @return mixed
+     */
+    protected function getFdInfo()
+    {
+        $fdinfo = $this->server->connection_info($this->fd);
+        return $fdinfo;
+    }
 }

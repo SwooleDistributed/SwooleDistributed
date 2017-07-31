@@ -8,7 +8,7 @@
 
 
 //是否启动集群模式
-$config['dispatch']['enable'] = true;
+$config['dispatch']['enable'] = false;
 //dispatch间的心跳时间
 $config['dispatch']['heart_time'] = 60;
 $config['dispatch']['dispatch_udp_port'] = 9991;

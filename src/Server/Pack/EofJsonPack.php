@@ -65,4 +65,9 @@ class EofJsonPack implements IPack
             'package_max_length' => 2000000
         ];
     }
+
+    public function errorHandle($fd)
+    {
+        get_instance()->close($fd);
+    }
 }
