@@ -11,6 +11,7 @@ namespace Server;
 
 
 use Server\CoreBase\ControllerFactory;
+use Server\CoreBase\HttpInput;
 use Server\Coroutine\Coroutine;
 
 abstract class SwooleWebSocketServer extends SwooleHttpServer
@@ -46,6 +47,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $this->server->on('open', [$this, 'onSwooleWSOpen']);
         $this->server->on('message', [$this, 'onSwooleWSMessage']);
         $this->server->on('close', [$this, 'onSwooleWSClose']);
+        $this->server->on('handshake', [$this, 'onSwooleWSHandShake']);
         $this->setServerSet($first_config['probuf_set'] ?? null);
         $this->portManager->buildPort($this, $first_config['socket_port']);
         $this->beforeSwooleStart();
@@ -124,6 +126,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      * @param $serv
      * @param $fd
      * @param $data
+     * @return CoreBase\Controller
      */
     public function onSwooleWSAllMessage($serv, $fd, $data)
     {
@@ -135,11 +138,16 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         try {
             $client_data = $pack->unPack($data);
         } catch (\Exception $e) {
-            $serv->close($fd);
-            return;
+            $pack->errorHandle($fd);
+            return null;
         }
         //client_data进行处理
-        $client_data = $route->handleClientData($client_data);
+        try {
+            $client_data = $route->handleClientData($client_data);
+        } catch (\Exception $e) {
+            $route->errorHandle($fd);
+            return null;
+        }
         $controller_name = $route->getControllerName();
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
         if ($controller_instance != null) {
@@ -155,6 +163,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
                 call_user_func([$controller_instance, 'onExceptionHandle'], $e);
             }
         }
+        return $controller_instance;
     }
 
     /**
@@ -165,5 +174,70 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
     public function onSwooleWSClose($serv, $fd)
     {
         $this->onSwooleClose($serv, $fd);
+    }
+
+    /**
+     * 可以在这验证WebSocket连接,return true代表可以握手，false代表拒绝
+     * @param HttpInput $httpInput
+     * @return bool
+     */
+    abstract public function onWebSocketHandCheck(HttpInput $httpInput);
+
+    /**
+     * @var HttpInput
+     */
+    protected $webSocketHttpInput;
+
+    /**
+     * ws握手
+     * @param $request
+     * @param $response
+     * @return bool
+     */
+    public function onSwooleWSHandShake(\swoole_http_request $request, \swoole_http_response $response)
+    {
+        if ($this->webSocketHttpInput == null) {
+            $this->webSocketHttpInput = new HttpInput();
+        }
+        $this->webSocketHttpInput->set($request);
+        $result = $this->onWebSocketHandCheck($this->webSocketHttpInput);
+        if (!$result) {
+            $response->end();
+            return false;
+        }
+        // websocket握手连接算法验证
+        $secWebSocketKey = $request->header['sec-websocket-key'];
+        $patten = '#^[+/0-9A-Za-z]{21}[AQgw]==$#';
+        if (0 === preg_match($patten, $secWebSocketKey) || 16 !== strlen(base64_decode($secWebSocketKey))) {
+            $response->end();
+            return false;
+        }
+        $key = base64_encode(sha1(
+            $request->header['sec-websocket-key'] . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11',
+            true
+        ));
+
+        $headers = [
+            'Upgrade' => 'websocket',
+            'Connection' => 'Upgrade',
+            'Sec-WebSocket-Accept' => $key,
+            'Sec-WebSocket-Version' => '13',
+        ];
+
+        if (isset($request->header['sec-websocket-protocol'])) {
+            $headers['Sec-WebSocket-Protocol'] = $request->header['sec-websocket-protocol'];
+        }
+
+        foreach ($headers as $key => $val) {
+            $response->header($key, $val);
+        }
+
+        $response->status(101);
+        $response->end();
+
+        $this->server->defer(function () use ($request) {
+            $this->onSwooleWSOpen($this->server, $request);
+        });
+        return true;
     }
 }

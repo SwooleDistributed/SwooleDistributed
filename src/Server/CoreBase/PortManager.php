@@ -93,6 +93,7 @@ class PortManager
                     $port->on('open', [$swoole_server, 'onSwooleWSOpen']);
                     $port->on('message', [$swoole_server, 'onSwooleWSMessage']);
                     $port->on('close', [$swoole_server, 'onSwooleWSClose']);
+                    $port->on('handshake', [$swoole_server, 'onSwooleWSHandShake']);
                 }
             } else {
                 $port = $swoole_server->server->listen($value['socket_name'], $value['socket_port'], $value['socket_type']);

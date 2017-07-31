@@ -1,7 +1,7 @@
 <?php
-
 namespace app;
 
+use Server\CoreBase\HttpInput;
 use Server\SwooleDistributedServer;
 
 /**
@@ -39,5 +39,15 @@ class AppServer extends SwooleDistributedServer
     public function initAsynPools($workerId)
     {
         parent::initAsynPools($workerId);
+    }
+
+    /**
+     * 可以在这验证WebSocket连接,return true代表可以握手，false代表拒绝
+     * @param HttpInput $httpInput
+     * @return bool
+     */
+    public function onWebSocketHandCheck(HttpInput $httpInput)
+    {
+        return true;
     }
 }

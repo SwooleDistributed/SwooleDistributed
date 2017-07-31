@@ -234,12 +234,16 @@ abstract class SwooleServer extends Child
         try {
             $client_data = $pack->unPack($data);
         } catch (\Exception $e) {
-            $serv->close($fd);
+            $pack->errorHandle($fd);
             return null;
         }
-
         //client_data进行处理
-        $client_data = $route->handleClientData($client_data);
+        try {
+            $client_data = $route->handleClientData($client_data);
+        } catch (\Exception $e) {
+            $route->errorHandle($fd);
+            return null;
+        }
         $controller_name = $route->getControllerName();
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
         if ($controller_instance != null) {

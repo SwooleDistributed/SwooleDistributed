@@ -19,4 +19,6 @@ interface IRoute
     function getParams();
 
     function getPath();
+
+    function errorHandle($fd);
 }

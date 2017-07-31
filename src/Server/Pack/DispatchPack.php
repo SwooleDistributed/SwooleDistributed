@@ -55,7 +55,7 @@ class DispatchPack implements IPack
     {
         $value = \swoole_serialize::unpack($this->decode($data));
         if (empty($value)) {
-            throw new SwooleException('json unPack 失败');
+            throw new SwooleException('swoole_serialize unPack 失败');
         }
         return $value;
     }
@@ -69,5 +69,10 @@ class DispatchPack implements IPack
             'package_body_offset' => $this->package_body_offset,       //第几个字节开始计算长度
             'package_max_length' => 2000000,  //协议最大长度)
         ];
+    }
+
+    public function errorHandle($fd)
+    {
+        get_instance()->close($fd);
     }
 }
