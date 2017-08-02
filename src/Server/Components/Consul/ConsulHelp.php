@@ -8,14 +8,17 @@
 
 namespace Server\Components\Consul;
 
+use Server\CoreBase\PortManager;
+
 class ConsulHelp
 {
     protected static $is_leader = null;
     protected static $session_id;
+
     public static function getMessgae($message)
     {
-        list($name,$data) = explode('@',$message);
-        ConsulServices::getInstance()->updateServies($name,$data);
+        list($name, $data) = explode('@', $message);
+        ConsulServices::getInstance()->updateServies($name, $data);
     }
 
     /**
@@ -34,39 +37,41 @@ class ConsulHelp
                 $newConfig['watches'][] = ['type' => 'service', 'passingonly' => true, 'service' => $watch, 'handler' => "php $path $watch"];
             }
         }
-        $enableTcp = get_instance()->config->get('tcp.enable',false);
-        $tcpPort = get_instance()->config->get('tcp.port',0);
-        $enableHttp = get_instance()->config->get('http_server.enable',false);
-        $httpPort = get_instance()->config->get('http_server.port',0);
         if (array_key_exists('services', $config)) {
             foreach ($config['services'] as $service) {
-                if($enableHttp) {
-                    $newConfig['services'][] = [
-                        'id' => "Http_$service",
-                        'name' => $service,
-                        'address' => $config['bind_addr'],
-                        'port' => $httpPort,
-                        'tags' => ['http'],
-                        'check' => [
-                            'name' => 'status',
-                            'http' => "http://localhost:$httpPort/$service/_consul_health",
-                            'interval' => "10s",
-                            'timeout' => "1s"
-                        ]];
-                }
-                if($enableTcp){
-                    $newConfig['services'][] = [
-                        'id' => "Tcp_$service",
-                        'name' => $service,
-                        'address' => $config['bind_addr'],
-                        'port' => $tcpPort,
-                        'tags' => ['tcp'],
-                        'check' => [
-                            'name' => 'status',
-                            'tcp' => "localhost:$tcpPort",
-                            'interval' => "10s",
-                            'timeout' => "1s"
-                        ]];
+                list($service_name, $service_port) = explode(":", $service);
+                $service_port = (int) $service_port;
+                $port_type = get_instance()->portManager->getPortType($service_port);
+                switch ($port_type) {
+                    case PortManager::SOCK_TCP:
+                    case PortManager::SOCK_TCP6:
+                        $newConfig['services'][] = [
+                            'id' => "Tcp_$service_name",
+                            'name' => $service_name,
+                            'address' => $config['bind_addr'],
+                            'port' => $service_port,
+                            'tags' => ['tcp'],
+                            'check' => [
+                                'name' => 'status',
+                                'tcp' => "localhost:$service_port",
+                                'interval' => "10s",
+                                'timeout' => "1s"
+                            ]];
+                        break;
+                    case PortManager::SOCK_HTTP:
+                        $newConfig['services'][] = [
+                            'id' => "Http_$service_name",
+                            'name' => $service_name,
+                            'address' => $config['bind_addr'],
+                            'port' => $service_port,
+                            'tags' => ['http'],
+                            'check' => [
+                                'name' => 'status',
+                                'http' => "http://localhost:$service_port/$service_name/_consul_health",
+                                'interval' => "10s",
+                                'timeout' => "1s"
+                            ]];
+                        break;
                 }
             }
         }
@@ -81,7 +86,7 @@ class ConsulHelp
         if (get_instance()->config->get('consul.enable', false)) {
             self::jsonFormatHandler();
             $consul_process = new \swoole_process(function ($process) {
-                if(!isDarwin()) {
+                if (!isDarwin()) {
                     $process->name('SWD-CONSUL');
                 }
                 $process->exec(BIN_DIR . "/exec/consul", ['agent', '-ui', '-config-dir', BIN_DIR . '/exec/consul.d']);
@@ -96,8 +101,8 @@ class ConsulHelp
      */
     public static function leaderChange($is_leader)
     {
-        if(get_instance()->server->worker_id==0) {
-            if($is_leader!==self::$is_leader) {
+        if (get_instance()->server->worker_id == 0) {
+            if ($is_leader !== self::$is_leader) {
                 if ($is_leader) {
                     print_r("Leader变更，被选举为Leader\n");
                 } else {
@@ -122,7 +127,7 @@ class ConsulHelp
      */
     public static function isLeader()
     {
-        if(self::$is_leader==null){
+        if (self::$is_leader == null) {
             return false;
         }
         return self::$is_leader;
@@ -132,4 +137,5 @@ class ConsulHelp
     {
         return self::$session_id;
     }
+
 }

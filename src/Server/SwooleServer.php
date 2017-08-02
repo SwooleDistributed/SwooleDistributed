@@ -22,7 +22,7 @@ use Server\Coroutine\Coroutine;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "2.2.0";
+    const version = "2.2.1";
 
     /**
      * server name
@@ -75,7 +75,7 @@ abstract class SwooleServer extends Child
     /**
      * @var PortManager
      */
-    protected $portManager;
+    public $portManager;
 
     /**
      * 是否需要协程支持(默认开启)
