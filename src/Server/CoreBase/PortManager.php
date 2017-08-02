@@ -217,4 +217,14 @@ class PortManager
                 return 'TCP';
         }
     }
+
+
+    public function getPortType($port)
+    {
+        if(!array_key_exists($port,$this->portConfig)){
+            throw new SwooleException('port 不存在');
+        }
+        $config = $this->portConfig[$port];
+        return $config['socket_type'];
+    }
 }

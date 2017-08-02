@@ -19,6 +19,6 @@ $config['consul']['start_join'] = ["192.168.8.85"];
 $config['consul']['bind_addr'] = "192.168.8.57";
 //监控服务
 $config['consul']['watches'] = ['MathService'];
-//发布服务
-//$config['consul']['services']=['MathService'];
+//发布服务写上端口
+$config['consul']['services']=['MathService:8081'];
 return $config;
