@@ -9,6 +9,7 @@ namespace Server\Controllers;
 
 use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\Components\Consul\ConsulServices;
+use Server\Components\Event\EventDispatcher;
 use Server\CoreBase\Controller;
 use Server\CoreBase\SelectCoroutine;
 use Server\Memory\Cache;
@@ -335,5 +336,21 @@ class TestController extends Controller
     public function http_echo()
     {
         $this->http_output->end(123);
+    }
+
+    /**
+     * 事件处理
+     */
+    public function http_getEvent()
+    {
+        $data = yield EventDispatcher::getInstance()->addOnceCoroutine('unlock')->setTimeout(5000);
+        //这里会等待事件到达，或者超时
+        $this->http_output->end($data);
+    }
+
+    public function http_sendEvent()
+    {
+        EventDispatcher::getInstance()->dispatch('unlock', 'hello block');
+        $this->http_output->end('ok');
     }
 }

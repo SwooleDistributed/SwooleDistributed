@@ -221,7 +221,7 @@ class PortManager
 
     public function getPortType($port)
     {
-        if(!array_key_exists($port,$this->portConfig)){
+        if (!array_key_exists($port, $this->portConfig)) {
             throw new SwooleException('port 不存在');
         }
         $config = $this->portConfig[$port];

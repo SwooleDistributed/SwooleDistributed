@@ -40,7 +40,7 @@ class ConsulHelp
         if (array_key_exists('services', $config)) {
             foreach ($config['services'] as $service) {
                 list($service_name, $service_port) = explode(":", $service);
-                $service_port = (int) $service_port;
+                $service_port = (int)$service_port;
                 $port_type = get_instance()->portManager->getPortType($service_port);
                 switch ($port_type) {
                     case PortManager::SOCK_TCP:

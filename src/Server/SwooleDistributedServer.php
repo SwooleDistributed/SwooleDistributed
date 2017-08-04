@@ -207,6 +207,23 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
+     * 发送给所有的异步进程，$callStaticFuc为静态方法,会在每个进程都执行
+     * @param $type
+     * @param $uns_data
+     * @param string $callStaticFuc
+     */
+    public function sendToAllAsynWorks($type, $uns_data, string $callStaticFuc)
+    {
+        $send_data = $this->packSerevrMessageBody($type, $uns_data, $callStaticFuc);
+        for ($i = 0; $i < $this->worker_num; $i++) {
+            if ($this->server->worker_id == $i) continue;
+            $this->server->sendMessage($send_data, $i);
+        }
+        //自己的进程是收不到消息的所以这里执行下
+        call_user_func($callStaticFuc, $uns_data);
+    }
+
+    /**
      * 向uid发送消息
      * @param $uid
      * @param $data

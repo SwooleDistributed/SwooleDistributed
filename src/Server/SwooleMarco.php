@@ -66,6 +66,11 @@ class SwooleMarco
      * consul_session
      */
     const CONSUL_SERVICES_SESSION = 8700;
+
+    /**
+     * dispatcher 触发器
+     */
+    const DISPATCHER_NAME = 10000;
     /**
      * redis uid和全局usid映射表的hashkey
      * @var string
