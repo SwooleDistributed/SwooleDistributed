@@ -121,7 +121,6 @@ class EventDispatcher
         } else {
             return;
         }
-
         foreach ($listeners as $listener) {
             call_user_func($listener, $event);
         }

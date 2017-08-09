@@ -78,12 +78,14 @@ abstract class TestCase extends CoreBase
 
     /**
      * 模拟TCP请求Controller
+     * @param $port
      * @param $data
      * @return TestTcpCoroutine
+     * @internal param $port
      */
-    public function coroutineRequestTcpController($data)
+    public function coroutineRequestTcpController($port, $data)
     {
-        return new TestTcpCoroutine($data);
+        return new TestTcpCoroutine($port, $data);
     }
 
     public function assertEquals($expected, $actual, string $message = '')
