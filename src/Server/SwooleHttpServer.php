@@ -89,8 +89,12 @@ abstract class SwooleHttpServer extends SwooleServer
      */
     public function onSwooleRequest($request, $response)
     {
-        $fdinfo = $this->server->connection_info($request->fd);
-        $server_port = $fdinfo['server_port'];
+        if (Start::$testUnity) {
+            $server_port = $request->server_port;
+        } else {
+            $fdinfo = $this->server->connection_info($request->fd);
+            $server_port = $fdinfo['server_port'];
+        }
         $route = $this->portManager->getRoute($server_port);
         $error_404 = false;
         $controller_instance = null;

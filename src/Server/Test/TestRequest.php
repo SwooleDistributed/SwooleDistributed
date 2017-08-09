@@ -9,6 +9,9 @@
 namespace Server\Test;
 
 
+use Exception;
+use Server\CoreBase\PortManager;
+
 class TestRequest
 {
     public $header = [];
@@ -18,14 +21,27 @@ class TestRequest
     public $cookie = [];
     public $files = [];
     public $_rawContent = '';
+    public $server_port;
 
     public function __construct($path_info, $header = [], $get = [], $post = [], $cookie = [])
     {
+        $this->server_port = $this->getHttpPort(get_instance()->config);
         $this->setControllerName($path_info);
         $this->header = $header;
         $this->get = $get;
         $this->post = $post;
         $this->cookie = $cookie;
+    }
+
+    public function getHttpPort($config)
+    {
+        $ports = $config->get('ports');
+        foreach ($ports as $value) {
+            if ($value['socket_type'] == PortManager::SOCK_HTTP) {
+                return $value['socket_port'];
+            }
+        }
+        throw new Exception('没有找到http端口');
     }
 
     /**

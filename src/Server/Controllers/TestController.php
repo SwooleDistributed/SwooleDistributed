@@ -343,7 +343,7 @@ class TestController extends Controller
      */
     public function http_getEvent()
     {
-        $data = yield EventDispatcher::getInstance()->addOnceCoroutine('unlock')->setTimeout(5000);
+        $data = yield EventDispatcher::getInstance()->addOnceCoroutine('unlock')->setTimeout(25000);
         //这里会等待事件到达，或者超时
         $this->http_output->end($data);
     }

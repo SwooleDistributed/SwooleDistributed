@@ -22,7 +22,7 @@ use Server\Coroutine\Coroutine;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "2.2.2";
+    const version = "2.2.3";
 
     /**
      * server name
@@ -221,12 +221,15 @@ abstract class SwooleServer extends Child
      * @param $fd
      * @param $from_id
      * @param $data
+     * @param null $server_port
      * @return CoreBase\Controller|void
      */
-    public function onSwooleReceive($serv, $fd, $from_id, $data)
+    public function onSwooleReceive($serv, $fd, $from_id, $data, $server_port = null)
     {
-        $fdinfo = $serv->connection_info($fd);
-        $server_port = $fdinfo['server_port'];
+        if (!Start::$testUnity) {
+            $fdinfo = $serv->connection_info($fd);
+            $server_port = $fdinfo['server_port'];
+        }
         $route = $this->portManager->getRoute($server_port);
         $pack = $this->portManager->getPack($server_port);
 

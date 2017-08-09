@@ -19,15 +19,17 @@ class TestTcpCoroutine extends CoroutineBase
      */
     private $controller;
 
-    public function __construct($data, $uid = 0)
+    public function __construct($port, $data, $uid = 0)
     {
         parent::__construct();
         $this->request = '#TcpRequest:' . json_encode($data);
-        $data = get_instance()->pack->pack($data);
-        $data = get_instance()->encode($data);
+        $pack = get_instance()->portManager->getPack($port);
         try {
-            $this->controller = get_instance()->onSwooleReceive(get_instance()->server, $uid, 0, $data);
+            $this->controller = get_instance()->onSwooleReceive(get_instance()->server, $uid, 0, $pack->pack($data), $port);
         } catch (\Exception $e) {
+            $this->controller = CoroutineNull::getInstance();
+        }
+        if ($this->controller == null) {
             $this->controller = CoroutineNull::getInstance();
         }
     }
