@@ -8,92 +8,58 @@
 
 namespace Server\Components\Consul;
 
-use Server\CoreBase\PortManager;
+use Server\Components\Event\Event;
+use Server\Components\Event\EventDispatcher;
+use Server\Components\Process\ProcessManager;
+use Server\Components\SDHelp\SDHelpProcess;
+use Server\Coroutine\Coroutine;
 
 class ConsulHelp
 {
     protected static $is_leader = null;
     protected static $session_id;
+    protected static $table;
+    const DISPATCH_KEY = 'consul_service';
+    const LEADER_KEY = 'consul_leader';
 
+    /**
+     * reload时获取一下
+     */
+    public static function start()
+    {
+        //提取SDHelpProcess中的services
+        Coroutine::startCoroutine(function () {
+            $result = yield ProcessManager::getInstance()
+                ->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
+            ConsulHelp::getMessgae($result);
+        });
+        //提取SDHelpProcess中的leader
+        Coroutine::startCoroutine(function () {
+            $result = yield ProcessManager::getInstance()
+                ->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::LEADER_KEY);
+            ConsulHelp::leaderChange($result);
+        });
+        //监听服务改变
+        EventDispatcher::getInstance()->add(ConsulHelp::DISPATCH_KEY, function (Event $event) {
+            ConsulHelp::getMessgae($event->data);
+        });
+        //监听leader改变
+        EventDispatcher::getInstance()->add(ConsulHelp::LEADER_KEY, function (Event $event) {
+            ConsulHelp::leaderChange($event->data);
+        });
+    }
+
+    /**
+     * @param $message
+     */
     public static function getMessgae($message)
     {
-        list($name, $data) = explode('@', $message);
-        ConsulServices::getInstance()->updateServies($name, $data);
+        if (empty($message)) return;
+        foreach ($message as $key => $value) {
+            ConsulServices::getInstance()->updateServies($key, $value);
+        }
     }
 
-    /**
-     * 格式化consul模板，输出配置文件
-     */
-    public static function jsonFormatHandler()
-    {
-        $config = get_instance()->config->get('consul');
-        $newConfig['node_name'] = $config['node_name'];
-        $newConfig['start_join'] = $config['start_join'];
-        $newConfig['data_dir'] = $config['data_dir'];
-        $newConfig['bind_addr'] = $config['bind_addr'];
-        $path = BIN_DIR . "/start_service_handle.php";
-        if (array_key_exists('watches', $config)) {
-            foreach ($config['watches'] as $watch) {
-                $newConfig['watches'][] = ['type' => 'service', 'passingonly' => true, 'service' => $watch, 'handler' => "php $path $watch"];
-            }
-        }
-        if (array_key_exists('services', $config)) {
-            foreach ($config['services'] as $service) {
-                list($service_name, $service_port) = explode(":", $service);
-                $service_port = (int)$service_port;
-                $port_type = get_instance()->portManager->getPortType($service_port);
-                switch ($port_type) {
-                    case PortManager::SOCK_TCP:
-                    case PortManager::SOCK_TCP6:
-                        $newConfig['services'][] = [
-                            'id' => "Tcp_$service_name",
-                            'name' => $service_name,
-                            'address' => $config['bind_addr'],
-                            'port' => $service_port,
-                            'tags' => ['tcp'],
-                            'check' => [
-                                'name' => 'status',
-                                'tcp' => "localhost:$service_port",
-                                'interval' => "10s",
-                                'timeout' => "1s"
-                            ]];
-                        break;
-                    case PortManager::SOCK_HTTP:
-                        $newConfig['services'][] = [
-                            'id' => "Http_$service_name",
-                            'name' => $service_name,
-                            'address' => $config['bind_addr'],
-                            'port' => $service_port,
-                            'tags' => ['http'],
-                            'check' => [
-                                'name' => 'status',
-                                'http' => "http://localhost:$service_port/$service_name/_consul_health",
-                                'interval' => "10s",
-                                'timeout' => "1s"
-                            ]];
-                        break;
-                }
-            }
-        }
-        file_put_contents(BIN_DIR . "/exec/consul.d/consul_config.json", json_encode($newConfig));
-    }
-
-    /**
-     * 开启进程
-     */
-    public static function startProcess()
-    {
-        if (get_instance()->config->get('consul.enable', false)) {
-            self::jsonFormatHandler();
-            $consul_process = new \swoole_process(function ($process) {
-                if (!isDarwin()) {
-                    $process->name('SWD-CONSUL');
-                }
-                $process->exec(BIN_DIR . "/exec/consul", ['agent', '-ui', '-config-dir', BIN_DIR . '/exec/consul.d']);
-            }, false, false);
-            get_instance()->server->addProcess($consul_process);
-        }
-    }
 
     /**
      * leader变更
@@ -114,14 +80,6 @@ class ConsulHelp
     }
 
     /**
-     * @param $session_id
-     */
-    public static function setSession($session_id)
-    {
-        self::$session_id = $session_id;
-    }
-
-    /**
      * 是否是leader
      * @return bool
      */
@@ -133,9 +91,5 @@ class ConsulHelp
         return self::$is_leader;
     }
 
-    public static function getSessionID()
-    {
-        return self::$session_id;
-    }
 
 }

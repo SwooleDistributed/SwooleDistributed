@@ -71,6 +71,11 @@ class SwooleMarco
      * dispatcher 触发器
      */
     const DISPATCHER_NAME = 10000;
+
+    /**
+     * 进程间通讯
+     */
+    const PROCESS_RPC = 20000;
     /**
      * redis uid和全局usid映射表的hashkey
      * @var string

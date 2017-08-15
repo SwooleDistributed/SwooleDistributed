@@ -1,6 +1,8 @@
 <?php
 namespace app;
 
+use app\Process\MyProcess;
+use Server\Components\Process\ProcessManager;
 use Server\CoreBase\HttpInput;
 use Server\SwooleDistributedServer;
 
@@ -39,6 +41,15 @@ class AppServer extends SwooleDistributedServer
     public function initAsynPools($workerId)
     {
         parent::initAsynPools($workerId);
+    }
+
+    /**
+     * 用户进程
+     */
+    public function startProcess()
+    {
+        parent::startProcess();
+        ProcessManager::getInstance()->addProcess(MyProcess::class);
     }
 
     /**
