@@ -94,6 +94,7 @@ abstract class CoroutineBase implements ICoroutineBase
             if (!$this->noException) {
                 $this->isFaile = true;
                 $ex = new SwooleException("[CoroutineTask]: Time Out!, [Request]: $this->request");
+
                 $this->destroy();
                 throw $ex;
             } else {

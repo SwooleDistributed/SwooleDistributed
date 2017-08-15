@@ -9,7 +9,7 @@
 namespace Server\Components\Reload;
 
 
-class InotifyProcess
+class InotifyReload
 {
     const RELOAD_SIG = 'reload_sig';
     // 监控的目录，默认是src
@@ -18,10 +18,10 @@ class InotifyProcess
     public $managePid;
     public $server;
 
-    public function __construct($server)
+    public function __construct()
     {
         echo "启动了autoReload\n";
-        $this->server = $server;
+        $this->server = get_instance()->server;
         $this->monitor_dir = realpath(MYROOT);
         if (!extension_loaded('inotify')) {
             swoole_timer_after(1000, [$this, 'unUseInotify']);

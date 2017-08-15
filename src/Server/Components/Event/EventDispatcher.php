@@ -134,10 +134,24 @@ class EventDispatcher
      *
      * @param string $type
      * @param null $data
+     * @param bool $onlyMyWorker
      */
-    public function dispatch($type, $data = null)
+    public function dispatch($type, $data = null, $onlyMyWorker = false)
     {
-        get_instance()->sendToAllAsynWorks(SwooleMarco::DISPATCHER_NAME, [$type, $data], EventDispatcher::class . "::workerDispatchEventWith");
+        if (!$onlyMyWorker) {
+            get_instance()->sendToAllAsynWorks(SwooleMarco::DISPATCHER_NAME, [$type, $data], EventDispatcher::class . "::workerDispatchEventWith");
+        } else {//仅仅发布自己的进程
+            self::workerDispatchEventWith([$type, $data]);
+        }
+    }
+
+    /**
+     * @param $type
+     * @param null $data
+     */
+    public function randomDispatch($type, $data = null)
+    {
+        get_instance()->sendToRandomWorker(SwooleMarco::DISPATCHER_NAME, [$type, $data], EventDispatcher::class . "::workerDispatchEventWith");
     }
 
     /**

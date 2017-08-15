@@ -7,9 +7,11 @@
  */
 namespace Server\Controllers;
 
+use app\Process\MyProcess;
 use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\Components\Consul\ConsulServices;
 use Server\Components\Event\EventDispatcher;
+use Server\Components\Process\ProcessManager;
 use Server\CoreBase\Controller;
 use Server\CoreBase\SelectCoroutine;
 use Server\Memory\Cache;
@@ -40,6 +42,7 @@ class TestController extends Controller
         $cache->addMap('123');
         $this->http_output->end($cache->getAllMap());
     }
+
     public function http_tcp()
     {
         $this->sdrpc = get_instance()->getAsynPool('RPC');
@@ -195,6 +198,7 @@ class TestController extends Controller
         $result = yield $this->redis_pool->getCoroutine()->get('testroute');
         $this->http_output->end($result);
     }
+
     /**
      * http redis 测试
      */
@@ -203,6 +207,7 @@ class TestController extends Controller
         $result = yield $this->redis_pool->getCoroutine()->set('testroute',1);
         $this->http_output->end($result);
     }
+
     /**
      * http 同步redis 测试
      */
@@ -352,5 +357,14 @@ class TestController extends Controller
     {
         EventDispatcher::getInstance()->dispatch('unlock', 'hello block');
         $this->http_output->end('ok');
+    }
+
+    /**
+     * 测试进程
+     */
+    public function http_testProcess()
+    {
+        $result = yield ProcessManager::getInstance()->getRpcCall(MyProcess::class)->getData();
+        $this->http_output->end($result);
     }
 }

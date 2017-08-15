@@ -93,8 +93,8 @@ class HttpClientPool extends AsynPool
                     foreach ($data['addFiles'] as $addFile) {
                         $client->addFile(...$addFile);
                     }
-                    $client->execute($path, function ($client) use ($token, $path) {
-                        if ($client->statusCode == -1) {
+                    $client->execute($path, function ($client) use ($token, $path, $data) {
+                        if ($client->statusCode < 0) {
                             return;
                         }
                         //分发消息
@@ -151,8 +151,8 @@ class HttpClientPool extends AsynPool
                 $client->set(['timeout' => -1]);
                 $this->host = $host;
                 $this->pushToPool($client);
-                $client->on('close', function ($cli){
-                    if(isset($cli->delay)) {
+                $client->on('close', function ($cli) {
+                    if (isset($cli->delay)) {
                         $this->pushToPool($cli);
                         unset($cli->delay);
                     }

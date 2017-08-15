@@ -9,9 +9,7 @@
 namespace Server\Components\Consul;
 
 
-use Server\Asyn\HttpClient\HttpClientPool;
 use Server\CoreBase\SwooleException;
-use Server\SwooleMarco;
 
 class ConsulServices
 {
@@ -19,7 +17,6 @@ class ConsulServices
     private $http_services;
     private $tcp_services;
     private $config;
-    private $httpClientPool;
 
     public function __construct()
     {
@@ -27,25 +24,6 @@ class ConsulServices
         $this->http_services = [];
         $this->tcp_services = [];
         $this->config = get_instance()->config;
-        $this->httpClientPool = new HttpClientPool($this->config, "http://0.0.0.0:8500");
-    }
-
-    /**
-     * 服务器启动后正常情况是会超时的，因为consul服务器还未完全启动好，这地方只是为了reload的时候不会丢失而做的请求。。
-     * 开始健康检查
-     */
-    public function serviceHealthCheck()
-    {
-        $watches = $this->config->get('consul.watches', []);
-        foreach ($watches as $watch) {
-            $result = yield $this->httpClientPool->httpClient->setQuery(['passing' => true])->coroutineExecute('/v1/health/service/' . $watch)->setTimeout(1000)->noException();
-            if ($result != null) {
-                $data = $watch . "@" . $result['body'];
-                get_instance()->sendToAllWorks(SwooleMarco::CONSUL_SERVICES_CHANGE, $data, ConsulHelp::class . "::getMessgae");
-            } else {
-                break;
-            }
-        }
     }
 
     public static function getInstance()
@@ -64,7 +42,6 @@ class ConsulServices
      */
     public function updateServies($serviceName, $checks)
     {
-        if (get_instance()->isTaskWorker()) return;
         if (!array_key_exists($serviceName, $this->tcp_services)) {
             $this->tcp_services[$serviceName] = [];
         }
@@ -86,7 +63,7 @@ class ConsulServices
         foreach ($nodes as $node) {
             $service = $node['Service'];
             $address = $service['Address'];
-            $tags = $service['Tags']??[];
+            $tags = $service['Tags'] ?? [];
             $port = $service['Port'];
             if (empty($address)) {
                 $address = $node['Node']['Address'];
@@ -175,18 +152,18 @@ class ConsulServices
     {
         switch ($type) {
             case "tcp":
-                $config_name = 'consul_'.$name;
-                if(!$this->config->has("tcpClient.$config_name")){
+                $config_name = 'consul_' . $name;
+                if (!$this->config->has("tcpClient.$config_name")) {
                     $config_name = 'consul';
                 }
                 $this->tcp_services[$name][$address] = new ConsulRpc($this->config, $config_name, "$address:$port");
-                if(get_instance()->server->worker_id==0) {
+                if (get_instance()->server->worker_id == 0) {
                     print_r("发现$name($address:$port) TCP服务，应用配置$config_name\n");
                 }
                 break;
             case "http":
                 $this->http_services[$name][$address] = new ConsulRest($this->config, "http://$address:$port");
-                if(get_instance()->server->worker_id==0) {
+                if (get_instance()->server->worker_id == 0) {
                     print_r("发现$name($address:$port) HTTP服务\n");
                 }
                 break;

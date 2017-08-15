@@ -77,6 +77,7 @@ class PortManager
      * 构架端口
      * @param SwooleServer $swoole_server
      * @param $first_port
+     * @throws \Exception
      */
     public function buildPort(SwooleServer $swoole_server, $first_port)
     {
@@ -84,6 +85,9 @@ class PortManager
             if ($value['socket_port'] == $first_port) continue;
             if ($value['socket_type'] == self::SOCK_HTTP || $value['socket_type'] == self::SOCK_WS) {
                 $port = $swoole_server->server->listen($value['socket_name'], $value['socket_port'], SWOOLE_SOCK_TCP);
+                if ($port == false) {
+                    throw new \Exception("{$value['socket_port']}端口创建失败");
+                }
                 if ($value['socket_type'] == self::SOCK_HTTP) {
                     $port->on('request', [$swoole_server, 'onSwooleRequest']);
                     $port->on('handshake', function () {

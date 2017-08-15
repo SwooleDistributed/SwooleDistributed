@@ -120,7 +120,16 @@ function checkExtension()
         print_r("[扩展依赖]缺少swoole扩展\n");
         $check = false;
     }
-    if(SWOOLE_VERSION[0]==2){
+    if (version_compare(PHP_VERSION, '7.0.0', '<')) {
+        print_r("[版本错误]PHP版本必须大于7.0.0\n");
+        $check = false;
+    }
+    if (version_compare(SWOOLE_VERSION, '1.9.18', '<')) {
+        print_r("[版本建议]Swoole推荐使用1.9.18版本,之前版本存在bug\n");
+        $check = false;
+    }
+
+    if (SWOOLE_VERSION[0] == 2) {
         print_r("[版本错误]不支持2.0版本swoole，请安装1.9版本\n");
         $check = false;
     }
