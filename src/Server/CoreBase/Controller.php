@@ -154,6 +154,15 @@ class Controller extends CoreBase
     }
 
     /**
+     * ws追加设置Request
+     * @param $request
+     */
+    public function setRequest($request)
+    {
+        $this->request = $request;
+        $this->http_input->set($request);
+    }
+    /**
      * 异常的回调(如果需要继承$autoSendAndDestroy传flase)
      * @param \Exception $e
      * @param callable $handle
