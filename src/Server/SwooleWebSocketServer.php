@@ -16,6 +16,10 @@ use Server\Coroutine\Coroutine;
 
 abstract class SwooleWebSocketServer extends SwooleHttpServer
 {
+    /**
+     * @var array
+     */
+    protected $fdRequest = [];
     public function __construct()
     {
         parent::__construct();
@@ -156,6 +160,10 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             if (!method_exists($controller_instance, $method_name)) {
                 $method_name = 'defaultMethod';
             }
+            $request = $this->fdRequest[$fd] ?? null;
+            if ($request != null) {
+                $controller_instance->setRequest($request);
+            }
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
                 Coroutine::startCoroutine([$controller_instance, $method_name], $route->getParams());
@@ -173,6 +181,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      */
     public function onSwooleWSClose($serv, $fd)
     {
+        unset($this->fdRequest[$fd]);
         $this->onSwooleClose($serv, $fd);
     }
 
@@ -233,6 +242,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         }
 
         $response->status(101);
+        $this->fdRequest[$request->fd] = $request;
         $response->end();
 
         $this->server->defer(function () use ($request) {

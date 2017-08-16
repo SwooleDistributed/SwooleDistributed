@@ -90,6 +90,21 @@ class HttpInput
     }
 
     /**
+     * 获取所有的post
+     */
+    public function getAllPost()
+    {
+        return $this->request->post ?? [];
+    }
+
+    /**
+     * 获取所有的get
+     */
+    public function getAllGet()
+    {
+        return $this->request->get ?? [];
+    }
+    /**
      * 获取所有的post和get
      */
     public function getAllPostGet()
