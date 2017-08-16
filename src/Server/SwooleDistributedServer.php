@@ -12,7 +12,6 @@ use Server\Components\Dispatch\DispatchHelp;
 use Server\Components\Event\EventDispatcher;
 use Server\Components\GrayLog\GrayLogHelp;
 use Server\Components\Process\ProcessManager;
-use Server\Components\Reload\ReloadHelp;
 use Server\Components\SDHelp\SDHelpProcess;
 use Server\Components\TimerTask\TimerTask;
 use Server\CoreBase\SwooleException;
