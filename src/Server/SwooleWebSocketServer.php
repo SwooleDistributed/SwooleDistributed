@@ -52,7 +52,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $this->server->on('message', [$this, 'onSwooleWSMessage']);
         $this->server->on('close', [$this, 'onSwooleWSClose']);
         $this->server->on('handshake', [$this, 'onSwooleWSHandShake']);
-        $this->setServerSet($first_config['probuf_set'] ?? null);
+        $this->setServerSet($this->portManager->getProbufSet($first_config['socket_port']));
         $this->portManager->buildPort($this, $first_config['socket_port']);
         $this->beforeSwooleStart();
         $this->server->start();

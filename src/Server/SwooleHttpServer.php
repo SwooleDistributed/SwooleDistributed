@@ -55,7 +55,7 @@ abstract class SwooleHttpServer extends SwooleServer
         $this->server->on('ManagerStart', [$this, 'onSwooleManagerStart']);
         $this->server->on('ManagerStop', [$this, 'onSwooleManagerStop']);
         $this->server->on('request', [$this, 'onSwooleRequest']);
-        $this->setServerSet($first_config['probuf_set'] ?? null);
+        $this->setServerSet($this->portManager->getProbufSet($first_config['socket_port']));
         $this->portManager->buildPort($this, $first_config['socket_port']);
         $this->beforeSwooleStart();
         $this->server->start();
