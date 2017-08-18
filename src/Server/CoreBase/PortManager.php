@@ -172,7 +172,7 @@ class PortManager
      */
     public function getPack($port)
     {
-        return $this->packs[$port];
+        return $this->packs[$port] ?? null;
     }
 
     /**
@@ -181,7 +181,7 @@ class PortManager
      */
     public function getRoute($port)
     {
-        return $this->routes[$port];
+        return $this->routes[$port] ?? null;
     }
 
     /**
@@ -190,6 +190,9 @@ class PortManager
      */
     public function getProbufSet($port)
     {
+        if ($this->getPack($port) == null) {
+            return [];
+        }
         return $this->getPack($port)->getProbufSet();
     }
 
