@@ -54,7 +54,7 @@ function httpEndFile($path, $request, $response)
     //缓存
     if (isset($request->header['if-modified-since']) && $request->header['if-modified-since'] == $lastModified) {
         $response->status(304);
-        $response->end();
+        $response->end('');
         return true;
     }
     $extension = get_extension($path);
