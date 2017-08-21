@@ -31,10 +31,11 @@ class ClusterController
      * 添加数据
      * @param $node_name
      * @param $uid
+     * @param $session
      */
-    public function addNodeUid($node_name, $uid)
+    public function addNodeUid($node_name, $uid, $session)
     {
-        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_addUid($node_name, $uid);
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_addUid($node_name, $uid, $session);
     }
 
     /**
