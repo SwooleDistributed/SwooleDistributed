@@ -1,4 +1,4 @@
-# SwooleDistributed v2.1.0 更新
+# SwooleDistributed v2.4.1 更新
 
 swoole 分布式通讯框架  
 开发交流群：569037921  
@@ -9,6 +9,8 @@ swoole 分布式通讯框架
 官网：http://sd.youwoxing.net
 
 文档：http://docs.youwoxing.net
+
+视频：http://v.qq.com/boke/gplay/337c9b150064b5e5bcfe344f11a106c5_m0i000801b66cfv.html
 
 可以通过composer安装
 
@@ -32,7 +34,7 @@ php vendor/tmtbe/swooledistributed/src/Install.php
 ```
 安装结束可以在bin中执行服务器。
 
-微服务框架SD2.1.2
+微服务框架SD2.4.1
 
 1.协程优化，速度更快，功能更强大
 
@@ -53,3 +55,7 @@ php vendor/tmtbe/swooledistributed/src/Install.php
 9.众多异步客户端，MQTT，AMQP等
 
 10.通过consul实现注册中心
+
+11.分布式部署
+
+12.用户进程管理
