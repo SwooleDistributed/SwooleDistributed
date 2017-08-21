@@ -116,76 +116,9 @@ class CoroutineTask
     }
 
     /**
-     * 旧方法
-     * 协程调度
+     * @param $routine
+     * @param $e
      */
-    public function run_old()
-    {
-        if ($this->isError) {//已经出错了就直接return
-            return;
-        }
-        $routine = &$this->routine;
-        $flag = false;
-        if (!$routine) {
-            return;
-        }
-        $value = null;
-        try {
-            $value = $routine->current();
-            $flag = true;
-            //嵌套的协程
-            if ($value instanceof \Generator) {
-                $this->generatorContext->addYieldStack($routine->key());
-                $this->stack->push($routine);
-                $routine = $value;
-                return;
-            }
-            if ($value != null && $value instanceof ICoroutineBase) {
-                $result = $value->getResult();
-                if ($result !== CoroutineNull::getInstance()) {
-                    $routine->send($result);
-                    $value->destroy();
-                } else {
-                    $value->setCoroutineTask($this);
-                    return;
-                }
-                //嵌套的协程返回
-                while (!$routine->valid() && !$this->stack->isEmpty()) {
-                    $result = $routine->getReturn();
-                    $this->routine = $this->stack->pop();
-                    $this->routine->send($result);
-                    $this->generatorContext->popYieldStack();
-                }
-            } else {
-                if ($routine->valid()) {
-                    $routine->send($value);
-                } else {
-                    //获得不到return说明可能是抛出了异常，这里可以停止了
-                    try {
-                        $result = $routine->getReturn();
-                        if (count($this->stack) > 0) {
-                            $this->routine = $this->stack->pop();
-                            $this->routine->send($result);
-                        }
-                    }catch (\Exception $e){
-                        if(!$this->isError) {
-                            $this->routine->throw($e);
-                        }
-                        $this->isError = true;
-                    }
-                }
-            }
-        } catch (\Exception $e) {
-            //这里$value如果是ICoroutineBase不需要进行销毁，否则有可能重复销毁
-            if ($flag) {
-                $this->generatorContext->addYieldStack($routine->key());
-            }
-            $this->generatorContext->setErrorFile($e->getFile(), $e->getLine());
-            $this->generatorContext->setErrorMessage($e->getMessage());
-            $this->throwEx($routine,$e);
-        }
-    }
-
     protected function throwEx($routine,$e){
         try {
             $routine->throw($e);
@@ -207,6 +140,7 @@ class CoroutineTask
             $this->throwEx($routine,$e);
         }
     }
+
     /**
      * [isFinished 判断该task是否完成]
      * @return boolean [description]

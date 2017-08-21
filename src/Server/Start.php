@@ -303,17 +303,6 @@ class Start
             self::$_maxShowLength - strlen('S_NAME')), "\033[47;30mS_PORT\033[0m", str_pad('',
             self::$_maxShowLength - strlen('S_PORT')), "\033[47;30m", "S_PACK\033[0m\n";
         switch (self::$_worker->name) {
-            case SwooleDispatchClient::SERVER_NAME:
-                echo str_pad('DISPATCH',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch_server.socket', '--'),
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch_server.port', '--'),
-                    self::$_maxShowLength - 2);
-                if (self::$_worker->config->get('dispatch_server.port') == null) {
-                    echo " \033[31;40m [CLOSE] \033[0m\n";
-                } else {
-                    echo " \033[32;40m [DISPATCHPACK] \033[0m\n";
-                }
-                break;
             case SwooleDistributedServer::SERVER_NAME:
                 $ports = $config['ports'];
                 foreach ($ports as $key => $value) {
@@ -325,12 +314,12 @@ class Start
                     $str = strtoupper($str);
                     echo " \033[32;40m [$str] \033[0m\n";
                 }
-                echo str_pad('DISPATCH',
+                echo str_pad('CLUSTER',
                     self::$_maxShowLength), str_pad('0.0.0.0',
-                    self::$_maxShowLength), str_pad(self::$_worker->config->get('dispatch.dispatch_port', '--'),
+                    self::$_maxShowLength), str_pad(self::$_worker->config->get('cluster.port', '--'),
                     self::$_maxShowLength - 2);
-                if (self::$_worker->config->get('dispatch.enable', false)) {
-                    echo " \033[32;40m [DISPATCHPACK] \033[0m\n";
+                if (self::$_worker->config->get('consul.enable', false)) {
+                    echo " \033[32;40m [CLUSTERPACK] \033[0m\n";
                 } else {
                     echo " \033[31;40m [CLOSE] \033[0m\n";
                 }

@@ -60,15 +60,16 @@ class ProcessManager
 
     /**
      * @param $class_name
+     * @param $oneWay
      * @return mixed
      * @throws \Exception
      */
-    public function getRpcCall($class_name)
+    public function getRpcCall($class_name, $oneWay = false)
     {
         if (!array_key_exists($class_name, $this->map)) {
             throw new \Exception("不存在$class_name 进程");
         }
-        return Pool::getInstance()->get(RPCCall::class)->init($this->map[$class_name]);
+        return Pool::getInstance()->get(RPCCall::class)->init($this->map[$class_name], $oneWay);
     }
 
     /**

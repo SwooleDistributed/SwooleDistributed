@@ -9,6 +9,7 @@ namespace Server\Controllers;
 
 use app\Process\MyProcess;
 use Server\Asyn\TcpClient\SdTcpRpcPool;
+use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Consul\ConsulServices;
 use Server\Components\Event\EventDispatcher;
 use Server\Components\Process\ProcessManager;
@@ -366,5 +367,35 @@ class TestController extends Controller
     {
         $result = yield ProcessManager::getInstance()->getRpcCall(MyProcess::class)->getData();
         $this->http_output->end($result);
+    }
+
+    public function http_testC1()
+    {
+        $this->sendToAll(1213, false);
+        $this->http_output->end(1);
+    }
+
+    public function http_testC2()
+    {
+        $this->sendToUid(1, 1, false);
+        $this->http_output->end(1);
+    }
+
+    public function http_testC3()
+    {
+        $this->sendToUid(2, 1, false);
+        $this->http_output->end(1);
+    }
+
+    public function http_testC4()
+    {
+        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getUidMap();
+        $this->http_output->end($result);
+    }
+
+    public function http_testC5()
+    {
+        $this->sendToUids([1, 2], 1, false);
+        $this->http_output->end(1);
     }
 }

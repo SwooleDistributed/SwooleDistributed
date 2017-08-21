@@ -334,28 +334,6 @@ class Controller extends CoreBase
     }
 
     /**
-     * 发送给群
-     * @param $groupId
-     * @param $data
-     * @param bool $destroy
-     * @throws SwooleException
-     */
-    protected function sendToGroup($groupId, $data, $destroy = true)
-    {
-        if ($this->is_destroy) {
-            throw new SwooleException('controller is destroy can not send data');
-        }
-        if (Start::$testUnity) {
-            $this->testUnitSendStack[] = ['action' => 'sendToGroup', 'groupId' => $groupId, 'data' => $data];
-        } else {
-            get_instance()->sendToGroup($groupId, $data);
-        }
-        if ($destroy) {
-            $this->destroy();
-        }
-    }
-
-    /**
      * 踢用户
      * @param $uid
      */
@@ -410,32 +388,6 @@ class Controller extends CoreBase
         }
         if ($autoDestroy) {
             $this->destroy();
-        }
-    }
-
-    /**
-     * @param $uid
-     * @param $groupID
-     */
-    protected function addToGroup($uid, $groupID)
-    {
-        if (Start::$testUnity) {
-            $this->testUnitSendStack[] = ['action' => 'addToGroup', '$uid' => $uid, 'groupId' => $groupID];
-        } else {
-            get_instance()->addToGroup($uid, $groupID);
-        }
-    }
-
-    /**
-     * @param $uid
-     * @param $groupID
-     */
-    protected function removeFromGroup($uid, $groupID)
-    {
-        if (Start::$testUnity) {
-            $this->testUnitSendStack[] = ['action' => 'removeFromGroup', '$uid' => $uid, 'groupId' => $groupID];
-        } else {
-            get_instance()->removeFromGroup($uid, $groupID);
         }
     }
 

@@ -39,7 +39,9 @@ class Coroutine
         });
     }
 
-
+    /**
+     * run
+     */
     public function run()
     {
         foreach ($this->routineList as $k => $task) {
@@ -117,6 +119,10 @@ class Coroutine
         }
     }
 
+    /**
+     * @param \Generator $routine
+     * @param GeneratorContext $generatorContext
+     */
     public function start(\Generator $routine, GeneratorContext $generatorContext)
     {
         $task = Pool::getInstance()->get(CoroutineTask::class)->init($routine, $generatorContext);
