@@ -9,14 +9,15 @@
 namespace Server\Components\Consul;
 
 
+use Server\Asyn\HttpClient\HttpClient;
 use Server\Components\Event\EventDispatcher;
 use Server\Components\Process\ProcessManager;
 use Server\Components\SDHelp\SDHelpProcess;
-use Server\Coroutine\Coroutine;
 
 class ConsulLeader
 {
-    protected $consul;
+    protected $consul_service_client;
+    protected $consul_leader;
     protected $leader_name;
     protected $config;
     protected $sessionID;
@@ -25,12 +26,10 @@ class ConsulLeader
     {
         $this->config = get_instance()->config;
         $this->leader_name = $this->config['consul']['leader_service_name'];
-        $this->consul = get_instance()->getAsynPool('consul');
+        $this->consul_leader = new HttpClient(null, 'http://127.0.0.1:8500');
         swoole_timer_after(1000, function () {
-            Coroutine::startCoroutine(function () {
-                yield $this->leader();
-                $this->serviceHealthCheck();
-            });
+            $this->leader();
+            $this->serviceHealthCheck();
         });
     }
 
@@ -42,7 +41,8 @@ class ConsulLeader
     {
         $watches = $this->config->get('consul.watches', []);
         foreach ($watches as $watch) {
-            Coroutine::startCoroutine([$this, 'help_serviceHealthCheck'], [$watch, 0]);
+            $this->consul_service_client[$watch] = new HttpClient(null, 'http://127.0.0.1:8500');
+            $this->help_serviceHealthCheck($watch, 0);
         }
     }
 
@@ -52,33 +52,37 @@ class ConsulLeader
      */
     public function help_serviceHealthCheck($watch, $index)
     {
-        $result = yield $this->consul->httpClient->setQuery(['passing' => true, 'index' => $index])->coroutineExecute('/v1/health/service/' . $watch)->setTimeout(11 * 60 * 1000)->noException(null);
-        if ($result == null) {
-            Coroutine::startCoroutine([$this, 'checkLeader'], [$watch, $index]);
-            return;
-        }
-        $data[$watch] = $result['body'];
-        //存儲在SDHelpProcess中
-        ProcessManager::getInstance()->getProcess(SDHelpProcess::class)
-            ->data[ConsulHelp::DISPATCH_KEY][$watch] = $result['body'];
-        //分发到进程中去
-        EventDispatcher::getInstance()->dispatch(ConsulHelp::DISPATCH_KEY, $data);
-        //继续监听
-        $index = $result['headers']['x-consul-index'];
-        Coroutine::startCoroutine([$this, 'help_serviceHealthCheck'], [$watch, $index]);
+        $this->consul_service_client[$watch]->setQuery(['passing' => true, 'index' => $index])->execute('/v1/health/service/' . $watch, function ($data) use ($watch, $index) {
+            if ($data['statusCode'] < 0) {
+                $this->help_serviceHealthCheck($watch, $index);
+                return;
+            }
+            $result[$watch] = $data['body'];
+            //存儲在SDHelpProcess中
+            ProcessManager::getInstance()->getProcess(SDHelpProcess::class)
+                ->data[ConsulHelp::DISPATCH_KEY][$watch] = $data['body'];
+            //分发到进程中去
+            EventDispatcher::getInstance()->dispatch(ConsulHelp::DISPATCH_KEY, $result);
+            //继续监听
+            $index = $data['headers']['x-consul-index'];
+            $this->help_serviceHealthCheck($watch, $index);
+        });
     }
 
     /**
      * 过去SessionID
-     * @return mixed
+     * @param $call
      */
-    public function getSession()
+    public function getSession($call)
     {
         if (empty($this->sessionID)) {
-            $result = yield $this->consul->httpClient->setData(json_encode(['LockDelay' => 0, 'Behavior' => 'release', 'Name' => $this->leader_name]))->setMethod('PUT')->coroutineExecute('/v1/session/create')->noException(null);
-            $this->sessionID = json_decode($result['body'], true)["ID"];
+            $this->consul_leader->setData(json_encode(['LockDelay' => 0, 'Behavior' => 'release', 'Name' => $this->leader_name]))->setMethod('PUT')->execute('/v1/session/create', function ($data) use ($call) {
+                $this->sessionID = json_decode($data['body'], true)["ID"];
+                call_user_func($call, $this->sessionID);
+            });
+        } else {
+            call_user_func($call, $this->sessionID);
         }
-        return $this->sessionID;
     }
 
     /**
@@ -88,23 +92,25 @@ class ConsulLeader
      */
     public function leader($index = 0)
     {
-        $id = yield $this->getSession();
-        $data = ['ip' => $this->config['consul']['bind_addr']];
-        $result = yield $this->consul->httpClient->setQuery(['acquire' => $id])
-            ->setData(json_encode($data))->setMethod('PUT')->coroutineExecute("/v1/kv/servers/$this->leader_name/leader");
-        $leader = $result['body'];
-        if ($leader == 'true') {//是leader
-            $leader = true;
-        } else {
-            $leader = false;
-        }
-        //发送到进程
-        EventDispatcher::getInstance()->dispatch(ConsulHelp::LEADER_KEY, $leader);
-        //存儲在SDHelpProcess中
-        ProcessManager::getInstance()->getProcess(SDHelpProcess::class)
-            ->setData(ConsulHelp::LEADER_KEY, $leader);
-        //继续监听
-        Coroutine::startCoroutine([$this, 'checkLeader'], [$index]);
+        $this->getSession(function ($id) use ($index) {
+            $data = ['ip' => $this->config['consul']['bind_addr']];
+            $this->consul_leader->setQuery(['acquire' => $id])
+                ->setData(json_encode($data))->setMethod('PUT')->execute("/v1/kv/servers/$this->leader_name/leader", function ($data) use ($index) {
+                    $leader = $data['body'];
+                    if ($leader == 'true') {//是leader
+                        $leader = true;
+                    } else {
+                        $leader = false;
+                    }
+                    //发送到进程
+                    EventDispatcher::getInstance()->dispatch(ConsulHelp::LEADER_KEY, $leader);
+                    //存儲在SDHelpProcess中
+                    ProcessManager::getInstance()->getProcess(SDHelpProcess::class)
+                        ->setData(ConsulHelp::LEADER_KEY, $leader);
+                    //继续监听
+                    $this->checkLeader($index);
+                });
+        });
     }
 
     /**
@@ -114,20 +120,21 @@ class ConsulLeader
      */
     public function checkLeader($index = 0)
     {
-        $result = yield $this->consul->httpClient->setMethod('GET')
+        $this->consul_leader->setMethod('GET')
             ->setQuery(['index' => $index])
-            ->coroutineExecute("/v1/kv/servers/$this->leader_name/leader")->setTimeout(11 * 60 * 1000)->noException(null);
-        if ($result == null) {
-            Coroutine::startCoroutine([$this, 'checkLeader'], [$index]);
-            return;
-        }
-        $body = json_decode($result['body'], true)[0];
-        $index = $result['headers']['x-consul-index'];
-        if (!isset($body['Session']))//代表没有Leader
-        {
-            Coroutine::startCoroutine([$this, 'leader'], [$index]);
-        } else {
-            Coroutine::startCoroutine([$this, 'checkLeader'], [$index]);
-        }
+            ->execute("/v1/kv/servers/$this->leader_name/leader", function ($data) use ($index) {
+                if ($data['statusCode'] < 0) {
+                    $this->checkLeader($index);
+                    return;
+                }
+                $body = json_decode($data['body'], true)[0];
+                $index = $data['headers']['x-consul-index'];
+                if (!isset($body['Session']))//代表没有Leader
+                {
+                    $this->leader($index);
+                } else {
+                    $this->checkLeader($index);
+                }
+            });
     }
 }

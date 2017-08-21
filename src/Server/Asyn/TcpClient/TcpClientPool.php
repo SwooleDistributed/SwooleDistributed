@@ -95,7 +95,7 @@ class TcpClientPool extends AsynPool
             $client->token = $data['token'];
             $client->send($data['send']);
             //单向的返回null直接回收
-            if ($data['oneway']??false) {
+            if ($data['oneway'] ?? false) {
                 $result['token'] = $data['token'];
                 $result['result'] = null;
                 $this->distribute($result);
@@ -118,7 +118,11 @@ class TcpClientPool extends AsynPool
             });
             $client->on("receive", function ($cli, $recdata) {
                 if (isset($cli->token)) {
-                    $packdata = $this->pack->unPack($recdata);
+                    try {
+                        $packdata = $this->pack->unPack($recdata);
+                    } catch (\Exception $e) {
+                        return null;
+                    }
                     $data['token'] = $cli->token;
                     $data['result'] = $packdata;
                     $this->distribute($data);

@@ -1,9 +1,8 @@
 <?php
 namespace app;
 
-use app\Process\MyProcess;
-use Server\Components\Process\ProcessManager;
 use Server\CoreBase\HttpInput;
+use Server\CoreBase\Loader;
 use Server\SwooleDistributedServer;
 
 /**
@@ -14,6 +13,16 @@ use Server\SwooleDistributedServer;
  */
 class AppServer extends SwooleDistributedServer
 {
+    /**
+     * 可以在这里自定义Loader，但必须是ILoader接口
+     * AppServer constructor.
+     */
+    public function __construct()
+    {
+        $this->setLoader(new Loader());
+        parent::__construct();
+    }
+
     /**
      * 开服初始化(支持协程)
      * @return mixed
@@ -49,7 +58,7 @@ class AppServer extends SwooleDistributedServer
     public function startProcess()
     {
         parent::startProcess();
-        ProcessManager::getInstance()->addProcess(MyProcess::class);
+        //ProcessManager::getInstance()->addProcess(MyProcess::class);
     }
 
     /**

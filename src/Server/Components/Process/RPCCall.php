@@ -18,22 +18,28 @@ class RPCCall
      * @var Process
      */
     protected $process;
+    protected $oneWay;
 
-    public function init($process)
+    public function init($process, $oneWay = false)
     {
         $this->process = $process;
+        $this->oneWay = $oneWay;
         return $this;
     }
 
     /**
      * @param $name
      * @param $arguments
-     * @return \Server\Components\Event\EventCoroutine
+     * @return bool|\Server\Components\Event\EventCoroutine
      */
     public function __call($name, $arguments)
     {
-        $token = $this->process->__call($name, $arguments);
+        $token = $this->process->call($name, $arguments, $this->oneWay);
         Pool::getInstance()->push($this);
-        return EventDispatcher::getInstance()->addOnceCoroutine($token);
+        if (!$this->oneWay) {
+            return EventDispatcher::getInstance()->addOnceCoroutine($token);
+        } else {
+            return true;
+        }
     }
 }

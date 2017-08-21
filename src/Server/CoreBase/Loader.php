@@ -11,7 +11,7 @@ namespace Server\CoreBase;
 
 use Server\Memory\Pool;
 
-class Loader
+class Loader implements ILoader
 {
     private $_task_proxy;
     private $_model_factory;

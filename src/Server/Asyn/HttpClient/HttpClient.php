@@ -117,6 +117,79 @@ class HttpClient
     }
 
     /**
+     * @param $path
+     * @param $callBack
+     */
+    public function execute($path, $callBack)
+    {
+        $data = $this->toArray();
+        $arr = parse_url($this->baseUrl);
+        $scheme = $arr['scheme'];
+        $host = $arr['host'];
+        if ($scheme == "https") {
+            $ssl = true;
+            $port = 443;
+        } else {
+            $ssl = false;
+            $port = 80;
+        }
+        if (array_key_exists('port', $arr)) {
+            $port = $arr['port'];
+        }
+        if ($this->client == null) {
+            swoole_async_dns_lookup($host, function ($host, $ip) use ($path, $port, $ssl, $host, $data, $callBack) {
+                $this->client = new \swoole_http_client($ip, $port, $ssl);
+                $this->client->set(['timeout' => -1]);
+                $this->client->setMethod($data['method']);
+                if (!empty($data['query'])) {
+                    $path = $path . '?' . $data['query'];
+                }
+                $data['headers']['Host'] = $host;
+                $this->client->setHeaders($data['headers']);
+
+                if (count($data['cookies']) != 0) {
+                    $this->client->setCookies($data['cookies']);
+                }
+                if ($data['data'] != null) {
+                    $this->client->setData($data['data']);
+                }
+                foreach ($data['addFiles'] as $addFile) {
+                    $this->client->addFile(...$addFile);
+                }
+                $this->client->execute($path, function ($client) use ($callBack) {
+                    $data['headers'] = $client->headers;
+                    $data['body'] = $client->body;
+                    $data['statusCode'] = $client->statusCode;
+                    call_user_func($callBack, $data);
+                });
+            });
+        } else {
+            $this->client->setMethod($data['method']);
+            if (!empty($data['query'])) {
+                $path = $path . '?' . $data['query'];
+            }
+            $data['headers']['Host'] = $host;
+            $this->client->setHeaders($data['headers']);
+
+            if (count($data['cookies']) != 0) {
+                $this->client->setCookies($data['cookies']);
+            }
+            if ($data['data'] != null) {
+                $this->client->setData($data['data']);
+            }
+            foreach ($data['addFiles'] as $addFile) {
+                $this->client->addFile(...$addFile);
+            }
+            $this->client->execute($path, function ($client) use ($callBack) {
+                $data['headers'] = $client->headers;
+                $data['body'] = $client->body;
+                $data['statusCode'] = $client->statusCode;
+                call_user_func($callBack, $data);
+            });
+        }
+    }
+
+    /**
      * 协程版执行
      * @param $path
      * @return HttpClientRequestCoroutine
@@ -134,6 +207,9 @@ class HttpClient
         return Pool::getInstance()->get(HttpClientRequestCoroutine::class)->init($this->pool, $data);
     }
 
+    /**
+     * @return mixed
+     */
     protected function toArray()
     {
         $data['method'] = $this->method;

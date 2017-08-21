@@ -10,6 +10,7 @@ use Noodlehaus\Config;
 use Server\Components\GrayLog\UdpTransport;
 use Server\CoreBase\Child;
 use Server\CoreBase\ControllerFactory;
+use Server\CoreBase\ILoader;
 use Server\CoreBase\Loader;
 use Server\CoreBase\PortManager;
 use Server\Coroutine\Coroutine;
@@ -22,7 +23,7 @@ use Server\Coroutine\Coroutine;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "2.3.3";
+    const version = "2.4.0";
 
     /**
      * server name
@@ -49,7 +50,7 @@ abstract class SwooleServer extends Child
 
     /**
      * 加载器
-     * @var Loader
+     * @var ILoader
      */
     public $loader;
     /**
@@ -113,9 +114,19 @@ abstract class SwooleServer extends Child
         register_shutdown_function(array($this, 'checkErrors'));
         set_error_handler(array($this, 'displayErrorHandler'));
         $this->portManager = new PortManager($this->config['ports']);
-        $this->loader = new Loader();
+        if ($this->loader == null) {
+            $this->loader = new Loader();
+        }
     }
 
+    /**
+     * 设置自定义Loader
+     * @param ILoader $loader
+     */
+    public function setLoader(ILoader $loader)
+    {
+        $this->loader = $loader;
+    }
 
     /**
      * 设置服务器配置参数
@@ -191,6 +202,9 @@ abstract class SwooleServer extends Child
         //清除apc缓存
         if (function_exists('apc_clear_cache')) {
             apc_clear_cache();
+        }
+        if (function_exists('opcache_reset')) {
+            opcache_reset();
         }
         Start::setWorketPid($serv->worker_pid);
         // 重新加载配置
@@ -502,7 +516,9 @@ abstract class SwooleServer extends Child
             $fdinfo = $this->server->connection_info($fd);
             $server_port = $fdinfo['server_port'];
             $pack = $this->portManager->getPack($server_port);
-            $data = $pack->pack($data);
+            if ($pack != null) {
+                $data = $pack->pack($data);
+            }
         }
         $this->server->send($fd, $data);
     }

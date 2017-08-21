@@ -129,7 +129,11 @@ class SdTcpRpcPool extends AsynPool
             }
         });
         $client->on("receive", function ($cli, $recdata) {
-            $packdata = $this->pack->unPack($recdata);
+            try {
+                $packdata = $this->pack->unPack($recdata);
+            } catch (\Exception $e) {
+                return null;
+            }
             if (isset($packdata->rpc_token)) {
                 $data['token'] = $packdata->rpc_token;
                 $data['result'] = $packdata->rpc_result;

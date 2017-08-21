@@ -51,8 +51,8 @@ class Process
         if ($this->coroutine_need) {
             //协成支持
             Coroutine::init();
-            swoole_event_add($process->pipe, [$this, 'onRead']);
         }
+        swoole_event_add($process->pipe, [$this, 'onRead']);
         get_instance()->server->worker_id = $this->worker_id;
 
     }
@@ -66,18 +66,21 @@ class Process
         $message = $recv['message'];
         $func = $message['func'];
         $result = call_user_func_array([$this, $func], $message['arg']);
-        $newMessage['result'] = $result;
-        $newMessage['token'] = $message['token'];
-        $data = get_instance()->packSerevrMessageBody(SwooleMarco::PROCESS_RPC, $newMessage);
-        get_instance()->server->sendMessage($data, $message['worker_id']);
+        if (!$message['oneWay']) {
+            $newMessage['result'] = $result;
+            $newMessage['token'] = $message['token'];
+            $data = get_instance()->packSerevrMessageBody(SwooleMarco::PROCESS_RPC, $newMessage);
+            get_instance()->server->sendMessage($data, $message['worker_id']);
+        }
     }
 
     /**
      * @param $name
      * @param $arguments
+     * @param $oneWay
      * @return string
      */
-    public function __call($name, $arguments)
+    public function call($name, $arguments, $oneWay)
     {
         $this->token++;
         $worker_id = get_instance()->server->worker_id;
@@ -85,6 +88,7 @@ class Process
         $message['arg'] = $arguments;
         $message['func'] = $name;
         $message['token'] = 'ProcessRpc:' . $this->token;
+        $message['oneWay'] = $oneWay;
         $this->process->write(
             \swoole_serialize::pack(
                 get_instance()->packSerevrMessageBody(SwooleMarco::PROCESS_RPC, $message)

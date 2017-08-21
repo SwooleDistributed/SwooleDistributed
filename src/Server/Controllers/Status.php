@@ -7,9 +7,12 @@
  */
 
 namespace Server\Controllers;
+
+use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Consul\ConsulHelp;
+use Server\Components\Process\ProcessManager;
+use Server\Components\SDHelp\SDHelpProcess;
 use Server\CoreBase\Controller;
-use Server\SwooleMarco;
 
 /**
  * SD状态控制器
@@ -24,6 +27,17 @@ class Status extends Controller
     {
         $status = get_instance()->server->stats();
         $status['now_task'] = get_instance()->getServerAllTaskMessage();
+        $data = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getStatus();
+        $status['cluster_nodes'] = $data['nodes'];
+        $status['uidOnlineCount'] = $data['count'];
+        $data = yield ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
+        foreach ($data as $key => $value) {
+            $data[$key] = json_decode($value, true);
+            foreach ($data[$key] as &$one) {
+                $one = $one['Service'];
+            }
+        }
+        $status['consul_services'] = $data;
         $this->http_output->end($status);
     }
 }

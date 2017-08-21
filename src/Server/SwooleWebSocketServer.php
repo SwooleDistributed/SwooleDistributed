@@ -23,7 +23,6 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
     public function __construct()
     {
         parent::__construct();
-
     }
 
     /**
@@ -96,7 +95,9 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $server_port = $fdinfo['server_port'];
         if ($ifPack) {
             $pack = $this->portManager->getPack($server_port);
-            $data = $pack->pack($data);
+            if ($pack != null) {
+                $data = $pack->pack($data);
+            }
         }
         if ($this->isWebSocket($fdinfo)) {
             $this->server->push($fd, $data, $this->portManager->getOpCode($server_port));
