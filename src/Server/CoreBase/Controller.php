@@ -351,13 +351,14 @@ class Controller extends CoreBase
      * @param $fd
      * @param $uid
      * @param bool $isKick
+     * @param array $session
      */
-    protected function bindUid($fd, $uid, $isKick = true)
+    protected function bindUid($fd, $uid, $isKick = true, $session = [])
     {
         if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'bindUid', 'fd' => $fd, 'uid' => $uid];
         } else {
-            get_instance()->bindUid($fd, $uid, $isKick);
+            get_instance()->bindUid($fd, $uid, $isKick, $session);
         }
     }
 
@@ -437,5 +438,30 @@ class Controller extends CoreBase
     {
         $fdinfo = $this->server->connection_info($this->fd);
         return $fdinfo;
+    }
+
+    /**
+     * 获取Session
+     * @param $uid
+     * @return array|\Generator
+     */
+    protected function getSessionCoroutine($uid)
+    {
+        if (empty($uid)) {
+            return [];
+        }
+        $result = get_instance()->getSessionCoroutine($uid);
+        return $result;
+    }
+
+    /**
+     * 更新Session
+     * @param $session
+     */
+    protected function updateSession($session)
+    {
+        if (!empty($this->uid)) {
+            get_instance()->updateSession($this->uid, $session);
+        }
     }
 }

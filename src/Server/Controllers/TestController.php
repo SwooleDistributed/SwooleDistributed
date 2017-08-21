@@ -119,7 +119,7 @@ class TestController extends Controller
      */
     public function bind_uid()
     {
-        $this->bindUid($this->fd, $this->client_data->data);
+        $this->bindUid($this->fd, $this->client_data->data, true, ['a', 'b', 'c']);
         $this->destroy();
     }
 

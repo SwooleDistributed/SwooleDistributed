@@ -556,17 +556,38 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @param $fd
      * @param $uid
      * @param bool $isKick 是否踢掉uid上一个的链接
+     * @param array $session
      */
-    public function bindUid($fd, $uid, $isKick = true)
+    public function bindUid($fd, $uid, $isKick = true, $session = [])
     {
         if ($isKick) {
             $this->kickUid($uid, false);
         }
         //将这个fd与当前worker进行绑定
         $this->server->bind($fd, $uid);
-        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_addUid($uid);
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_addUid($uid, $session);
         //加入共享内存
         $this->uid_fd_table->set($uid, ['fd' => $fd]);
+    }
+
+    /**
+     * 设置Session
+     * @param $uid
+     * @param $session
+     */
+    public function updateSession($uid, $session)
+    {
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_addUid($uid, $session);
+    }
+
+    /**
+     * 获取Session
+     * @param $uid
+     * @return \Generator
+     */
+    public function getSessionCoroutine($uid)
+    {
+        return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getSession($uid);
     }
 
     /**

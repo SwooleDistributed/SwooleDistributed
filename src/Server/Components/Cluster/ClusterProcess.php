@@ -32,7 +32,7 @@ class ClusterProcess extends Process
             $fdinfo = get_instance()->server->connection_info($fd);
             $uid = $fdinfo['uid'] ?? null;
             if ($uid != null) {
-                $this->map[$this->node_name][$uid] = $uid;
+                $this->map[$this->node_name][$uid] = [];
             }
         }
         $this->consul = new HttpClient(null, 'http://127.0.0.1:8500');
@@ -51,13 +51,24 @@ class ClusterProcess extends Process
     /**
      * 自身增加了一个uid
      * @param $uid
+     * @param $session
      */
-    public function my_addUid($uid)
+    public function my_addUid($uid, $session = [])
     {
-        $this->map[$this->node_name][$uid] = $uid;
+        $this->map[$this->node_name][$uid] = $session;
         foreach ($this->client as $client) {
-            $client->addNodeUid($this->node_name, $uid);
+            $client->addNodeUid($this->node_name, $uid, $session);
         }
+    }
+
+    /**
+     * 获取Session
+     * @param $uid
+     * @return null
+     */
+    public function my_getSession($uid)
+    {
+        return $this->map[$this->node_name][$uid] ?? [];
     }
 
     /**
@@ -129,10 +140,11 @@ class ClusterProcess extends Process
      * 增加一个
      * @param $node_name
      * @param $uid
+     * @param $session
      */
-    public function th_addUid($node_name, $uid)
+    public function th_addUid($node_name, $uid, $session)
     {
-        $this->map[$node_name][$uid] = $uid;
+        $this->map[$node_name][$uid] = $session;
     }
 
     /**
@@ -152,7 +164,7 @@ class ClusterProcess extends Process
      */
     public function th_syncData($node_name, $uids)
     {
-        $this->map[$node_name] = array_flip($uids);
+        $this->map[$node_name] = $uids;
     }
 
     /**
@@ -206,7 +218,7 @@ class ClusterProcess extends Process
     protected function addNode($node_name, $ip)
     {
         $client = new ClusterClient($ip, $this->port, function (ClusterClient $client) {
-            $client->syncNodeData($this->node_name, array_keys($this->map[$this->node_name]));
+            $client->syncNodeData($this->node_name, $this->map[$this->node_name]);
         });
         $this->client[$node_name] = $client;
     }
