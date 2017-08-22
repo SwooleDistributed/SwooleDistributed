@@ -27,11 +27,11 @@ class Coroutine
         self::$instance = $this;
         $this->routineList = [];
         $this->startTick();
+        $this->run();
     }
 
     private function startTick()
     {
-        $this->run();
         swoole_timer_tick(self::TICK_INTERVAL, function ($timerId) {
             $this->tickTime++;
             $this->tickId = $timerId;

@@ -27,26 +27,28 @@ class ConsulHelp
      */
     public static function start()
     {
-        //提取SDHelpProcess中的services
-        Coroutine::startCoroutine(function () {
-            $result = yield ProcessManager::getInstance()
-                ->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
-            ConsulHelp::getMessgae($result);
-        });
-        //提取SDHelpProcess中的leader
-        Coroutine::startCoroutine(function () {
-            $result = yield ProcessManager::getInstance()
-                ->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::LEADER_KEY);
-            ConsulHelp::leaderChange($result);
-        });
-        //监听服务改变
-        EventDispatcher::getInstance()->add(ConsulHelp::DISPATCH_KEY, function (Event $event) {
-            ConsulHelp::getMessgae($event->data);
-        });
-        //监听leader改变
-        EventDispatcher::getInstance()->add(ConsulHelp::LEADER_KEY, function (Event $event) {
-            ConsulHelp::leaderChange($event->data);
-        });
+        if (get_instance()->config->get('consul.enable', false)) {
+            //提取SDHelpProcess中的services
+            Coroutine::startCoroutine(function () {
+                $result = yield ProcessManager::getInstance()
+                    ->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
+                ConsulHelp::getMessgae($result);
+            });
+            //提取SDHelpProcess中的leader
+            Coroutine::startCoroutine(function () {
+                $result = yield ProcessManager::getInstance()
+                    ->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::LEADER_KEY);
+                ConsulHelp::leaderChange($result);
+            });
+            //监听服务改变
+            EventDispatcher::getInstance()->add(ConsulHelp::DISPATCH_KEY, function (Event $event) {
+                ConsulHelp::getMessgae($event->data);
+            });
+            //监听leader改变
+            EventDispatcher::getInstance()->add(ConsulHelp::LEADER_KEY, function (Event $event) {
+                ConsulHelp::leaderChange($event->data);
+            });
+        }
     }
 
     /**
