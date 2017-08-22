@@ -23,7 +23,7 @@ use Server\Coroutine\Coroutine;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "2.4.2";
+    const version = "2.4.3";
 
     /**
      * server name

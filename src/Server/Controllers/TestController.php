@@ -197,7 +197,7 @@ class TestController extends Controller
     public function http_redis()
     {
         $result = yield $this->redis_pool->getCoroutine()->get('testroute');
-        $this->http_output->end($result);
+        $this->http_output->end(1, false);
     }
 
     /**
@@ -214,8 +214,8 @@ class TestController extends Controller
      */
     public function http_aredis()
     {
-        $value = get_instance()->getRedis()->get('test');
-        $this->http_output->end(1);
+        $value = get_instance()->getRedis()->get('testroute');
+        $this->http_output->end(1, false);
     }
 
     /**

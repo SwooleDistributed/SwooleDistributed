@@ -90,8 +90,8 @@ abstract class CoroutineBase implements ICoroutineBase
             $this->onTimerOutHandle();
             if (!$this->noException) {
                 $this->isFaile = true;
-                $ex = new SwooleException("[CoroutineTask]: Time Out!, [Request]: $this->request");
-
+                $class_name = get_class($this);
+                $ex = new SwooleException("[CoroutineTask:$class_name]: Time Out!, [Request]: $this->request");
                 $this->destroy();
                 throw $ex;
             } else {
