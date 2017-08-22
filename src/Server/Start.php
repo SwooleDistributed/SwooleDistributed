@@ -219,7 +219,7 @@ class Start
                 // Send stop signal to master process.
                 $master_pid && posix_kill($master_pid, SIGTERM);
                 // Timeout.
-                $timeout = 5;
+                $timeout = 40;
                 $start_time = time();
                 // Check master process is still alive?
                 while (1) {

@@ -39,10 +39,10 @@ class RedisCoroutine extends CoroutineBase
         $this->request = "#redis: $name";
         $this->send(function ($result) {
             $this->result = $result;
-            $this->immediateExecution();
         });
         return $this;
     }
+
     public function send($callback)
     {
         $this->arguments[] = $callback;

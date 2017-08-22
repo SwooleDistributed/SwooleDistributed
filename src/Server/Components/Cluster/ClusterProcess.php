@@ -10,7 +10,6 @@ namespace Server\Components\Cluster;
 
 use Server\Asyn\HttpClient\HttpClient;
 use Server\Components\Process\Process;
-use Server\Coroutine\Coroutine;
 
 class ClusterProcess extends Process
 {
@@ -38,13 +37,7 @@ class ClusterProcess extends Process
         $this->consul = new HttpClient(null, 'http://127.0.0.1:8500');
         $this->port = $this->config['cluster']['port'];
         swoole_timer_after(1000, function () {
-            Coroutine::startCoroutine([$this, 'updateFromConsul']);
-        });
-        //心跳
-        swoole_timer_tick($this->config['server']['set']['heartbeat_check_interval'] ?? 60, function () {
-            foreach ($this->client as $client) {
-                $client->ping();
-            }
+            $this->updateFromConsul();
         });
     }
 
@@ -103,6 +96,7 @@ class ClusterProcess extends Process
     {
         $node_name = $this->searchUid($uid);
         if ($node_name) {
+            if (!isset($this->client[$node_name])) return;
             $this->client[$node_name]->sendToUid($uid, $data);
         }
     }
@@ -217,10 +211,10 @@ class ClusterProcess extends Process
      */
     protected function addNode($node_name, $ip)
     {
-        $client = new ClusterClient($ip, $this->port, function (ClusterClient $client) {
+        new ClusterClient($ip, $this->port, function (ClusterClient $client) use ($node_name) {
             $client->syncNodeData($this->node_name, $this->map[$this->node_name]);
+            $this->client[$node_name] = $client;
         });
-        $this->client[$node_name] = $client;
     }
 
     /**

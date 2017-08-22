@@ -44,10 +44,7 @@ abstract class CoroutineBase implements ICoroutineBase
      * @var callable
      */
     protected $downgrade;
-    /**
-     * @var CoroutineTask
-     */
-    private $coroutineTask;
+
     /**
      * @var bool
      */
@@ -130,25 +127,6 @@ abstract class CoroutineBase implements ICoroutineBase
     }
 
     /**
-     * 设置协程任务
-     * @param $coroutineTask
-     */
-    public function setCoroutineTask($coroutineTask)
-    {
-        $this->coroutineTask = $coroutineTask;
-    }
-
-    /**
-     * 立即执行任务的下一个步骤
-     */
-    public function immediateExecution()
-    {
-        if (isset($this->coroutineTask)) {
-            $this->coroutineTask->run();
-        }
-    }
-
-    /**
      * destroy
      */
     public function destroy()
@@ -163,7 +141,6 @@ abstract class CoroutineBase implements ICoroutineBase
         $this->result = CoroutineNull::getInstance();
         $this->MAX_TIMERS = get_instance()->config->get('coroution.timerOut', 1000);
         $this->getCount = 0;
-        $this->coroutineTask = null;
         $this->request = null;
         $this->downgrade = null;
         $this->isFaile = false;

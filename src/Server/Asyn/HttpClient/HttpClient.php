@@ -137,14 +137,14 @@ class HttpClient
             $port = $arr['port'];
         }
         if ($this->client == null) {
-            swoole_async_dns_lookup($host, function ($host, $ip) use ($path, $port, $ssl, $host, $data, $callBack) {
+            swoole_async_dns_lookup($host, function ($host1, $ip) use ($path, $port, $ssl, $data, $callBack) {
                 $this->client = new \swoole_http_client($ip, $port, $ssl);
                 $this->client->set(['timeout' => -1]);
                 $this->client->setMethod($data['method']);
                 if (!empty($data['query'])) {
                     $path = $path . '?' . $data['query'];
                 }
-                $data['headers']['Host'] = $host;
+                $data['headers']['Host'] = $host1;
                 $this->client->setHeaders($data['headers']);
 
                 if (count($data['cookies']) != 0) {

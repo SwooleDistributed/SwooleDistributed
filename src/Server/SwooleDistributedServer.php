@@ -10,7 +10,6 @@ use Server\Components\Cluster\ClusterHelp;
 use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Consul\ConsulHelp;
 use Server\Components\Consul\ConsulProcess;
-use Server\Components\Dispatch\DispatchHelp;
 use Server\Components\Event\EventDispatcher;
 use Server\Components\GrayLog\GrayLogHelp;
 use Server\Components\Process\ProcessManager;
@@ -239,25 +238,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
-     * 随机选择一个dispatch发送消息
-     * @param $type
-     * @param $data
-     */
-    private function sendToDispatchMessage($type, $data)
-    {
-        $send_data = $this->packSerevrMessageBody($type, $data);
-        if (!DispatchHelp::$dispatch->send($send_data)) {
-            //如果没有dispatch那么MSG_TYPE_SEND_BATCH这个消息不需要发出，因为本机已经处理过可以发送的uid了
-            if ($type == SwooleMarco::MSG_TYPE_SEND_BATCH) return;
-            if ($this->isTaskWorker()) {
-                $this->onSwooleTask($this->server, 0, 0, $send_data);
-            } else {
-                $this->server->task($send_data);
-            }
-        }
-    }
-
-    /**
      * task异步任务
      * @param $serv
      * @param $task_id
@@ -282,15 +262,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                         continue;
                     }
                     $this->send($fd, $message['data'], true);
-                }
-                return null;
-            case SwooleMarco::MSG_TYPE_SEND_GROUP://群组
-                $uids = $this->getRedis()->sMembers(SwooleMarco::redis_group_hash_name_prefix . $message['groupId']);
-                foreach ($uids as $uid) {
-                    if ($this->uid_fd_table->exist($uid)) {
-                        $fd = $this->uid_fd_table->get($uid)['fd'];
-                        $this->send($fd, $message['data'], true);
-                    }
                 }
                 return null;
             case SwooleMarco::SERVER_TYPE_TASK://task任务

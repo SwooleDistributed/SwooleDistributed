@@ -47,7 +47,6 @@ class TcpClientRequestCoroutine extends CoroutineBase
         if ($this->fuse()) {//启动断路器
             $this->send(function ($result) {
                 $this->result = $result;
-                $this->immediateExecution();
             });
         }
         return $this;
