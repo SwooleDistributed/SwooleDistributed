@@ -32,13 +32,9 @@ class SwooleMarco
      */
     const MSG_TYPE_SEND_ALL = 2;
     /**
-     * 发送给群
-     */
-    const MSG_TYPE_SEND_GROUP = 3;
-    /**
      * 踢uid下线
      */
-    const MSG_TYPE_KICK_UID = 4;
+    const MSG_TYPE_KICK_UID = 3;
     /**
      * 添加server
      */

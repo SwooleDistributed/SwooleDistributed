@@ -18,7 +18,8 @@ class ClusterClient
     protected $ip;
     protected $port;
     protected $onConnect;
-    protected $isClose;
+    protected $reconnect_tick;
+    protected $isClose = false;
 
     public function __construct($ip, $port, $onConnect)
     {
@@ -29,6 +30,10 @@ class ClusterClient
         $this->pack = new ClusterPack();
         $this->client->set($this->pack->getProbufSet());
         $this->client->on("connect", function ($cli) {
+            if (!empty($this->reconnect_tick)) {
+                swoole_timer_clear($this->reconnect_tick);
+                $this->reconnect_tick = null;
+            }
             call_user_func($this->onConnect, $this);
         });
         $this->client->on("receive", function ($cli, $recdata) {
@@ -38,8 +43,8 @@ class ClusterClient
 
         });
         $this->client->on("close", function ($cli) {
-            if (!$this->isClose) {
-                swoole_timer_after(1000, [$this, 'reConnect']);
+            if (empty($this->reconnect_tick)) {
+                $this->reconnect_tick = swoole_timer_tick(1000, [$this, 'reConnect']);
             }
         });
         $this->client->connect($this->ip, $this->port);
@@ -81,6 +86,10 @@ class ClusterClient
     {
         $this->isClose = true;
         $this->client = null;
+        if (!empty($this->reconnect_tick)) {
+            swoole_timer_clear($this->reconnect_tick);
+            $this->reconnect_tick = null;
+        }
     }
 
     /**

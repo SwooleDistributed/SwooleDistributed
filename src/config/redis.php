@@ -28,6 +28,7 @@ $config['redis']['local2']['port'] = 6379;
 $config['redis']['local2']['select'] = 2;
 $config['redis']['local2']['password'] = '123456';
 
+$config['redis']['asyn_max_count'] = 10;
 /**
  * 最终的返回，固定写这里
  */

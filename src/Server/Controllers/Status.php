@@ -27,17 +27,21 @@ class Status extends Controller
     {
         $status = get_instance()->server->stats();
         $status['now_task'] = get_instance()->getServerAllTaskMessage();
-        $data = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getStatus();
-        $status['cluster_nodes'] = $data['nodes'];
-        $status['uidOnlineCount'] = $data['count'];
-        $data = yield ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
-        foreach ($data as $key => $value) {
-            $data[$key] = json_decode($value, true);
-            foreach ($data[$key] as &$one) {
-                $one = $one['Service'];
+        if ($this->config['consul']['enable']) {
+            $data = yield ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
+            foreach ($data as $key => $value) {
+                $data[$key] = json_decode($value, true);
+                foreach ($data[$key] as &$one) {
+                    $one = $one['Service'];
+                }
+            }
+            $status['consul_services'] = $data;
+            if ($this->config['cluster']['enable']) {
+                $data = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getStatus();
+                $status['cluster_nodes'] = $data['nodes'];
+                $status['uidOnlineCount'] = $data['count'];
             }
         }
-        $status['consul_services'] = $data;
         $this->http_output->end($status);
     }
 }
