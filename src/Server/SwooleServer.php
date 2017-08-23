@@ -23,7 +23,15 @@ use Server\Coroutine\Coroutine;
  */
 abstract class SwooleServer extends Child
 {
-    const version = "2.4.3";
+    /**
+     * 配置文件版本
+     */
+    const config_version = 2;
+
+    /**
+     * 版本
+     */
+    const version = "2.4.4";
 
     /**
      * server name

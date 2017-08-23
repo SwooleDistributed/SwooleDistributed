@@ -10,17 +10,24 @@ namespace Server\Components\Consul;
 
 use Server\Components\Process\Process;
 use Server\CoreBase\PortManager;
+use Server\CoreBase\SwooleException;
 use Server\CoreBase\TimerTask;
 
 class ConsulProcess extends Process
 {
     /**
      * @param $process
+     * @throws SwooleException
      */
     public function start($process)
     {
         parent::start($process);
         $this->jsonFormatHandler();
+        if(!is_file(BIN_DIR . "/exec/consul")){
+            echo ("consul没有安装,请下载最新的consul安装至bin/exec目录,或者在config/consul.php中取消使能\n");
+            get_instance()->server->shutdown();
+            return;
+        }
         $process->exec(BIN_DIR . "/exec/consul", ['agent', '-ui', '-config-dir', BIN_DIR . '/exec/consul.d']);
     }
 
