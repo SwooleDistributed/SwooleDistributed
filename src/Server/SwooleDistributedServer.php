@@ -93,6 +93,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     private $asynPools = [];
 
     /**
+     * @var bool
+     */
+    private $debug = false;
+    /**
      * SwooleDistributedServer constructor.
      */
     public function __construct()
@@ -106,6 +110,22 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         }
     }
 
+    /**
+     * 设置Debug模式
+     */
+    public function setDebugMode()
+    {
+        $this->debug = true;
+    }
+
+    /**
+     * 是否是Debug
+     * @return mixed
+     */
+    public function isDebug()
+    {
+        return $this->debug;
+    }
     /**
      * 获取实例
      * @return SwooleDistributedServer
@@ -306,7 +326,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         } else {
             $this->server->task($send_data);
         }
-        if($this->isCluster()) {
+        if ($this->isCluster()) {
             ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_sendToAll($data);
         }
     }
@@ -324,7 +344,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $this->send($fd, $data, true);
         } else {
             if ($fromDispatch) return;
-            if($this->isCluster()) {
+            if ($this->isCluster()) {
                 ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_sendToUid($uid, $data);
             }
         }
@@ -359,7 +379,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         }
         if ($fromDispatch) return;
         //本机处理不了的发给dispatch
-        if($this->isCluster()) {
+        if ($this->isCluster()) {
             if (count($uids) > 0) {
                 ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_sendToUids(array_values($uids), $data);
             }
@@ -378,7 +398,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $this->close($fd);
         } else {
             if ($fromDispatch) return;
-            if($this->isCluster()) {
+            if ($this->isCluster()) {
                 ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_kickUid($uid);
             }
         }
@@ -520,7 +540,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $this->getRedis()->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
             }
         }
-        if($this->isCluster()) {
+        if ($this->isCluster()) {
             ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_removeUid($uid);
         }
     }
@@ -538,7 +558,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     protected function isCluster()
     {
-        return $this->config['consul']['enable']&&$this->config['cluster']['enable'];
+        return $this->config['consul']['enable'] && $this->config['cluster']['enable'];
     }
     /**
      * 将fd绑定到uid,uid不能为0
@@ -554,7 +574,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         }
         //将这个fd与当前worker进行绑定
         $this->server->bind($fd, $uid);
-        if($this->isCluster()) {
+        if ($this->isCluster()) {
             ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_addUid($uid, $session);
         }
         //加入共享内存
@@ -569,9 +589,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function updateSession($uid, $session)
     {
-        if($this->isCluster()) {
+        if ($this->isCluster()) {
             ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_addUid($uid, $session);
-        }else{
+        } else {
             throw new SwooleException('集群环境可用');
         }
     }
@@ -584,9 +604,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function getSessionCoroutine($uid)
     {
-        if($this->isCluster()) {
+        if ($this->isCluster()) {
             return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getSession($uid);
-        }else{
+        } else {
             throw new SwooleException('集群环境可用');
         }
     }
@@ -599,9 +619,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function coroutineUidIsOnline($uid)
     {
-        if($this->isCluster()) {
+        if ($this->isCluster()) {
             return yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->isOnline($uid);
-        }else{
+        } else {
             return $this->uid_fd_table->exist($uid);
         }
     }
@@ -614,9 +634,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function coroutineCountOnline()
     {
-        if($this->isCluster()) {
+        if ($this->isCluster()) {
             return yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->countOnline();
-        }else{
+        } else {
             return count($this->uid_fd_table);
         }
     }

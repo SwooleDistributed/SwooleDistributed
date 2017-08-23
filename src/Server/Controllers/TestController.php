@@ -331,14 +331,6 @@ class TestController extends Controller
         yield $task->coroutineSend();
     }
 
-    public function http_testLeader()
-    {
-        $ConsulModel = $this->loader->model('ConsulModel',$this);
-        $result = yield $ConsulModel->leader();
-        var_dump($result);
-        $this->http_output->end($result);
-    }
-
     public function http_echo()
     {
         $this->http_output->end(123);
@@ -398,4 +390,5 @@ class TestController extends Controller
         $this->sendToUids([1, 2], 1, false);
         $this->http_output->end(1);
     }
+
 }
