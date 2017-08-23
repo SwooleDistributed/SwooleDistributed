@@ -6,7 +6,7 @@
  * Time: 下午5:58
  */
 //是否启用consul
-$config['consul']['enable'] = true;
+$config['consul']['enable'] = false;
 //服务器名称，同种服务应该设置同样的名称，用于leader选举
 $config['consul']['leader_service_name'] = 'Test';
 //node的名字，每一个都必须不一样

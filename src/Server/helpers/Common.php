@@ -158,6 +158,10 @@ function checkExtension()
         print_r("dispatch_heart_time配置已被弃用，请换成['dispatch']['heart_time']\n");
         $check = false;
     }
+    if(get_instance()->config->get('config_version','')!=\Server\SwooleServer::config_version){
+        print_r("配置文件有不兼容的可能，请将vendor/tmtbe/swooledistributed/src/config目录替换src/config目录，然后重新配置\n");
+        $check = false;
+    }
 
     $dispatch_enable = get_instance()->config->get('dispatch.enable',false);
     if($dispatch_enable){
