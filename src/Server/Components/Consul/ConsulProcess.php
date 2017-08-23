@@ -23,8 +23,8 @@ class ConsulProcess extends Process
     {
         parent::start($process);
         $this->jsonFormatHandler();
-        if(!is_file(BIN_DIR . "/exec/consul")){
-            echo ("consul没有安装,请下载最新的consul安装至bin/exec目录,或者在config/consul.php中取消使能\n");
+        if (!is_file(BIN_DIR . "/exec/consul")) {
+            echo("consul没有安装,请下载最新的consul安装至bin/exec目录,或者在config/consul.php中取消使能\n");
             get_instance()->server->shutdown();
             return;
         }

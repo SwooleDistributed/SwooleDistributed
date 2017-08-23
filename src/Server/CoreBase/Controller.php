@@ -131,6 +131,9 @@ class Controller extends CoreBase
         $context['method_name'] = "$controller_name:$method_name";
         $this->setContext($context);
         $this->start_run_time = microtime(true);
+        if (get_instance()->isDebug()) {
+            set_time_limit(1);
+        }
     }
 
     /**
@@ -162,6 +165,7 @@ class Controller extends CoreBase
         $this->request = $request;
         $this->http_input->set($request);
     }
+
     /**
      * 异常的回调(如果需要继承$autoSendAndDestroy传flase)
      * @param \Exception $e
