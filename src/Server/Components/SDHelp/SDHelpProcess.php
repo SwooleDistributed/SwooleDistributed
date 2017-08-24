@@ -8,7 +8,6 @@
 
 namespace Server\Components\SDHelp;
 
-use Server\Asyn\HttpClient\HttpClientPool;
 use Server\Components\Consul\ConsulLeader;
 use Server\Components\Process\Process;
 use Server\Components\Reload\InotifyReload;
@@ -21,7 +20,6 @@ class SDHelpProcess extends Process
     public function start($process)
     {
         parent::start($process);
-        get_instance()->addAsynPool('consul', new HttpClientPool($this->config, 'http://127.0.0.1:8500'));
         new TimerTask();
         if (get_instance()->config->get('consul.enable', false)) {
             new ConsulLeader();

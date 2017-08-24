@@ -20,7 +20,6 @@ class ClusterClient
     protected $onConnect;
     protected $reconnect_tick;
     protected $isClose = false;
-
     public function __construct($ip, $port, $onConnect)
     {
         $this->onConnect = $onConnect;
@@ -40,12 +39,20 @@ class ClusterClient
 
         });
         $this->client->on("error", function ($cli) {
-
+            if (empty($this->reconnect_tick)) {
+                $this->reconnect_tick = swoole_timer_tick(1000, [$this, 'reConnect']);
+            }
         });
         $this->client->on("close", function ($cli) {
             if (empty($this->reconnect_tick)) {
                 $this->reconnect_tick = swoole_timer_tick(1000, [$this, 'reConnect']);
             }
+        });
+        $this->client->on("BufferEmpty", function ($cli) {
+
+        });
+        $this->client->on("BufferFull", function ($cli) {
+
         });
         $this->client->connect($this->ip, $this->port);
     }
@@ -89,16 +96,6 @@ class ClusterClient
         if (!empty($this->reconnect_tick)) {
             swoole_timer_clear($this->reconnect_tick);
             $this->reconnect_tick = null;
-        }
-    }
-
-    /**
-     * ping
-     */
-    public function ping()
-    {
-        if ($this->client->isConnected()) {
-            $this->client->send($this->pack->pack(ClusterPack::PING));
         }
     }
 }

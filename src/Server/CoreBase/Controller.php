@@ -352,30 +352,34 @@ class Controller extends CoreBase
 
     /**
      * bindUid
-     * @param $fd
      * @param $uid
      * @param bool $isKick
-     * @param array $session
+     * @throws \Exception
      */
-    protected function bindUid($fd, $uid, $isKick = true, $session = [])
+    protected function bindUid($uid, $isKick = true)
     {
-        if (Start::$testUnity) {
-            $this->testUnitSendStack[] = ['action' => 'bindUid', 'fd' => $fd, 'uid' => $uid];
-        } else {
-            get_instance()->bindUid($fd, $uid, $isKick, $session);
+        if (!empty($this->uid)) {
+            throw new \Exception("已经绑定过uid");
         }
+        $uid = (int)$uid;
+        if (Start::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'bindUid', 'fd' => $this->fd, 'uid' => $uid];
+        } else {
+            get_instance()->bindUid($this->fd, $uid, $isKick);
+        }
+        $this->uid = $uid;
     }
 
     /**
      * unBindUid
-     * @param $uid
      */
-    protected function unBindUid($uid)
+    protected function unBindUid()
     {
+        if (empty($this->uid)) return;
         if (Start::$testUnity) {
-            $this->testUnitSendStack[] = ['action' => 'unBindUid', 'uid' => $uid];
+            $this->testUnitSendStack[] = ['action' => 'unBindUid', 'uid' => $this->uid];
         } else {
-            get_instance()->unBindUid($uid);
+            get_instance()->unBindUid($this->uid);
         }
     }
 
@@ -440,32 +444,37 @@ class Controller extends CoreBase
      */
     protected function getFdInfo()
     {
-        $fdinfo = $this->server->connection_info($this->fd);
-        return $fdinfo;
+        return get_instance()->getFdInfo($this->fd);
     }
 
     /**
-     * 获取Session
-     * @param $uid
-     * @return array|\Generator
+     * @param $sub
      */
-    protected function getSessionCoroutine($uid)
+    protected function addSub($sub)
     {
-        if (empty($uid)) {
-            return [];
-        }
-        $result = get_instance()->getSessionCoroutine($uid);
-        return $result;
+        if (empty($this->uid)) return;
+        get_instance()->addSub($sub, $this->uid);
     }
 
     /**
-     * 更新Session
-     * @param $session
+     * @param $sub
      */
-    protected function updateSession($session)
+    protected function removeSub($sub)
     {
-        if (!empty($this->uid)) {
-            get_instance()->updateSession($this->uid, $session);
+        if (empty($this->uid)) return;
+        get_instance()->removeSub($sub, $this->uid);
+    }
+
+    /**
+     * @param $sub
+     * @param $data
+     * @param $destroy
+     */
+    protected function sendPub($sub, $data, $destroy = true)
+    {
+        get_instance()->pub($sub, $data);
+        if ($destroy) {
+            $this->destroy();
         }
     }
 }

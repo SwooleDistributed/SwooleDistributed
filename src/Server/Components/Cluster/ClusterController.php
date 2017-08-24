@@ -24,6 +24,7 @@ class ClusterController
      */
     public function syncNodeData($node_name, $uids)
     {
+        $uids = array_values($uids);
         ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_syncData($node_name, $uids);
     }
 
@@ -31,11 +32,10 @@ class ClusterController
      * 添加数据
      * @param $node_name
      * @param $uid
-     * @param $session
      */
-    public function addNodeUid($node_name, $uid, $session)
+    public function addNodeUid($node_name, $uid)
     {
-        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_addUid($node_name, $uid, $session);
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_addUid($node_name, $uid);
     }
 
     /**
@@ -60,11 +60,16 @@ class ClusterController
 
     public function sendToAll($data)
     {
-        get_instance()->sendToAll($data);
+        get_instance()->sendToAll($data, true);
     }
 
     public function kickUid($uid)
     {
         get_instance()->kickUid($uid, true);
+    }
+
+    public function pub($sub, $data)
+    {
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_pub($sub, $data);
     }
 }

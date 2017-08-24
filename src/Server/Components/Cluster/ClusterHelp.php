@@ -45,9 +45,7 @@ class ClusterHelp
 
     public function buildPort()
     {
-        if (!$this->config->get('cluster.enable', false)) {
-            return;
-        }
+        if (!get_instance()->isCluster()) return;
         //创建dispatch端口用于连接dispatch
         $this->port = get_instance()->server->listen('0.0.0.0', $this->config['cluster']['port'], SWOOLE_SOCK_TCP);
         $this->port->set($this->pack->getProbufSet());
@@ -67,6 +65,7 @@ class ClusterHelp
             }
             $method = $unserialize_data['m'];
             $params = $unserialize_data['p'];
+
             call_user_func_array([$this->controller, $method], $params);
         });
     }

@@ -82,16 +82,14 @@ class TestModel extends Model
 
     public function testMysql()
     {
-        try {
-            $value = yield $this->mysql_pool->dbQueryBuilder->insert('MysqlTest')
-                ->option('HIGH_PRIORITY')
-                ->set('firstname', 'White')
-                ->set('lastname', 'Cat')
-                ->set('age', '25')
-                ->set('townid', '10000')->coroutineSend()->dump();
-            return $value;
-        }catch (\Exception $e){
-            return 1;
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->coroutineSend();
+        return $result;
+    }
+
+    public function testWhile()
+    {
+        while (1) {
+
         }
     }
 }

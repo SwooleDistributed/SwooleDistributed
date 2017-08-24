@@ -62,7 +62,7 @@ class Process
      */
     public function onRead()
     {
-        $recv = \swoole_serialize::unpack($this->process->read());
+        $recv = \swoole_serialize::unpack($this->process->read(64 * 1024));
         $message = $recv['message'];
         $func = $message['func'];
         $result = call_user_func_array([$this, $func], $message['arg']);

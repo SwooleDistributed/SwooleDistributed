@@ -56,7 +56,6 @@ class Task extends TaskProxy
      */
     protected function sendToUid($uid, $data)
     {
-        $data = $this->pack->pack($data);
         get_instance()->sendToUid($uid, $data);
     }
 
@@ -67,7 +66,6 @@ class Task extends TaskProxy
      */
     protected function sendToUids($uids, $data)
     {
-        $data = $this->pack->pack($data);
         get_instance()->sendToUids($uids, $data);
     }
 
@@ -77,7 +75,6 @@ class Task extends TaskProxy
      */
     protected function sendToAll($data)
     {
-        $data = $this->pack->pack($data);
         get_instance()->sendToAll($data);
     }
 }
