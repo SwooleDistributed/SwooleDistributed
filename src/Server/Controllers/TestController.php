@@ -9,7 +9,6 @@ namespace Server\Controllers;
 
 use app\Process\MyProcess;
 use Server\Asyn\TcpClient\SdTcpRpcPool;
-use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Consul\ConsulServices;
 use Server\Components\Event\EventDispatcher;
 use Server\Components\Process\ProcessManager;
@@ -119,7 +118,7 @@ class TestController extends Controller
      */
     public function bind_uid()
     {
-        $this->bindUid($this->fd, $this->client_data->data, true, ['a', 'b', 'c']);
+        $this->bindUid($this->client_data->data, true);
         $this->destroy();
     }
 
@@ -361,34 +360,10 @@ class TestController extends Controller
         $this->http_output->end($result);
     }
 
-    public function http_testC1()
+    public function http_testWhile()
     {
-        $this->sendToAll(1213, false);
+        $this->testModel = $this->loader->model('TestModel', $this);
+        yield $this->testModel->testWhile();
         $this->http_output->end(1);
     }
-
-    public function http_testC2()
-    {
-        $this->sendToUid(1, 1, false);
-        $this->http_output->end(1);
-    }
-
-    public function http_testC3()
-    {
-        $this->sendToUid(2, 1, false);
-        $this->http_output->end(1);
-    }
-
-    public function http_testC4()
-    {
-        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getUidMap();
-        $this->http_output->end($result);
-    }
-
-    public function http_testC5()
-    {
-        $this->sendToUids([1, 2], 1, false);
-        $this->http_output->end(1);
-    }
-
 }

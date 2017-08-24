@@ -9,6 +9,7 @@
 namespace Server\Components\TimerTask;
 
 
+use Server\Asyn\HttpClient\HttpClient;
 use Server\Asyn\HttpClient\HttpClientPool;
 use Server\Components\Event\Event;
 use Server\Components\Event\EventDispatcher;
@@ -31,16 +32,18 @@ class TimerTask extends CoreBase
     {
         parent::__construct();
         $this->leader_name = $this->config['consul']['leader_service_name'];
-        $this->consul = get_instance()->getAsynPool('consul');
+        if (get_instance()->isConsul()) {
+            $this->consul = new HttpClient(null, 'http://127.0.0.1:8500');
+            swoole_timer_after(1000, function () {
+                $this->updateFromConsul();
+            });
+        }
         $this->updateTimerTask();
         $this->timerTask();
         $this->id = swoole_timer_tick(1000, function () {
             $this->timerTask();
         });
 
-        swoole_timer_after(1000, function () {
-            Coroutine::startCoroutine([$this, 'updateFromConsul']);
-        });
 
     }
 
@@ -56,11 +59,12 @@ class TimerTask extends CoreBase
             $timer_tasks = array_merge($timer_tasks, $consulTask);
         }
         $this->timer_tasks_used = [];
-        foreach ($timer_tasks as $timer_task) {
+        foreach ($timer_tasks as $name => $timer_task) {
             $task_name = $timer_task['task_name'] ?? '';
             $model_name = $timer_task['model_name'] ?? '';
             if (empty($task_name) && empty($model_name)) {
-                throw new SwooleException('定时任务配置错误，缺少task_name或者model_name.');
+                echo("定时任务$name 配置错误，缺少task_name或者model_name.\n");
+                continue;
             }
             $method_name = $timer_task['method_name'];
             if (!array_key_exists('start_time', $timer_task)) {
@@ -133,23 +137,26 @@ class TimerTask extends CoreBase
      */
     public function updateFromConsul($index = 0)
     {
-        $result = yield $this->consul->httpClient->setMethod('GET')
+        $this->consul->setMethod('GET')
             ->setQuery(['index' => $index, 'key' => '*', 'recurse' => true])
-            ->coroutineExecute("/v1/kv/TimerTask/{$this->leader_name}/")->setTimeout(11 * 60 * 1000)->noException(null);
-        if ($result == null) {
-            Coroutine::startCoroutine([$this, 'updateFromConsul'], [$index]);
-            return;
-        }
-        $body = json_decode($result['body'], true);
-        $consulTask = [];
-        if ($body != null) {
-            foreach ($body as $value) {
-                $consulTask[$value['Key']] = json_decode(base64_decode($value['Value']), true);
-            }
-            $this->updateTimerTask($consulTask);
-        }
-        $index = $result['headers']['x-consul-index'];
-        Coroutine::startCoroutine([$this, 'updateFromConsul'], [$index]);
+            ->execute("/v1/kv/TimerTask/{$this->leader_name}/", function ($data) use ($index) {
+                if ($data['statusCode'] < 0) {
+                    $this->updateFromConsul($index);
+                    return;
+                }
+                $body = json_decode($data['body'], true);
+                $consulTask = [];
+                if ($body != null) {
+                    foreach ($body as $value) {
+                        $consulTask[$value['Key']] = json_decode(base64_decode($value['Value']), true);
+                    }
+                    $this->updateTimerTask($consulTask);
+                } else {
+                    $this->updateTimerTask(null);
+                }
+                $index = $data['headers']['x-consul-index'];
+                $this->updateFromConsul($index);
+            });
     }
 
     /**
