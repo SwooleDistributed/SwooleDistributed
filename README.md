@@ -1,20 +1,23 @@
-# SwooleDistributed v2.4.1 更新
+# SwooleDistributed
 
-swoole 分布式通讯框架  
-开发交流群：569037921  
+High performance, high concurrency, PHP asynchronous distributed framework,power by ext-swoole
 
-简单websocket案例 
-聊天室 https://github.com/tmtbe/SD-todpole
+Development communication QQ-group：569037921  
 
-官网：http://sd.youwoxing.net
+Simple websocket case
 
-文档：http://docs.youwoxing.net
+Chat room https://github.com/tmtbe/SD-todpole
 
-视频：http://v.qq.com/boke/gplay/337c9b150064b5e5bcfe344f11a106c5_m0i000801b66cfv.html
+The official website：http://sd.youwoxing.net
 
-可以通过composer安装
+Development document：http://docs.youwoxing.net
 
-autoload必须要指定app和test。
+Instructional video：http://v.qq.com/boke/gplay/337c9b150064b5e5bcfe344f11a106c5_m0i000801b66cfv.html
+
+##Install
+You can install via composer
+
+Autoload must specify `app` and `test`.
 ```
 {
   "require": {
@@ -28,34 +31,34 @@ autoload必须要指定app和test。
   }
 }
 ```
-然后在根目录（vendor上级目录）执行下面代码
+Then execute the following code in the root directory (the vendor higher directory)
 ```
 php vendor/tmtbe/swooledistributed/src/Install.php
 ```
-安装结束可以在bin中执行服务器。
+The server can be executed in the bin at the end of the installation.
 
-微服务框架SD2.4.1
+##Advantage
 
-1.协程优化，速度更快，功能更强大
+1.High performance and high concurrency, asynchronous event driven
 
-2.httpClient，client连接池，REST和RPC的支持
+2.HttpClient, client, Mysql, Redis connection pooling
 
-3.timerTask优化
+3.Timed task system
 
-4.协程熔断器，可以超时降级和熔断恢复
+4.Coroutine Support
 
-5.包结构调整优化，分离协程，连接池模块，模块解耦
+5.Using object pooling mode, optimizing memory allocation and GC
 
-6.全链路监控，开放Context上下文
+6.Many asynchronous clients, such as MQTT, AMQP, etc.
 
-7.推荐使用对象池模式，优化内存分配和GC
+7.Support cluster deployment
 
-8.提供分布式锁功能，简单易用，更多分布式工具逐步更新
+8.User process management
 
-9.众多异步客户端，MQTT，AMQP等
+9.Support multi port, multi protocol, automatic conversion between protocols
 
-10.通过consul实现注册中心
+10.Micro service management based on Consul
 
-11.分布式部署
+11.Automatic discovery of cluster nodes based on Consul
 
-12.用户进程管理
+12.Support pubish-subscribe mode
