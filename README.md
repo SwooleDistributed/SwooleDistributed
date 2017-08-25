@@ -14,7 +14,7 @@ Development document：http://docs.youwoxing.net
 
 Instructional video：http://v.qq.com/boke/gplay/337c9b150064b5e5bcfe344f11a106c5_m0i000801b66cfv.html
 
-##Install
+## Install
 You can install via composer
 
 Autoload must specify `app` and `test`.
@@ -37,7 +37,7 @@ php vendor/tmtbe/swooledistributed/src/Install.php
 ```
 The server can be executed in the bin at the end of the installation.
 
-##Advantage
+## Advantage
 
 1.High performance and high concurrency, asynchronous event driven
 
