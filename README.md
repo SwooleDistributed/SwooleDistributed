@@ -6,7 +6,9 @@ Development communication QQ-group：569037921
 
 Simple websocket case
 
-Chat room https://github.com/tmtbe/SD-todpole
+Chat room: https://github.com/tmtbe/SD-todpole
+
+Live Demo: http://114.55.253.83:8081/
 
 The official website：http://sd.youwoxing.net
 
