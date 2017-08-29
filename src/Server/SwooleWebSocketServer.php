@@ -143,14 +143,14 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         try {
             $client_data = $pack->unPack($data);
         } catch (\Exception $e) {
-            $pack->errorHandle($fd);
+            $pack->errorHandle($e, $fd);
             return null;
         }
         //client_data进行处理
         try {
             $client_data = $route->handleClientData($client_data);
         } catch (\Exception $e) {
-            $route->errorHandle($fd);
+            $route->errorHandle($e, $fd);
             return null;
         }
         $controller_name = $route->getControllerName();
@@ -158,7 +158,8 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         if ($controller_instance != null) {
             $uid = $serv->connection_info($fd)['uid']??0;
             $method_name = $this->config->get('websocket.method_prefix', '') . $route->getMethodName();
-            if (!method_exists($controller_instance, $method_name)) {
+            $call = [$controller_instance, &$method_name];
+            if (!is_callable($call)) {
                 $method_name = 'defaultMethod';
             }
             $request = $this->fdRequest[$fd] ?? null;
@@ -167,7 +168,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             }
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
-                Coroutine::startCoroutine([$controller_instance, $method_name], $route->getParams());
+                Coroutine::startCoroutine($call, $route->getParams());
             } catch (\Exception $e) {
                 call_user_func([$controller_instance, 'onExceptionHandle'], $e);
             }

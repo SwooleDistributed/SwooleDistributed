@@ -165,9 +165,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         parent::beforeSwooleStart();
         //创建uid->fd共享内存表
-        $this->uid_fd_table = new \swoole_table(65536);
-        $this->uid_fd_table->column('fd', \swoole_table::TYPE_INT, 8);
-        $this->uid_fd_table->create();
+        $this->createUidTable();
         //创建task用的taskid
         $this->task_atomic = new \swoole_atomic(0);
         //创建task用的id->pid共享内存表不至于同时超过1024个任务吧
@@ -186,6 +184,16 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         ClusterHelp::getInstance()->buildPort();
         //init锁
         $this->initLock = new \swoole_lock(SWOOLE_RWLOCK);
+    }
+
+    /**
+     * 创建uid->fd共享内存表
+     */
+    protected function createUidTable()
+    {
+        $this->uid_fd_table = new \swoole_table(65536);
+        $this->uid_fd_table->column('fd', \swoole_table::TYPE_INT, 8);
+        $this->uid_fd_table->create();
     }
 
     /**
@@ -285,10 +293,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $task_fuc_name = $message['task_fuc_name'];
                 $task_data = $message['task_fuc_data'];
                 $task_context = $message['task_context'];
-                if (method_exists($task, $task_fuc_name)) {
+                $call = [$task, $task_fuc_name];
+                if (is_callable($call)) {
                     //给task做初始化操作
                     $task->initialization($task_id, $from_id, $this->server->worker_pid, $task_name, $task_fuc_name, $task_context);
-                    $result = Coroutine::startCoroutine([$task, $task_fuc_name], $task_data);
+                    $result = Coroutine::startCoroutine($call, $task_data);
                 } else {
                     throw new SwooleException("method $task_fuc_name not exist in $task_name");
                 }
@@ -547,7 +556,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $uid = $info['uid'] ?? 0;
         if (!empty($uid)) {
             Coroutine::startCoroutine([$this, 'onUidCloseClear'], [$uid]);
-            $this->unBindUid($uid);
+            $this->unBindUid($uid, $fd);
         }
         parent::onSwooleClose($serv, $fd);
     }
@@ -565,16 +574,13 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     /**
      * 解绑uid，链接断开自动解绑
      * @param $uid
+     * @param $fd
      */
-    public function unBindUid($uid)
+    public function unBindUid($uid, $fd)
     {
         //更新共享内存
-        $ok = $this->uid_fd_table->del($uid);
-        //更新映射表
-        if ($ok) {//说明是本机绑定的uid
-            if ($this->config->get('redis.enable', true)) {
-                $this->getRedis()->hDel(SwooleMarco::redis_uid_usid_hash_name, $uid);
-            }
+        if ($this->uid_fd_table->get($uid, 'fd') == $fd) {
+            $this->uid_fd_table->del($uid);
         }
         //这里无论是不是集群都需要调用
         ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_removeUid($uid);
@@ -603,14 +609,14 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         return $this->config['consul']['enable'];
     }
+
     /**
      * 将fd绑定到uid,uid不能为0
      * @param $fd
      * @param $uid
      * @param bool $isKick 是否踢掉uid上一个的链接
-     * @param array $session
      */
-    public function bindUid($fd, $uid, $isKick = true, $session = [])
+    public function bindUid($fd, $uid, $isKick = true)
     {
         $uid = (int)$uid;
         if ($isKick) {

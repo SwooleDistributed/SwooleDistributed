@@ -18,5 +18,5 @@ interface IPack
 
     function getProbufSet();
 
-    function errorHandle($fd);
+    function errorHandle($e, $fd);
 }

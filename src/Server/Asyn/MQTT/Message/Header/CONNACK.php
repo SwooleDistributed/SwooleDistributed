@@ -7,7 +7,6 @@
 namespace Server\Asyn\MQTT\Message\Header;
 use Server\Asyn\MQTT\Debug;
 use Server\Asyn\MQTT\Exception;
-use Server\Asyn\MQTT\Message;
 
 
 /**
@@ -95,6 +94,32 @@ class CONNACK extends Base
         } else {
             Debug::Log(Debug::DEBUG, "CONNACK: Session Present Flag: OFF");
         }
+    }
+
+    /**
+     * Build Variable Header
+     *
+     * @return string
+     */
+    protected function buildVariableHeader()
+    {
+        $buffer = "";
+        $buffer .= chr($this->session_present);
+        $buffer .= chr($this->return_code);
+        return $buffer;
+    }
+
+    /**
+     * @param $return_code
+     */
+    public function setReturnCode($return_code)
+    {
+        $this->return_code = $return_code;
+    }
+
+    public function setSessionPresent($session_present)
+    {
+        $this->session_present = $session_present;
     }
 }
 

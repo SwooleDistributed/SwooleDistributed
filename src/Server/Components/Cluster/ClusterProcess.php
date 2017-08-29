@@ -158,13 +158,58 @@ class ClusterProcess extends Process
      */
     public function my_pub($sub, $data)
     {
-        if (isset($this->subArr[$sub])) {
-            foreach ($this->subArr[$sub] as $uid) {
-                get_instance()->sendToUid($uid, $data, true);
-            }
-        }
+        $this->th_pub($sub, $data);
         foreach ($this->client as $client) {
             $client->pub($sub, $data);
+        }
+    }
+
+    /**
+     * 构建订阅树,只允许5层
+     * @param $sub
+     * @return Set
+     */
+    protected function buildTrees($sub)
+    {
+        $p = explode("/", $sub);
+        $countPlies = count($p);
+        $result = new Set();
+        $result->add("#");
+        for ($j = 0; $j < $countPlies; $j++) {
+            $a = array_slice($p, 0, $j + 1);
+            $arr = [$a];
+            $count_a = count($a);
+            $value = implode('/', $a);
+            $result->add($value . "/#");
+            $complete = false;
+            if ($count_a == $countPlies) {
+                $complete = true;
+                $result->add($value);
+            }
+            for ($i = 0; $i < $count_a; $i++) {
+                $temp = [];
+                foreach ($arr as $one) {
+                    $this->help_replace_plus($one, $temp, $result, $complete);
+                }
+                $arr = $temp;
+            }
+        }
+        return $result;
+    }
+
+    protected function help_replace_plus($arr, &$temp, &$result, $complete)
+    {
+        $count = count($arr);
+        for ($i = 0; $i < $count; $i++) {
+            $new = $arr;
+            if ($new[$i] == '+') continue;
+            $new[$i] = '+';
+            $temp[] = $new;
+            $value = implode('/', $new);
+            $result->add($value . "/#");
+            if ($complete) {
+                $result->add($value);
+            }
         }
     }
 
@@ -185,9 +230,12 @@ class ClusterProcess extends Process
      */
     public function th_pub($sub, $data)
     {
-        if (isset($this->subArr[$sub])) {
-            foreach ($this->subArr[$sub] as $uid) {
-                get_instance()->sendToUid($uid, $data, true);
+        $tree = $this->buildTrees($sub);
+        foreach ($tree as $one) {
+            if (isset($this->subArr[$one])) {
+                foreach ($this->subArr[$one] as $uid) {
+                    get_instance()->sendToUid($uid, $data, true);
+                }
             }
         }
     }

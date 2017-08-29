@@ -18,9 +18,10 @@ class NonJsonPack implements IPack
 
     public function pack($data)
     {
-        if ($this->last_data == $data) {
+        if ($this->last_data != null && $this->last_data == $data) {
             return $this->last_data_result;
         }
+        $this->last_data = $data;
         $this->last_data_result = json_encode($data, JSON_UNESCAPED_UNICODE);
         return $this->last_data_result;
     }
@@ -49,7 +50,7 @@ class NonJsonPack implements IPack
         return null;
     }
 
-    public function errorHandle($fd)
+    public function errorHandle($e, $fd)
     {
         //get_instance()->close($fd);
     }

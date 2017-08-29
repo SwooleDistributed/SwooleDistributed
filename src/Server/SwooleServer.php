@@ -31,7 +31,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.4.6";
+    const version = "2.4.7";
 
     /**
      * server name
@@ -259,14 +259,14 @@ abstract class SwooleServer extends Child
         try {
             $client_data = $pack->unPack($data);
         } catch (\Exception $e) {
-            $pack->errorHandle($fd);
+            $pack->errorHandle($e, $fd);
             return null;
         }
         //client_data进行处理
         try {
             $client_data = $route->handleClientData($client_data);
         } catch (\Exception $e) {
-            $route->errorHandle($fd);
+            $route->errorHandle($e, $fd);
             return null;
         }
         $controller_name = $route->getControllerName();
@@ -281,10 +281,11 @@ abstract class SwooleServer extends Child
             $method_name = $this->config->get('tcp.method_prefix', '') . $route->getMethodName();
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
-                if (!method_exists($controller_instance, $method_name)) {
+                $call = [$controller_instance, &$method_name];
+                if (!is_callable($call)) {
                     $method_name = 'defaultMethod';
                 }
-                Coroutine::startCoroutine([$controller_instance, $method_name], $route->getParams());
+                Coroutine::startCoroutine($call, $route->getParams());
             } catch (\Exception $e) {
                 call_user_func([$controller_instance, 'onExceptionHandle'], $e);
             }

@@ -6,7 +6,6 @@
 
 
 namespace Server\Asyn\MQTT;
-use Server\Asyn\MQTT\Message\Header;
 
 /**
  * Message type definitions
@@ -16,86 +15,86 @@ class Message
     /**
      * Message Type: CONNECT
      */
-    const CONNECT       = 0x01;
+    const CONNECT = 0x01;
     /**
      * Message Type: CONNACK
      */
-    const CONNACK       = 0x02;
+    const CONNACK = 0x02;
     /**
      * Message Type: PUBLISH
      */
-    const PUBLISH       = 0x03;
+    const PUBLISH = 0x03;
     /**
      * Message Type: PUBACK
      */
-    const PUBACK        = 0x04;
+    const PUBACK = 0x04;
     /**
      * Message Type: PUBREC
      */
-    const PUBREC        = 0x05;
+    const PUBREC = 0x05;
     /**
      * Message Type: PUBREL
      */
-    const PUBREL        = 0x06;
+    const PUBREL = 0x06;
     /**
      * Message Type: PUBCOMP
      */
-    const PUBCOMP       = 0x07;
+    const PUBCOMP = 0x07;
     /**
      * Message Type: SUBSCRIBE
      */
-    const SUBSCRIBE     = 0x08;
+    const SUBSCRIBE = 0x08;
     /**
      * Message Type: SUBACK
      */
-    const SUBACK        = 0x09;
+    const SUBACK = 0x09;
     /**
      * Message Type: UNSUBSCRIBE
      */
-    const UNSUBSCRIBE   = 0x0A;
+    const UNSUBSCRIBE = 0x0A;
     /**
      * Message Type: UNSUBACK
      */
-    const UNSUBACK      = 0x0B;
+    const UNSUBACK = 0x0B;
     /**
      * Message Type: PINGREQ
      */
-    const PINGREQ       = 0x0C;
+    const PINGREQ = 0x0C;
     /**
      * Message Type: PINGRESP
      */
-    const PINGRESP      = 0x0D;
+    const PINGRESP = 0x0D;
     /**
      * Message Type: DISCONNECT
      */
-    const DISCONNECT    = 0x0E;
+    const DISCONNECT = 0x0E;
 
     static public $name = array(
-        Message::CONNECT     => 'CONNECT',
-        Message::CONNACK     => 'CONNACK',
-        Message::PUBLISH     => 'PUBLISH',
-        Message::PUBACK      => 'PUBACK',
-        Message::PUBREC      => 'PUBREC',
-        Message::PUBREL      => 'PUBREL',
-        Message::PUBCOMP     => 'PUBCOMP',
-        Message::SUBSCRIBE   => 'SUBSCRIBE',
-        Message::SUBACK      => 'SUBACK',
+        Message::CONNECT => 'CONNECT',
+        Message::CONNACK => 'CONNACK',
+        Message::PUBLISH => 'PUBLISH',
+        Message::PUBACK => 'PUBACK',
+        Message::PUBREC => 'PUBREC',
+        Message::PUBREL => 'PUBREL',
+        Message::PUBCOMP => 'PUBCOMP',
+        Message::SUBSCRIBE => 'SUBSCRIBE',
+        Message::SUBACK => 'SUBACK',
         Message::UNSUBSCRIBE => 'UNSUBSCRIBE',
-        Message::UNSUBACK    => 'UNSUBACK',
-        Message::PINGREQ     => 'PINGREQ',
-        Message::PINGRESP    => 'PINGRESP',
-        Message::DISCONNECT  => 'DISCONNECT',
+        Message::UNSUBACK => 'UNSUBACK',
+        Message::PINGREQ => 'PINGREQ',
+        Message::PINGRESP => 'PINGRESP',
+        Message::DISCONNECT => 'DISCONNECT',
     );
 
     /**
      * Create Message Object
      *
-     * @param int         $message_type
-     * @param MQTT        $mqtt
+     * @param int $message_type
+     * @param MQTT $mqtt
      * @return mixed
      * @throws Exception
      */
-    static public function Create($message_type, MQTT $mqtt)
+    static public function Create($message_type, $mqtt)
     {
         if (!isset(Message::$name[$message_type])) {
             throw new Exception('Message type not defined');
