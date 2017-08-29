@@ -20,5 +20,5 @@ interface IRoute
 
     function getPath();
 
-    function errorHandle($fd);
+    function errorHandle($e, $fd);
 }

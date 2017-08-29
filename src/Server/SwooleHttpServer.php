@@ -136,12 +136,13 @@ abstract class SwooleHttpServer extends SwooleServer
                     return;
                 }
                 $method_name = $this->config->get('http.method_prefix', '') . $route->getMethodName();
-                if (!method_exists($controller_instance, $method_name)) {
+                $call = [$controller_instance, &$method_name];
+                if (!is_callable($call)) {
                     $method_name = 'defaultMethod';
                 }
                 try {
                     $controller_instance->setRequestResponse($request, $response, $controller_name, $method_name);
-                    Coroutine::startCoroutine([$controller_instance, $method_name], $route->getParams());
+                    Coroutine::startCoroutine($call, $route->getParams());
                     return;
                 } catch (\Exception $e) {
                     call_user_func([$controller_instance, 'onExceptionHandle'], $e);

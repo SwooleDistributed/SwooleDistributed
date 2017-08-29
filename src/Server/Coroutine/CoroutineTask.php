@@ -124,8 +124,9 @@ class CoroutineTask
                 if ($e instanceof SwooleException) {
                     $e->setShowOther($this->generatorContext->getTraceStack());
                 }
-                if ($this->generatorContext->getController() != null && method_exists($this->generatorContext->getController(), 'onExceptionHandle')) {
-                    call_user_func([$this->generatorContext->getController(), 'onExceptionHandle'], $e);
+                $call = [$this->generatorContext->getController(), 'onExceptionHandle'];
+                if ($this->generatorContext->getController() != null && is_callable($call)) {
+                    call_user_func($call, $e);
                 }else{
                     $routine->throw($e);
                 }

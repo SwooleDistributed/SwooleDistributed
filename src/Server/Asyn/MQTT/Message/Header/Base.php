@@ -7,7 +7,6 @@
 namespace Server\Asyn\MQTT\Message\Header;
 use Server\Asyn\MQTT\Debug;
 use Server\Asyn\MQTT\Exception;
-use Server\Asyn\MQTT\Message;
 use Server\Asyn\MQTT\Utility;
 
 
@@ -79,7 +78,6 @@ class Base
     {
         $cmd = Utility::ParseCommand(ord($packet_data[0]));
         $message_type = $cmd['message_type'];
-
         if ($this->message->getMessageType() != $message_type) {
             throw new Exception('Unexpected Control Packet Type');
         }
@@ -88,15 +86,11 @@ class Base
         $this->setFlags($flags);
 
         $pos = 1;
-
         $rl_len = strlen(($this->remaining_length_bytes = Utility::EncodeLength($remaining_length)));
-
         $pos += $rl_len;
 
         $this->remaining_length = $remaining_length;
-
         $this->decodeVariableHeader($packet_data, $pos);
-
         $payload_pos = $pos;
     }
 

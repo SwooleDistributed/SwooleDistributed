@@ -9,7 +9,10 @@ namespace Server\Asyn\MQTT;
 /**
  * Exception class
  */
-class Exception extends \Exception {}
+class Exception extends \Exception
+{
+
+}
 
 
 # EOF

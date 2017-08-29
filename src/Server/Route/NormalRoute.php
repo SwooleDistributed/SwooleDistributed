@@ -77,7 +77,7 @@ class NormalRoute implements IRoute
         return $this->client_data->params??null;
     }
 
-    public function errorHandle($fd)
+    public function errorHandle($e, $fd)
     {
         //get_instance()->close($fd);
     }

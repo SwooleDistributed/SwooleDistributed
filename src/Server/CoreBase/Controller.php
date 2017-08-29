@@ -379,21 +379,20 @@ class Controller extends CoreBase
         if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'unBindUid', 'uid' => $this->uid];
         } else {
-            get_instance()->unBindUid($this->uid);
+            get_instance()->unBindUid($this->uid, $this->fd);
         }
     }
 
     /**
      * 断开链接
-     * @param $fd
      * @param bool $autoDestroy
      */
-    protected function close($fd, $autoDestroy = true)
+    protected function close($autoDestroy = true)
     {
         if (Start::$testUnity) {
-            $this->testUnitSendStack[] = ['action' => 'close', 'fd' => $fd];
+            $this->testUnitSendStack[] = ['action' => 'close', 'fd' => $this->fd];
         } else {
-            get_instance()->close($fd);
+            get_instance()->close($this->fd);
         }
         if ($autoDestroy) {
             $this->destroy();

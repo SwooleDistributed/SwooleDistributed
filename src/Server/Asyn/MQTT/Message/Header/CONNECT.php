@@ -5,8 +5,9 @@
  */
 
 namespace Server\Asyn\MQTT\Message\Header;
+
+use Server\Asyn\MQTT\Debug;
 use Server\Asyn\MQTT\Exception;
-use Server\Asyn\MQTT\Message;
 use Server\Asyn\MQTT\MQTT;
 use Server\Asyn\MQTT\Utility;
 
@@ -46,6 +47,47 @@ class CONNECT extends Base
      */
     protected $keepalive = 60;
 
+    protected $will_flag;
+    protected $will_qos;
+    protected $will_retain;
+    protected $user_name_flag;
+    protected $password_flag;
+
+    public function getClean()
+    {
+        return $this->clean;
+    }
+
+    public function getKeepAlive()
+    {
+        return $this->keepalive;
+    }
+
+    public function getWillFlag()
+    {
+        return $this->will_flag;
+    }
+
+    public function getWillQos()
+    {
+        return $this->will_qos;
+    }
+
+    public function getWillRetain()
+    {
+        return $this->will_retain;
+    }
+
+    public function getUserNameFlag()
+    {
+        return $this->user_name_flag;
+    }
+
+    public function getPassWordFlag()
+    {
+        return $this->password_flag;
+    }
+
     /**
      * Clean Session
      *
@@ -66,7 +108,7 @@ class CONNECT extends Base
      */
     public function setKeepalive($keepalive)
     {
-        $this->keepalive = (int) $keepalive;
+        $this->keepalive = (int)$keepalive;
     }
 
     /**
@@ -124,13 +166,36 @@ class CONNECT extends Base
      * Decode Variable Header
      *
      * @param string & $packet_data
-     * @param int    & $pos
+     * @param int & $pos
      * @return bool
      * @throws Exception
      */
     protected function decodeVariableHeader(& $packet_data, & $pos)
     {
-        throw new Exception('NO CONNECT will be sent to client');
+        Debug::Log(Debug::DEBUG, "CONNECT", $packet_data);
+        $pos++;
+        //Protocol Name
+        $length = ord($packet_data[$pos]);
+        $pos += $length + 1;
+        //Protocol Level
+        $level = ord($packet_data[$pos]);
+        $pos++;
+        //Connect Flags
+        $flags = ord($packet_data[$pos]);
+        $reserved = $flags & 0x01;
+        $this->clean = ($flags & 0x02) >> 1;
+        $this->will_flag = ($flags & 0x04) >> 2;
+        $this->will_qos = ($flags & 0x18) >> 3;
+        $this->will_retain = ($flags & 0x20) >> 5;
+        $this->user_name_flag = ($flags & 0x80) >> 7;
+        $this->password_flag = ($flags & 0x40) >> 6;
+        $pos++;
+        //Keep Alive
+        $keep_alive_msb = ord($packet_data[$pos]);
+        $pos++;
+        $keep_alive_lsb = ord($packet_data[$pos]);
+        $this->keepalive = $keep_alive_msb * 128 + $keep_alive_lsb;
+        $pos++;
     }
 }
 

@@ -9,7 +9,6 @@ namespace Server\Asyn\MQTT\Message;
 use Server\Asyn\MQTT\Debug;
 use Server\Asyn\MQTT\Exception;
 use Server\Asyn\MQTT\Message;
-use Server\Asyn\MQTT\MQTT;
 use Server\Asyn\MQTT\Utility;
 
 /**
@@ -45,7 +44,7 @@ abstract class Base
     protected $protocol_type = self::FIXED_ONLY;
 
     /**
-     * @var MQTT
+     * @var
      */
     public $mqtt;
 
@@ -68,7 +67,7 @@ abstract class Base
      */
     protected $message_type = 0;
 
-    public function __construct(MQTT $mqtt)
+    public function __construct($mqtt)
     {
         $this->mqtt = $mqtt;
 
@@ -82,7 +81,6 @@ abstract class Base
         $payload_pos = 0;
 
         $this->header->decode($packet_data, $remaining_length, $payload_pos);
-
         return $this->decodePayload($packet_data, $payload_pos);
     }
 
@@ -203,7 +201,17 @@ abstract class Base
         }
     }
 
-
+    protected function readUTF($messages)
+    {
+        $arr = [];
+        while (strlen($messages) != 0) {
+            $length = unpack("n", $messages)[1];
+            $message = substr($messages, 2, $length);
+            $arr[] = $message;
+            $messages = substr($messages, 2 + $length);
+        }
+        return $arr;
+    }
 }
 
 # EOF
