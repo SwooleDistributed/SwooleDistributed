@@ -625,7 +625,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         //将这个fd与当前worker进行绑定
         $this->server->bind($fd, $uid);
         if ($this->isCluster()) {
-            ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_addUid($uid, $session);
+            ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_addUid($uid);
         }
         //加入共享内存
         $this->uid_fd_table->set($uid, ['fd' => $fd]);
