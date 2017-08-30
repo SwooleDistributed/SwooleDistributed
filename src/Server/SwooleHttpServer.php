@@ -189,7 +189,7 @@ abstract class SwooleHttpServer extends SwooleServer
      */
     public function getHostIndex($host)
     {
-        $index = $this->config['http']['root'][$host]['index']??'index.html';
+        $index = $this->config['http']['root'][$host]['index'] ?? $this->config['http']['root']['default']['index'] ?? 'index.html';
         return $index;
     }
 }

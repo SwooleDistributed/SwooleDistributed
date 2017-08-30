@@ -1063,7 +1063,7 @@ class Miner
                     // column name and join against the same column from the previous
                     // table.
                     if (strpos($criterion, '=') === false) {
-                        $statement .= $this->getJoinCriteriaUsingPreviousTable($i, $join['table'], $criterion);
+                        $statement .= $this->getJoinCriteriaUsingPreviousTable($i, $join['alias'] ?? $join['table'], $criterion);
                     } else {
                         $statement .= $criterion;
                     }
@@ -1093,9 +1093,9 @@ class Miner
         // If the previous table is from a JOIN, use that. Otherwise, use the
         // FROM table.
         if (array_key_exists($previousJoinIndex, $this->join)) {
-            $previousTable = $this->join[$previousJoinIndex]['table'];
+            $previousTable = $this->join[$previousJoinIndex]['alias'] ?? $this->join[$previousJoinIndex]['table'];
         } elseif ($this->isSelect()) {
-            $previousTable = $this->getFrom();
+            $previousTable = $this->getFromAlias() ?? $this->getFrom();
         } elseif ($this->isUpdate()) {
             $previousTable = $this->getUpdate();
         } else {
@@ -1108,7 +1108,6 @@ class Miner
         }
 
         $joinCriteria .= $column . " " . self::EQUALS . " " . $table . "." . $column;
-
         return $joinCriteria;
     }
 

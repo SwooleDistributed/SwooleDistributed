@@ -379,7 +379,7 @@ class Controller extends CoreBase
         if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'unBindUid', 'uid' => $this->uid];
         } else {
-            get_instance()->unBindUid($this->uid, $this->fd);
+            get_instance()->unBindUid($this->uid);
         }
     }
 
