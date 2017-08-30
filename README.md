@@ -69,4 +69,6 @@ The server can be executed in the bin at the end of the installation.
 If you like the project, I hope you donate this project so that the project will get better development, 
 Thank you.
 
+Alipay：
+
  ![image](https://raw.githubusercontent.com/tmtbe/SwooleDistributed/v2/screenshots/pay.png)
