@@ -70,7 +70,7 @@ The server can be executed in the bin at the end of the installation.
  ![image](https://raw.githubusercontent.com/tmtbe/SwooleDistributed/v2/screenshots/k1.png)
  ![image](https://raw.githubusercontent.com/tmtbe/SwooleDistributed/v2/screenshots/k2.png)
  ![image](https://raw.githubusercontent.com/tmtbe/SwooleDistributed/v2/screenshots/k3.png)
-## donation
+## Donation
 If you like the project, I hope you donate this project so that the project will get better development, 
 Thank you.
 
