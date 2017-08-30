@@ -402,24 +402,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
-     * 踢用户下线
-     * @param $uid
-     * @param bool $fromDispatch
-     */
-    public function kickUid($uid, $fromDispatch = false)
-    {
-        if ($this->uid_fd_table->exist($uid)) {//本机处理
-            $fd = $this->uid_fd_table->get($uid)['fd'];
-            $this->close($fd);
-        } else {
-            if ($fromDispatch) return;
-            if ($this->isCluster()) {
-                ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_kickUid($uid);
-            }
-        }
-    }
-
-    /**
      * 添加订阅
      * @param $sub
      * @param $uid
@@ -572,21 +554,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
-     * 解绑uid，链接断开自动解绑
-     * @param $uid
-     * @param $fd
-     */
-    public function unBindUid($uid, $fd)
-    {
-        //更新共享内存
-        if ($this->uid_fd_table->get($uid, 'fd') == $fd) {
-            $this->uid_fd_table->del($uid);
-        }
-        //这里无论是不是集群都需要调用
-        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_removeUid($uid);
-    }
-
-    /**
      * 当一个绑定uid的连接close后的清理
      * 支持协程
      * @param $uid
@@ -611,6 +578,24 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
+     * 踢用户下线
+     * @param $uid
+     * @param bool $fromDispatch
+     */
+    public function kickUid($uid, $fromDispatch = false)
+    {
+        if ($this->uid_fd_table->exist($uid)) {//本机处理
+            $fd = $this->uid_fd_table->get($uid)['fd'];
+            $this->close($fd);
+        } else {
+            if ($fromDispatch) return;
+            if ($this->isCluster()) {
+                ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_kickUid($uid);
+            }
+        }
+    }
+
+    /**
      * 将fd绑定到uid,uid不能为0
      * @param $fd
      * @param $uid
@@ -631,6 +616,17 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $this->uid_fd_table->set($uid, ['fd' => $fd]);
     }
 
+    /**
+     * 解绑uid，链接断开自动解绑
+     * @param $uid
+     */
+    public function unBindUid($uid)
+    {
+        //更新共享内存
+        $this->uid_fd_table->del($uid);
+        //这里无论是不是集群都需要调用
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_removeUid($uid);
+    }
     /**
      * uid是否在线(协程)
      * @param $uid

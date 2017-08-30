@@ -37,6 +37,9 @@ class ConsulProcess extends Process
     public function jsonFormatHandler()
     {
         $config = get_instance()->config->get('consul');
+        if (isset($config['datacenter'])) {
+            $newConfig['datacenter'] = $config['datacenter'];
+        }
         $newConfig['node_name'] = $config['node_name'];
         $newConfig['start_join'] = $config['start_join'];
         $newConfig['data_dir'] = $config['data_dir'];

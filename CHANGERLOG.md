@@ -9,3 +9,10 @@
 2. 支持MQTT规则的订阅树
 3. 现在访问到被保护或者私有的控制器方法不会报错，会直接转到defaultMethod中去
 4. 修复了NonJsonPack的一个缓存bug
+
+## 2.4.8
+1. 修复Miner中Join别名问题
+2. Consul.php增加datacenter配置，可以设置数据中心名称，默认为dc1
+3. 修复HttpServer中静态默认页面存在BUG
+4. fileHeader增加xhtml类型的支持
+5. 一些轻微问题的修复
