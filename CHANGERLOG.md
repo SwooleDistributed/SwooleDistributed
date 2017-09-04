@@ -32,10 +32,17 @@ sudo pecl install ds
 $config['http']['gzip_off'] = false;
 ```
 4.server.php配置中dispatch_mode默认设置改为了2
+
 5.server.php配置中新增了max_connection，最大连接数越大消耗的内存越大，这个数字和代码中uid_fd_table有密切联系,不像以前为65536
+
 6.一些内部命名的修改
+
 7.IPack接口轻微修改pack方法增加了一个名为topic的参数，用于订阅发布时的识别
+
 8.单元测试中的多参数时解析bug修复
+
 9.订阅发布的规则修改为和MQTT的规则一致
+
 10.存在一个效率问题的修复，qps约提升了30%
+
 11.MQTT服务器（暂未提供源码）
