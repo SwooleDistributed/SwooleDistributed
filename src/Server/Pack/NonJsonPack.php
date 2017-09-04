@@ -16,7 +16,7 @@ class NonJsonPack implements IPack
     protected $last_data_result;
 
 
-    public function pack($data)
+    public function pack($data, $topic = null)
     {
         if ($this->last_data != null && $this->last_data == $data) {
             return $this->last_data_result;

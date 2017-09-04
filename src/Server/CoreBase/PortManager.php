@@ -176,6 +176,16 @@ class PortManager
     }
 
     /**
+     * @param $fd
+     * @return IPack
+     */
+    public function getPackFromFd($fd)
+    {
+        $port = get_instance()->getServerPort($fd);
+        return $this->getPack($port);
+    }
+
+    /**
      * @param $port
      * @return IRoute
      */

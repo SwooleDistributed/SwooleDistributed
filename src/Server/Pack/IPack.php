@@ -12,7 +12,7 @@ interface IPack
 
     function decode($buffer);
 
-    function pack($data);
+    function pack($data, $topic = null);
 
     function unPack($data);
 

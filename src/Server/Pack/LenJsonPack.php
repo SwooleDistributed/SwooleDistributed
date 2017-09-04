@@ -41,7 +41,7 @@ class LenJsonPack implements IPack
         return substr($buffer, $this->package_length_type_length);
     }
 
-    public function pack($data)
+    public function pack($data, $topic = null)
     {
         if ($this->last_data != null && $this->last_data == $data) {
             return $this->last_data_result;

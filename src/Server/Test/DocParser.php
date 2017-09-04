@@ -86,11 +86,16 @@ class DocParser
         if (empty ($this->params [$param])) {
             $this->params [$param] = $value;
         } else {
-            $arr = array(
-                $this->params [$param],
-                $value
-            );
-            $this->params [$param] = $arr;
+            if (is_array($this->params[$param])) {
+                $this->params[$param][] = $value;
+            } else {
+                $arr = array(
+                    $this->params [$param],
+                    $value
+                );
+                $this->params [$param] = $arr;
+            }
+
         }
         return true;
     }

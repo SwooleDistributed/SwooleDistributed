@@ -100,16 +100,18 @@ class HttpOutput
      */
     public function end($output = '', $gzip = true, $destroy = true)
     {
-        //低版本swoole的gzip方法存在效率问题
-        if ($gzip) {
-            $this->response->gzip(1);
+        if (!get_instance()->config->get('http.gzip_off', false)) {
+            //低版本swoole的gzip方法存在效率问题
+            if ($gzip) {
+                $this->response->gzip(1);
+            }
+            //压缩备用方案
+            /*if ($gzip) {
+                $this->response->header('Content-Encoding', 'gzip');
+                $this->response->header('Vary', 'Accept-Encoding');
+                $output = gzencode($output . " \n", 9);
+            }*/
         }
-        //压缩备用方案
-        /*if ($gzip) {
-            $this->response->header('Content-Encoding', 'gzip');
-            $this->response->header('Vary', 'Accept-Encoding');
-            $output = gzencode($output . " \n", 9);
-        }*/
         if (is_array($output)||is_object($output)) {
             $this->setHeader('Content-Type','text/html; charset=UTF-8');
             $output = json_encode($output,JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT);
