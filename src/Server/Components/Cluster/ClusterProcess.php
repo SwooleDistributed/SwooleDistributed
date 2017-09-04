@@ -128,50 +128,50 @@ class ClusterProcess extends Process
 
     /**
      * 添加订阅
-     * @param $sub
+     * @param $topic
      * @param $uid
      */
-    public function my_addSub($sub, $uid)
+    public function my_addSub($topic, $uid)
     {
-        if (!isset($this->subArr[$sub])) {
-            $this->subArr[$sub] = new Set();
+        if (!isset($this->subArr[$topic])) {
+            $this->subArr[$topic] = new Set();
         }
-        $this->subArr[$sub]->add($uid);
+        $this->subArr[$topic]->add($uid);
     }
 
     /**
      * 移除订阅
-     * @param $sub
+     * @param $topic
      * @param $uid
      */
-    public function my_removeSub($sub, $uid)
+    public function my_removeSub($topic, $uid)
     {
-        if (isset($this->subArr[$sub])) {
-            $this->subArr[$sub]->remove($uid);
+        if (isset($this->subArr[$topic])) {
+            $this->subArr[$topic]->remove($uid);
         }
     }
 
     /**
      * 发布订阅
-     * @param $sub
+     * @param $topic
      * @param $data
      */
-    public function my_pub($sub, $data)
+    public function my_pub($topic, $data)
     {
-        $this->th_pub($sub, $data);
+        $this->th_pub($topic, $data);
         foreach ($this->client as $client) {
-            $client->pub($sub, $data);
+            $client->pub($topic, $data);
         }
     }
 
     /**
      * 构建订阅树,只允许5层
-     * @param $sub
+     * @param $topic
      * @return Set
      */
-    protected function buildTrees($sub)
+    protected function buildTrees($topic)
     {
-        $p = explode("/", $sub);
+        $p = explode("/", $topic);
         $countPlies = count($p);
         $result = new Set();
         $result->add("#");
@@ -225,16 +225,16 @@ class ClusterProcess extends Process
     }
 
     /**
-     * @param $sub
+     * @param $topic
      * @param $data
      */
-    public function th_pub($sub, $data)
+    public function th_pub($topic, $data)
     {
-        $tree = $this->buildTrees($sub);
+        $tree = $this->buildTrees($topic);
         foreach ($tree as $one) {
             if (isset($this->subArr[$one])) {
                 foreach ($this->subArr[$one] as $uid) {
-                    get_instance()->sendToUid($uid, $data, true);
+                    get_instance()->pubToUid($uid, $data, $topic);
                 }
             }
         }

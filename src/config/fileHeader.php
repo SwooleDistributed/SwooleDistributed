@@ -17,6 +17,7 @@ $config['fileHeader']['js'] = ['Content-type: application/javascript'];
 $config['fileHeader']['json'] = ['Content-type: application/json'];
 $config['fileHeader']['pdf'] = ['Content-type: application/pdf'];
 $config['fileHeader']['html'] = ['Content-Type: text/html; charset=utf-8'];
+$config['fileHeader']['xhtml'] = ['Content-Type: application/xhtml+xml'];
 $config['fileHeader']['zip'] = ['Content-Type: application/zip'];
 $config['fileHeader']['mp3'] = ['Content-Type: audio/mpeg'];
 $config['fileHeader']['mp4'] = ['Content-Type: audio/mpeg'];

@@ -20,6 +20,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      * @var array
      */
     protected $fdRequest = [];
+    protected $web_socket_method_prefix;
     public function __construct()
     {
         parent::__construct();
@@ -58,6 +59,16 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
     }
 
     /**
+     * workerStart
+     * @param $serv
+     * @param $workerId
+     */
+    public function onSwooleWorkerStart($serv, $workerId)
+    {
+        parent::onSwooleWorkerStart($serv, $workerId);
+        $this->web_socket_method_prefix = $this->config->get('websocket.method_prefix', '');
+    }
+    /**
      * 判断这个fd是不是一个WebSocket连接，用于区分tcp和websocket
      * 握手后才识别为websocket
      * @param $fdinfo
@@ -81,11 +92,12 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      * @param $fd
      * @param $data
      * @param bool $ifPack
+     * @param $topic
      */
-    public function send($fd, $data, $ifPack = false)
+    public function send($fd, $data, $ifPack = false, $topic = null)
     {
         if (!$this->portManager->websocket_enable) {
-            parent::send($fd, $data, $ifPack);
+            parent::send($fd, $data, $ifPack, $topic);
             return;
         }
         if (!$this->server->exist($fd)) {
@@ -96,7 +108,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         if ($ifPack) {
             $pack = $this->portManager->getPack($server_port);
             if ($pack != null) {
-                $data = $pack->pack($data);
+                $data = $pack->pack($data, $topic);
             }
         }
         if ($this->isWebSocket($fdinfo)) {
@@ -157,7 +169,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
         if ($controller_instance != null) {
             $uid = $serv->connection_info($fd)['uid']??0;
-            $method_name = $this->config->get('websocket.method_prefix', '') . $route->getMethodName();
+            $method_name = $this->web_socket_method_prefix . $route->getMethodName();
             $call = [$controller_instance, &$method_name];
             if (!is_callable($call)) {
                 $method_name = 'defaultMethod';

@@ -447,21 +447,21 @@ class Controller extends CoreBase
     }
 
     /**
-     * @param $sub
+     * @param $topic
      */
-    protected function addSub($sub)
+    protected function addSub($topic)
     {
         if (empty($this->uid)) return;
-        get_instance()->addSub($sub, $this->uid);
+        get_instance()->addSub($topic, $this->uid);
     }
 
     /**
-     * @param $sub
+     * @param $topic
      */
-    protected function removeSub($sub)
+    protected function removeSub($topic)
     {
         if (empty($this->uid)) return;
-        get_instance()->removeSub($sub, $this->uid);
+        get_instance()->removeSub($topic, $this->uid);
     }
 
     /**

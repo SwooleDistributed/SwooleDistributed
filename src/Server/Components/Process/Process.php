@@ -69,7 +69,7 @@ class Process
         if (!$message['oneWay']) {
             $newMessage['result'] = $result;
             $newMessage['token'] = $message['token'];
-            $data = get_instance()->packSerevrMessageBody(SwooleMarco::PROCESS_RPC, $newMessage);
+            $data = get_instance()->packServerMessageBody(SwooleMarco::PROCESS_RPC, $newMessage);
             get_instance()->server->sendMessage($data, $message['worker_id']);
         }
     }
@@ -91,7 +91,7 @@ class Process
         $message['oneWay'] = $oneWay;
         $this->process->write(
             \swoole_serialize::pack(
-                get_instance()->packSerevrMessageBody(SwooleMarco::PROCESS_RPC, $message)
+                get_instance()->packServerMessageBody(SwooleMarco::PROCESS_RPC, $message)
             )
         );
         return $message['token'];

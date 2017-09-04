@@ -31,7 +31,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.4.8";
+    const version = "2.4.9";
 
     /**
      * server name
@@ -92,6 +92,7 @@ abstract class SwooleServer extends Child
      */
     protected $needCoroutine = true;
 
+    protected $tcp_method_prefix;
     /**
      * 设置monolog的loghandler
      */
@@ -198,6 +199,7 @@ abstract class SwooleServer extends Child
     public function onSwooleStart($serv)
     {
         Start::setMasterPid($serv->master_pid, $serv->manager_pid);
+        $this->tcp_method_prefix = $this->config->get('tcp.method_prefix', '');
     }
 
     /**
@@ -278,7 +280,7 @@ abstract class SwooleServer extends Child
             } else {
                 $uid = $fdinfo['uid'] ?? 0;
             }
-            $method_name = $this->config->get('tcp.method_prefix', '') . $route->getMethodName();
+            $method_name = $this->tcp_method_prefix . $route->getMethodName();
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
             try {
                 $call = [$controller_instance, &$method_name];
@@ -404,7 +406,7 @@ abstract class SwooleServer extends Child
      * @param string $func
      * @return string
      */
-    public function packSerevrMessageBody($type, $message, string $func = null)
+    public function packServerMessageBody($type, $message, string $func = null)
     {
         $data['type'] = $type;
         $data['message'] = $message;
@@ -515,18 +517,17 @@ abstract class SwooleServer extends Child
      * @param $fd
      * @param $data
      * @param bool $ifPack
+     * @param null $topic
      */
-    public function send($fd, $data, $ifPack = false)
+    public function send($fd, $data, $ifPack = false, $topic = null)
     {
         if (!$this->server->exist($fd)) {
             return;
         }
         if ($ifPack) {
-            $fdinfo = $this->server->connection_info($fd);
-            $server_port = $fdinfo['server_port'];
-            $pack = $this->portManager->getPack($server_port);
+            $pack = $this->portManager->getPackFromFd($fd);
             if ($pack != null) {
-                $data = $pack->pack($data);
+                $data = $pack->pack($data, $topic);
             }
         }
         $this->server->send($fd, $data);

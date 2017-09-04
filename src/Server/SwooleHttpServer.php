@@ -21,7 +21,7 @@ abstract class SwooleHttpServer extends SwooleServer
      * @var Engine
      */
     public $templateEngine;
-
+    protected $http_method_prefix;
     public function __construct()
     {
         parent::__construct();
@@ -70,6 +70,7 @@ abstract class SwooleHttpServer extends SwooleServer
     {
         parent::onSwooleWorkerStart($serv, $workerId);
         $this->setTemplateEngine();
+        $this->http_method_prefix = $this->config->get('http.method_prefix', '');
     }
 
     /**
@@ -135,7 +136,7 @@ abstract class SwooleHttpServer extends SwooleServer
                     $controller_instance->destroy();
                     return;
                 }
-                $method_name = $this->config->get('http.method_prefix', '') . $route->getMethodName();
+                $method_name = $this->http_method_prefix . $route->getMethodName();
                 $call = [$controller_instance, &$method_name];
                 if (!is_callable($call)) {
                     $method_name = 'defaultMethod';

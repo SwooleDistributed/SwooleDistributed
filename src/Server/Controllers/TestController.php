@@ -146,10 +146,11 @@ class TestController extends Controller
      * mysql效率测试
      * @throws \Server\CoreBase\SwooleException
      */
-    public function mysql_efficiency()
+    public function http_mysql_efficiency()
     {
-        yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10004)->coroutineSend();
-        $this->send($this->client_data->data);
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10004)->coroutineSend();
+        //$this->send($this->client_data->data);
+        $this->http_output->end($result, false);
     }
 
     /**
@@ -332,7 +333,7 @@ class TestController extends Controller
 
     public function http_echo()
     {
-        $this->http_output->end(123);
+        $this->http_output->end(123, false);
     }
 
     /**
