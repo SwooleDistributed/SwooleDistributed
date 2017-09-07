@@ -66,7 +66,7 @@ class CoreBase extends Child
             $this->server = get_instance()->server;
             $this->config = get_instance()->config;
             $this->redis_pool = RedisRoute::getInstance();
-            $this->mysql_pool = get_instance()->mysql_pool;
+            $this->mysql_pool = get_instance()->getAsynPool('mysqlPool');
             $this->isEfficiencyMonitorEnable = $this->config->get("log.{$this->config['log']['active']}.efficiency_monitor_enable", false);
         }
     }

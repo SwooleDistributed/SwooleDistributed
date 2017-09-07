@@ -46,3 +46,19 @@ $config['http']['gzip_off'] = false;
 10.存在一个效率问题的修复，qps约提升了30%
 
 11.MQTT服务器（暂未提供源码）
+
+## 2.4.10
+1.Mysql,Redis协程性能调优，现在协程的性能可以达到异步回调的95%
+
+2.Loader修改，现在可以使用class名称进行loader
+
+```php
+$this->loader->model(TestModel::class, $this);
+```
+
+3.Model支持分级，可以在Models目录下新建新的子目录。
+
+4.提供了sleepCoroutine命令，可以通过这个代替sleep,改方法不会堵塞进程
+```
+yield sleepCoroutine(1000);
+```

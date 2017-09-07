@@ -17,4 +17,7 @@ interface ICoroutineBase
 
     function destroy();
 
+    function setCoroutineTask($coroutineTask);
+
+    function immediateExecution();
 }

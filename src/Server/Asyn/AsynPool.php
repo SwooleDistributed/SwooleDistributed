@@ -131,7 +131,7 @@ abstract class AsynPool implements IAsynPool
     }
 
     /**
-     * 准备一个httpClient
+     * 准备一个
      */
     public function prepareOne()
     {
