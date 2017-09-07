@@ -72,6 +72,7 @@ class CoroutineTask
                     $routine->send($result);
                     $value->destroy();
                 } else {
+                    $value->setCoroutineTask($this);
                     return;
                 }
                 //嵌套的协程返回

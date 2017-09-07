@@ -72,7 +72,7 @@ class InotifyReload
 
     public function unUseInotify()
     {
-        echo "非inotify模式，性能极低，不建议在正式环境启用。\n";
+        echo "非inotify模式，性能极低，不建议在正式环境启用。请安装inotify扩展\n";
         if(isDarwin()){
             echo "mac开启auto_reload可能会导致cpu占用过高。\n";
         }

@@ -53,6 +53,23 @@ class RedisAsynPool extends AsynPool
     }
 
     /**
+     * @param $name
+     * @param $arguments
+     * @param $callback
+     * @return int
+     */
+    public function call($name, $arguments, $callback)
+    {
+        $data = [
+            'name' => $name,
+            'arguments' => $arguments
+        ];
+        $data['token'] = $this->addTokenCallback($callback);
+        $this->execute($data);
+        return $data['token'];
+    }
+
+    /**
      * 执行redis命令
      * @param $data
      */

@@ -41,6 +41,7 @@ class MySqlCoroutine extends CoroutineBase
         $this->request = '#Mysql:' . $_sql;
         $this->send(function ($result) {
             $this->result = $result;
+            $this->immediateExecution();
         });
         return $this;
     }

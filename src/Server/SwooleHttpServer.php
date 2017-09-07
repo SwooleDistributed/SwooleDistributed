@@ -111,7 +111,7 @@ abstract class SwooleHttpServer extends SwooleServer
             $response->end($this->cache404);
             return;
         }
-        $extension = pathinfo($route->getPath(), PATHINFO_EXTENSION);
+        $extension = pathinfo($path, PATHINFO_EXTENSION);
         if ($path=="/") {//寻找主页
             $www_path = $this->getHostRoot($host) . $this->getHostIndex($host);
             $result = httpEndFile($www_path, $request, $response);
@@ -121,7 +121,7 @@ abstract class SwooleHttpServer extends SwooleServer
                 return;
             }
         }else if(!empty($extension)){//有后缀
-            $www_path = $this->getHostRoot($host) . $route->getPath();
+            $www_path = $this->getHostRoot($host) . $path;
             $result = httpEndFile($www_path, $request, $response);
             if (!$result) {
                 $error_404 = true;
