@@ -31,7 +31,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.4.10";
+    const version = "2.4.11";
 
     /**
      * server name
@@ -281,16 +281,7 @@ abstract class SwooleServer extends Child
                 $uid = $fdinfo['uid'] ?? 0;
             }
             $method_name = $this->tcp_method_prefix . $route->getMethodName();
-            $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
-            try {
-                $call = [$controller_instance, &$method_name];
-                if (!is_callable($call)) {
-                    $method_name = 'defaultMethod';
-                }
-                Coroutine::startCoroutine($call, $route->getParams());
-            } catch (\Exception $e) {
-                call_user_func([$controller_instance, 'onExceptionHandle'], $e);
-            }
+            $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
         }
         return $controller_instance;
     }

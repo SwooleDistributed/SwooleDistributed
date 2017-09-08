@@ -69,6 +69,9 @@ class RedisRoute
      */
     protected function getKey($name, $arguments)
     {
+        if (empty($arguments)) {
+            return null;
+        }
         if (is_string($arguments[0])) {
             return $arguments[0];
         } else {

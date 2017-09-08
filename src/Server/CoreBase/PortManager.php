@@ -89,23 +89,23 @@ class PortManager
                     throw new \Exception("{$value['socket_port']}端口创建失败");
                 }
                 if ($value['socket_type'] == self::SOCK_HTTP) {
-                    $port->on('request', [$swoole_server, 'onSwooleRequest']);
+                    $port->on('request', [$swoole_server, $value['request'] ?? 'onSwooleRequest']);
                     $port->on('handshake', function () {
                         return false;
                     });
                 } else {
-                    $port->on('open', [$swoole_server, 'onSwooleWSOpen']);
-                    $port->on('message', [$swoole_server, 'onSwooleWSMessage']);
-                    $port->on('close', [$swoole_server, 'onSwooleWSClose']);
-                    $port->on('handshake', [$swoole_server, 'onSwooleWSHandShake']);
+                    $port->on('open', [$swoole_server, $value['open'] ?? 'onSwooleWSOpen']);
+                    $port->on('message', [$swoole_server, $value['message'] ?? 'onSwooleWSMessage']);
+                    $port->on('close', [$swoole_server, $value['close'] ?? 'onSwooleWSClose']);
+                    $port->on('handshake', [$swoole_server, $value['handshake'] ?? 'onSwooleWSHandShake']);
                 }
             } else {
                 $port = $swoole_server->server->listen($value['socket_name'], $value['socket_port'], $value['socket_type']);
                 $port->set($this->getProbufSet($value['socket_port']));
-                $port->on('connect', [$swoole_server, 'onSwooleConnect']);
-                $port->on('receive', [$swoole_server, 'onSwooleReceive']);
-                $port->on('close', [$swoole_server, 'onSwooleClose']);
-                $port->on('packet', [$swoole_server, 'onSwoolePacket']);
+                $port->on('connect', [$swoole_server, $value['connect'] ?? 'onSwooleConnect']);
+                $port->on('receive', [$swoole_server, $value['receive'] ?? 'onSwooleReceive']);
+                $port->on('close', [$swoole_server, $value['close'] ?? 'onSwooleClose']);
+                $port->on('packet', [$swoole_server, $value['packet'] ?? 'onSwoolePacket']);
             }
 
         }

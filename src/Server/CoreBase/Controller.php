@@ -3,6 +3,7 @@
 namespace Server\CoreBase;
 
 use Monolog\Logger;
+use Server\Coroutine\Coroutine;
 use Server\Start;
 use Server\SwooleMarco;
 
@@ -96,8 +97,9 @@ class Controller extends CoreBase
      * @param $client_data
      * @param $controller_name
      * @param $method_name
+     * @param $params
      */
-    public function setClientData($uid, $fd, $client_data, $controller_name, $method_name)
+    public function setClientData($uid, $fd, $client_data, $controller_name, $method_name, $params)
     {
         $this->uid = $uid;
         $this->fd = $fd;
@@ -110,7 +112,53 @@ class Controller extends CoreBase
             $this->isRPC = false;
         }
         $this->request_type = SwooleMarco::TCP_REQUEST;
-        $this->initialization($controller_name, $method_name);
+        $this->execute($controller_name, $method_name, $params);
+    }
+
+    /**
+     * 来自Http
+     * set http Request Response
+     * @param $request
+     * @param $response
+     * @param $controller_name
+     * @param $method_name
+     * @param $params
+     * @return \Generator
+     */
+    public function setRequestResponse($request, $response, $controller_name, $method_name, $params)
+    {
+        $this->request = $request;
+        $this->response = $response;
+        $this->http_input->set($request);
+        $this->http_output->set($request, $response);
+        $this->rpc_request_id = $this->http_input->header('rpc_request_id');
+        $this->isRPC = empty($this->rpc_request_id) ? false : true;
+        $this->request_type = SwooleMarco::HTTP_REQUEST;
+        $this->execute($controller_name, $method_name, $params);
+    }
+
+    /**
+     * @param $controller_name
+     * @param $method_name
+     * @param $params
+     */
+    private function execute($controller_name, $method_name, $params)
+    {
+        if (!is_callable([$this, $method_name])) {
+            $method_name = 'defaultMethod';
+        }
+        Coroutine::startCoroutine(function () use ($controller_name, $method_name, $params) {
+            try {
+                yield $this->initialization($controller_name, $method_name);
+                if ($params == null) {
+                    yield call_user_func([$this, $method_name]);
+                } else {
+                    yield call_user_func_array([$this, $method_name], $params);
+                }
+            } catch (\Exception $e) {
+                yield $this->onExceptionHandle($e);
+            }
+        });
     }
 
     /**
@@ -134,26 +182,7 @@ class Controller extends CoreBase
         if (get_instance()->isDebug()) {
             set_time_limit(1);
         }
-    }
-
-    /**
-     * 来自Http
-     * set http Request Response
-     * @param $request
-     * @param $response
-     * @param $controller_name
-     * @param $method_name
-     */
-    public function setRequestResponse($request, $response, $controller_name, $method_name)
-    {
-        $this->request = $request;
-        $this->response = $response;
-        $this->http_input->set($request);
-        $this->http_output->set($request, $response);
-        $this->rpc_request_id = $this->http_input->header('rpc_request_id');
-        $this->isRPC = empty($this->rpc_request_id) ? false : true;
-        $this->request_type = SwooleMarco::HTTP_REQUEST;
-        $this->initialization($controller_name, $method_name);
+        $this->installMysqlPool($this->mysql_pool);
     }
 
     /**
@@ -181,8 +210,13 @@ class Controller extends CoreBase
             return;
         }
         if ($e instanceof SwooleException) {
+            print_r($e->getMessage() . "\n");
             $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
             if ($e->others != null) {
+                //这里只打印，在controller里面写日志，能把context带进去。
+                print_r("=================================================\e[30;41m [ERROR] \e[0m==============================================================\n");
+                print_r($e->others . "\n");
+                print_r("\n");
                 $this->log($e->others, Logger::NOTICE);
             }
         }

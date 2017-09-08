@@ -501,7 +501,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function getAsynPool($name)
     {
-        return $this->asynPools[$name]??null;
+        $pool = $this->asynPools[$name] ?? null;
+        return $pool;
     }
 
     /**

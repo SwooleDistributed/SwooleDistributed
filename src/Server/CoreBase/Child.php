@@ -40,6 +40,7 @@ class Child
      */
     public function addChild($child)
     {
+        if ($child == null) return;
         $child->onAddChild($this);
         $this->child_list[$child->core_name] = $child;
     }
