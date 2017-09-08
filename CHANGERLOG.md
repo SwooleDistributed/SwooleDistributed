@@ -62,3 +62,18 @@ $this->loader->model(TestModel::class, $this);
 ```
 yield sleepCoroutine(1000);
 ```
+## 2.4.11
+1.Controller以及Model的initialization均已支持协程，通过在initialization中抛出异常会立即中断后面所有的函数执行。
+
+2.Mysql构建器会在某种特殊情况下导致请求间出现sql语句扰乱的bug，现在已经修复。
+
+3.创建新的Mysql连接池在Controller以及Model通过get_instance()->getAsynPool()使用时需要在initialization方法中通过installMysqlPool命令进行安装
+```php
+$this->installMysqlPool($this->mysql_pool);
+```
+
+4.修复了一个RedisRoute的bug，该bug导致无参数的redis请求会报错。
+
+5.修复了协程超时报错使用try捕获时控制台依旧会打印报错信息的问题。
+
+6.PortManager可以在Ports.php配置中设置端口专用的回调地址。

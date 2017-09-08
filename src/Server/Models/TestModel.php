@@ -14,6 +14,12 @@ use Server\CoreBase\SwooleException;
 
 class TestModel extends Model
 {
+
+    public function initialization(&$context)
+    {
+        parent::initialization($context);
+    }
+
     public function timerTest()
     {
         print_r("model timer\n");
@@ -82,8 +88,7 @@ class TestModel extends Model
 
     public function testMysql()
     {
-        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->coroutineSend();
-        return $result;
+        return $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10004)->coroutineSend();
     }
 
     public function testWhile()
@@ -92,4 +97,5 @@ class TestModel extends Model
 
         }
     }
+
 }

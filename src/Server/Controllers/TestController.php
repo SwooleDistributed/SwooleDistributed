@@ -5,13 +5,12 @@
  * Date: 16-7-15
  * Time: 下午3:51
  */
+
 namespace Server\Controllers;
 
-use app\Process\MyProcess;
 use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\Components\Consul\ConsulServices;
 use Server\Components\Event\EventDispatcher;
-use Server\Components\Process\ProcessManager;
 use Server\CoreBase\Controller;
 use Server\CoreBase\SelectCoroutine;
 use Server\Memory\Cache;
@@ -55,13 +54,11 @@ class TestController extends Controller
     public function http_ex()
     {
         throw new \Exception("1");
-        $value = yield $this->redis_pool->getCoroutine()->ping();
-
     }
 
     public function http_mysql()
     {
-        $model = $this->loader->model('TestModel', $this);
+        $model = $this->loader->model(TestModel::class, $this);
         $result = yield $model->testMysql();
         $this->http_output->end($result);
     }
@@ -146,11 +143,25 @@ class TestController extends Controller
      * mysql效率测试
      * @throws \Server\CoreBase\SwooleException
      */
-    public function http_mysql_efficiency()
+    public function http_smysql()
     {
         $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10004)->coroutineSend();
-        //$this->send($this->client_data->data);
         $this->http_output->end($result, false);
+    }
+
+    public function http_amysql()
+    {
+        $result = get_instance()->getMysql()->select('*')->from('account')->where('uid', 10004)->pdoQuery();
+        $this->http_output->end($result, false);
+    }
+
+    public function http_cmysql()
+    {
+        $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10004);
+        $this->mysql_pool->query(function ($result) {
+            $this->http_output->end($result, false);
+        });
+
     }
 
     /**
@@ -188,7 +199,7 @@ class TestController extends Controller
      */
     public function http_health()
     {
-        $this->http_output->end('ok');
+        $this->http_output->end('1');
     }
 
     /**
@@ -197,7 +208,18 @@ class TestController extends Controller
     public function http_redis()
     {
         $result = yield $this->redis_pool->getCoroutine()->get('testroute');
-        $this->http_output->end(1, false);
+        $this->http_output->end($result, false);
+    }
+
+    /**
+     * http redis 测试
+     */
+    public function http_redis2()
+    {
+        $this->redis_pool->getRedisPool()->get('testroute', function () {
+            $this->http_output->end(1, false);
+        });
+
     }
 
     /**
@@ -205,7 +227,7 @@ class TestController extends Controller
      */
     public function http_setRedis()
     {
-        $result = yield $this->redis_pool->getCoroutine()->set('testroute',1);
+        $result = yield $this->redis_pool->getCoroutine()->set('testroute', 1);
         $this->http_output->end($result);
     }
 
@@ -215,7 +237,7 @@ class TestController extends Controller
     public function http_aredis()
     {
         $value = get_instance()->getRedis()->get('testroute');
-        $this->http_output->end(1, false);
+        $this->http_output->end($value, false);
     }
 
     /**
@@ -290,7 +312,7 @@ class TestController extends Controller
 
     public function http_testTask()
     {
-        $testTask = $this->loader->task('TestTask', $this);
+        $testTask = $this->loader->task(TestTask::class, $this);
         $testTask->testMysql();
         $result = yield $testTask->coroutineSend();
         $this->http_output->end($result);
@@ -350,15 +372,6 @@ class TestController extends Controller
     {
         EventDispatcher::getInstance()->dispatch('unlock', 'hello block');
         $this->http_output->end('ok');
-    }
-
-    /**
-     * 测试进程
-     */
-    public function http_testProcess()
-    {
-        $result = yield ProcessManager::getInstance()->getRpcCall(MyProcess::class)->getData();
-        $this->http_output->end($result);
     }
 
     public function http_testWhile()

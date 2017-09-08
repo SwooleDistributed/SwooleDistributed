@@ -13,6 +13,7 @@ use Monolog\Logger;
 use Noodlehaus\Config;
 use Server\Asyn\Mysql\MysqlAsynPool;
 use Server\Asyn\Redis\RedisRoute;
+use Server\Memory\Pool;
 
 class CoreBase extends Child
 {
@@ -55,6 +56,7 @@ class CoreBase extends Child
      */
     protected $isEfficiencyMonitorEnable = false;
 
+    protected $dbQueryBuilders = [];
     /**
      * Task constructor.
      */
@@ -72,12 +74,26 @@ class CoreBase extends Child
     }
 
     /**
+     * 安装MysqlPool
+     * @param MysqlAsynPool $mysqlPool
+     */
+    protected function installMysqlPool(MysqlAsynPool $mysqlPool)
+    {
+        $this->dbQueryBuilders[] = $mysqlPool->installDbBuilder();
+    }
+
+    /**
      * 销毁，解除引用
      */
     public function destroy()
     {
         parent::destroy();
         $this->is_destroy = true;
+        foreach ($this->dbQueryBuilders as $dbQueryBuilder) {
+            $dbQueryBuilder->clear();
+            Pool::getInstance()->push($dbQueryBuilder);
+        }
+        $this->dbQueryBuilders = [];
     }
 
     /**

@@ -146,10 +146,8 @@ class HttpClient
                 }
                 $data['headers']['Host'] = $host1;
                 $this->client->setHeaders($data['headers']);
+                $this->client->setCookies($data['cookies']);
 
-                if (count($data['cookies']) != 0) {
-                    $this->client->setCookies($data['cookies']);
-                }
                 if ($data['data'] != null) {
                     $this->client->setData($data['data']);
                 }

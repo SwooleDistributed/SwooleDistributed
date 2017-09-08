@@ -12,7 +12,6 @@ namespace Server;
 
 use League\Plates\Engine;
 use Server\CoreBase\ControllerFactory;
-use Server\Coroutine\Coroutine;
 
 abstract class SwooleHttpServer extends SwooleServer
 {
@@ -137,17 +136,8 @@ abstract class SwooleHttpServer extends SwooleServer
                     return;
                 }
                 $method_name = $this->http_method_prefix . $route->getMethodName();
-                $call = [$controller_instance, &$method_name];
-                if (!is_callable($call)) {
-                    $method_name = 'defaultMethod';
-                }
-                try {
-                    $controller_instance->setRequestResponse($request, $response, $controller_name, $method_name);
-                    Coroutine::startCoroutine($call, $route->getParams());
-                    return;
-                } catch (\Exception $e) {
-                    call_user_func([$controller_instance, 'onExceptionHandle'], $e);
-                }
+                $controller_instance->setRequestResponse($request, $response, $controller_name, $method_name, $route->getParams());
+                return;
             } else {
                 $error_404 = true;
             }

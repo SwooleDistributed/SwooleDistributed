@@ -117,6 +117,11 @@ class CoroutineTask
      */
     protected function throwEx($routine,$e){
         try {
+            if ($this->stack->isEmpty()) {
+                if ($e instanceof SwooleException) {
+                    $e->setShowOther($this->generatorContext->getTraceStack());
+                }
+            }
             $routine->throw($e);
             $this->routine = $routine;
         }catch (\Exception $e){

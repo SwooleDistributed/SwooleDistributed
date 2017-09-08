@@ -11,6 +11,7 @@ namespace Server\Asyn\Mysql;
 
 use Server\Asyn\AsynPool;
 use Server\CoreBase\SwooleException;
+use Server\Memory\Pool;
 
 class MysqlAsynPool extends AsynPool
 {
@@ -31,9 +32,16 @@ class MysqlAsynPool extends AsynPool
         parent::__construct($config);
         $this->active = $active;
         $this->bind_pool = [];
-        $this->dbQueryBuilder = new Miner();
-        $this->dbQueryBuilder->mysql_pool = $this;
         $this->client_max_count = $this->config->get('mysql.asyn_max_count', 10);
+    }
+
+    /**
+     * @return Miner
+     */
+    public function installDbBuilder()
+    {
+        $this->dbQueryBuilder = Pool::getInstance()->get(Miner::class)->setPool($this);
+        return $this->dbQueryBuilder;
     }
 
     /**
@@ -85,9 +93,13 @@ class MysqlAsynPool extends AsynPool
      * @param null $sql
      * @return int
      * @throws SwooleException
+     * @throws \Exception
      */
     public function query($callback, $bind_id = null, $sql = null)
     {
+        if ($this->dbQueryBuilder == null) {
+            throw new \Exception('你需要先调用installDbBuilder');
+        }
         if ($sql == null) {
             $sql = $this->dbQueryBuilder->getStatement(false);
             $this->dbQueryBuilder->clear();
@@ -226,9 +238,13 @@ class MysqlAsynPool extends AsynPool
      * 开启一个协程事务
      * @param $object
      * @return MySqlCoroutine
+     * @throws \Exception
      */
     public function coroutineBegin($object)
     {
+        if ($this->dbQueryBuilder == null) {
+            throw new \Exception('你需要先调用installDbBuilder');
+        }
         $id = $this->bind($object);
         return $this->dbQueryBuilder->coroutineSend($id, 'begin');
     }
@@ -248,9 +264,13 @@ class MysqlAsynPool extends AsynPool
      * 协程Commit
      * @param $id
      * @return MySqlCoroutine
+     * @throws \Exception
      */
     public function coroutineCommit($id)
     {
+        if ($this->dbQueryBuilder == null) {
+            throw new \Exception('你需要先调用installDbBuilder');
+        }
         return $this->dbQueryBuilder->coroutineSend($id, 'commit');
     }
 
@@ -268,9 +288,13 @@ class MysqlAsynPool extends AsynPool
      * 协程Rollback
      * @param $id
      * @return MySqlCoroutine
+     * @throws \Exception
      */
     public function coroutineRollback($id)
     {
+        if ($this->dbQueryBuilder == null) {
+            throw new \Exception('你需要先调用installDbBuilder');
+        }
         return $this->dbQueryBuilder->coroutineSend($id, 'rollback');
     }
 

@@ -12,7 +12,6 @@ namespace Server;
 
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\HttpInput;
-use Server\Coroutine\Coroutine;
 
 abstract class SwooleWebSocketServer extends SwooleHttpServer
 {
@@ -170,20 +169,11 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         if ($controller_instance != null) {
             $uid = $serv->connection_info($fd)['uid']??0;
             $method_name = $this->web_socket_method_prefix . $route->getMethodName();
-            $call = [$controller_instance, &$method_name];
-            if (!is_callable($call)) {
-                $method_name = 'defaultMethod';
-            }
             $request = $this->fdRequest[$fd] ?? null;
             if ($request != null) {
                 $controller_instance->setRequest($request);
             }
-            $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name);
-            try {
-                Coroutine::startCoroutine($call, $route->getParams());
-            } catch (\Exception $e) {
-                call_user_func([$controller_instance, 'onExceptionHandle'], $e);
-            }
+            $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
         }
         return $controller_instance;
     }

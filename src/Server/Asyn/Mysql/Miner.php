@@ -313,6 +313,16 @@ class Miner
     }
 
     /**
+     * @param $mysql_pool
+     * @return $this
+     */
+    public function setPool($mysql_pool)
+    {
+        $this->mysql_pool = $mysql_pool;
+        return $this;
+    }
+
+    /**
      * Add SQL_CALC_FOUND_ROWS execution option.
      *
      * @return Miner
