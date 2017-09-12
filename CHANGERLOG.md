@@ -77,3 +77,12 @@ $this->installMysqlPool($this->mysql_pool);
 5.修复了协程超时报错使用try捕获时控制台依旧会打印报错信息的问题。
 
 6.PortManager可以在Ports.php配置中设置端口专用的回调地址。
+
+## 2.4.12
+1.Mysql（task）同步模式也可以使用dump打印信息
+
+2.Controller可以添加文件夹，修改了默认NormalRoute支持多级访问
+```
+http://localhost:8081/V1/AppController/test
+```
+比如V1就是一个文件夹，默认访问的是app\V1\AppController::test();
