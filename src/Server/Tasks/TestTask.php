@@ -84,7 +84,7 @@ class TestTask extends Task
 
     public function testMysql()
     {
-        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->coroutineSend();
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->coroutineSend()->dump();
         return $result;
     }
 }

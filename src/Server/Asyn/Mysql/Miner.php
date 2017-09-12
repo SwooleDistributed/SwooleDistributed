@@ -1829,7 +1829,7 @@ class Miner
      * 协程的方式
      * @param null $bind_id
      * @param null $sql
-     * @return MySqlCoroutine
+     * @return MySqlCoroutine|MysqlSyncHelp
      */
     public function coroutineSend($bind_id = null, $sql = null)
     {
@@ -1839,7 +1839,7 @@ class Miner
         if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式
             $this->mergeInto($this->mysql_pool->getSync());
             $this->clear();
-            $data = array();
+            $data = [];
             switch ($sql) {
                 case 'commit':
                     $this->mysql_pool->getSync()->pdoCommitTrans();
@@ -1853,7 +1853,7 @@ class Miner
                 default:
                     $data = $this->mysql_pool->getSync()->pdoQuery($sql);
             }
-            return $data;
+            return new MysqlSyncHelp($sql, $data);
         } else {
             $this->clear();
             return Pool::getInstance()->get(MySqlCoroutine::class)->init($this->mysql_pool, $bind_id, $sql);
