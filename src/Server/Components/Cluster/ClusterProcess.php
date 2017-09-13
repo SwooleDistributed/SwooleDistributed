@@ -310,7 +310,7 @@ class ClusterProcess extends Process
                     $node_name = $value['Node'];
                     $ips = $value['TaggedAddresses'];
                     if (!isset($ips['lan'])) continue;
-                    if ($ips['lan'] == $this->config['consul']['bind_addr']) continue;
+                    if ($ips['lan'] == getBindIp()) continue;
                     if (!isset($this->client[$node_name])) {
                         $this->addNode($node_name, $ips['lan']);
                     }
