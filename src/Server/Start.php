@@ -29,19 +29,7 @@ class Start
      * @var string
      */
     public static $testUnityDir = '';
-    /**
-     * The file to store master process PID.
-     *
-     * @var string
-     */
-    protected static $pidFile = '';
 
-    /**
-     * Start file.
-     *
-     * @var string
-     */
-    protected static $_startFile = '';
     /**
      * worker instance.
      *
@@ -90,17 +78,8 @@ class Start
      */
     protected static function init()
     {
-        // Start file.
-        $backtrace = debug_backtrace();
-        self::$_startFile = $backtrace[count($backtrace) - 1]['file'];
-
-        // Pid file.
-        if (empty(self::$pidFile)) {
-            self::$pidFile = PID_DIR . "/" . str_replace('/', '_', self::$_startFile) . ".pid";
-        }
-
         // Process title.
-        self::setProcessTitle('SWD');
+        self::setProcessTitle(getServerName());
     }
 
     /**
@@ -152,14 +131,13 @@ class Start
             }
         }
         echo("Swoole[$start_file] $command $mode \n");
-        if (file_exists(self::$pidFile)) {
-            $pids = explode(',', file_get_contents(self::$pidFile));
-            // Get master process PID.
-            $master_pid = $pids[0];
-            $manager_pid = $pids[1];
-            $master_is_alive = $master_pid && @posix_kill($master_pid, 0);
-        } else {
+        $server_name = getServerName();
+        $master_pid = exec("ps -ef | grep $server_name-Master | grep -v 'grep ' | awk '{print $2}'");
+        $manager_pid = exec("ps -ef | grep $server_name-Manager | grep -v 'grep ' | awk '{print $2}'");
+        if (empty($master_pid)) {
             $master_is_alive = false;
+        } else {
+            $master_is_alive = true;
         }
         // Master is still alive?
         if ($master_is_alive) {
@@ -180,10 +158,9 @@ class Start
                 }
                 break;
             case 'kill':
-                exec('ps -ef|grep SWD|grep -v grep|cut -c 9-15|xargs kill -9');
+                exec("ps -ef|grep $server_name|grep -v grep|cut -c 9-15|xargs kill -9");
                 break;
             case 'stop':
-                @unlink(self::$pidFile);
                 echo("Swoole[$start_file] is stoping ...\n");
                 // Send stop signal to master process.
                 $master_pid && posix_kill($master_pid, SIGTERM);
@@ -214,7 +191,6 @@ class Start
                 echo("Swoole[$start_file] reload\n");
                 exit;
             case 'restart':
-                @unlink(self::$pidFile);
                 echo("Swoole[$start_file] is stoping ...\n");
                 // Send stop signal to master process.
                 $master_pid && posix_kill($master_pid, SIGTERM);
@@ -343,18 +319,6 @@ class Start
     protected static function startSwoole()
     {
         self::$_worker->start();
-    }
-
-    public static function setMasterPid($masterPid, $manager_pid)
-    {
-        file_put_contents(self::$pidFile, $masterPid);
-        file_put_contents(self::$pidFile, ',' . $manager_pid, FILE_APPEND);
-        Start::setProcessTitle('SWD-Master');
-    }
-
-    public static function setWorketPid($worker_pid)
-    {
-        file_put_contents(self::$pidFile, ',' . $worker_pid, FILE_APPEND);
     }
 
     public static function initServer($swooleServer)

@@ -31,7 +31,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.4.14";
+    const version = "2.4.15";
 
     /**
      * server name
@@ -198,7 +198,7 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleStart($serv)
     {
-        Start::setMasterPid($serv->master_pid, $serv->manager_pid);
+        Start::setProcessTitle(getServerName() . '-Master');
         $this->tcp_method_prefix = $this->config->get('tcp.method_prefix', '');
     }
 
@@ -216,16 +216,15 @@ abstract class SwooleServer extends Child
         if (function_exists('opcache_reset')) {
             opcache_reset();
         }
-        Start::setWorketPid($serv->worker_pid);
         // 重新加载配置
         $this->config = $this->config->load(CONFIG_DIR);
         if (!$serv->taskworker) {//worker进程
             if ($this->needCoroutine) {//启动协程调度器
                 Coroutine::init();
             }
-            Start::setProcessTitle('SWD-Worker');
+            Start::setProcessTitle(getServerName() . "-Worker");
         } else {
-            Start::setProcessTitle('SWD-Tasker');
+            Start::setProcessTitle(getServerName() . "-Tasker");
         }
     }
 
@@ -367,7 +366,7 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleManagerStart($serv)
     {
-        Start::setProcessTitle('SWD-Manager');
+        Start::setProcessTitle(getServerName() . '-Manager');
     }
 
     /**
