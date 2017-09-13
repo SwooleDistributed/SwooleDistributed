@@ -165,6 +165,18 @@ class ClusterProcess extends Process
     }
 
     /**
+     * event派发
+     * @param $type
+     * @param $data
+     */
+    public function my_dispatchEvent($type, $data)
+    {
+        foreach ($this->client as $client) {
+            $client->dispatchEvent($type, $data);
+        }
+    }
+
+    /**
      * 构建订阅树,只允许5层
      * @param $topic
      * @return Set

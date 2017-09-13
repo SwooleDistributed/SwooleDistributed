@@ -24,6 +24,7 @@ class EventCoroutine extends CoroutineBase
     public function init($eventType)
     {
         $this->eventType = $eventType;
+        $this->request = '[Event]' . $eventType;
         EventDispatcher::getInstance()->add($this->eventType, [$this, 'send']);
         return $this;
     }

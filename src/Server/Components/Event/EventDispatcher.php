@@ -8,6 +8,8 @@
 
 namespace Server\Components\Event;
 
+use Server\Components\Cluster\ClusterProcess;
+use Server\Components\Process\ProcessManager;
 use Server\Memory\Pool;
 use Server\SwooleMarco;
 
@@ -135,10 +137,18 @@ class EventDispatcher
      * @param string $type
      * @param null $data
      * @param bool $onlyMyWorker
+     * @param bool $fromDispatch
      */
-    public function dispatch($type, $data = null, $onlyMyWorker = false)
+    public function dispatch($type, $data = null, $onlyMyWorker = false, $fromDispatch = false)
     {
         if (!$onlyMyWorker) {
+            if ($fromDispatch) {//来自集群的请求
+                get_instance()->sendToAllAsynWorks(SwooleMarco::DISPATCHER_NAME, [$type, $data], EventDispatcher::class . "::workerDispatchEventWith");
+                return;
+            }
+            if (get_instance()->isCluster()) {
+                ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_dispatchEvent($type, $data);
+            }
             get_instance()->sendToAllAsynWorks(SwooleMarco::DISPATCHER_NAME, [$type, $data], EventDispatcher::class . "::workerDispatchEventWith");
         } else {//仅仅发布自己的进程
             self::workerDispatchEventWith([$type, $data]);

@@ -35,15 +35,20 @@ class ProcessManager
     /**
      * @param $class_name
      * @param bool $needCoroutine
+     * @param string $name
      * @return Process
+     * @throws \Exception
      */
-    public function addProcess($class_name, $needCoroutine = true)
+    public function addProcess($class_name, $needCoroutine = true, $name = '')
     {
         $worker_id = get_instance()->worker_num + get_instance()->task_num + $this->atomic->get();
         $this->atomic->add();
         $names = explode("\\", $class_name);
         $process = new $class_name('SWD-' . $names[count($names) - 1], $worker_id, $needCoroutine);
-        $this->map[$class_name] = $process;
+        if(array_key_exists($class_name.$name,$this->map)){
+            throw new \Exception('存在相同类型的进程，需要设置别名');
+        }
+        $this->map[$class_name.$name] = $process;
         return $process;
     }
 
@@ -60,28 +65,30 @@ class ProcessManager
 
     /**
      * @param $class_name
-     * @param $oneWay
+     * @param bool $oneWay
+     * @param string $name
      * @return mixed
      * @throws \Exception
      */
-    public function getRpcCall($class_name, $oneWay = false)
+    public function getRpcCall($class_name, $oneWay = false, $name = '')
     {
-        if (!array_key_exists($class_name, $this->map)) {
+        if (!array_key_exists($class_name.$name, $this->map)) {
             throw new \Exception("不存在$class_name 进程");
         }
-        return Pool::getInstance()->get(RPCCall::class)->init($this->map[$class_name], $oneWay);
+        return Pool::getInstance()->get(RPCCall::class)->init($this->map[$class_name.$name], $oneWay);
     }
 
     /**
      * @param $class_name
+     * @param $name
      * @return mixed
      * @throws \Exception
      */
-    public function getProcess($class_name)
+    public function getProcess($class_name,$name='')
     {
-        if (!array_key_exists($class_name, $this->map)) {
+        if (!array_key_exists($class_name.$name, $this->map)) {
             throw new \Exception("不存在$class_name 进程");
         }
-        return $this->map[$class_name];
+        return $this->map[$class_name.$name];
     }
 }
