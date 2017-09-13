@@ -86,3 +86,13 @@ $this->installMysqlPool($this->mysql_pool);
 http://localhost:8081/V1/AppController/test
 ```
 比如V1就是一个文件夹，默认访问的是app\V1\AppController::test();
+
+
+## 2.4.13
+1.EventDispatcher支持集群发布消息
+
+2.ProcessManager针对同类型进程进行标识
+
+3.HttpInput getAllPostGet接口行为变更
+
+4.docker化部署支持性改良
