@@ -211,12 +211,27 @@ function sleepCoroutine($time)
  * @param string $dev
  * @return string
  */
-function getServerIp($dev='eth0')
+function getServerIp($dev = 'eth0')
 {
     return exec("ip -4 addr show $dev | grep inet | awk '{print $2}' | cut -d / -f 1");
 }
 
 function getBindIp()
 {
-    return getServerIp(get_instance()->config['consul']['bind_net_dev']??'eth0');
+    return getServerIp(get_instance()->config['consul']['bind_net_dev'] ?? 'eth0');
+}
+
+function getNodeName()
+{
+    $env_SD_NODE_NAME = getenv("SD_NODE_NAME");
+    if (!empty($env_SD_NODE_NAME)) {
+        $node_name = $env_SD_NODE_NAME;
+    } else {
+        if (!isset(get_instance()->config['node_name']) || empty(get_instance()->config['node_name'])) {
+            $node_name = exec('hostname');
+        } else {
+            $node_name = get_instance()->config['node_name'];
+        }
+    }
+    return $node_name;
 }
