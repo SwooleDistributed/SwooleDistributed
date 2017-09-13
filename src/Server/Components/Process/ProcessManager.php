@@ -44,7 +44,7 @@ class ProcessManager
         $worker_id = get_instance()->worker_num + get_instance()->task_num + $this->atomic->get();
         $this->atomic->add();
         $names = explode("\\", $class_name);
-        $process = new $class_name('SWD-' . $names[count($names) - 1], $worker_id, $needCoroutine);
+        $process = new $class_name(getServerName() . "-" . $names[count($names) - 1], $worker_id, $needCoroutine);
         if (array_key_exists($class_name . $name, $this->map)) {
             throw new \Exception('存在相同类型的进程，需要设置别名');
         }

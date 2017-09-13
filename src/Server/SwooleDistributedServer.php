@@ -568,7 +568,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $uid = $info['uid'] ?? 0;
         if (!empty($uid)) {
             Coroutine::startCoroutine([$this, 'onUidCloseClear'], [$uid]);
-            $this->unBindUid($uid, $fd);
+            $this->unBindUid($uid);
         }
         parent::onSwooleClose($serv, $fd);
     }

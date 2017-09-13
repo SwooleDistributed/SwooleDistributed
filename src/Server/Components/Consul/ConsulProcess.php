@@ -11,7 +11,6 @@ namespace Server\Components\Consul;
 use Server\Components\Process\Process;
 use Server\CoreBase\PortManager;
 use Server\CoreBase\SwooleException;
-use Server\CoreBase\TimerTask;
 
 class ConsulProcess extends Process
 {
@@ -28,6 +27,7 @@ class ConsulProcess extends Process
             get_instance()->server->shutdown();
             return;
         }
+
         $process->exec(BIN_DIR . "/exec/consul", ['agent', '-ui', '-config-dir', BIN_DIR . '/exec/consul.d']);
     }
 

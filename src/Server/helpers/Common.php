@@ -235,3 +235,8 @@ function getNodeName()
     }
     return $node_name;
 }
+
+function getServerName()
+{
+    return get_instance()->config['name'] ?? 'SWD';
+}
