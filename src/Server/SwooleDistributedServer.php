@@ -608,6 +608,16 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
+     * 通过Uid获取fd
+     * @param $uid
+     * @return mixed
+     */
+    public function getFdFromUid($uid)
+    {
+        return $this->uid_fd_table->get($uid)['fd'];
+    }
+
+    /**
      * 踢用户下线
      * @param $uid
      * @param bool $fromDispatch

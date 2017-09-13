@@ -211,6 +211,8 @@ class Controller extends CoreBase
         }
         if ($e instanceof SwooleException) {
             print_r($e->getMessage() . "\n");
+            $context = json_encode($this->context);
+            print_r("出错Context:$context \n");
             $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
             if ($e->others != null) {
                 //这里只打印，在controller里面写日志，能把context带进去。

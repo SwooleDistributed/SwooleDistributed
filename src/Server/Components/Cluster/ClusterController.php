@@ -8,6 +8,7 @@
 
 namespace Server\Components\Cluster;
 
+use Server\Components\Event\EventDispatcher;
 use Server\Components\Process\ProcessManager;
 
 /**
@@ -71,5 +72,10 @@ class ClusterController
     public function pub($sub, $data)
     {
         ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_pub($sub, $data);
+    }
+
+    public function dispatchEvent($type, $data)
+    {
+        EventDispatcher::getInstance()->dispatch($type, $data, false, true);
     }
 }

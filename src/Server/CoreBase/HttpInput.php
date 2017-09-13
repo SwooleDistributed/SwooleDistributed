@@ -109,7 +109,7 @@ class HttpInput
      */
     public function getAllPostGet()
     {
-        return $this->request->post??$this->request->get??[];
+        return array_merge($this->request->post ?? [], $this->request->get ?? []);
     }
 
     /**

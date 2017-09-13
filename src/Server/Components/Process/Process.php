@@ -17,9 +17,10 @@ class Process
     protected $process;
     protected $worker_id;
     protected $config;
+    protected $log;
     protected $token = 0;
     /**
-     * 协成支持
+     * 协程支持
      * @var bool
      */
     protected $coroutine_need = true;
@@ -37,6 +38,7 @@ class Process
         $this->coroutine_need = $coroutine_need;
         $this->process = new \swoole_process([$this, 'start'], false, 2);
         $this->config = get_instance()->config;
+        $this->log = get_instance()->log;
         get_instance()->server->addProcess($this->process);
     }
 
