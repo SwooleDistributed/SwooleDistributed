@@ -206,3 +206,17 @@ function sleepCoroutine($time)
 {
     return \Server\Memory\Pool::getInstance()->get(\Server\CoreBase\SleepCoroutine::class)->setTimeout($time);
 }
+
+/**
+ * @param string $dev
+ * @return string
+ */
+function getServerIp($dev='eth0')
+{
+    return exec("ip -4 addr show $dev | grep inet | awk '{print $2}' | cut -d / -f 1");
+}
+
+function getBindIp()
+{
+    return getServerIp(get_instance()->config['consul']['bind_net_dev']??'eth0');
+}
