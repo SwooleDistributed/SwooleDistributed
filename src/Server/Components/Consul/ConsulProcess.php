@@ -40,16 +40,7 @@ class ConsulProcess extends Process
         if (isset($config['datacenter'])) {
             $newConfig['datacenter'] = $config['datacenter'];
         }
-        $env_SD_NODE_NAME = getenv("SD_NODE_NAME");
-        if (!empty($env_SD_NODE_NAME)) {
-            $newConfig['node_name'] = $env_SD_NODE_NAME;
-        } else {
-            if (!isset($config['node_name']) || empty($config['node_name'])) {
-                $newConfig['node_name'] = exec('hostname');
-            } else {
-                $newConfig['node_name'] = $config['node_name'];
-            }
-        }
+        $newConfig['node_name'] = getNodeName();
         $newConfig['start_join'] = $config['start_join'];
         $newConfig['data_dir'] = $config['data_dir'];
         $newConfig['bind_addr'] = getBindIp();

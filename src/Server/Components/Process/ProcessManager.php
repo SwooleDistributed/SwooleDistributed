@@ -45,10 +45,10 @@ class ProcessManager
         $this->atomic->add();
         $names = explode("\\", $class_name);
         $process = new $class_name('SWD-' . $names[count($names) - 1], $worker_id, $needCoroutine);
-        if(array_key_exists($class_name.$name,$this->map)){
+        if (array_key_exists($class_name . $name, $this->map)) {
             throw new \Exception('存在相同类型的进程，需要设置别名');
         }
-        $this->map[$class_name.$name] = $process;
+        $this->map[$class_name . $name] = $process;
         return $process;
     }
 
@@ -72,10 +72,10 @@ class ProcessManager
      */
     public function getRpcCall($class_name, $oneWay = false, $name = '')
     {
-        if (!array_key_exists($class_name.$name, $this->map)) {
+        if (!array_key_exists($class_name . $name, $this->map)) {
             throw new \Exception("不存在$class_name 进程");
         }
-        return Pool::getInstance()->get(RPCCall::class)->init($this->map[$class_name.$name], $oneWay);
+        return Pool::getInstance()->get(RPCCall::class)->init($this->map[$class_name . $name], $oneWay);
     }
 
     /**
@@ -84,11 +84,11 @@ class ProcessManager
      * @return mixed
      * @throws \Exception
      */
-    public function getProcess($class_name,$name='')
+    public function getProcess($class_name, $name = '')
     {
-        if (!array_key_exists($class_name.$name, $this->map)) {
+        if (!array_key_exists($class_name . $name, $this->map)) {
             throw new \Exception("不存在$class_name 进程");
         }
-        return $this->map[$class_name.$name];
+        return $this->map[$class_name . $name];
     }
 }

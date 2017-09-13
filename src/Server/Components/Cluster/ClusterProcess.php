@@ -28,7 +28,7 @@ class ClusterProcess extends Process
     {
         parent::start($process);
         if (get_instance()->isCluster()) {
-            $this->node_name = $this->config['consul']['node_name'];
+            $this->node_name = getNodeName();
             $this->map[$this->node_name] = new Set();
             foreach (get_instance()->server->connections as $fd) {
                 $fdinfo = get_instance()->server->connection_info($fd);
