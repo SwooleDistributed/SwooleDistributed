@@ -103,7 +103,7 @@ class ConsulLeader
                         $leader = false;
                     }
                     //发送到进程
-                    EventDispatcher::getInstance()->dispatch(ConsulHelp::LEADER_KEY, $leader);
+                    EventDispatcher::getInstance()->dispatch(ConsulHelp::LEADER_KEY, $leader, false, true);
                     //存儲在SDHelpProcess中
                     ProcessManager::getInstance()->getProcess(SDHelpProcess::class)
                         ->setData(ConsulHelp::LEADER_KEY, $leader);
