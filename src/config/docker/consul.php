@@ -16,7 +16,7 @@ $config['consul']['leader_service_name'] = 'Test';
 //consul的data_dir默认放在临时文件下
 $config['consul']['data_dir'] = "/tmp/consul";
 //consul join地址，可以是集群的任何一个，或者多个
-$config['consul']['start_join'] = ["192.168.8.85"];
+$config['consul']['start_join'] = ["consul"];
 //本地网卡设备
 $config['consul']['bind_net_dev'] = "eth0";
 //监控服务

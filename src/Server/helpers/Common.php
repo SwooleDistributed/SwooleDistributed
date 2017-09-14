@@ -244,15 +244,14 @@ function getServerName()
 function getConfigDir()
 {
     $env_SD_CONFIG_DIR = getenv("SD_CONFIG_DIR");
-    if(!empty($env_SD_CONFIG_DIR)) {
+    if (!empty($env_SD_CONFIG_DIR)) {
         $dir = CONFIG_DIR . '/' . $env_SD_CONFIG_DIR;
-        if (!is_file($dir))
-        {
+        if (!is_dir($dir)) {
             print_r("$dir 目录不存在\n");
             exit();
         }
         return $dir;
-    }else{
+    } else {
         return CONFIG_DIR;
     }
 }
