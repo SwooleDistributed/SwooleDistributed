@@ -96,3 +96,17 @@ http://localhost:8081/V1/AppController/test
 3.HttpInput getAllPostGet接口行为变更
 
 4.docker化部署支持性改良
+
+# 2.5.0
+1.已不再依赖pid文件，通过新的方式识别SD进程，server.php新增name字段，不同name代表不同服务器，
+一台机器不允许启动多个相同name的服务器
+
+2.config支持文件夹区分，通过设置SD_CONFIG_DIR环境变量来识别文件夹
+
+3.consul.php配置文件变更，新增client_addr字段默认为127.0.0.1只开放本地访问，node_name字段现在可以不填，
+如果不填写则使用机器名，可通过SD_NODE_NAME环境变量来设置node_name。新增bind_net_dev字段，移除bind_addr字段，
+默认为eth0网卡名。
+
+4.对docker友好，提供SD运行环境的docker镜像registry.cn-hangzhou.aliyuncs.com/youwoxing/swoole
+
+5.提供docker编排模板及其集群环境搭建实例https://github.com/tmtbe/swoole-docker

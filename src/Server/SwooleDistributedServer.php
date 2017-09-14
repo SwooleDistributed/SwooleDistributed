@@ -99,6 +99,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     private $debug = false;
 
     /**
+     * @var
+     */
+    private $bind_ip;
+
+    /**
      * SwooleDistributedServer constructor.
      */
     public function __construct()
@@ -724,5 +729,17 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $tasks[] = $row;
         }
         return $tasks;
+    }
+
+    /**
+     * 获取本机ip
+     * @return string
+     */
+    public function getBindIp()
+    {
+        if (empty($this->bind_ip)) {
+            $this->bind_ip = getServerIp($this->config['consul']['bind_net_dev'] ?? 'eth0');
+        }
+        return $this->bind_ip;
     }
 }

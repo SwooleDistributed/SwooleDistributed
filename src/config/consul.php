@@ -20,7 +20,7 @@ $config['consul']['data_dir'] = "/tmp/consul";
 //consul join地址，可以是集群的任何一个，或者多个
 $config['consul']['start_join'] = ["192.168.8.85"];
 //本地网卡设备
-$config['consul']['bind_net_dev'] = "enp2s0";
+$config['consul']['bind_net_dev'] = "eth0";
 //监控服务
 $config['consul']['watches'] = ['MathService', 'TestController'];
 //发布服务
