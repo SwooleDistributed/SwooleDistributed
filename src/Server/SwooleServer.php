@@ -31,7 +31,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.4.15";
+    const version = "2.4.16";
 
     /**
      * server name
@@ -117,7 +117,7 @@ abstract class SwooleServer extends Child
         $this->onErrorHandel = [$this, 'onErrorHandel'];
         Start::initServer($this);
         // 加载配置
-        $this->config = new Config(CONFIG_DIR);
+        $this->config = new Config(getConfigDir());
         $this->user = $this->config->get('server.set.user', '');
         $this->setLogHandler();
         register_shutdown_function(array($this, 'checkErrors'));
@@ -217,7 +217,7 @@ abstract class SwooleServer extends Child
             opcache_reset();
         }
         // 重新加载配置
-        $this->config = $this->config->load(CONFIG_DIR);
+        $this->config = $this->config->load(getConfigDir());
         if (!$serv->taskworker) {//worker进程
             if ($this->needCoroutine) {//启动协程调度器
                 Coroutine::init();

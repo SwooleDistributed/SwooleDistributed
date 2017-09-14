@@ -380,4 +380,5 @@ class TestController extends Controller
         yield $this->testModel->testWhile();
         $this->http_output->end(1);
     }
+
 }
