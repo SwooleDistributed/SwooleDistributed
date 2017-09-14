@@ -40,6 +40,9 @@ class ConsulProcess extends Process
         if (isset($config['datacenter'])) {
             $newConfig['datacenter'] = $config['datacenter'];
         }
+        if (isset($config['client_addr'])) {
+            $newConfig['client_addr'] = $config['client_addr'];
+        }
         $newConfig['node_name'] = getNodeName();
         $newConfig['start_join'] = $config['start_join'];
         $newConfig['data_dir'] = $config['data_dir'];
