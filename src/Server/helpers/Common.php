@@ -218,7 +218,7 @@ function getServerIp($dev = 'eth0')
 
 function getBindIp()
 {
-    return getServerIp(get_instance()->config['consul']['bind_net_dev'] ?? 'eth0');
+    return get_instance()->getBindIp();
 }
 
 function getNodeName()
