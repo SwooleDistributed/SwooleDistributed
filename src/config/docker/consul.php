@@ -9,6 +9,8 @@
 $config['consul']['enable'] = true;
 //数据中心配置
 $config['consul']['datacenter'] = 'dc1';
+//开放给本地
+$config['consul']['client_addr'] = '127.0.0.1';
 //服务器名称，同种服务应该设置同样的名称，用于leader选举
 $config['consul']['leader_service_name'] = 'Test';
 //node的名字，每一个都必须不一样,也可以为空自动填充主机名

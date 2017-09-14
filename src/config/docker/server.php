@@ -12,7 +12,7 @@
 $config['name'] = 'SWD';
 $config['server']['send_use_task_num'] = 20;
 $config['server']['set'] = [
-    'log_file' => LOG_DIR."/swoole.log",
+    'log_file' => LOG_DIR . "/swoole.log",
     'log_level' => 5,
     'reactor_num' => 1, //reactor thread num
     'worker_num' => 1,    //worker process num
