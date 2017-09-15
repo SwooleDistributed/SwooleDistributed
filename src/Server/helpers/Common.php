@@ -216,11 +216,17 @@ function getServerIp($dev = 'eth0')
     return exec("ip -4 addr show $dev | grep inet | awk '{print $2}' | cut -d / -f 1");
 }
 
+/**
+ * @return string
+ */
 function getBindIp()
 {
     return get_instance()->getBindIp();
 }
 
+/**
+ * @return array|false|mixed|string
+ */
 function getNodeName()
 {
     $env_SD_NODE_NAME = getenv("SD_NODE_NAME");
@@ -236,11 +242,17 @@ function getNodeName()
     return $node_name;
 }
 
+/**
+ * @return mixed|string
+ */
 function getServerName()
 {
     return get_instance()->config['name'] ?? 'SWD';
 }
 
+/**
+ * @return string
+ */
 function getConfigDir()
 {
     $env_SD_CONFIG_DIR = getenv("SD_CONFIG_DIR");
@@ -254,4 +266,19 @@ function getConfigDir()
     } else {
         return CONFIG_DIR;
     }
+}
+
+/**
+ * @param string $prefix
+ * @return string
+ */
+function create_uuid($prefix = "")
+{    //可以指定前缀
+    $str = md5(uniqid(mt_rand(), true));
+    $uuid = substr($str, 0, 8) . '-';
+    $uuid .= substr($str, 8, 4) . '-';
+    $uuid .= substr($str, 12, 4) . '-';
+    $uuid .= substr($str, 16, 4) . '-';
+    $uuid .= substr($str, 20, 12);
+    return $prefix . $uuid;
 }

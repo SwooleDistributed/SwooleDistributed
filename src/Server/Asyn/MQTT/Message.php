@@ -90,11 +90,11 @@ class Message
      * Create Message Object
      *
      * @param int $message_type
-     * @param MQTT $mqtt
+     * @param IMqtt $mqtt
      * @return mixed
      * @throws Exception
      */
-    static public function Create($message_type, $mqtt)
+    static public function Create($message_type, IMqtt $mqtt)
     {
         if (!isset(Message::$name[$message_type])) {
             throw new Exception('Message type not defined');

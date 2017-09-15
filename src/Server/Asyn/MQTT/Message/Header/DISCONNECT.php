@@ -6,7 +6,6 @@
 
 namespace Server\Asyn\MQTT\Message\Header;
 use Server\Asyn\MQTT\Exception;
-use Server\Asyn\MQTT\Message;
 
 
 /**
@@ -38,7 +37,7 @@ class DISCONNECT extends Base
      */
     protected function decodeVariableHeader(& $packet_data, & $pos)
     {
-        throw new Exception('NO DISCONNECT will be sent to client');
+        return;
     }
 }
 

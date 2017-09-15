@@ -30,6 +30,10 @@ class SUBSCRIBE extends Base
         $this->topics[$topic_filter] = $qos_max;
     }
 
+    public function getTopic()
+    {
+        return $this->topics;
+    }
     protected function payload()
     {
         if (empty($this->topics)) {
@@ -49,6 +53,16 @@ class SUBSCRIBE extends Base
         }
 
         return $buffer;
+    }
+
+    protected function decodePayload(& $packet_data, & $payload_pos)
+    {
+        while (isset($packet_data[$payload_pos])) {
+            $topic = Utility::UnpackStringWithLength($packet_data, $payload_pos);
+            $qos = ord($packet_data[$payload_pos]);
+            $this->topics[$topic] = $qos;
+            ++$payload_pos;
+        }
     }
 }
 
