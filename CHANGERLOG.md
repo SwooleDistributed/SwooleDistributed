@@ -110,3 +110,8 @@ http://localhost:8081/V1/AppController/test
 4.对docker友好，提供SD运行环境的docker镜像registry.cn-hangzhou.aliyuncs.com/youwoxing/swoole
 
 5.提供docker编排模板及其集群环境搭建实例https://github.com/tmtbe/swoole-docker
+
+# 2.5.1
+1.AMQP异步任务处理系统
+
+2.MQTT简易服务器
