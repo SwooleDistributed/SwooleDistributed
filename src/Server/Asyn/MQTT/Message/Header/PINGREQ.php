@@ -6,7 +6,6 @@
 
 namespace Server\Asyn\MQTT\Message\Header;
 use Server\Asyn\MQTT\Exception;
-use Server\Asyn\MQTT\Message;
 
 
 /**
@@ -38,7 +37,8 @@ class PINGREQ extends Base
      */
     protected function decodeVariableHeader(& $packet_data, & $pos)
     {
-        throw new Exception('NO PINGREQ will be sent to client');
+        # DO NOTHING
+        return true;
     }
 }
 

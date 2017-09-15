@@ -6,7 +6,6 @@
 
 namespace Server\Asyn\MQTT\Message\Header;
 use Server\Asyn\MQTT\Exception;
-use Server\Asyn\MQTT\Message;
 
 
 /**
@@ -38,7 +37,7 @@ class SUBSCRIBE extends Base
      */
     protected function decodeVariableHeader(& $packet_data, & $pos)
     {
-        throw new Exception('NO SUBSCRIBE will be sent to client');
+        return $this->decodePacketIdentifier($packet_data, $pos);
     }
 }
 

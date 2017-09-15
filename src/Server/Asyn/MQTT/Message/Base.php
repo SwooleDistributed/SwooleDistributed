@@ -8,6 +8,7 @@ namespace Server\Asyn\MQTT\Message;
 
 use Server\Asyn\MQTT\Debug;
 use Server\Asyn\MQTT\Exception;
+use Server\Asyn\MQTT\IMqtt;
 use Server\Asyn\MQTT\Message;
 use Server\Asyn\MQTT\Utility;
 
@@ -44,7 +45,7 @@ abstract class Base
     protected $protocol_type = self::FIXED_ONLY;
 
     /**
-     * @var
+     * @var IMqtt
      */
     public $mqtt;
 
@@ -67,7 +68,7 @@ abstract class Base
      */
     protected $message_type = 0;
 
-    public function __construct($mqtt)
+    public function __construct(IMqtt $mqtt)
     {
         $this->mqtt = $mqtt;
 

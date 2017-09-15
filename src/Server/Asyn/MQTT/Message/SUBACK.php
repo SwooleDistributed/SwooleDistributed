@@ -37,6 +37,10 @@ class SUBACK extends Base
         return $this->return_codes;
     }
 
+    public function setReturnCodes($codes)
+    {
+        $this->return_codes = $codes;
+    }
     /**
      * Decode Payload
      *
@@ -55,6 +59,18 @@ class SUBACK extends Base
         }
 
         $this->return_codes = $return_code;
+    }
+
+    protected function payload()
+    {
+        $buffer = "";
+
+        # Payload
+        foreach ($this->return_codes as $qos_max) {
+            $buffer .= chr($qos_max);
+        }
+
+        return $buffer;
     }
 }
 

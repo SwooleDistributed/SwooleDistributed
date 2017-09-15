@@ -29,6 +29,11 @@ class UNSUBSCRIBE extends Base
         $this->topics[] = $topic_filter;
     }
 
+    public function getTopic()
+    {
+        return $this->topics;
+    }
+
     protected function payload()
     {
         if (empty($this->topics)) {
@@ -47,6 +52,11 @@ class UNSUBSCRIBE extends Base
         }
 
         return $buffer;
+    }
+
+    protected function decodePayload(& $packet_data, & $payload_pos)
+    {
+        $this->topics = $this->readUTF($packet_data);
     }
 }
 
