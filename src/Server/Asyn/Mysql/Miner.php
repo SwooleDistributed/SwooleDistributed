@@ -145,6 +145,12 @@ class Miner
      * Closing bracket for grouping criteria.
      */
     const BRACKET_CLOSE = ")";
+
+    /**
+     * RAW
+     */
+    const LOGICAL_RAW = "RAW";
+
     /**
      * @var MysqlAsynPool
      */
@@ -1231,7 +1237,7 @@ class Miner
                         }
 
                         break;
-
+                    case self::LOGICAL_RAW:
                     case self::IS:
                     case self::IS_NOT:
                         $value = $criterion['value'];
@@ -1250,7 +1256,11 @@ class Miner
                         break;
                 }
 
-                $statement .= $criterion['column'] . " " . $criterion['operator'] . " " . $value;
+                if ($criterion['operator'] == self::LOGICAL_RAW) {
+                    $statement .= " " . $value . " ";
+                } else {
+                    $statement .= $criterion['column'] . " " . $criterion['operator'] . " " . $value;
+                }
             }
         }
 

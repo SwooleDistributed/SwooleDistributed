@@ -115,3 +115,11 @@ http://localhost:8081/V1/AppController/test
 1.AMQP异步任务处理系统
 
 2.MQTT简易服务器
+
+# 2.5.2
+1.Mysql支持RAW模式
+```apple js
+ $selectMiner = $this->mysql_pool->dbQueryBuilder->select('*')->from('account');
+ $selectMiner = $selectMiner->where('', '(status = 1 and dec in ("ss", "cc")) or name = "kk"', Miner::LOGICAL_RAW);
+```
+2.修复onOpenServiceInitialization中不能使用mysql的bug

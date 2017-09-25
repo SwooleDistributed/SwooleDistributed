@@ -8,6 +8,7 @@
 
 namespace Server\Controllers;
 
+use Server\Asyn\Mysql\Miner;
 use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\Components\Consul\ConsulServices;
 use Server\Components\Event\EventDispatcher;
@@ -219,7 +220,6 @@ class TestController extends Controller
         $this->redis_pool->getRedisPool()->get('testroute', function () {
             $this->http_output->end(1, false);
         });
-
     }
 
     /**
@@ -379,6 +379,13 @@ class TestController extends Controller
         $this->testModel = $this->loader->model('TestModel', $this);
         yield $this->testModel->testWhile();
         $this->http_output->end(1);
+    }
+
+    public function http_testMysqlRaw()
+    {
+        $selectMiner = $this->mysql_pool->dbQueryBuilder->select('*')->from('account');
+        $selectMiner = $selectMiner->where('', '(status = 1 and dec in ("ss", "cc")) or name = "kk"', Miner::LOGICAL_RAW);
+        $this->http_output->end($selectMiner->getStatement(false));
     }
 
 }
