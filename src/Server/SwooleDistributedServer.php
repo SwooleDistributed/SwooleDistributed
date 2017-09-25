@@ -559,7 +559,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function onOpenServiceInitialization()
     {
-
+        $this->mysql_pool->installDbBuilder();
     }
 
     /**

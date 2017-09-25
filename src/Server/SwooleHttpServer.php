@@ -11,6 +11,7 @@ namespace Server;
 
 
 use League\Plates\Engine;
+use Server\Components\Consul\ConsulHelp;
 use Server\CoreBase\ControllerFactory;
 
 abstract class SwooleHttpServer extends SwooleServer
@@ -21,6 +22,7 @@ abstract class SwooleHttpServer extends SwooleServer
      */
     public $templateEngine;
     protected $http_method_prefix;
+    protected $cache404;
     public function __construct()
     {
         parent::__construct();
@@ -70,6 +72,8 @@ abstract class SwooleHttpServer extends SwooleServer
         parent::onSwooleWorkerStart($serv, $workerId);
         $this->setTemplateEngine();
         $this->http_method_prefix = $this->config->get('http.method_prefix', '');
+        $template = $this->loader->view('server::error_404');
+        $this->cache404 = $template->render();
     }
 
     /**
@@ -103,10 +107,6 @@ abstract class SwooleHttpServer extends SwooleServer
         $path = $route->getPath();
         if($path=='/404'){
             $response->header('HTTP/1.1', '404 Not Found');
-            if (!isset($this->cache404)) {//内存缓存404页面
-                $template = $this->loader->view('server::error_404');
-                $this->cache404 = $template->render();
-            }
             $response->end($this->cache404);
             return;
         }
@@ -130,7 +130,7 @@ abstract class SwooleHttpServer extends SwooleServer
             $controller_name = $route->getControllerName();
             $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
             if ($controller_instance != null) {
-                if ($route->getMethodName() == '_consul_health') {//健康检查
+                if ($route->getMethodName() == ConsulHelp::HEALTH) {//健康检查
                     $response->end('ok');
                     $controller_instance->destroy();
                     return;

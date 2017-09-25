@@ -21,6 +21,7 @@ class ConsulHelp
     protected static $table;
     const DISPATCH_KEY = 'consul_service';
     const LEADER_KEY = 'consul_leader';
+    const HEALTH='_consul_health';
 
     /**
      * reload时获取一下

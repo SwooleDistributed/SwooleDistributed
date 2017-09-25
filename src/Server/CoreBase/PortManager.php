@@ -130,6 +130,10 @@ class PortManager
      */
     public static function createPack($pack_tool)
     {
+        if (class_exists($pack_tool)) {
+            $pack = new $pack_tool;
+            return $pack;
+        }
         //pack class
         $pack_class_name = "app\\Pack\\" . $pack_tool;
         if (class_exists($pack_class_name)) {
@@ -152,6 +156,10 @@ class PortManager
      */
     public static function createRoute($route_tool)
     {
+        if (class_exists($route_tool)) {
+            $route = new $route_tool;
+            return $route;
+        }
         $route_class_name = "app\\Route\\" . $route_tool;
         if (class_exists($route_class_name)) {
             $route = new $route_class_name;
