@@ -31,7 +31,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.5.3";
+    const version = "2.5.4";
 
     /**
      * server name
@@ -296,6 +296,22 @@ abstract class SwooleServer extends Child
             $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
         }
         return $controller_instance;
+    }
+
+    /**
+     * 转到Controller中处理
+     * @param $uid
+     * @param $fd
+     * @param $client_data
+     * @param $controller_name
+     * @param $method_name
+     * @param $params
+     */
+    public function routeToController($uid, $fd, $client_data, $controller_name, $method_name, $params)
+    {
+        $method_name = $this->tcp_method_prefix . $method_name;
+        $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
+        $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $params);
     }
 
     /**

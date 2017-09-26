@@ -23,4 +23,41 @@ class AppController extends Controller
         parent::initialization($controller_name, $method_name);
         $this->AppModel = $this->loader->model('AppModel', $this);
     }
+
+    public function sub($sub)
+    {
+        $this->bindUid($this->fd);
+        $this->addSub($sub);
+        $this->send("ok.$this->fd");
+    }
+
+    public function http_remove()
+    {
+        $sub = $this->http_input->get('sub');
+        $fd = (int)$this->http_input->get('fd');
+        get_instance()->removeSub($sub, $fd);
+        $this->http_output->end("ok");
+    }
+
+    public function pub($sub, $data)
+    {
+        $this->sendPub($sub, $data);
+    }
+
+    public function http_pub()
+    {
+        $this->sendPub('test', 1);
+    }
+
+    public function sendAll($data)
+    {
+        $this->sendToAll($data);
+    }
+
+    public function onClose()
+    {
+        var_dump($this->fd, $this->uid);
+        var_dump("onClose");
+        $this->destroy();
+    }
 }

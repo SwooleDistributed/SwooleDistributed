@@ -571,13 +571,20 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         $info = $serv->connection_info($fd, 0, true);
         $uid = $info['uid'] ?? 0;
-        if (!empty($uid)) {
-            Coroutine::startCoroutine([$this, 'onUidCloseClear'], [$uid]);
-            $this->unBindUid($uid);
-        }
+        $this->routeToController($uid, $fd, null, $this->getCloseControllerName(), $this->getCloseMethodName(), null);
+        $this->unBindUid($uid);
         parent::onSwooleClose($serv, $fd);
     }
 
+    /**
+     * @return string
+     */
+    abstract function getCloseControllerName();
+
+    /**
+     * @return string
+     */
+    abstract function getCloseMethodName();
     /**
      * ｗｅｂｓｏｃｋｅｔ的连接断开
      * @param $serv
@@ -587,13 +594,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         $this->onSwooleClose($serv, $fd);
     }
-
-    /**
-     * 当一个绑定uid的连接close后的清理
-     * 支持协程
-     * @param $uid
-     */
-    abstract public function onUidCloseClear($uid);
 
     /**
      * 是否开启集群
