@@ -31,7 +31,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.5.2";
+    const version = "2.5.3";
 
     /**
      * server name
@@ -93,6 +93,7 @@ abstract class SwooleServer extends Child
     protected $needCoroutine = true;
 
     protected $tcp_method_prefix;
+
     /**
      * 设置monolog的loghandler
      */
@@ -160,7 +161,20 @@ abstract class SwooleServer extends Child
     {
         if ($this->portManager->tcp_enable) {
             $first_config = $this->portManager->getFirstTypePort();
-            $this->server = new \swoole_server($first_config['socket_name'], $first_config['socket_port'], SWOOLE_PROCESS, $first_config['socket_type']);
+            $set = $this->portManager->getProbufSet($first_config['socket_port']);
+            if (array_key_exists('ssl_cert_file', $first_config)) {
+                $set['ssl_cert_file'] = $first_config['ssl_cert_file'];
+            }
+            if (array_key_exists('ssl_key_file', $first_config)) {
+                $set['ssl_key_file'] = $first_config['ssl_key_file'];
+            }
+            $socket_ssl = $first_config['socket_ssl'] ?? false;
+            if ($socket_ssl) {
+                $this->server = new \swoole_server($first_config['socket_name'], $first_config['socket_port'], SWOOLE_PROCESS, $first_config['socket_type'] | SWOOLE_SSL);
+            } else {
+                $this->server = new \swoole_server($first_config['socket_name'], $first_config['socket_port'], SWOOLE_PROCESS, $first_config['socket_type']);
+            }
+            $this->setServerSet($set);
             $this->server->on('Start', [$this, 'onSwooleStart']);
             $this->server->on('WorkerStart', [$this, 'onSwooleWorkerStart']);
             $this->server->on('connect', [$this, 'onSwooleConnect']);
@@ -174,7 +188,6 @@ abstract class SwooleServer extends Child
             $this->server->on('ManagerStart', [$this, 'onSwooleManagerStart']);
             $this->server->on('ManagerStop', [$this, 'onSwooleManagerStop']);
             $this->server->on('Packet', [$this, 'onSwoolePacket']);
-            $this->setServerSet($this->portManager->getProbufSet($first_config['socket_port']));
             $this->portManager->buildPort($this, $first_config['socket_port']);
             $this->beforeSwooleStart();
             $this->server->start();

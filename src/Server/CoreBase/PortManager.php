@@ -25,6 +25,7 @@ class PortManager
     const SOCK_UDP6 = SWOOLE_SOCK_UDP6;
     const UNIX_DGRAM = SWOOLE_UNIX_DGRAM;
     const UNIX_STREAM = SWOOLE_UNIX_STREAM;
+    const SWOOLE_SSL = SWOOLE_SSL;
     const SOCK_HTTP = 10;
     const SOCK_WS = 11;
     const WEBSOCKET_OPCODE_TEXT = WEBSOCKET_OPCODE_TEXT;
@@ -83,25 +84,49 @@ class PortManager
     {
         foreach ($this->portConfig as $key => $value) {
             if ($value['socket_port'] == $first_port) continue;
+            //获得set
+            $set = $this->getProbufSet($value['socket_port']);
+            if (array_key_exists('ssl_cert_file', $value)) {
+                $set['ssl_cert_file'] = $value['ssl_cert_file'];
+            }
+            if (array_key_exists('ssl_key_file', $value)) {
+                $set['ssl_key_file'] = $value['ssl_key_file'];
+            }
+            $socket_ssl = $value['socket_ssl'] ?? false;
             if ($value['socket_type'] == self::SOCK_HTTP || $value['socket_type'] == self::SOCK_WS) {
-                $port = $swoole_server->server->listen($value['socket_name'], $value['socket_port'], SWOOLE_SOCK_TCP);
+                if ($socket_ssl) {
+                    $port = $swoole_server->server->listen($value['socket_name'], $value['socket_port'], self::SOCK_TCP | self::SWOOLE_SSL);
+                } else {
+                    $port = $swoole_server->server->listen($value['socket_name'], $value['socket_port'], self::SOCK_TCP);
+                }
                 if ($port == false) {
                     throw new \Exception("{$value['socket_port']}端口创建失败");
                 }
                 if ($value['socket_type'] == self::SOCK_HTTP) {
+                    $set['open_http_protocol'] = true;
+                    $port->set($set);
                     $port->on('request', [$swoole_server, $value['request'] ?? 'onSwooleRequest']);
                     $port->on('handshake', function () {
                         return false;
                     });
                 } else {
+                    $set['open_websocket_protocol'] = true;
+                    $port->set($set);
                     $port->on('open', [$swoole_server, $value['open'] ?? 'onSwooleWSOpen']);
                     $port->on('message', [$swoole_server, $value['message'] ?? 'onSwooleWSMessage']);
                     $port->on('close', [$swoole_server, $value['close'] ?? 'onSwooleWSClose']);
                     $port->on('handshake', [$swoole_server, $value['handshake'] ?? 'onSwooleWSHandShake']);
                 }
             } else {
-                $port = $swoole_server->server->listen($value['socket_name'], $value['socket_port'], $value['socket_type']);
-                $port->set($this->getProbufSet($value['socket_port']));
+                if ($socket_ssl) {
+                    $port = $swoole_server->server->listen($value['socket_name'], $value['socket_port'], $value['socket_type'] | self::SWOOLE_SSL);
+                } else {
+                    $port = $swoole_server->server->listen($value['socket_name'], $value['socket_port'], $value['socket_type']);
+                }
+                if ($port == false) {
+                    throw new \Exception("{$value['socket_port']}端口创建失败");
+                }
+                $port->set($set);
                 $port->on('connect', [$swoole_server, $value['connect'] ?? 'onSwooleConnect']);
                 $port->on('receive', [$swoole_server, $value['receive'] ?? 'onSwooleReceive']);
                 $port->on('close', [$swoole_server, $value['close'] ?? 'onSwooleClose']);
