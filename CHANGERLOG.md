@@ -139,3 +139,28 @@ $config['ports'][] = [
     'ssl_key_file' => $ssl_dir . '/ssl.key',
 ];
 ```
+# 2.5.4
+设计问题废除了AppServer中的onUidCloseClear方法。
+
+增加了getCloseControllerName与getCloseMethodName方法。
+
+```
+    /**
+     * @return string
+     */
+    public function getCloseControllerName()
+    {
+        return 'AppController';
+    }
+
+    /**
+     * @return string
+     */
+    public function getCloseMethodName()
+    {
+        return 'onClose';
+    }
+```
+通过设置AppServer中的控制器与方法名可以将连接断开的消息转发到对应的控制器方法中。
+
+如上，如果连接断开，会转到AppController中的onClose方法，这里不需要填写方法前缀。
