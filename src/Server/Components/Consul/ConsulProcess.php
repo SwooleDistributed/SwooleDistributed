@@ -77,7 +77,7 @@ class ConsulProcess extends Process
                             'tags' => ['http'],
                             'check' => [
                                 'name' => 'status',
-                                'http' => "http://localhost:$service_port/$service_name/".ConsulHelp::HEALTH,
+                                'http' => "http://localhost:$service_port/$service_name/" . ConsulHelp::HEALTH,
                                 'interval' => "10s",
                                 'timeout' => "1s"
                             ]];

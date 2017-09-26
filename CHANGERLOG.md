@@ -123,3 +123,19 @@ http://localhost:8081/V1/AppController/test
  $selectMiner = $selectMiner->where('', '(status = 1 and dec in ("ss", "cc")) or name = "kk"', Miner::LOGICAL_RAW);
 ```
 2.修复onOpenServiceInitialization中不能使用mysql的bug
+
+# 2.5.3
+SD框架正式支持SSL。
+通过Ports.php配置文件配置HTTPS，WSS。
+```
+$config['ports'][] = [
+    'socket_type' => PortManager::SOCK_HTTP
+    'socket_name' => '0.0.0.0',
+    'socket_port' => 8081,
+    'pack_tool' => 'LenJsonPack',
+    'route_tool' => 'NormalRoute',
+    'socket_ssl' => true,
+    'ssl_cert_file' => $ssl_dir . '/ssl.crt',
+    'ssl_key_file' => $ssl_dir . '/ssl.key',
+];
+```

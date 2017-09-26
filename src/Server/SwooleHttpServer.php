@@ -44,8 +44,21 @@ abstract class SwooleHttpServer extends SwooleServer
             return;
         }
         $first_config = $this->portManager->getFirstTypePort();
+        $set = $this->portManager->getProbufSet($first_config['socket_port']);
+        if (array_key_exists('ssl_cert_file', $first_config)) {
+            $set['ssl_cert_file'] = $first_config['ssl_cert_file'];
+        }
+        if (array_key_exists('ssl_key_file', $first_config)) {
+            $set['ssl_key_file'] = $first_config['ssl_key_file'];
+        }
+        $socket_ssl = $first_config['socket_ssl'] ?? false;
         //开启一个http服务器
-        $this->server = new \swoole_http_server($first_config['socket_name'], $first_config['socket_port']);
+        if ($socket_ssl) {
+            $this->server = new \swoole_http_server($first_config['socket_name'], $first_config['socket_port'], SWOOLE_PROCESS, SWOOLE_SOCK_TCP | SWOOLE_SSL);
+        } else {
+            $this->server = new \swoole_http_server($first_config['socket_name'], $first_config['socket_port']);
+        }
+        $this->setServerSet($set);
         $this->server->on('Start', [$this, 'onSwooleStart']);
         $this->server->on('WorkerStart', [$this, 'onSwooleWorkerStart']);
         $this->server->on('WorkerStop', [$this, 'onSwooleWorkerStop']);
@@ -56,7 +69,6 @@ abstract class SwooleHttpServer extends SwooleServer
         $this->server->on('ManagerStart', [$this, 'onSwooleManagerStart']);
         $this->server->on('ManagerStop', [$this, 'onSwooleManagerStop']);
         $this->server->on('request', [$this, 'onSwooleRequest']);
-        $this->setServerSet($this->portManager->getProbufSet($first_config['socket_port']));
         $this->portManager->buildPort($this, $first_config['socket_port']);
         $this->beforeSwooleStart();
         $this->server->start();
