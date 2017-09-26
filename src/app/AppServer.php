@@ -33,16 +33,6 @@ class AppServer extends SwooleDistributedServer
     }
 
     /**
-     * 当一个绑定uid的连接close后的清理
-     * 支持协程
-     * @param $uid
-     */
-    public function onUidCloseClear($uid)
-    {
-        // TODO: Implement onUidCloseClear() method.
-    }
-
-    /**
      * 这里可以进行额外的异步连接池，比如另一组redis/mysql连接
      * @param $workerId
      * @return array
@@ -58,7 +48,6 @@ class AppServer extends SwooleDistributedServer
     public function startProcess()
     {
         parent::startProcess();
-        //ProcessManager::getInstance()->addProcess(MyProcess::class);
     }
 
     /**
@@ -69,5 +58,21 @@ class AppServer extends SwooleDistributedServer
     public function onWebSocketHandCheck(HttpInput $httpInput)
     {
         return true;
+    }
+
+    /**
+     * @return string
+     */
+    public function getCloseControllerName()
+    {
+        return 'AppController';
+    }
+
+    /**
+     * @return string
+     */
+    public function getCloseMethodName()
+    {
+        return 'onClose';
     }
 }
