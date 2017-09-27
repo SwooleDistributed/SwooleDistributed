@@ -569,30 +569,23 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function onSwooleClose($serv, $fd)
     {
+        parent::onSwooleClose($serv, $fd);
         $info = $serv->connection_info($fd, 0, true);
         $uid = $info['uid'] ?? 0;
-        $this->routeToController($uid, $fd, null, $this->getCloseControllerName(), $this->getCloseMethodName(), null);
         $this->unBindUid($uid);
-        parent::onSwooleClose($serv, $fd);
     }
 
     /**
-     * @return string
-     */
-    abstract function getCloseControllerName();
-
-    /**
-     * @return string
-     */
-    abstract function getCloseMethodName();
-    /**
-     * ｗｅｂｓｏｃｋｅｔ的连接断开
+     * WS连接断开
      * @param $serv
      * @param $fd
      */
     public function onSwooleWSClose($serv, $fd)
     {
-        $this->onSwooleClose($serv, $fd);
+        parent::onSwooleWSClose($serv, $fd);
+        $info = $serv->connection_info($fd, 0, true);
+        $uid = $info['uid'] ?? 0;
+        $this->unBindUid($uid);
     }
 
     /**

@@ -31,7 +31,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.5.4";
+    const version = "2.5.5";
 
     /**
      * server name
@@ -248,7 +248,9 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleConnect($serv, $fd)
     {
-
+        $method_name = $this->tcp_method_prefix . $this->getConnectMethodName();
+        $controller_instance = ControllerFactory::getInstance()->getController($this->getEventControllerName());
+        $controller_instance->setClientData(null, $fd, null, $this->getEventControllerName(), $method_name, null);
     }
 
     /**
@@ -299,20 +301,19 @@ abstract class SwooleServer extends Child
     }
 
     /**
-     * 转到Controller中处理
-     * @param $uid
-     * @param $fd
-     * @param $client_data
-     * @param $controller_name
-     * @param $method_name
-     * @param $params
+     * @return string
      */
-    public function routeToController($uid, $fd, $client_data, $controller_name, $method_name, $params)
-    {
-        $method_name = $this->tcp_method_prefix . $method_name;
-        $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
-        $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $params);
-    }
+    abstract function getEventControllerName();
+
+    /**
+     * @return string
+     */
+    abstract function getCloseMethodName();
+
+    /**
+     * @return string
+     */
+    abstract function getConnectMethodName();
 
     /**
      * onSwooleClose
@@ -321,7 +322,11 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleClose($serv, $fd)
     {
-
+        $info = $serv->connection_info($fd, 0, true);
+        $uid = $info['uid'] ?? 0;
+        $method_name = $this->tcp_method_prefix . $this->getCloseMethodName();
+        $controller_instance = ControllerFactory::getInstance()->getController($this->getEventControllerName());
+        $controller_instance->setClientData($uid, $fd, null, $this->getEventControllerName(), $method_name, null);
     }
 
     /**

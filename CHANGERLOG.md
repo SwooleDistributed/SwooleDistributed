@@ -164,3 +164,8 @@ $config['ports'][] = [
 通过设置AppServer中的控制器与方法名可以将连接断开的消息转发到对应的控制器方法中。
 
 如上，如果连接断开，会转到AppController中的onClose方法，这里不需要填写方法前缀。
+
+# 2.5.5
+1.getCloseControllerName改名为getEventControllerName
+
+2.添加getConnectMethodName
