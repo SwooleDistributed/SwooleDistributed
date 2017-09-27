@@ -136,7 +136,10 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      */
     public function onSwooleWSOpen($server, $request)
     {
-
+        $method_name = $this->web_socket_method_prefix . $this->getConnectMethodName();
+        $controller_instance = ControllerFactory::getInstance()->getController($this->getEventControllerName());
+        $controller_instance->setRequest($request);
+        $controller_instance->setClientData(null, $request->fd, null, $this->getEventControllerName(), $method_name, null);
     }
 
     /**
@@ -198,7 +201,11 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
     public function onSwooleWSClose($serv, $fd)
     {
         unset($this->fdRequest[$fd]);
-        $this->onSwooleClose($serv, $fd);
+        $info = $serv->connection_info($fd, 0, true);
+        $uid = $info['uid'] ?? 0;
+        $method_name = $this->web_socket_method_prefix . $this->getCloseMethodName();
+        $controller_instance = ControllerFactory::getInstance()->getController($this->getEventControllerName());
+        $controller_instance->setClientData($uid, $fd, null, $this->getEventControllerName(), $method_name, null);
     }
 
     /**

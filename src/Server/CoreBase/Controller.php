@@ -501,13 +501,13 @@ class Controller extends CoreBase
     }
 
     /**
-     * @param $sub
+     * @param $topic
      * @param $data
      * @param $destroy
      */
-    protected function sendPub($sub, $data, $destroy = true)
+    protected function sendPub($topic, $data, $destroy = true)
     {
-        get_instance()->pub($sub, $data);
+        get_instance()->pub($topic, $data);
         if ($destroy) {
             $this->destroy();
         }

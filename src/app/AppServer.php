@@ -63,7 +63,15 @@ class AppServer extends SwooleDistributedServer
     /**
      * @return string
      */
-    public function getCloseControllerName()
+    public function getCloseMethodName()
+    {
+        return 'onClose';
+    }
+
+    /**
+     * @return string
+     */
+    public function getEventControllerName()
     {
         return 'AppController';
     }
@@ -71,8 +79,8 @@ class AppServer extends SwooleDistributedServer
     /**
      * @return string
      */
-    public function getCloseMethodName()
+    public function getConnectMethodName()
     {
-        return 'onClose';
+        return 'onConnect';
     }
 }
