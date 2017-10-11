@@ -3,7 +3,6 @@
 namespace Server\CoreBase;
 
 use Monolog\Logger;
-use Server\Coroutine\Coroutine;
 use Server\Start;
 use Server\SwooleMarco;
 
@@ -98,6 +97,7 @@ class Controller extends CoreBase
      * @param $controller_name
      * @param $method_name
      * @param $params
+     * @return \Generator
      */
     public function setClientData($uid, $fd, $client_data, $controller_name, $method_name, $params)
     {
@@ -112,7 +112,7 @@ class Controller extends CoreBase
             $this->isRPC = false;
         }
         $this->request_type = SwooleMarco::TCP_REQUEST;
-        $this->execute($controller_name, $method_name, $params);
+        yield $this->execute($controller_name, $method_name, $params);
     }
 
     /**
@@ -134,31 +134,30 @@ class Controller extends CoreBase
         $this->rpc_request_id = $this->http_input->header('rpc_request_id');
         $this->isRPC = empty($this->rpc_request_id) ? false : true;
         $this->request_type = SwooleMarco::HTTP_REQUEST;
-        $this->execute($controller_name, $method_name, $params);
+        yield $this->execute($controller_name, $method_name, $params);
     }
 
     /**
      * @param $controller_name
      * @param $method_name
      * @param $params
+     * @return \Generator
      */
     private function execute($controller_name, $method_name, $params)
     {
         if (!is_callable([$this, $method_name])) {
             $method_name = 'defaultMethod';
         }
-        Coroutine::startCoroutine(function () use ($controller_name, $method_name, $params) {
-            try {
-                yield $this->initialization($controller_name, $method_name);
-                if ($params == null) {
-                    yield call_user_func([$this, $method_name]);
-                } else {
-                    yield call_user_func_array([$this, $method_name], $params);
-                }
-            } catch (\Exception $e) {
-                yield $this->onExceptionHandle($e);
+        try {
+            yield $this->initialization($controller_name, $method_name);
+            if ($params == null) {
+                yield call_user_func([$this, $method_name]);
+            } else {
+                yield call_user_func_array([$this, $method_name], $params);
             }
-        });
+        } catch (\Exception $e) {
+            yield $this->onExceptionHandle($e);
+        }
     }
 
     /**
@@ -171,14 +170,12 @@ class Controller extends CoreBase
     {
         if ($this->isRPC && !empty($this->rpc_request_id)) {
             //全链路监控保证调用的request_id唯一
-            $context = ['request_id' => $this->rpc_request_id];
+            $this->context['request_id'] = $this->rpc_request_id;
         } else {
-            $context = ['request_id' => time() . crc32($controller_name . $method_name . getTickTime() . rand(1, 10000000))];
+            $this->context['request_id'] = time() . crc32($controller_name . $method_name . getTickTime() . rand(1, 10000000));
         }
-        $context['controller_name'] = $controller_name;
-        $context['method_name'] = "$controller_name:$method_name";
-        $this->setContext($context);
-        $this->start_run_time = microtime(true);
+        $this->context['controller_name'] = $controller_name;
+        $this->context['method_name'] = "$controller_name:$method_name";
         if (get_instance()->isDebug()) {
             set_time_limit(1);
         }
@@ -214,13 +211,6 @@ class Controller extends CoreBase
             $context = json_encode($this->context);
             print_r("出错Context:$context \n");
             $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
-            if ($e->others != null) {
-                //这里只打印，在controller里面写日志，能把context带进去。
-                print_r("=================================================\e[30;41m [ERROR] \e[0m==============================================================\n");
-                print_r($e->others . "\n");
-                print_r("\n");
-                $this->log($e->others, Logger::NOTICE);
-            }
         }
         //可以重写的代码
         if ($handle == null) {
@@ -271,10 +261,6 @@ class Controller extends CoreBase
         if ($this->is_destroy) {
             return;
         }
-        if ($this->isEfficiencyMonitorEnable) {
-            $this->context['execution_time'] = (microtime(true) - $this->start_run_time) * 1000;
-            $this->log('Efficiency monitor', Logger::INFO);
-        }
         parent::destroy();
         $this->fd = null;
         $this->uid = null;
@@ -313,6 +299,7 @@ class Controller extends CoreBase
      * sendToUid
      * @param $uid
      * @param $data
+     * @param bool $destroy
      * @throws SwooleException
      */
     protected function sendToUid($uid, $data, $destroy = true)

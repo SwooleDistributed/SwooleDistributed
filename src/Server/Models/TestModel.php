@@ -88,7 +88,7 @@ class TestModel extends Model
 
     public function testMysql()
     {
-        return $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10004)->coroutineSend();
+        return $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->coroutineSend();
     }
 
     public function testWhile()

@@ -8,6 +8,7 @@ use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Noodlehaus\Config;
 use Server\Components\GrayLog\UdpTransport;
+use Server\Components\Middleware\MiddlewareManager;
 use Server\CoreBase\Child;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\ILoader;
@@ -31,7 +32,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.5.5";
+    const version = "2.6.0-beta";
 
     /**
      * server name
@@ -92,6 +93,11 @@ abstract class SwooleServer extends Child
      */
     protected $needCoroutine = true;
 
+    /**
+     * @var MiddlewareManager
+     */
+    protected $middlewareManager;
+
     protected $tcp_method_prefix;
 
     /**
@@ -119,6 +125,7 @@ abstract class SwooleServer extends Child
         Start::initServer($this);
         // 加载配置
         $this->config = new Config(getConfigDir());
+        $this->middlewareManager = new MiddlewareManager();
         $this->user = $this->config->get('server.set.user', '');
         $this->setLogHandler();
         register_shutdown_function(array($this, 'checkErrors'));
@@ -267,37 +274,52 @@ abstract class SwooleServer extends Child
         if (!Start::$testUnity) {
             $fdinfo = $serv->connection_info($fd);
             $server_port = $fdinfo['server_port'];
+            $uid = $fdinfo['uid'] ?? 0;
+        } else {
+            $fd = 'self';
+            $uid = $fd;
         }
-        $route = $this->portManager->getRoute($server_port);
         $pack = $this->portManager->getPack($server_port);
-
         //反序列化，出现异常断开连接
         try {
             $client_data = $pack->unPack($data);
         } catch (\Exception $e) {
             $pack->errorHandle($e, $fd);
-            return null;
+            return;
         }
-        //client_data进行处理
-        try {
-            $client_data = $route->handleClientData($client_data);
-        } catch (\Exception $e) {
-            $route->errorHandle($e, $fd);
-            return null;
-        }
-        $controller_name = $route->getControllerName();
-        $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
-        if ($controller_instance != null) {
-            if (Start::$testUnity) {
-                $fd = 'self';
-                $uid = $fd;
-            } else {
-                $uid = $fdinfo['uid'] ?? 0;
+        Coroutine::startCoroutine(function () use ($client_data, $server_port, $fd, $uid) {
+            $middleware_names = $this->portManager->getMiddlewares($server_port);
+            $context = [];
+            $path = '';
+            $middlewares = $this->middlewareManager->create($middleware_names, $context, [$fd]);
+            //client_data进行处理
+            try {
+                yield $this->middlewareManager->before($middlewares);
+                $route = $this->portManager->getRoute($server_port);
+                try {
+                    $client_data = $route->handleClientData($client_data);
+                    $controller_name = $route->getControllerName();
+                    $method_name = $this->tcp_method_prefix . $route->getMethodName();
+                    $path = $route->getPath();
+                    $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
+                    if ($controller_instance != null) {
+                        yield $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
+                    } else {
+                        throw new \Exception('no controller');
+                    }
+                } catch (\Exception $e) {
+                    $route->errorHandle($e, $fd);
+                }
+            } catch (\Exception $e) {
             }
-            $method_name = $this->tcp_method_prefix . $route->getMethodName();
-            $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
-        }
-        return $controller_instance;
+
+            try {
+                yield $this->middlewareManager->after($middlewares, $path);
+            } catch (\Exception $e) {
+
+            }
+            $this->middlewareManager->destory($middlewares);
+        });
     }
 
     /**

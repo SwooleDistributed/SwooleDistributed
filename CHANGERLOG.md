@@ -169,3 +169,9 @@ $config['ports'][] = [
 1.getCloseControllerName改名为getEventControllerName
 
 2.添加getConnectMethodName
+
+# 2.5.6-beta
+这是一个测试版本，增加了中间件，和深度优化了协程调度。
+1.ports.php中添加了middlewares字段可以自定义中间件模块
+
+2.修复了process中使用协程的问题

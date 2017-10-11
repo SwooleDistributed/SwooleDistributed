@@ -86,24 +86,17 @@ class Coroutine
      * 启动一个协程
      * @param callable $function
      * @param array|null $params
-     * @param GeneratorContext|null $generatorContext
      * @return mixed|null
      */
-    public static function startCoroutine(callable $function, array $params = null, GeneratorContext $generatorContext = null)
+    public static function startCoroutine(callable $function, array $params = null)
     {
         if ($params == null) $params = [];
         $generator = call_user_func_array($function, $params);
         if ($generator instanceof \Generator) {
-            if ($generatorContext == null) {
-                $generatorContext = Pool::getInstance()->get(GeneratorContext::class);
-                if (is_array($function)) {//代表不是匿名函数
-                    $generatorContext->setController($function[0], get_class($function[0]), $function[1]);
-                }
-            }
             if (self::$instance != null) {//协程标志
-                self::$instance->start($generator, $generatorContext);
+                self::$instance->start($generator);
             } else {//降级普通
-                $corotineTask = Pool::getInstance()->get(CoroutineTask::class)->init($generator, $generatorContext);
+                $corotineTask = Pool::getInstance()->get(CoroutineTask::class)->init($generator);
                 while (1) {
                     if ($corotineTask->isFinished()) {
                         $result = $generator->getReturn();
@@ -121,11 +114,10 @@ class Coroutine
 
     /**
      * @param \Generator $routine
-     * @param GeneratorContext $generatorContext
      */
-    public function start(\Generator $routine, GeneratorContext $generatorContext)
+    public function start(\Generator $routine)
     {
-        $task = Pool::getInstance()->get(CoroutineTask::class)->init($routine, $generatorContext);
+        $task = Pool::getInstance()->get(CoroutineTask::class)->init($routine);
         $this->routineList[] = $task;
     }
 }

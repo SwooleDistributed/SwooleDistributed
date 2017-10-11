@@ -20,5 +20,8 @@ interface IRoute
 
     function getPath();
 
-    function errorHandle($e, $fd);
+    function errorHandle(\Exception $e, $fd);
+
+    function errorHttpHandle(\Exception $e, $request, $response);
+
 }

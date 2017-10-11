@@ -277,18 +277,23 @@ class Start
         echo "\033[47;30mS_TYPE\033[0m", str_pad('',
             self::$_maxShowLength - strlen('S_TYPE')), "\033[47;30mS_NAME\033[0m", str_pad('',
             self::$_maxShowLength - strlen('S_NAME')), "\033[47;30mS_PORT\033[0m", str_pad('',
-            self::$_maxShowLength - strlen('S_PORT')), "\033[47;30m", "S_PACK\033[0m\n";
+            self::$_maxShowLength - strlen('S_PORT')), "\033[47;30mS_PACK\033[0m", str_pad('',
+            self::$_maxShowLength - strlen('S_')), "\033[47;30m", "S_MIDD\033[0m\n";
         switch (self::$_worker->name) {
             case SwooleDistributedServer::SERVER_NAME:
                 $ports = $config['ports'];
                 foreach ($ports as $key => $value) {
+                    $middleware = '';
+                    foreach ($value['middlewares'] ?? [] as $m) {
+                        $middleware .= '[' . $m . ']';
+                    }
                     echo str_pad(PortManager::getTypeName($value['socket_type']),
                         self::$_maxShowLength), str_pad($value['socket_name'],
                         self::$_maxShowLength), str_pad($value['socket_port'],
-                        self::$_maxShowLength - 2);
-                    $str = $value['pack_tool'] ?? PortManager::getTypeName($value['socket_type']);
-                    $str = strtoupper($str);
-                    echo " \033[32;40m [$str] \033[0m\n";
+                        self::$_maxShowLength), str_pad($value['pack_tool'] ?? PortManager::getTypeName($value['socket_type']),
+                        self::$_maxShowLength + 4), str_pad($middleware,
+                        self::$_maxShowLength);
+                    echo "\n";
                 }
                 echo str_pad('CLUSTER',
                     self::$_maxShowLength), str_pad('0.0.0.0',
