@@ -10,7 +10,6 @@ namespace Server\Test;
 
 use Server\Coroutine\Coroutine;
 use Server\Coroutine\CoroutineTask;
-use Server\Coroutine\GeneratorContext;
 use Server\Memory\Pool;
 
 /**
@@ -74,12 +73,10 @@ class TestModule
                 }
             }
         }
-        $generatorContext = Pool::getInstance()->get(GeneratorContext::class);
-        $generatorContext->setController($this, 'SwooleDistributedServer', 'TestModule');
         if ($coroutine != null) {
-            $coroutine->start($this->runTests(), $generatorContext);
+            $coroutine->start($this->runTests());
         } else {
-            $coroutineTask = Pool::getInstance()->get(CoroutineTask::class)->init($this->runTests(), $generatorContext);
+            $coroutineTask = Pool::getInstance()->get(CoroutineTask::class)->init($this->runTests());
             while (true) {
                 $coroutineTask->run();
                 if ($coroutineTask->isFinished()) {

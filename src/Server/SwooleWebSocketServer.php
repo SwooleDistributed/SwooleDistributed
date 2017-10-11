@@ -12,6 +12,7 @@ namespace Server;
 
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\HttpInput;
+use Server\Coroutine\Coroutine;
 
 abstract class SwooleWebSocketServer extends SwooleHttpServer
 {
@@ -20,6 +21,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      */
     protected $fdRequest = [];
     protected $web_socket_method_prefix;
+
     public function __construct()
     {
         parent::__construct();
@@ -79,6 +81,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         parent::onSwooleWorkerStart($serv, $workerId);
         $this->web_socket_method_prefix = $this->config->get('websocket.method_prefix', '');
     }
+
     /**
      * 判断这个fd是不是一个WebSocket连接，用于区分tcp和websocket
      * 握手后才识别为websocket
@@ -163,7 +166,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
     {
         $fdinfo = $serv->connection_info($fd);
         $server_port = $fdinfo['server_port'];
-        $route = $this->portManager->getRoute($server_port);
+        $uid = $fdinfo['uid'] ?? 0;
         $pack = $this->portManager->getPack($server_port);
         //反序列化，出现异常断开连接
         try {
@@ -172,25 +175,44 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             $pack->errorHandle($e, $fd);
             return null;
         }
-        //client_data进行处理
-        try {
-            $client_data = $route->handleClientData($client_data);
-        } catch (\Exception $e) {
-            $route->errorHandle($e, $fd);
-            return null;
-        }
-        $controller_name = $route->getControllerName();
-        $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
-        if ($controller_instance != null) {
-            $uid = $serv->connection_info($fd)['uid']??0;
-            $method_name = $this->web_socket_method_prefix . $route->getMethodName();
-            $request = $this->fdRequest[$fd] ?? null;
-            if ($request != null) {
-                $controller_instance->setRequest($request);
+        Coroutine::startCoroutine(function () use ($client_data, $server_port, $fd, $uid) {
+            $middleware_names = $this->portManager->getMiddlewares($server_port);
+            $context = [];
+            $path = '';
+            $middlewares = $this->middlewareManager->create($middleware_names, $context, [$fd]);
+            //client_data进行处理
+            try {
+                yield $this->middlewareManager->before($middlewares);
+                $route = $this->portManager->getRoute($server_port);
+                try {
+                    $client_data = $route->handleClientData($client_data);
+                    $controller_name = $route->getControllerName();
+                    $method_name = $this->web_socket_method_prefix . $route->getMethodName();
+                    $path = $route->getPath();
+                    $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
+                    if ($controller_instance != null) {
+                        $request = $this->fdRequest[$fd] ?? null;
+                        if ($request != null) {
+                            $controller_instance->setRequest($request);
+                        }
+                        yield $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
+                    } else {
+                        throw new \Exception('no controller');
+                    }
+                } catch (\Exception $e) {
+                    $route->errorHandle($e, $fd);
+                    return;
+                }
+            } catch (\Exception $e) {
+
             }
-            $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
-        }
-        return $controller_instance;
+            try {
+                yield $this->middlewareManager->after($middlewares, $path);
+            } catch (\Exception $e) {
+
+            }
+            $this->middlewareManager->destory($middlewares);
+        });
     }
 
     /**

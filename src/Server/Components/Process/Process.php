@@ -68,11 +68,27 @@ class Process
         $message = $recv['message'];
         $func = $message['func'];
         $result = call_user_func_array([$this, $func], $message['arg']);
-        if (!$message['oneWay']) {
-            $newMessage['result'] = $result;
-            $newMessage['token'] = $message['token'];
-            $data = get_instance()->packServerMessageBody(SwooleMarco::PROCESS_RPC, $newMessage);
-            get_instance()->server->sendMessage($data, $message['worker_id']);
+        if ($result instanceof \Generator)//需要协程调度
+        {
+            if (!$this->coroutine_need) {
+                throw new \Exception("该进程不支持协程调度器");
+            }
+            Coroutine::startCoroutine(function () use ($result, $message) {
+                $result = yield $result;
+                if (!$message['oneWay']) {
+                    $newMessage['result'] = $result;
+                    $newMessage['token'] = $message['token'];
+                    $data = get_instance()->packServerMessageBody(SwooleMarco::PROCESS_RPC, $newMessage);
+                    get_instance()->server->sendMessage($data, $message['worker_id']);
+                }
+            });
+        } else {
+            if (!$message['oneWay']) {
+                $newMessage['result'] = $result;
+                $newMessage['token'] = $message['token'];
+                $data = get_instance()->packServerMessageBody(SwooleMarco::PROCESS_RPC, $newMessage);
+                get_instance()->server->sendMessage($data, $message['worker_id']);
+            }
         }
     }
 

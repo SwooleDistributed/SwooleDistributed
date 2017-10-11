@@ -9,27 +9,39 @@
 use Server\CoreBase\PortManager;
 
 $config['ports'][] = [
-    'socket_type' => PortManager::SOCK_HTTP,
+    'socket_type' => PortManager::SOCK_TCP,
     'socket_name' => '0.0.0.0',
-    'socket_port' => 8081,
-    'route_tool' => 'NormalRoute'
-];
-
-$config['ports'][] = [
-    'socket_type' => PortManager::SOCK_WS,
-    'socket_name' => '0.0.0.0',
-    'socket_port' => 8082,
+    'socket_port' => 9091,
+    'pack_tool' => 'LenJsonPack',
     'route_tool' => 'NormalRoute',
-    'pack_tool' => 'NonJsonPack',
-    'opcode' => PortManager::WEBSOCKET_OPCODE_TEXT
+    'middlewares' => ['MonitorMiddleware']
 ];
 
 $config['ports'][] = [
     'socket_type' => PortManager::SOCK_TCP,
     'socket_name' => '0.0.0.0',
-    'socket_port' => 8083,
-    'pack_tool' => 'LenJsonPack',
+    'socket_port' => 1883,
+    'pack_tool' => 'MqttPack',
     'route_tool' => 'NormalRoute',
+    'middlewares' => ['MonitorMiddleware']
+];
+
+$config['ports'][] = [
+    'socket_type' => PortManager::SOCK_HTTP,
+    'socket_name' => '0.0.0.0',
+    'socket_port' => 8081,
+    'route_tool' => 'NormalRoute',
+    'middlewares' => ['MonitorMiddleware', 'NormalHttpMiddleware']
+];
+
+$config['ports'][] = [
+    'socket_type' => PortManager::SOCK_WS,
+    'socket_name' => '0.0.0.0',
+    'socket_port' => 8083,
+    'route_tool' => 'NormalRoute',
+    'pack_tool' => 'NonJsonPack',
+    'opcode' => PortManager::WEBSOCKET_OPCODE_TEXT,
+    'middlewares' => ['MonitorMiddleware']
 ];
 
 return $config;

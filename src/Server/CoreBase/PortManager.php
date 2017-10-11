@@ -33,6 +33,7 @@ class PortManager
 
     protected $packs = [];
     protected $routes = [];
+    protected $middlewares = [];
     protected $portConfig;
     public $websocket_enable = false;
     public $http_enable = false;
@@ -146,6 +147,9 @@ class PortManager
             $this->packs[$value['socket_port']] = self::createPack($value['pack_tool']);
         }
         $this->routes[$value['socket_port']] = self::createRoute($value['route_tool']);
+        foreach ($value['middlewares'] ?? [] as $middleware) {
+            $this->middlewares[$value['socket_port']][] = $this->createMiddleware($middleware);
+        }
     }
 
     /**
@@ -200,6 +204,29 @@ class PortManager
     }
 
     /**
+     * @param $middleware_name
+     * @return mixed
+     * @throws SwooleException
+     */
+    protected function createMiddleware($middleware_name)
+    {
+        if (class_exists($middleware_name)) {
+            return $middleware_name;
+        }
+        $middleware_class_name = "app\\Middlewares\\" . $middleware_name;
+        if (class_exists($middleware_class_name)) {
+            return $middleware_class_name;
+        } else {
+            $middleware_class_name = "Server\\Middlewares\\" . $middleware_name;
+            if (class_exists($middleware_class_name)) {
+                return $middleware_class_name;
+            } else {
+                throw new SwooleException("class $middleware_name is not exist.");
+            }
+        }
+    }
+
+    /**
      * @param $port
      * @return IPack
      */
@@ -227,6 +254,14 @@ class PortManager
         return $this->routes[$port] ?? null;
     }
 
+    /**
+     * @param $port
+     * @return null
+     */
+    public function getMiddlewares($port)
+    {
+        return $this->middlewares[$port] ?? [];
+    }
     /**
      * @param $port
      * @return mixed

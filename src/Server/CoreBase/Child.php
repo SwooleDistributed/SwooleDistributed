@@ -102,7 +102,6 @@ class Child
         }
         $this->child_list = [];
         $this->parent = null;
-        $this->context = [];
     }
 
 }

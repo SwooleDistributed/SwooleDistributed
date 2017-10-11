@@ -1,6 +1,5 @@
 <?php
 namespace Server\CoreBase;
-use Monolog\Logger;
 use Server\Memory\Pool;
 
 /**
@@ -40,10 +39,6 @@ class Task extends TaskProxy
 
     public function destroy()
     {
-        if($this->isEfficiencyMonitorEnable) {
-            $this->context['execution_time'] = (microtime(true) - $this->start_run_time) * 1000;
-            $this->log('Efficiency monitor', Logger::INFO);
-        }
         get_instance()->tid_pid_table->del($this->from_id.$this->task_id);
         parent::destroy();
         $this->task_id = 0;

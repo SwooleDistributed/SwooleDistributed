@@ -13,6 +13,7 @@ namespace Server;
 use League\Plates\Engine;
 use Server\Components\Consul\ConsulHelp;
 use Server\CoreBase\ControllerFactory;
+use Server\Coroutine\Coroutine;
 
 abstract class SwooleHttpServer extends SwooleServer
 {
@@ -23,6 +24,7 @@ abstract class SwooleHttpServer extends SwooleServer
     public $templateEngine;
     protected $http_method_prefix;
     protected $cache404;
+
     public function __construct()
     {
         parent::__construct();
@@ -111,88 +113,46 @@ abstract class SwooleHttpServer extends SwooleServer
             $fdinfo = $this->server->connection_info($request->fd);
             $server_port = $fdinfo['server_port'];
         }
-        $route = $this->portManager->getRoute($server_port);
-        $error_404 = false;
-        $controller_instance = null;
-        $route->handleClientRequest($request);
-        list($host) = explode(':', $request->header['host']??'');
-        $path = $route->getPath();
-        if($path=='/404'){
-            $response->header('HTTP/1.1', '404 Not Found');
-            $response->end($this->cache404);
-            return;
-        }
-        $extension = pathinfo($path, PATHINFO_EXTENSION);
-        if ($path=="/") {//寻找主页
-            $www_path = $this->getHostRoot($host) . $this->getHostIndex($host);
-            $result = httpEndFile($www_path, $request, $response);
-            if (!$result) {
-                $error_404 = true;
-            } else {
-                return;
-            }
-        }else if(!empty($extension)){//有后缀
-            $www_path = $this->getHostRoot($host) . $path;
-            $result = httpEndFile($www_path, $request, $response);
-            if (!$result) {
-                $error_404 = true;
-            }
-        }
-        else {
-            $controller_name = $route->getControllerName();
-            $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
-            if ($controller_instance != null) {
-                if ($route->getMethodName() == ConsulHelp::HEALTH) {//健康检查
-                    $response->end('ok');
-                    $controller_instance->destroy();
-                    return;
+        Coroutine::startCoroutine(function () use ($request, $response, $server_port) {
+            $middleware_names = $this->portManager->getMiddlewares($server_port);
+            $context = [];
+            $path = $request->server['path_info'];
+            $middlewares = $this->middlewareManager->create($middleware_names, $context, [$request, $response]);
+            //before
+            try {
+                yield $this->middlewareManager->before($middlewares);
+                //client_data进行处理
+                $route = $this->portManager->getRoute($server_port);
+                try {
+                    $route->handleClientRequest($request);
+                    $controller_name = $route->getControllerName();
+                    $method_name = $this->http_method_prefix . $route->getMethodName();
+                    $path = $route->getPath();
+                    $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
+                    if ($controller_instance != null) {
+                        $controller_instance->setContext($context);
+                        if ($route->getMethodName() == ConsulHelp::HEALTH) {//健康检查
+                            $response->end('ok');
+                            $controller_instance->destroy();
+                        } else {
+                            yield $controller_instance->setRequestResponse($request, $response, $controller_name, $method_name, $route->getParams());
+                        }
+                    } else {
+                        throw new \Exception('no controller');
+                    }
+                } catch (\Exception $e) {
+                    $route->errorHttpHandle($e, $request, $response);
                 }
-                $method_name = $this->http_method_prefix . $route->getMethodName();
-                $controller_instance->setRequestResponse($request, $response, $controller_name, $method_name, $route->getParams());
-                return;
-            } else {
-                $error_404 = true;
+            } catch (\Exception $e) {
             }
-        }
-        if ($error_404) {
-            if ($controller_instance != null) {
-                $controller_instance->destroy();
+            //after
+            try {
+                yield $this->middlewareManager->after($middlewares, $path);
+            } catch (\Exception $e) {
             }
-            //重定向到404
-            $response->status(302);
-            $location = 'http://'.$request->header['host']."/".'404';
-            $response->header('Location',$location);
-            $response->end('');
-        }
+            $this->middlewareManager->destory($middlewares);
+        });
+
     }
 
-    /**
-     * 获得host对应的根目录
-     * @param $host
-     * @return string
-     */
-    public function getHostRoot($host)
-    {
-        $root_path = $this->config['http']['root'][$host]['root']??'';
-        if (empty($root_path)) {
-            $root_path = $this->config['http']['root']['default']['root']??'';
-        }
-        if (!empty($root_path)) {
-            $root_path = WWW_DIR . "/$root_path/";
-        } else {
-            $root_path = WWW_DIR . "/";
-        }
-        return $root_path;
-    }
-
-    /**
-     * 返回host对应的默认文件
-     * @param $host
-     * @return mixed|null
-     */
-    public function getHostIndex($host)
-    {
-        $index = $this->config['http']['root'][$host]['index'] ?? $this->config['http']['root']['default']['index'] ?? 'index.html';
-        return $index;
-    }
 }
