@@ -1,5 +1,7 @@
 # SwooleDistributed
 
+[![Join the chat at https://gitter.im/SwooleDistributed/Lobby](https://badges.gitter.im/SwooleDistributed/Lobby.svg)](https://gitter.im/SwooleDistributed/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 TCP/Websocket/Http全栈框架
 
 高可用，高性能，高并发，天然分布式集群架构。
