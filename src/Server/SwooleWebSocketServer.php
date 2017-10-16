@@ -10,6 +10,7 @@
 namespace Server;
 
 
+use app\AppServer;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\HttpInput;
 use Server\Coroutine\Coroutine;
@@ -212,6 +213,10 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
 
             }
             $this->middlewareManager->destory($middlewares);
+            if (AppServer::get_instance()->isDebug()) {
+                print_r($context);
+            }
+            unset($context);
         });
     }
 

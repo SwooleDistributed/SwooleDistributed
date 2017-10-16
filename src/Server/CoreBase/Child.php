@@ -9,7 +9,10 @@
 namespace Server\CoreBase;
 
 
-class Child
+use Server\Components\AOP\AOP;
+use Server\Components\AOP\Proxy;
+
+class Child extends AOP
 {
     /**
      * 名称
@@ -33,6 +36,16 @@ class Child
      * @var array
      */
     protected $context = [];
+
+    /**
+     * @var Proxy
+     */
+    protected $proxy;
+
+    public function __construct()
+    {
+        parent::__construct(ChildProxy::class);
+    }
 
     /**
      * 加入一个插件
@@ -98,10 +111,9 @@ class Child
     public function destroy()
     {
         foreach ($this->child_list as $core_child) {
-            $core_child->destroy();
+            $core_child->getProxy()->destroy();
         }
         $this->child_list = [];
         $this->parent = null;
     }
-
 }

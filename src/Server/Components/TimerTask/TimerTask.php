@@ -13,9 +13,11 @@ use Server\Asyn\HttpClient\HttpClient;
 use Server\Asyn\HttpClient\HttpClientPool;
 use Server\Components\Event\Event;
 use Server\Components\Event\EventDispatcher;
+use Server\CoreBase\Child;
 use Server\CoreBase\CoreBase;
 use Server\CoreBase\SwooleException;
 use Server\Coroutine\Coroutine;
+use Server\Memory\Pool;
 
 class TimerTask extends CoreBase
 {
@@ -171,8 +173,13 @@ class TimerTask extends CoreBase
                 call_user_func([$task, $timer_task['method_name']]);
                 $task->startTask(null);
             } else {
-                $model = get_instance()->loader->model($timer_task['model_name'], get_instance());
-                Coroutine::startCoroutine([$model, $timer_task['method_name']]);
+                $child = Pool::getInstance()->get(Child::class);
+                $model = get_instance()->loader->model($timer_task['model_name'], $child);
+                Coroutine::startCoroutine(function () use (&$child, &$model, &$timer_task) {
+                    yield call_user_func([$model, $timer_task['method_name']]);
+                    $child->destroy();
+                    Pool::getInstance()->push($child);
+                });
             }
         });
     }

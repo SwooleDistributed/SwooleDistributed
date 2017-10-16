@@ -18,6 +18,7 @@ checkfile("LUA_DIR", MYROOT . "/src/lua");
 checkfile("CONFIG_DIR", MYROOT . "/src/config");
 checkfile("TEST_DIR", MYROOT . "/src/test");
 checkfile("LOG_DIR", BIN_DIR . "/log");
+checkfile("PID_DIR", BIN_DIR . "/pid");
 
 function checkfile($name,$path)
 {

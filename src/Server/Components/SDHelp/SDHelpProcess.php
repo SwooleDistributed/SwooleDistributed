@@ -19,7 +19,6 @@ class SDHelpProcess extends Process
 
     public function start($process)
     {
-        parent::start($process);
         new TimerTask();
         if (get_instance()->config->get('consul.enable', false)) {
             new ConsulLeader();

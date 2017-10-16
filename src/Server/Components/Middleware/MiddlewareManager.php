@@ -63,7 +63,7 @@ class MiddlewareManager
     {
         $count = count($middlewares);
         for ($i = 0; $i < $count; $i++) {
-            yield $middlewares[$i]->before_handle();
+            yield $middlewares[$i]->getProxy()->before_handle();
         }
     }
 
@@ -76,7 +76,7 @@ class MiddlewareManager
     {
         $count = count($middlewares);
         for ($i = $count - 1; $i >= 0; $i--) {
-            yield $middlewares[$i]->after_handle($path);
+            yield $middlewares[$i]->getProxy()->after_handle($path);
         }
     }
 }

@@ -90,7 +90,7 @@ class TestController extends Controller
     {
         $this->getContext()['test'] = 1;
         $this->testModel = $this->loader->model('TestModel', $this);
-        $this->testModel->contextTest();
+        yield $this->testModel->contextTest();
         $this->http_output->end($this->getContext());
     }
 
@@ -179,6 +179,7 @@ class TestController extends Controller
      */
     public function http_test()
     {
+        var_dump($this->http_input->header('a'));
         $max = $this->http_input->get('max');
         if (empty($max)) {
             $max = 100;
@@ -363,7 +364,7 @@ class TestController extends Controller
      */
     public function http_getEvent()
     {
-        $data = yield EventDispatcher::getInstance()->addOnceCoroutine('unlock')->setTimeout(25000);
+        $data = yield EventDispatcher::getInstance()->addOnceCoroutine('unlock')->setTimeout(1000);
         //这里会等待事件到达，或者超时
         $this->http_output->end($data);
     }

@@ -56,8 +56,18 @@ class AppController extends Controller
 
     public function onClose()
     {
-        var_dump($this->fd, $this->uid);
-        var_dump("onClose");
+        var_dump('close');
         $this->destroy();
+    }
+
+    public function onConnect()
+    {
+        var_dump('connect');
+        $this->destroy();
+    }
+
+    public function http_test()
+    {
+        $this->http_output->end(1123);
     }
 }

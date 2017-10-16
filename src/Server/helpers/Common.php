@@ -282,3 +282,13 @@ function create_uuid($prefix = "")
     $uuid .= substr($str, 20, 12);
     return $prefix . $uuid;
 }
+
+function print_context($context)
+{
+    echo "--------------------------------------------------------------------------\n";
+    echo "运行堆栈:\n";
+    foreach ($context['RunStack'] as $key => $value) {
+        echo "$key# $value\n";
+    }
+    echo "--------------------------------------------------------------------------\n";
+}

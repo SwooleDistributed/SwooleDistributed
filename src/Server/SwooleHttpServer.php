@@ -10,6 +10,7 @@
 namespace Server;
 
 
+use app\AppServer;
 use League\Plates\Engine;
 use Server\Components\Consul\ConsulHelp;
 use Server\CoreBase\ControllerFactory;
@@ -151,6 +152,10 @@ abstract class SwooleHttpServer extends SwooleServer
             } catch (\Exception $e) {
             }
             $this->middlewareManager->destory($middlewares);
+            if (AppServer::get_instance()->isDebug()) {
+                print_r($context);
+            }
+            unset($context);
         });
 
     }

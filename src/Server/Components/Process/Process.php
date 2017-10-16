@@ -12,7 +12,7 @@ namespace Server\Components\Process;
 use Server\Coroutine\Coroutine;
 use Server\SwooleMarco;
 
-class Process
+abstract class Process
 {
     protected $process;
     protected $worker_id;
@@ -36,28 +36,34 @@ class Process
         $this->name = $name;
         $this->worker_id = $worker_id;
         $this->coroutine_need = $coroutine_need;
-        $this->process = new \swoole_process([$this, 'start'], false, 2);
+        $this->process = new \swoole_process([$this, '__start'], false, 2);
         $this->config = get_instance()->config;
         $this->log = get_instance()->log;
         get_instance()->server->addProcess($this->process);
     }
 
-    /**
-     * @param $process
-     */
-    public function start($process)
+    public function __start($process)
     {
         if (!isDarwin()) {
             $process->name($this->name);
         }
+        swoole_event_add($process->pipe, [$this, 'onRead']);
+        get_instance()->server->worker_id = $this->worker_id;
+        get_instance()->server->taskworker = false;
         if ($this->coroutine_need) {
             //协成支持
             Coroutine::init();
+            Coroutine::startCoroutine([$this, 'start'], [$process]);
+        } else {
+            $this->start($process);
         }
-        swoole_event_add($process->pipe, [$this, 'onRead']);
-        get_instance()->server->worker_id = $this->worker_id;
-
     }
+
+
+    /**
+     * @param $process
+     */
+    public abstract function start($process);
 
     /**
      * onRead
