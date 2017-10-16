@@ -9,6 +9,7 @@
 
 namespace Server\CoreBase;
 
+use Server\Components\AOP\AOP;
 use Server\Memory\Pool;
 
 class Loader implements ILoader
@@ -35,7 +36,7 @@ class Loader implements ILoader
             return null;
         }
         if ($model == $parent->core_name) {
-            return $parent;
+            return AOP::getAOP($parent);
         }
         $root = $parent;
         while (isset($root)) {
@@ -47,7 +48,7 @@ class Loader implements ILoader
         $model_instance = $this->_model_factory->getModel($model);
         $parent->addChild($model_instance);
         $model_instance->initialization($parent->getContext());
-        return $model_instance;
+        return AOP::getAOP($model_instance);
     }
 
     /**
@@ -79,7 +80,7 @@ class Loader implements ILoader
             if ($parent != null) {
                 $this->_task_proxy->setContext($parent->getContext());
             }
-            return $this->_task_proxy;
+            return AOP::getAOP($this->_task_proxy);
         }
         $task_instance = Pool::getInstance()->get($task_class);
         $task_instance->reUse();

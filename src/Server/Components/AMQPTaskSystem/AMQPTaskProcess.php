@@ -26,7 +26,6 @@ abstract class AMQPTaskProcess extends Process
 
     public function start($process)
     {
-        parent::start($process);
         $this->initAsynPools();
         $this->connectAMQP();
     }

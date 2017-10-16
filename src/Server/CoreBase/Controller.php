@@ -112,7 +112,7 @@ class Controller extends CoreBase
             $this->isRPC = false;
         }
         $this->request_type = SwooleMarco::TCP_REQUEST;
-        yield $this->execute($controller_name, $method_name, $params);
+        yield $this->getProxy()->execute($controller_name, $method_name, $params);
     }
 
     /**
@@ -143,7 +143,7 @@ class Controller extends CoreBase
      * @param $params
      * @return \Generator
      */
-    private function execute($controller_name, $method_name, $params)
+    protected function execute($controller_name, $method_name, $params)
     {
         if (!is_callable([$this, $method_name])) {
             $method_name = 'defaultMethod';
@@ -151,12 +151,12 @@ class Controller extends CoreBase
         try {
             yield $this->initialization($controller_name, $method_name);
             if ($params == null) {
-                yield call_user_func([$this, $method_name]);
+                yield call_user_func([$this->getProxy(), $method_name]);
             } else {
-                yield call_user_func_array([$this, $method_name], $params);
+                yield call_user_func_array([$this->getProxy(), $method_name], $params);
             }
         } catch (\Exception $e) {
-            yield $this->onExceptionHandle($e);
+            yield $this->getProxy()->onExceptionHandle($e);
         }
     }
 
@@ -208,8 +208,7 @@ class Controller extends CoreBase
         }
         if ($e instanceof SwooleException) {
             print_r($e->getMessage() . "\n");
-            $context = json_encode($this->context);
-            print_r("出错Context:$context \n");
+            print_context($this->getContext());
             $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
         }
         //可以重写的代码
@@ -249,7 +248,7 @@ class Controller extends CoreBase
             get_instance()->send($this->fd, $data, true);
         }
         if ($destroy) {
-            $this->destroy();
+            $this->getProxy()->destroy();
         }
     }
 
@@ -313,7 +312,7 @@ class Controller extends CoreBase
             get_instance()->sendToUid($uid, $data);
         }
         if ($destroy) {
-            $this->destroy();
+            $this->getProxy()->destroy();
         }
     }
 
@@ -335,7 +334,7 @@ class Controller extends CoreBase
             get_instance()->sendToUids($uids, $data);
         }
         if ($destroy) {
-            $this->destroy();
+            $this->getProxy()->destroy();
         }
     }
 
@@ -356,7 +355,7 @@ class Controller extends CoreBase
             get_instance()->sendToAll($data);
         }
         if ($destroy) {
-            $this->destroy();
+            $this->getProxy()->destroy();
         }
     }
 
@@ -418,7 +417,7 @@ class Controller extends CoreBase
             get_instance()->close($this->fd);
         }
         if ($autoDestroy) {
-            $this->destroy();
+            $this->getProxy()->destroy();
         }
     }
 
@@ -496,7 +495,7 @@ class Controller extends CoreBase
     {
         get_instance()->pub($topic, $data);
         if ($destroy) {
-            $this->destroy();
+            $this->getProxy()->destroy();
         }
     }
 }

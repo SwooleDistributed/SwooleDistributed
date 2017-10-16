@@ -2,6 +2,7 @@
 
 namespace Server;
 
+use app\AppServer;
 use Gelf\Publisher;
 use Monolog\Handler\GelfHandler;
 use Monolog\Handler\RotatingFileHandler;
@@ -32,7 +33,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.6.0-beta";
+    const version = "2.6.1-beta";
 
     /**
      * server name
@@ -319,6 +320,10 @@ abstract class SwooleServer extends Child
 
             }
             $this->middlewareManager->destory($middlewares);
+            if (AppServer::get_instance()->isDebug()) {
+                print_r($context);
+            }
+            unset($context);
         });
     }
 
@@ -555,7 +560,7 @@ abstract class SwooleServer extends Child
      */
     public function isTaskWorker()
     {
-        return $this->server->taskworker;
+        return $this->server->taskworker ?? false;
     }
 
     /**

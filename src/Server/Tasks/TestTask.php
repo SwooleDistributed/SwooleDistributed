@@ -29,7 +29,7 @@ class TestTask extends Task
 
     public function contextTest()
     {
-        print_r($this->getContext());
+        //print_r($this->getContext());
     }
 
     public function test_task()

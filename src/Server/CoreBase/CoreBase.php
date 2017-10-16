@@ -54,6 +54,7 @@ class CoreBase extends Child
      */
     public function __construct()
     {
+        parent::__construct();
         if (!empty(get_instance())) {
             $this->loader = get_instance()->loader;
             $this->logger = get_instance()->log;

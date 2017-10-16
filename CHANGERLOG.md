@@ -170,8 +170,18 @@ $config['ports'][] = [
 
 2.添加getConnectMethodName
 
-# 2.5.6-beta
+# 2.6.0-beta
 这是一个测试版本，增加了中间件，和深度优化了协程调度。
 1.ports.php中添加了middlewares字段可以自定义中间件模块
 
 2.修复了process中使用协程的问题
+
+
+# 2.6.1-beta
+1.Process中start方法改为了虚函数，不需要被继承了，start方法中也可以使用协程。
+
+2.AppSerevr开启debug模式可以看到调用链
+
+3.报错会打印调用链的运行状态
+
+4.增加了基础的AOP模式

@@ -26,7 +26,6 @@ class ClusterProcess extends Process
 
     public function start($process)
     {
-        parent::start($process);
         if (get_instance()->isCluster()) {
             $this->node_name = getNodeName();
             $this->map[$this->node_name] = new Set();

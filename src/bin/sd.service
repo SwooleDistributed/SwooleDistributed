@@ -1,0 +1,15 @@
+[Unit]
+Description=SD Server
+After=network.target
+After=syslog.target
+
+[Service]
+Type=forking
+PIDFile=/apps/sd/bin/pid/server.pid
+ExecStart=php /apps/sd/bin/start_swoole_server.php start -d
+ExecStop=php /apps/sd/bin/start_swoole_server.php stop
+ExecReload=php /apps/sd/bin/start_swoole_server.php reload
+Restart=always
+
+[Install]
+WantedBy=multi-user.target graphical.target
