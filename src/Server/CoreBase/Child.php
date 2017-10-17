@@ -42,9 +42,9 @@ class Child extends AOP
      */
     protected $proxy;
 
-    public function __construct()
+    public function __construct($proxy = ChildProxy::class)
     {
-        parent::__construct(ChildProxy::class);
+        parent::__construct($proxy);
     }
 
     /**

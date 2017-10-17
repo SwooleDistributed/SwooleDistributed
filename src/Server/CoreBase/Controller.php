@@ -80,10 +80,11 @@ class Controller extends CoreBase
 
     /**
      * Controller constructor.
+     * @param string $proxy
      */
-    final public function __construct()
+    public function __construct($proxy = ChildProxy::class)
     {
-        parent::__construct();
+        parent::__construct($proxy);
         $this->http_input = new HttpInput();
         $this->http_output = new HttpOutput($this);
     }

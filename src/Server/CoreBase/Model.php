@@ -10,9 +10,9 @@ namespace Server\CoreBase;
  */
 class Model extends CoreBase
 {
-    final public function __construct()
+    public function __construct($proxy = ChildProxy::class)
     {
-        parent::__construct();
+        parent::__construct($proxy);
     }
 
     /**
