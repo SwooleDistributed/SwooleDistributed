@@ -111,6 +111,7 @@ class PortManager
                         return false;
                     });
                 } else {
+                    $set['open_http_protocol'] = true;
                     $set['open_websocket_protocol'] = true;
                     $port->set($set);
                     $port->on('open', [$swoole_server, $value['open'] ?? 'onSwooleWSOpen']);

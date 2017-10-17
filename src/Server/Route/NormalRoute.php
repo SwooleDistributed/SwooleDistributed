@@ -77,7 +77,7 @@ class NormalRoute implements IRoute
 
     public function getPath()
     {
-        return $this->client_data->path;
+        return $this->client_data->path ?? "";
     }
 
     public function getParams()
