@@ -385,6 +385,24 @@ class ClusterProcess extends Process
     }
 
     /**
+     * 获取topic数量
+     * @param $topic
+     */
+    public function getSubMembersCount($topic)
+    {
+        return $this->subArr[$topic]->count();
+    }
+
+    /**
+     * 获取topic Members
+     * @param $topic
+     */
+    public function getSubMembers($topic)
+    {
+        return $this->subArr[$topic]->toArray();
+    }
+
+    /**
      * 是否在线
      * @param $uid
      * @return bool
