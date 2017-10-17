@@ -2,7 +2,6 @@
 
 namespace Server;
 
-use app\AppServer;
 use Gelf\Publisher;
 use Monolog\Handler\GelfHandler;
 use Monolog\Handler\RotatingFileHandler;
@@ -33,7 +32,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.6.1-beta";
+    const version = "2.6.1-beta2";
 
     /**
      * server name
@@ -304,6 +303,7 @@ abstract class SwooleServer extends Child
                     $path = $route->getPath();
                     $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
                     if ($controller_instance != null) {
+                        $controller_instance->setContext($context);
                         yield $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
                     } else {
                         throw new \Exception('no controller');
@@ -320,7 +320,7 @@ abstract class SwooleServer extends Child
 
             }
             $this->middlewareManager->destory($middlewares);
-            if (AppServer::get_instance()->isDebug()) {
+            if (get_instance()->isDebug()) {
                 print_r($context);
             }
             unset($context);

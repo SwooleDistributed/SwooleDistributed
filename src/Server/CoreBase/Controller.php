@@ -112,7 +112,7 @@ class Controller extends CoreBase
             $this->isRPC = false;
         }
         $this->request_type = SwooleMarco::TCP_REQUEST;
-        yield $this->getProxy()->execute($controller_name, $method_name, $params);
+        yield $this->execute($controller_name, $method_name, $params);
     }
 
     /**

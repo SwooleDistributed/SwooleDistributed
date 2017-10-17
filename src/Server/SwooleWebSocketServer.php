@@ -10,7 +10,6 @@
 namespace Server;
 
 
-use app\AppServer;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\HttpInput;
 use Server\Coroutine\Coroutine;
@@ -196,6 +195,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
                         if ($request != null) {
                             $controller_instance->setRequest($request);
                         }
+                        $controller_instance->setContext($context);
                         yield $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
                     } else {
                         throw new \Exception('no controller');
@@ -213,7 +213,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
 
             }
             $this->middlewareManager->destory($middlewares);
-            if (AppServer::get_instance()->isDebug()) {
+            if (get_instance()->isDebug()) {
                 print_r($context);
             }
             unset($context);
