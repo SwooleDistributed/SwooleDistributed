@@ -434,6 +434,24 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
+     * 获取Topic的数量
+     * @param $topic
+     */
+    public function getSubMembersCountCoroutine($topic)
+    {
+        return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getSubMembersCount($topic);
+    }
+
+    /**
+     * 获取Topic的Member
+     * @param $topic
+     */
+    public function getSubMembersCoroutine($topic)
+    {
+        return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getSubMembers($topic);
+    }
+
+    /**
      * 添加订阅
      * @param $topic
      * @param $uid
