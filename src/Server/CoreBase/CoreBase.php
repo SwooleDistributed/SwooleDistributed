@@ -49,12 +49,14 @@ class CoreBase extends Child
     public $mysql_pool;
 
     protected $dbQueryBuilders = [];
+
     /**
      * Task constructor.
+     * @param string $proxy
      */
-    public function __construct()
+    public function __construct($proxy = ChildProxy::class)
     {
-        parent::__construct();
+        parent::__construct($proxy);
         if (!empty(get_instance())) {
             $this->loader = get_instance()->loader;
             $this->logger = get_instance()->log;

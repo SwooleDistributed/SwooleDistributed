@@ -9,11 +9,17 @@
 namespace Server\Models;
 
 
+use Server\CoreBase\ChildProxy;
 use Server\CoreBase\Model;
 use Server\CoreBase\SwooleException;
 
 class TestModel extends Model
 {
+
+    public function __construct()
+    {
+        parent::__construct(TestModelProxy::class);
+    }
 
     public function initialization(&$context)
     {
@@ -97,4 +103,13 @@ class TestModel extends Model
         }
     }
 
+}
+
+class TestModelProxy extends ChildProxy
+{
+    public function test_exception()
+    {
+        $this->beforeCall("test_exception");
+        return $this->own->test_exception();
+    }
 }

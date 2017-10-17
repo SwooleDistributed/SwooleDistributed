@@ -30,12 +30,12 @@ class ChildProxy extends Proxy
         $this->own->setContext($context);
     }
 
-    public function beforeCall($name, $arguments)
+    public function beforeCall($name, $arguments = null)
     {
         $this->own->getContext()['RunStack'][] = $this->class_name . "::" . $name;
     }
 
-    public function afterCall($name, $arguments)
+    public function afterCall($name, $arguments = null)
     {
         // TODO: Implement afterCall() method.
     }

@@ -21,9 +21,9 @@ abstract class Proxy implements IProxy
         $this->own = $own;
     }
 
-    public abstract function beforeCall($name, $arguments);
+    public abstract function beforeCall($name, $arguments = null);
 
-    public abstract function afterCall($name, $arguments);
+    public abstract function afterCall($name, $arguments = null);
 
     public function __call($name, $arguments)
     {
