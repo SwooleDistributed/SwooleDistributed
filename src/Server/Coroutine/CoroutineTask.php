@@ -17,8 +17,10 @@ class CoroutineTask
      * @var \SplStack
      */
     protected $stack;
+    /**
+     * @var \Generator
+     */
     protected $routine;
-    protected $isError = false;
 
 
     public function __construct()
@@ -43,12 +45,11 @@ class CoroutineTask
      */
     public function run()
     {
-        if ($this->isError || !$this->routine) {//已经出错了就直接return
+        if (!$this->routine) {//已经出错了就直接return
             return;
         }
         try {
             $value = $this->routine->current();
-            $flag = true;
             //嵌套的协程
             if ($value instanceof \Generator) {
                 $this->stack->push($this->routine);
@@ -79,7 +80,11 @@ class CoroutineTask
                 return;
             }
             //返回上级
-            $result = $this->routine->getReturn();
+            try {
+                $result = $this->routine->getReturn();
+            } catch (\Exception $e) {
+                $result = '';
+            }
             if (!$this->stack->isEmpty()) {
                 $this->routine = $this->stack->pop();
                 $this->routine->send($result);
@@ -94,12 +99,13 @@ class CoroutineTask
      * @param $routine
      * @param $e
      */
-    protected function throwEx($routine, $e)
+    protected function throwEx(\Generator $routine, $e)
     {
         try {
             $routine->throw($e);
+            $this->routine = $routine;
+            $this->run();
         } catch (\Exception $e) {
-            $this->isError = true;
             if (!$this->stack->isEmpty()) {
                 $routine = $this->stack->pop();
                 $this->throwEx($routine, $e);
@@ -114,7 +120,7 @@ class CoroutineTask
     public function isFinished()
     {
         try {
-            $result = $this->isError || ($this->stack->isEmpty() && !$this->routine->valid());
+            $result = $this->stack->isEmpty() && !$this->routine->valid();
         } catch (\Exception $e) {
             $this->throwEx($this->routine, $e);
             $result = true;

@@ -54,7 +54,8 @@ class TestController extends Controller
 
     public function http_ex()
     {
-        throw new \Exception("1");
+        $testModel = $this->loader->model('TestModel', $this);
+        yield $testModel->test_exception();
     }
 
     public function http_mysql()
