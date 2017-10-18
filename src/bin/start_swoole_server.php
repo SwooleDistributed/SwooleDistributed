@@ -7,5 +7,6 @@
  */
 
 require_once 'define.php';
+date_default_timezone_set('Asia/Shanghai');
 $worker = new \app\AppServer();
 Server\Start::run();

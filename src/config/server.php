@@ -32,4 +32,7 @@ $config['coroution']['timerOut'] = 5000;
 
 //是否启用自动reload
 $config['auto_reload_enable'] = true;
+
+//是否允许访问Server中的Controller，如果不允许将禁止调用Server包中的Controller
+$config['allow_ServerController'] = true;
 return $config;

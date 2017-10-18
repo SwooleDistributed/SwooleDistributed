@@ -18,6 +18,7 @@ class ControllerFactory
      */
     private static $instance;
     private $pool = [];
+    private $allow_ServerController = true;
 
     /**
      * ControllerFactory constructor.
@@ -25,6 +26,7 @@ class ControllerFactory
     public function __construct()
     {
         self::$instance = $this;
+        $this->allow_ServerController = get_instance()->config->get('allow_ServerController', "true");
     }
 
     /**
@@ -67,6 +69,9 @@ class ControllerFactory
             $controller_instance->core_name = $controller;
             return AOP::getAOP($controller_instance);
         } else {
+            if (!$this->allow_ServerController) {
+                return null;
+            }
             $class_name = "Server\\Controllers\\$controller";
             if (class_exists($class_name)) {
                 $controller_instance = new $class_name;
