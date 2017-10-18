@@ -180,8 +180,35 @@ $config['ports'][] = [
 # 2.6.1-beta
 1.Process中start方法改为了虚函数，不需要被继承了，start方法中也可以使用协程。
 
-2.AppSerevr开启debug模式可以看到调用链
+2.AppServer开启debug模式可以看到调用链
 
 3.报错会打印调用链的运行状态
 
 4.增加了基础的AOP模式
+
+# 2.6.1
+正式版本，更新此版本需要重新设置配置文件，主要在于ports.php配置需要添加中间件。
+
+1.AppServer开启debug模式可以看到请求调用链,贯穿请求过程中的强大Context
+http://docs.youwoxing.net/425321
+
+2.AOP的支持
+
+3.Controller和Model开放__construct，可以设置特殊AOP代理
+
+4.协程调度器优化
+
+5.添加中间件处理模块
+http://docs.youwoxing.net/425118
+
+6.默认添加了上海时区
+
+7.server.php中增加了allow_ServerController，设置为false时将不能访问Server包下的Controller，建议线上填写false
+
+8.fix ws多端口报错bug
+
+9.fix 循环loader引发的死循环问题
+
+10.fix 用户进程调用mysql，redis的错误问题
+
+11.fix 细微bug
