@@ -98,6 +98,7 @@ abstract class AMQPTaskProcess extends Process
     {
         Coroutine::startCoroutine(function () use ($message) {
             $task = Pool::getInstance()->get($this->route($message->getBody()));
+            $task->reUse();
             yield $task->initialization($message);
             yield $task->handle($message->getBody());
         });

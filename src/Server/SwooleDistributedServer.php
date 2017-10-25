@@ -268,7 +268,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             //自己的进程是收不到消息的所以这里执行下
             call_user_func($callStaticFuc, $uns_data);
         } else {
-            get_instance()->sendMessage($send_data, $id);
+            get_instance()->server->sendMessage($send_data, $id);
         }
     }
 
@@ -749,7 +749,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function getBindIp()
     {
         if (empty($this->bind_ip)) {
-            $this->bind_ip = getServerIp($this->config['consul']['bind_net_dev'] ?? 'eth0');
+            $this->bind_ip = $this->config['consul']['bind_addr'] ?? null;
+            if ($this->bind_ip == null) {
+                $this->bind_ip = getServerIp($this->config['consul']['bind_net_dev'] ?? 'eth0');
+            }
         }
         return $this->bind_ip;
     }

@@ -121,6 +121,10 @@ class CONNECT extends Base
         $this->header->setKeepalive($keepalive);
     }
 
+    public function setClientId($clientId)
+    {
+        $this->client_id = $clientId;
+    }
     /**
      * Username and Password
      *

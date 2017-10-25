@@ -180,7 +180,6 @@ class TestController extends Controller
      */
     public function http_test()
     {
-        var_dump($this->http_input->header('a'));
         $max = $this->http_input->get('max');
         if (empty($max)) {
             $max = 100;

@@ -286,6 +286,8 @@ class MQTT implements IMqtt
             # default client id
             if (empty($this->clientid)) {
                 $this->clientid = 'mqtt' . substr(md5(uniqid('mqtt', true)), 8, 16);
+            } else {
+                $connectobj->setClientId($this->clientid);
             }
             Debug::Log(Debug::DEBUG, 'connect(): clientid=' . $this->clientid);
 
