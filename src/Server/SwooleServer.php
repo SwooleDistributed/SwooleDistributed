@@ -32,7 +32,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.6.2";
+    const version = "2.6.3";
 
     /**
      * server name
@@ -257,7 +257,7 @@ abstract class SwooleServer extends Child
     {
         $method_name = $this->tcp_method_prefix . $this->getConnectMethodName();
         $controller_instance = ControllerFactory::getInstance()->getController($this->getEventControllerName());
-        $controller_instance->setClientData(null, $fd, null, $this->getEventControllerName(), $method_name, null);
+        Coroutine::startCoroutine([$controller_instance, 'setClientData'], [null, $fd, null, $this->getEventControllerName(), $method_name, null]);
     }
 
     /**
@@ -353,7 +353,7 @@ abstract class SwooleServer extends Child
         $uid = $info['uid'] ?? 0;
         $method_name = $this->tcp_method_prefix . $this->getCloseMethodName();
         $controller_instance = ControllerFactory::getInstance()->getController($this->getEventControllerName());
-        $controller_instance->setClientData($uid, $fd, null, $this->getEventControllerName(), $method_name, null);
+        Coroutine::startCoroutine([$controller_instance, 'setClientData'], [$uid, $fd, null, $this->getEventControllerName(), $method_name, null]);
     }
 
     /**
