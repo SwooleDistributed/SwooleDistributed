@@ -21,7 +21,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      */
     protected $fdRequest = [];
     protected $web_socket_method_prefix;
-
+    protected $custom_handshake = false;
     public function __construct()
     {
         parent::__construct();
@@ -65,10 +65,21 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $this->server->on('open', [$this, 'onSwooleWSOpen']);
         $this->server->on('message', [$this, 'onSwooleWSMessage']);
         $this->server->on('close', [$this, 'onSwooleWSClose']);
-        $this->server->on('handshake', [$this, 'onSwooleWSHandShake']);
+        if ($this->custom_handshake) {
+            $this->server->on('handshake', [$this, 'onSwooleWSHandShake']);
+        }
         $this->portManager->buildPort($this, $first_config['socket_port']);
         $this->beforeSwooleStart();
         $this->server->start();
+    }
+
+    /**
+     * 是否自定义handshake
+     * @param bool $custom_handshake
+     */
+    public function setCustomHandshake(bool $custom_handshake)
+    {
+        $this->custom_handshake = $custom_handshake;
     }
 
     /**
@@ -142,7 +153,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $method_name = $this->web_socket_method_prefix . $this->getConnectMethodName();
         $controller_instance = ControllerFactory::getInstance()->getController($this->getEventControllerName());
         $controller_instance->setRequest($request);
-        $controller_instance->setClientData(null, $request->fd, null, $this->getEventControllerName(), $method_name, null);
+        Coroutine::startCoroutine([$controller_instance, 'setClientData'], [null, $request->fd, null, $this->getEventControllerName(), $method_name, null]);
     }
 
     /**
@@ -232,7 +243,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $uid = $info['uid'] ?? 0;
         $method_name = $this->web_socket_method_prefix . $this->getCloseMethodName();
         $controller_instance = ControllerFactory::getInstance()->getController($this->getEventControllerName());
-        $controller_instance->setClientData($uid, $fd, null, $this->getEventControllerName(), $method_name, null);
+        Coroutine::startCoroutine([$controller_instance, 'setClientData'], [$uid, $fd, null, $this->getEventControllerName(), $method_name, null]);
     }
 
     /**
