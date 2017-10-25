@@ -233,10 +233,11 @@ function getNodeName()
     if (!empty($env_SD_NODE_NAME)) {
         $node_name = $env_SD_NODE_NAME;
     } else {
-        if (!isset(get_instance()->config['node_name']) || empty(get_instance()->config['node_name'])) {
+        if (!isset(get_instance()->config['consul']['node_name'])
+            || empty(get_instance()->config['consul']['node_name'])) {
             $node_name = exec('hostname');
         } else {
-            $node_name = get_instance()->config['node_name'];
+            $node_name = get_instance()->config['consul']['node_name'];
         }
     }
     return $node_name;

@@ -147,6 +147,7 @@ class Controller extends CoreBase
     protected function execute($controller_name, $method_name, $params)
     {
         if (!is_callable([$this, $method_name])) {
+            $this->context['raw_method_name'] = "$controller_name:$method_name";
             $method_name = 'defaultMethod';
         }
         try {
@@ -291,7 +292,7 @@ class Controller extends CoreBase
         if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
             $this->redirect404();
         } else {
-            throw new SwooleException($this->context['method_name'] . ' method not exist');
+            throw new SwooleException($this->context['raw_method_name'] . ' method not exist');
         }
     }
 

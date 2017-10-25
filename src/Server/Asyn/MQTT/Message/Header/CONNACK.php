@@ -71,7 +71,7 @@ class CONNACK extends Base
         $this->return_code = ord($packet_data[3]);
 
         if ($this->return_code != 0) {
-            $error = isset($connect_errors[$this->return_code]) ? $connect_errors[$this->return_code] : 'Unknown error';
+            $error = isset(self::$connect_errors[$this->return_code]) ? self::$connect_errors[$this->return_code] : 'Unknown error';
             Debug::Log(
                 Debug::ERR,
                 sprintf(
