@@ -212,3 +212,8 @@ http://docs.youwoxing.net/425118
 10.fix 用户进程调用mysql，redis的错误问题
 
 11.fix 细微bug
+
+# 2.6.2
+1.修复AMQPTTASK bug
+2.修复MQTT Client bug
+3.修复CONSUL 配置 bug
