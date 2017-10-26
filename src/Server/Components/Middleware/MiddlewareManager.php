@@ -17,13 +17,20 @@ class MiddlewareManager
 
     /**
      * @param $middlewares
+     * @param $context
+     * @param $params
+     * @param bool $isHttp
      * @return array
      */
-    public function create($middlewares, &$context, $params)
+    public function create($middlewares, &$context, $params, $isHttp = false)
     {
         $m = [];
         foreach ($middlewares as $middleware) {
             $one = $this->createOne($middleware);
+            if (!$isHttp && $one instanceof HttpMiddleware) {
+                Pool::getInstance()->push($one);
+                continue;
+            }
             $one->setContext($context);
             if (is_callable([$one, 'init'])) {
                 call_user_func_array([$one, 'init'], $params);

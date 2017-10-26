@@ -441,6 +441,21 @@ class ClusterProcess extends Process
     }
 
     /**
+     * 获取所有的uids
+     * @return array
+     */
+    public function getAllUids()
+    {
+        $uids = new Set();
+        foreach ($this->map as $node_name => $set) {
+            foreach ($set as $value) {
+                $uids->add($value);
+            }
+        }
+        return $uids->toArray();
+    }
+
+    /**
      * 获取状态
      */
     public function getStatus()

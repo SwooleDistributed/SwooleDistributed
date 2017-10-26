@@ -117,7 +117,7 @@ abstract class SwooleHttpServer extends SwooleServer
             $middleware_names = $this->portManager->getMiddlewares($server_port);
             $context = [];
             $path = $request->server['path_info'];
-            $middlewares = $this->middlewareManager->create($middleware_names, $context, [$request, $response]);
+            $middlewares = $this->middlewareManager->create($middleware_names, $context, [$request, $response], true);
             //before
             try {
                 yield $this->middlewareManager->before($middlewares);

@@ -224,3 +224,12 @@ http://docs.youwoxing.net/425118
 1.修复close，connect回调无法执行的bug
 
 2.默认使用swoole的websocket握手规则，如需打开自定义握手在AppServer构造函数中添加setCustomHandshake(true)
+
+# 2.6.4
+1.修复不开启Mysql时的报错问题
+
+2.修复websocket端口不能兼容使用http中间件的问题
+
+3.修复了GrayLog日志插件配置上的bug
+
+4.增加了coroutineGetAllUids方法，可以获取到所有在线的uid，支持集群
