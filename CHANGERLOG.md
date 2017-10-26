@@ -215,8 +215,12 @@ http://docs.youwoxing.net/425118
 
 # 2.6.2
 1.修复AMQPTTASK bug
+
 2.修复MQTT Client bug
+
 3.修复CONSUL 配置 bug
 
 # 2.6.3
-修复close，connect回调无法执行的bug
+1.修复close，connect回调无法执行的bug
+
+2.默认使用swoole的websocket握手规则，如需打开自定义握手在AppServer构造函数中添加setCustomHandshake(true)
