@@ -181,7 +181,9 @@ class Controller extends CoreBase
         if (get_instance()->isDebug()) {
             set_time_limit(1);
         }
-        $this->installMysqlPool($this->mysql_pool);
+        if ($this->mysql_pool != null) {
+            $this->installMysqlPool($this->mysql_pool);
+        }
     }
 
     /**

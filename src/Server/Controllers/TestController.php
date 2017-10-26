@@ -389,4 +389,9 @@ class TestController extends Controller
         $this->http_output->end($selectMiner->getStatement(false));
     }
 
+    public function http_getAllUids()
+    {
+        $uids = yield get_instance()->coroutineGetAllUids();
+        $this->http_output->end($uids);
+    }
 }

@@ -577,7 +577,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function onOpenServiceInitialization()
     {
-        $this->mysql_pool->installDbBuilder();
+        if ($this->mysql_pool != null) {
+            $this->mysql_pool->installDbBuilder();
+        }
     }
 
     /**
@@ -711,6 +713,24 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             return yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->countOnline();
         } else {
             return count($this->uid_fd_table);
+        }
+    }
+
+    /**
+     * 获取所有在线uid
+     * @return int
+     * @throws SwooleException
+     */
+    public function coroutineGetAllUids()
+    {
+        if ($this->isCluster()) {
+            return yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getAllUids();
+        } else {
+            $uids = [];
+            foreach ($this->uid_fd_table as $key => $value) {
+                $uids[] = $key;
+            }
+            return $uids;
         }
     }
 
