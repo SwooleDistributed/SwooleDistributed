@@ -335,13 +335,22 @@ class PortManager
         $fdinfo = get_instance()->getFdInfo($fd);
         $server_port = $fdinfo["server_port"];
         $uid = $fdinfo['uid'] ?? 0;
+        $type = $this->getPortType($server_port);
+        if ($type == self::SOCK_HTTP) {
+            return;
+        }
         $config = $this->portConfig[$server_port];
         $controller_name = $config['event_controller_name'] ?? get_instance()->getEventControllerName();
         $method_name = ($config['method_prefix'] ?? '') . ($config['close_method_name'] ?? get_instance()->getCloseMethodName());
         $controller_instance = ControllerFactory::getInstance()
             ->getController($controller_name);
-        Coroutine::startCoroutine([$controller_instance, 'setClientData'], [$uid, $fd, null,
-            $controller_name, $method_name, null]);
+        Coroutine::startCoroutine(function () use ($controller_instance, $uid, $fd, $controller_name, $method_name) {
+            $context = [];
+            $controller_instance->setContext($context);
+            yield $controller_instance->setClientData($uid, $fd, null,
+                $controller_name, $method_name, null);
+            unset($context);
+        });
     }
 
     /**
