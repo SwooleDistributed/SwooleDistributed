@@ -103,7 +103,7 @@ class CoreBase extends Child
      * @param $message
      * @param int $level
      */
-    protected function log($message, $level = Logger::DEBUG)
+    protected function log($message, $level = Logger::EX)
     {
         try {
             $this->logger->addRecord($level, $message, $this->getContext());

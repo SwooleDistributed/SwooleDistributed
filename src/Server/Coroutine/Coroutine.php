@@ -51,7 +51,7 @@ class Coroutine
                 unset($this->routineList[$k]);
             }
         }
-        swoole_timer_after(self::TICK_INTERVAL,[$this,'run']);
+        swoole_timer_after(self::TICK_INTERVAL, [$this, 'run']);
     }
 
     /**
@@ -99,7 +99,20 @@ class Coroutine
                 $corotineTask = Pool::getInstance()->get(CoroutineTask::class)->init($generator);
                 while (1) {
                     if ($corotineTask->isFinished()) {
-                        $result = $generator->getReturn();
+                        try {
+                            $result = $generator->getReturn();
+                        } catch (\Exception $e) {
+                            $e = $corotineTask->getEx();
+                            $function_name = '';
+                            if (is_array($function)) {
+                                $function_name = get_class($function[0]) . "::" . $function[1];
+                            }
+                            secho("EX", "---------------------[协程同步模式异常警告]---------------------" . date("Y-m-d h:i:s"));
+                            $message = "[" . $function_name . "]" . $e->getMessage();
+                            secho("EX", $message);
+                            get_instance()->log->addWarning($message);
+                            $result = new CoroutineTaskException($e->getMessage(), $e->getCode());
+                        }
                         $corotineTask->destroy();
                         break;
                     }

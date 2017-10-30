@@ -24,7 +24,7 @@ class MysqlSyncHelp implements ArrayAccess
 
     public function dump()
     {
-        print_r("[dump] " . $this->mysql . "\n");
+        secho("MYSQL", $this->mysql);
         return $this;
     }
 

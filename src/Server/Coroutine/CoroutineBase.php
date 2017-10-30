@@ -55,7 +55,7 @@ abstract class CoroutineBase implements ICoroutineBase
     /**
      * @var bool
      */
-    private $noException;
+    protected $noException;
 
     protected $token;
 
@@ -89,12 +89,11 @@ abstract class CoroutineBase implements ICoroutineBase
             $this->result = CoroutineNull::getInstance();
         }
         $this->getCount++;
-        if ($this->getCount > $this->MAX_TIMERS && $this->result == CoroutineNull::getInstance()) {
+        if ($this->getCount > $this->MAX_TIMERS && $this->result instanceof CoroutineNull) {
             $this->onTimerOutHandle();
             if (!$this->noException) {
                 $this->isFaile = true;
                 $ex = new SwooleException("[CoroutineTask]: Time Out!, [Request]: $this->request");
-
                 $this->destroy();
                 throw $ex;
             } else {
@@ -109,7 +108,7 @@ abstract class CoroutineBase implements ICoroutineBase
      */
     public function dump()
     {
-        print_r("[dump] ".$this->request."\n");
+        secho("DUMP", $this->request);
         return $this;
     }
 

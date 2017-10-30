@@ -86,5 +86,6 @@ class TestTask extends Task
     {
         yield $this->mysql_pool->dbQueryBuilder->coroutineSend(null,
             "update account set phone = 1 WHERE uid = 1");
+        throw new \Exception("aaaaaaaa");
     }
 }

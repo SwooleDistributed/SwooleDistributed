@@ -310,7 +310,7 @@ class MQTT implements IMqtt
 
             $this->keepalive_time = swoole_timer_tick($this->keepalive * 500, [$this, 'keepalive']);
         }, [$this, 'onReceive'],function (){
-            print_r("连接mqtt服务器失败,正在重试\n");
+            secho("MQTT", "连接mqtt服务器失败,正在重试");
             swoole_timer_after(1000,[$this,'connect']);
         },function (){
             if ($this->keepalive_time!=null) {

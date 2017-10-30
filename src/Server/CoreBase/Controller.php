@@ -135,6 +135,7 @@ class Controller extends CoreBase
         $this->rpc_request_id = $this->http_input->header('rpc_request_id');
         $this->isRPC = empty($this->rpc_request_id) ? false : true;
         $this->request_type = SwooleMarco::HTTP_REQUEST;
+        $this->fd = $request->fd;
         yield $this->execute($controller_name, $method_name, $params);
     }
 
@@ -177,9 +178,10 @@ class Controller extends CoreBase
             $this->context['request_id'] = time() . crc32($controller_name . $method_name . getTickTime() . rand(1, 10000000));
         }
         $this->context['controller_name'] = $controller_name;
-        $this->context['method_name'] = "$controller_name:$method_name";
-        if (get_instance()->isDebug()) {
-            set_time_limit(1);
+        $this->context['method_name'] = "$controller_name::$method_name";
+        $this->context['ip'] = $this->getFdInfo()['remote_ip'];
+        if (!empty($this->uid)) {
+            $this->context['uid'] = $this->uid;
         }
         if ($this->mysql_pool != null) {
             $this->installMysqlPool($this->mysql_pool);
@@ -211,8 +213,10 @@ class Controller extends CoreBase
             return;
         }
         if ($e instanceof SwooleException) {
-            print_r($e->getMessage() . "\n");
+            secho("EX", "--------------------------[报错指南]----------------------------" . date("Y-m-d h:i:s"));
+            secho("EX", "异常消息：" . $e->getMessage());
             print_context($this->getContext());
+            secho("EX", "--------------------------------------------------------------");
             $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
         }
         //可以重写的代码

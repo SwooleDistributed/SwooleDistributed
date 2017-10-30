@@ -19,6 +19,16 @@ class Start
      * @var bool
      */
     protected static $daemonize = false;
+
+    /**
+     * @var array
+     */
+    protected static $debug_filter;
+
+    /**
+     * @var bool
+     */
+    protected static $debug = false;
     /**
      * 单元测试
      * @var bool
@@ -119,18 +129,8 @@ class Start
 
         // Get command.
         $command = trim($argv[1]);
-        $command2 = isset($argv[2]) ? $argv[2] : '';
-
-        // Start command.
-        $mode = '';
-        if ($command === 'start') {
-            if ($command2 === '-d') {
-                $mode = 'in DAEMON mode';
-            } else {
-                $mode = 'in DEBUG mode';
-            }
-        }
-        echo("Swoole[$start_file] $command $mode \n");
+        $command2 = $argv[2] ?? '';
+        $command3 = $argv[3] ?? '';
         $server_name = getServerName();
         $master_pid = exec("ps -ef | grep $server_name-Master | grep -v 'grep ' | awk '{print $2}'");
         $manager_pid = exec("ps -ef | grep $server_name-Manager | grep -v 'grep ' | awk '{print $2}'");
@@ -142,11 +142,11 @@ class Start
         // Master is still alive?
         if ($master_is_alive) {
             if ($command === 'start' || $command === 'test') {
-                echo("Swoole[$start_file] already running\n");
+                secho("STA", "Swoole[$start_file] already running");
                 exit;
             }
         } elseif ($command !== 'start' && $command !== 'test') {
-            echo("Swoole[$start_file] not run\n");
+            secho("STA", "Swoole[$start_file] not run");
             exit;
         }
 
@@ -155,13 +155,22 @@ class Start
             case 'start':
                 if ($command2 === '-d') {
                     self::$daemonize = true;
+                } else if ($command2 === '-debug' || $command2 === '-de') {
+                    self::$debug = true;
+                    if (!empty($command3)) {
+                        if ($command3 === "--f") {
+                            self::$debug_filter = array_slice($argv, 4);
+                        } else {
+                            exit("Usage: php yourfile.php start -de {--f}\n");
+                        }
+                    }
                 }
                 break;
             case 'kill':
                 exec("ps -ef|grep $server_name|grep -v grep|cut -c 9-15|xargs kill -9");
                 break;
             case 'stop':
-                echo("Swoole[$start_file] is stoping ...\n");
+                secho("STA", "Swoole[$start_file] is stoping ...");
                 // Send stop signal to master process.
                 $master_pid && posix_kill($master_pid, SIGTERM);
                 // Timeout.
@@ -173,7 +182,7 @@ class Start
                     if ($master_is_alive) {
                         // Timeout?
                         if (time() - $start_time >= $timeout) {
-                            echo("Swoole[$start_file] stop fail\n");
+                            secho("STA", "Swoole[$start_file] stop fail");
                             exit;
                         }
                         // Waiting amoment.
@@ -181,17 +190,17 @@ class Start
                         continue;
                     }
                     // Stop success.
-                    echo("Swoole[$start_file] stop success\n");
+                    secho("STA", "Swoole[$start_file] stop success");
                     break;
                 }
                 exit(0);
                 break;
             case 'reload':
                 posix_kill($manager_pid, SIGUSR1);
-                echo("Swoole[$start_file] reload\n");
+                secho("STA", "Swoole[$start_file] reload");
                 exit;
             case 'restart':
-                echo("Swoole[$start_file] is stoping ...\n");
+                secho("STA", "Swoole[$start_file] is stoping ...");
                 // Send stop signal to master process.
                 $master_pid && posix_kill($master_pid, SIGTERM);
                 // Timeout.
@@ -203,7 +212,7 @@ class Start
                     if ($master_is_alive) {
                         // Timeout?
                         if (time() - $start_time >= $timeout) {
-                            echo("Swoole[$start_file] stop fail\n");
+                            secho("STA", "Swoole[$start_file] stop fail");
                             exit;
                         }
                         // Waiting amoment.
@@ -211,7 +220,7 @@ class Start
                         continue;
                     }
                     // Stop success.
-                    echo("Swoole[$start_file] stop success\n");
+                    secho("STA", "Swoole[$start_file] stop success");
                     break;
                 }
                 self::$daemonize = true;
@@ -241,7 +250,7 @@ class Start
             self::$_worker->user = self::getCurrentUser();
         } else {
             if (posix_getuid() !== 0 && self::$_worker->user != self::getCurrentUser()) {
-                echo('Warning: You must have the root privileges to change uid and gid.');
+                secho("STA", 'Warning: You must have the root privileges to change uid and gid.');
             }
         }
     }
@@ -266,14 +275,14 @@ class Start
     {
         $config = self::$_worker->config;
         echo "\033[2J";
-        echo "\033[1A\n\033[K-------------\033[47;30m SWOOLE_DISTRIBUTED \033[0m--------------\n\033[0m";
-        echo 'System:', PHP_OS, "\n";
+        echo "\033[1A\n\033[K------------------------\033[47;30m SWOOLE_DISTRIBUTED \033[0m---------------------------\n\033[0m";
+        echo 'System:', PHP_OS, "\t\t\t";
         echo 'SwooleDistributed version:', SwooleServer::version, "\n";
-        echo 'Swoole version: ', SWOOLE_VERSION, "\n";
+        echo 'Swoole version: ', SWOOLE_VERSION, "\t\t";
         echo 'PHP version: ', PHP_VERSION, "\n";
-        echo 'worker_num: ', $config->get('server.set.worker_num', 0), "\n";
+        echo 'worker_num: ', $config->get('server.set.worker_num', 0), "\t\t\t";
         echo 'task_num: ', $config->get('server.set.task_worker_num', 0), "\n";
-        echo "-------------------\033[47;30m" . self::$_worker->name . "\033[0m----------------------\n";
+        echo "------------------------------\033[47;30m" . self::$_worker->name . "\033[0m-----------------------------------\n";
         echo "\033[47;30mS_TYPE\033[0m", str_pad('',
             self::$_maxShowLength - strlen('S_TYPE')), "\033[47;30mS_NAME\033[0m", str_pad('',
             self::$_maxShowLength - strlen('S_NAME')), "\033[47;30mS_PORT\033[0m", str_pad('',
@@ -310,9 +319,9 @@ class Start
         if (self::$daemonize) {
             global $argv;
             $start_file = $argv[0];
-            echo "Input \"php $start_file stop\" to quit. Start success.\n";
+            secho("STA", "Input \"php $start_file stop\" to quit. Start success.");
         } else {
-            echo "Press Ctrl-C to quit. Start success.\n";
+            secho("STA", "Press Ctrl-C to quit. Start success.");
         }
     }
 
@@ -336,4 +345,13 @@ class Start
         return self::$daemonize ? 1 : 0;
     }
 
+    public static function getDebug()
+    {
+        return self::$debug;
+    }
+
+    public static function getDebugFilter()
+    {
+        return self::$debug_filter ?? [];
+    }
 }

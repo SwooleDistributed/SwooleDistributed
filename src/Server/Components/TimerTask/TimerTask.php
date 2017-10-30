@@ -65,7 +65,7 @@ class TimerTask extends CoreBase
             $task_name = $timer_task['task_name'] ?? '';
             $model_name = $timer_task['model_name'] ?? '';
             if (empty($task_name) && empty($model_name)) {
-                echo("定时任务$name 配置错误，缺少task_name或者model_name.\n");
+                secho("[TIMERTASK]", "定时任务$name 配置错误，缺少task_name或者model_name.");
                 continue;
             }
             $method_name = $timer_task['method_name'];

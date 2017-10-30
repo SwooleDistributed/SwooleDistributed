@@ -9,10 +9,9 @@
 namespace Server\Middlewares;
 
 
-use Server\Components\Middleware\IMiddleware;
-use Server\CoreBase\CoreBase;
+use Server\Components\Middleware\Middleware;
 
-class MonitorMiddleware extends CoreBase implements IMiddleware
+class MonitorMiddleware extends Middleware
 {
     protected $start_run_time;
     protected static $efficiency_monitor_enable;
@@ -28,6 +27,7 @@ class MonitorMiddleware extends CoreBase implements IMiddleware
     public function before_handle()
     {
         $this->start_run_time = microtime(true);
+        $this->context['start_time'] = date('Y-m-d H:i:s');
     }
 
     public function after_handle($path)

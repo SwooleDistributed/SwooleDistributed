@@ -94,11 +94,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     private $asynPools = [];
 
     /**
-     * @var bool
-     */
-    private $debug = false;
-
-    /**
      * @var
      */
     private $bind_ip;
@@ -115,23 +110,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if (!checkExtension()) {
             exit(-1);
         }
-    }
-
-    /**
-     * 设置Debug模式
-     */
-    public function setDebugMode()
-    {
-        $this->debug = true;
-    }
-
-    /**
-     * 是否是Debug
-     * @return mixed
-     */
-    public function isDebug()
-    {
-        return $this->debug;
     }
 
     /**
@@ -317,24 +295,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         }
     }
 
-    /**
-     * @param $fd
-     * @return mixed
-     */
-    public function getFdInfo($fd)
-    {
-        $fdinfo = $this->server->connection_info($fd);
-        return $fdinfo;
-    }
 
-    /**
-     * @param $fd
-     * @return mixed
-     */
-    public function getServerPort($fd)
-    {
-        return $this->server->connection_info($fd)['server_port'];
-    }
 
     /**
      * 获取同步redis

@@ -11,11 +11,12 @@ namespace Server\Components\Middleware;
 abstract class TcpMiddleware extends Middleware
 {
     protected $fd;
-    protected $response;
+    protected $client_data;
 
-    public function init($fd)
+    public function init($fd, $client_data)
     {
         $this->fd = $fd;
+        $this->client_data = $client_data;
     }
 
     /**

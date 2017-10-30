@@ -6,7 +6,7 @@
  * Time: 下午2:12
  */
 
-namespace Server\Controllers;
+namespace app\Controllers;
 
 
 use Server\CoreBase\Controller;

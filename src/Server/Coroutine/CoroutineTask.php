@@ -22,6 +22,11 @@ class CoroutineTask
      */
     protected $routine;
 
+    /**
+     * @var \Exception
+     */
+    protected $e;
+
 
     public function __construct()
     {
@@ -99,9 +104,10 @@ class CoroutineTask
      * @param $routine
      * @param $e
      */
-    protected function throwEx(\Generator $routine, $e)
+    protected function throwEx(\Generator $routine, \Exception $e)
     {
         try {
+            $this->e = $e;
             $routine->throw($e);
             $this->routine = $routine;
             $this->run();
@@ -138,9 +144,18 @@ class CoroutineTask
      */
     public function destroy()
     {
+        $this->e = null;
         $this->routine = null;
         $this->stack = null;
         $this->isError = false;
         Pool::getInstance()->push($this);
+    }
+
+    /**
+     * @return \Exception
+     */
+    public function getEx()
+    {
+        return $this->e;
     }
 }

@@ -73,9 +73,9 @@ class ConsulHelp
         if (get_instance()->server->worker_id == 0) {
             if ($is_leader !== self::$is_leader) {
                 if ($is_leader) {
-                    print_r("Leader变更，被选举为Leader\n");
+                    secho("CONSUL", "Leader变更，被选举为Leader");
                 } else {
-                    print_r("Leader变更，本机不是Leader\n");
+                    secho("CONSUL", "Leader变更，本机不是Leader");
                 }
             }
         }

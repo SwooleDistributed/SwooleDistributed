@@ -20,7 +20,6 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      * @var array
      */
     protected $fdRequest = [];
-    protected $web_socket_method_prefix;
     protected $custom_handshake = false;
     public function __construct()
     {
@@ -83,17 +82,6 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
     }
 
     /**
-     * workerStart
-     * @param $serv
-     * @param $workerId
-     */
-    public function onSwooleWorkerStart($serv, $workerId)
-    {
-        parent::onSwooleWorkerStart($serv, $workerId);
-        $this->web_socket_method_prefix = $this->config->get('websocket.method_prefix', '');
-    }
-
-    /**
      * 判断这个fd是不是一个WebSocket连接，用于区分tcp和websocket
      * 握手后才识别为websocket
      * @param $fdinfo
@@ -150,10 +138,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      */
     public function onSwooleWSOpen($server, $request)
     {
-        $method_name = $this->web_socket_method_prefix . $this->getConnectMethodName();
-        $controller_instance = ControllerFactory::getInstance()->getController($this->getEventControllerName());
-        $controller_instance->setRequest($request);
-        Coroutine::startCoroutine([$controller_instance, 'setClientData'], [null, $request->fd, null, $this->getEventControllerName(), $method_name, null]);
+        $this->portManager->eventConnect($request->fd);
     }
 
     /**
@@ -190,7 +175,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             $middleware_names = $this->portManager->getMiddlewares($server_port);
             $context = [];
             $path = '';
-            $middlewares = $this->middlewareManager->create($middleware_names, $context, [$fd]);
+            $middlewares = $this->middlewareManager->create($middleware_names, $context, [$fd, &$client_data]);
             //client_data进行处理
             try {
                 yield $this->middlewareManager->before($middlewares);
@@ -198,7 +183,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
                 try {
                     $client_data = $route->handleClientData($client_data);
                     $controller_name = $route->getControllerName();
-                    $method_name = $this->web_socket_method_prefix . $route->getMethodName();
+                    $method_name = $this->portManager->getMethodPrefix($server_port) . $route->getMethodName();
                     $path = $route->getPath();
                     $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
                     if ($controller_instance != null) {
@@ -224,8 +209,8 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
 
             }
             $this->middlewareManager->destory($middlewares);
-            if (get_instance()->isDebug()) {
-                print_r($context);
+            if (Start::getDebug()) {
+                secho("DEBUG", $context);
             }
             unset($context);
         });
@@ -239,11 +224,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
     public function onSwooleWSClose($serv, $fd)
     {
         unset($this->fdRequest[$fd]);
-        $info = $serv->connection_info($fd, 0, true);
-        $uid = $info['uid'] ?? 0;
-        $method_name = $this->web_socket_method_prefix . $this->getCloseMethodName();
-        $controller_instance = ControllerFactory::getInstance()->getController($this->getEventControllerName());
-        Coroutine::startCoroutine([$controller_instance, 'setClientData'], [$uid, $fd, null, $this->getEventControllerName(), $method_name, null]);
+        $this->portManager->eventClose($fd);
     }
 
     /**

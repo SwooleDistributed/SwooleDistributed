@@ -233,3 +233,26 @@ http://docs.youwoxing.net/425118
 3.修复了GrayLog日志插件配置上的bug
 
 4.增加了coroutineGetAllUids方法，可以获取到所有在线的uid，支持集群
+
+# 2.6.5
+1.Server下的例子均移到App下了
+
+2.ports.php配置增加了method_prefix，event_controller_name，close_method_name，connect_method_name，bussiness.php配置去除了相关配置，详情见http://docs.youwoxing.net/399763
+
+3.优化服务器信息打印
+
+4.去除了AppServer中的setDebugMode函数，debug模式改为命令行
+```
+php start_swoole_server.php start -de（或者-debug）
+```
+
+5.命令行debug模式增加了过滤参数--f,比如下面将只显示包含"[ip] => 127.0.0.1"的信息，可以接多个参数，参数间是或的逻辑关系。
+```
+php start_swoole_server.php start -de --f "[ip] => 127.0.0.1"
+```
+
+6.协程task现在可以捕获到task抛出的异常了
+
+7.同步模式Task出错会有详细的报错
+
+8.主题订阅树支持$SYS标识

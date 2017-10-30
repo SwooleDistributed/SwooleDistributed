@@ -31,7 +31,8 @@ $config['ports'][] = [
     'socket_name' => '0.0.0.0',
     'socket_port' => 8081,
     'route_tool' => 'NormalRoute',
-    'middlewares' => ['MonitorMiddleware', 'NormalHttpMiddleware']
+    'middlewares' => ['MonitorMiddleware', 'NormalHttpMiddleware'],
+    'method_prefix' => 'http_'
 ];
 
 $config['ports'][] = [
