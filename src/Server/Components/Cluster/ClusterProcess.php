@@ -182,10 +182,16 @@ class ClusterProcess extends Process
      */
     protected function buildTrees($topic)
     {
+        $isSYS = false;
+        if ($topic[0] == "$") {
+            $isSYS = true;
+        }
         $p = explode("/", $topic);
         $countPlies = count($p);
         $result = new Set();
-        $result->add("#");
+        if (!$isSYS) {
+            $result->add("#");
+        }
         for ($j = 0; $j < $countPlies; $j++) {
             $a = array_slice($p, 0, $j + 1);
             $arr = [$a];
@@ -200,7 +206,7 @@ class ClusterProcess extends Process
             for ($i = 0; $i < $count_a; $i++) {
                 $temp = [];
                 foreach ($arr as $one) {
-                    $this->help_replace_plus($one, $temp, $result, $complete);
+                    $this->help_replace_plus($one, $temp, $result, $complete, $isSYS);
                 }
                 $arr = $temp;
             }
@@ -208,10 +214,12 @@ class ClusterProcess extends Process
         return $result;
     }
 
-    protected function help_replace_plus($arr, &$temp, &$result, $complete)
+    protected function help_replace_plus($arr, &$temp, &$result, $complete, $isSYS)
     {
         $count = count($arr);
-        for ($i = 0; $i < $count; $i++) {
+        $m = 0;
+        if ($isSYS) $m = 1;
+        for ($i = $m; $i < $count; $i++) {
             $new = $arr;
             if ($new[$i] == '+') continue;
             $new[$i] = '+';
@@ -288,7 +296,7 @@ class ClusterProcess extends Process
         } else {
             $this->map[$node_name]->add(...$uids);
         }
-        echo "同步$node_name 信息\n";
+        secho("CLUSTER", "同步$node_name 信息");
     }
 
     /**

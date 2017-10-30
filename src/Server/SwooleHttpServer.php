@@ -22,7 +22,6 @@ abstract class SwooleHttpServer extends SwooleServer
      * @var Engine
      */
     public $templateEngine;
-    protected $http_method_prefix;
     protected $cache404;
 
     public function __construct()
@@ -31,7 +30,7 @@ abstract class SwooleHttpServer extends SwooleServer
         //view dir
         $view_dir = APP_DIR . '/Views';
         if (!is_dir($view_dir)) {
-            echo "app目录下不存在Views目录，请创建。\n";
+            secho("STA", "app目录下不存在Views目录，请创建。");
             exit();
         }
     }
@@ -85,7 +84,6 @@ abstract class SwooleHttpServer extends SwooleServer
     {
         parent::onSwooleWorkerStart($serv, $workerId);
         $this->setTemplateEngine();
-        $this->http_method_prefix = $this->config->get('http.method_prefix', '');
         $template = $this->loader->view('server::error_404');
         $this->cache404 = $template->render();
     }
@@ -126,7 +124,7 @@ abstract class SwooleHttpServer extends SwooleServer
                 try {
                     $route->handleClientRequest($request);
                     $controller_name = $route->getControllerName();
-                    $method_name = $this->http_method_prefix . $route->getMethodName();
+                    $method_name = $this->portManager->getMethodPrefix($server_port) . $route->getMethodName();
                     $path = $route->getPath();
                     $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
                     if ($controller_instance != null) {
@@ -151,8 +149,8 @@ abstract class SwooleHttpServer extends SwooleServer
             } catch (\Exception $e) {
             }
             $this->middlewareManager->destory($middlewares);
-            if (get_instance()->isDebug()) {
-                print_r($context);
+            if (Start::getDebug()) {
+                secho("DEBUG", $context);
             }
             unset($context);
         });

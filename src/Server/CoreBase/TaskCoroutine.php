@@ -9,6 +9,7 @@
 namespace Server\CoreBase;
 
 use Server\Coroutine\CoroutineBase;
+use Server\Coroutine\CoroutineTaskException;
 use Server\Memory\Pool;
 
 class TaskCoroutine extends CoroutineBase
@@ -48,5 +49,17 @@ class TaskCoroutine extends CoroutineBase
     {
         parent::onTimerOutHandle();
         get_instance()->stopTask($this->task_id);
+    }
+
+    public function getResult()
+    {
+        if ($this->result instanceof CoroutineTaskException) {
+            if (!$this->noException) {
+                $ex = new SwooleException($this->result->getMessage(), $this->result->getCode());
+                $this->destroy();
+                throw $ex;
+            }
+        }
+        return parent::getResult();
     }
 }

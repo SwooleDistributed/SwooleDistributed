@@ -117,71 +117,60 @@ function checkExtension()
 {
     $check = true;
     if (!extension_loaded('swoole')) {
-        print_r("[扩展依赖]缺少swoole扩展\n");
+        secho("STA", "[扩展依赖]缺少swoole扩展");
         $check = false;
     }
     if (version_compare(PHP_VERSION, '7.0.0', '<')) {
-        print_r("[版本错误]PHP版本必须大于7.0.0\n");
+        secho("STA", "[版本错误]PHP版本必须大于7.0.0\n");
         $check = false;
     }
     if (version_compare(SWOOLE_VERSION, '1.9.18', '<')) {
-        print_r("[版本建议]Swoole推荐使用1.9.18版本,之前版本存在bug\n");
+        secho("STA", "[版本建议]Swoole推荐使用1.9.18版本,之前版本存在bug");
         $check = false;
     }
 
     if (SWOOLE_VERSION[0] == 2) {
-        print_r("[版本错误]不支持2.0版本swoole，请安装1.9版本\n");
+        secho("STA", "[版本错误]不支持2.0版本swoole，请安装1.9版本");
         $check = false;
     }
     if (!class_exists('swoole_redis')) {
-        print_r("[编译错误]swoole编译缺少--enable-async-redis,具体参见文档http://docs.sder.xin/%E7%8E%AF%E5%A2%83%E8%A6%81%E6%B1%82.html");
+        secho("STA", "[编译错误]swoole编译缺少--enable-async-redis,具体参见文档http://docs.sder.xin/%E7%8E%AF%E5%A2%83%E8%A6%81%E6%B1%82.html");
         $check = false;
     }
     if (!extension_loaded('redis')) {
-        print_r("[扩展依赖]缺少redis扩展\n");
+        secho("STA", "[扩展依赖]缺少redis扩展");
         $check = false;
     }
     if (!extension_loaded('pdo')) {
-        print_r("[扩展依赖]缺少pdo扩展\n");
+        secho("STA", "[扩展依赖]缺少pdo扩展");
         $check = false;
     }
 
     if (get_instance()->config->has('consul_enable')) {
-        print_r("consul_enable配置已被弃用，请换成['consul']['enable']\n");
+        secho("STA", "consul_enable配置已被弃用，请换成['consul']['enable']");
         $check = false;
     }
     if (get_instance()->config->has('use_dispatch')) {
-        print_r("use_dispatch配置已被弃用，请换成['dispatch']['enable']\n");
+        secho("STA", "use_dispatch配置已被弃用，请换成['dispatch']['enable']");
         $check = false;
     }
     if (get_instance()->config->has('dispatch_heart_time')) {
-        print_r("dispatch_heart_time配置已被弃用，请换成['dispatch']['heart_time']\n");
+        secho("STA", "dispatch_heart_time配置已被弃用，请换成['dispatch']['heart_time']");
         $check = false;
     }
     if (get_instance()->config->get('config_version', '') != \Server\SwooleServer::config_version) {
-        print_r("配置文件有不兼容的可能，请将vendor/tmtbe/swooledistributed/src/config目录替换src/config目录，然后重新配置\n");
+        secho("STA", "配置文件有不兼容的可能，请将vendor/tmtbe/swooledistributed/src/config目录替换src/config目录，然后重新配置");
         $check = false;
     }
 
     $dispatch_enable = get_instance()->config->get('dispatch.enable', false);
     if ($dispatch_enable) {
         if (!get_instance()->config->get('redis.enable', true)) {
-            print_r("开启dispatch，就必须启动redis的配置\n");
+            secho("STA", "开启dispatch，就必须启动redis的配置");
             $check = false;
         }
     }
     return $check;
-}
-
-/**
- * 断点调试
- */
-function breakpoint()
-{
-    $backtrace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-    print_r($backtrace);
-    print_r("断点中任意键继续:");
-    shell_read();
 }
 
 /**
@@ -260,7 +249,7 @@ function getConfigDir()
     if (!empty($env_SD_CONFIG_DIR)) {
         $dir = CONFIG_DIR . '/' . $env_SD_CONFIG_DIR;
         if (!is_dir($dir)) {
-            print_r("$dir 目录不存在\n");
+            secho("STA", "$dir 目录不存在\n");
             exit();
         }
         return $dir;
@@ -286,10 +275,39 @@ function create_uuid($prefix = "")
 
 function print_context($context)
 {
-    echo "--------------------------------------------------------------------------\n";
-    echo "运行堆栈:\n";
+    secho("EX", "运行链路:");
     foreach ($context['RunStack'] as $key => $value) {
-        echo "$key# $value\n";
+        secho("EX", "$key# $value");
     }
-    echo "--------------------------------------------------------------------------\n";
+}
+
+function secho($tile, $message)
+{
+    ob_start();
+    if (is_string($message)) {
+        $message = ltrim($message);
+        $message = str_replace(PHP_EOL, '', $message);
+    }
+    print_r($message);
+    $content = ob_get_contents();
+    ob_end_clean();
+    $could = false;
+    if (empty(\Server\Start::getDebugFilter())) {
+        $could = true;
+    } else {
+        foreach (\Server\Start::getDebugFilter() as $filter) {
+            if (strpos($tile, $filter) !== false || strpos($content, $filter) !== false) {
+                $could = true;
+                break;
+            }
+        }
+    }
+    if ($could) {
+        $content = explode("\n", $content);
+        foreach ($content as $value) {
+            if (!empty($value)) {
+                echo "[$tile]\t$value\n";
+            }
+        }
+    }
 }

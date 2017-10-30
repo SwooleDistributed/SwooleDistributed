@@ -32,7 +32,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.6.4";
+    const version = "2.6.5";
 
     /**
      * server name
@@ -98,7 +98,6 @@ abstract class SwooleServer extends Child
      */
     protected $middlewareManager;
 
-    protected $tcp_method_prefix;
 
     /**
      * 设置monolog的loghandler
@@ -199,7 +198,7 @@ abstract class SwooleServer extends Child
             $this->beforeSwooleStart();
             $this->server->start();
         } else {
-            print_r("没有任何服务启动\n");
+            secho("SYS", "没有任何服务启动");
             exit(0);
         }
     }
@@ -219,7 +218,9 @@ abstract class SwooleServer extends Child
     public function onSwooleStart($serv)
     {
         Start::setProcessTitle(getServerName() . '-Master');
-        $this->tcp_method_prefix = $this->config->get('tcp.method_prefix', '');
+        if (Start::getDebug()) {
+            secho("SYS", "工作在DEBUG模式");
+        }
     }
 
     /**
@@ -255,9 +256,7 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleConnect($serv, $fd)
     {
-        $method_name = $this->tcp_method_prefix . $this->getConnectMethodName();
-        $controller_instance = ControllerFactory::getInstance()->getController($this->getEventControllerName());
-        Coroutine::startCoroutine([$controller_instance, 'setClientData'], [null, $fd, null, $this->getEventControllerName(), $method_name, null]);
+        $this->portManager->eventConnect($fd);
     }
 
     /**
@@ -291,7 +290,7 @@ abstract class SwooleServer extends Child
             $middleware_names = $this->portManager->getMiddlewares($server_port);
             $context = [];
             $path = '';
-            $middlewares = $this->middlewareManager->create($middleware_names, $context, [$fd]);
+            $middlewares = $this->middlewareManager->create($middleware_names, $context, [$fd, &$client_data]);
             //client_data进行处理
             try {
                 yield $this->middlewareManager->before($middlewares);
@@ -299,7 +298,7 @@ abstract class SwooleServer extends Child
                 try {
                     $client_data = $route->handleClientData($client_data);
                     $controller_name = $route->getControllerName();
-                    $method_name = $this->tcp_method_prefix . $route->getMethodName();
+                    $method_name = $this->portManager->getMethodPrefix($server_port) . $route->getMethodName();
                     $path = $route->getPath();
                     $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
                     if ($controller_instance != null) {
@@ -320,8 +319,8 @@ abstract class SwooleServer extends Child
 
             }
             $this->middlewareManager->destory($middlewares);
-            if (get_instance()->isDebug()) {
-                print_r($context);
+            if (Start::getDebug()) {
+                secho("DEBUG", $context);
             }
             unset($context);
         });
@@ -349,11 +348,7 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleClose($serv, $fd)
     {
-        $info = $serv->connection_info($fd, 0, true);
-        $uid = $info['uid'] ?? 0;
-        $method_name = $this->tcp_method_prefix . $this->getCloseMethodName();
-        $controller_instance = ControllerFactory::getInstance()->getController($this->getEventControllerName());
-        Coroutine::startCoroutine([$controller_instance, 'setClientData'], [$uid, $fd, null, $this->getEventControllerName(), $method_name, null]);
+        $this->portManager->eventClose($fd);
     }
 
     /**
@@ -602,7 +597,26 @@ abstract class SwooleServer extends Child
      */
     public function onErrorHandel($msg, $log)
     {
-        print_r($msg . "\n");
-        print_r($log . "\n");
+        secho("ERROR", $msg);
+        secho("ERROR", $log);
+    }
+
+    /**
+     * @param $fd
+     * @return mixed
+     */
+    public function getFdInfo($fd)
+    {
+        $fdinfo = $this->server->connection_info($fd);
+        return $fdinfo;
+    }
+
+    /**
+     * @param $fd
+     * @return mixed
+     */
+    public function getServerPort($fd)
+    {
+        return $this->server->connection_info($fd)['server_port'];
     }
 }

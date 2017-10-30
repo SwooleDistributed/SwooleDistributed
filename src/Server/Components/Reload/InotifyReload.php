@@ -20,7 +20,7 @@ class InotifyReload
 
     public function __construct()
     {
-        echo "启动了autoReload\n";
+        secho("SYS", "已开启代码热重载");
         $this->server = get_instance()->server;
         $this->monitor_dir = realpath(MYROOT);
         if (!extension_loaded('inotify')) {
@@ -59,7 +59,7 @@ class InotifyReload
                 foreach ($events as $ev) {
                     // 更新的文件
                     $file = $monitor_files[$ev['wd']];
-                    echo "[RELOAD]  " . $file . " update\n";
+                    secho("RELOAD", $file . " update");
                     unset($monitor_files[$ev['wd']]);
                     // 需要把文件重新加入监控
                     $wd = inotify_add_watch($inotify_fd, $file, IN_MODIFY);
@@ -72,9 +72,9 @@ class InotifyReload
 
     public function unUseInotify()
     {
-        echo "非inotify模式，性能极低，不建议在正式环境启用。请安装inotify扩展\n";
-        if(isDarwin()){
-            echo "mac开启auto_reload可能会导致cpu占用过高。\n";
+        secho("[SYS]", "非inotify模式，性能极低，不建议在正式环境启用。请安装inotify扩展");
+        if (isDarwin()) {
+            secho("[SYS]", "mac开启auto_reload可能会导致cpu占用过高。");
         }
         swoole_timer_tick(1, function () {
             global $last_mtime;
@@ -91,7 +91,7 @@ class InotifyReload
                 }
                 // check mtime
                 if ($last_mtime < $file->getMTime()) {
-                    echo "[RELOAD]  " . $file . " update\n";
+                    secho("[RELOAD]", $file . " update");
                     //reload
                     $this->server->reload();
                     $last_mtime = $file->getMTime();

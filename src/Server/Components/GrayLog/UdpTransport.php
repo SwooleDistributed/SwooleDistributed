@@ -1,8 +1,8 @@
 <?php
 
 namespace Server\Components\GrayLog;
-use Gelf\MessageInterface as Message;
 use Gelf\Encoder\CompressedJsonEncoder as DefaultEncoder;
+use Gelf\MessageInterface as Message;
 use Gelf\Transport\AbstractTransport;
 
 /**
@@ -54,7 +54,7 @@ class UdpTransport extends AbstractTransport
     public function write($data)
     {
         if(get_instance()->server!=null){
-            get_instance()->sendto($this->ip,$this->port,$data);
+            get_instance()->server->sendto($this->ip, $this->port, $data);
         }
     }
 

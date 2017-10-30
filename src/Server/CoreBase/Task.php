@@ -34,7 +34,9 @@ class Task extends TaskProxy
         $this->setContext($context);
         $this->start_run_time = microtime(true);
         $this->context['task_name'] = "$task_name:$method_name";
-        $this->installMysqlPool($this->mysql_pool);
+        if ($this->mysql_pool != null) {
+            $this->installMysqlPool($this->mysql_pool);
+        }
     }
 
     public function destroy()

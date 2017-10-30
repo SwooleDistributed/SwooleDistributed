@@ -8,6 +8,7 @@
 
 namespace Server\CoreBase;
 
+use Server\Coroutine\Coroutine;
 use Server\Pack\IPack;
 use Server\Route\IRoute;
 use Server\SwooleServer;
@@ -263,6 +264,7 @@ class PortManager
     {
         return $this->middlewares[$port] ?? [];
     }
+
     /**
      * @param $port
      * @return mixed
@@ -312,5 +314,48 @@ class PortManager
         }
         $config = $this->portConfig[$port];
         return $config['socket_type'];
+    }
+
+    /**
+     * @param $server_port
+     * @return string
+     */
+    public function getMethodPrefix($server_port)
+    {
+        $config = $this->portConfig[$server_port];
+        $method_name = $config['method_prefix'] ?? '';
+        return $method_name;
+    }
+
+    /**
+     * @param $fd
+     */
+    public function eventClose($fd)
+    {
+        $fdinfo = get_instance()->getFdInfo($fd);
+        $server_port = $fdinfo["server_port"];
+        $uid = $fdinfo['uid'] ?? 0;
+        $config = $this->portConfig[$server_port];
+        $controller_name = $config['event_controller_name'] ?? get_instance()->getEventControllerName();
+        $method_name = ($config['method_prefix'] ?? '') . ($config['close_method_name'] ?? get_instance()->getCloseMethodName());
+        $controller_instance = ControllerFactory::getInstance()
+            ->getController($controller_name);
+        Coroutine::startCoroutine([$controller_instance, 'setClientData'], [$uid, $fd, null,
+            $controller_name, $method_name, null]);
+    }
+
+    /**
+     * @param $fd
+     */
+    public function eventConnect($fd)
+    {
+        $server_port = get_instance()->getServerPort($fd);
+        $config = $this->portConfig[$server_port];
+        $controller_name = $config['event_controller_name'] ?? get_instance()->getEventControllerName();
+        $method_name = ($config['method_prefix'] ?? '') . ($config['connect_method_name'] ?? get_instance()->getConnectMethodName());
+        $controller_instance = ControllerFactory::getInstance()
+            ->getController($controller_name);
+        Coroutine::startCoroutine([$controller_instance, 'setClientData'], [null, $fd, null,
+            $controller_name, $method_name, null]);
     }
 }

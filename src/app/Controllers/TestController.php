@@ -6,8 +6,9 @@
  * Time: 下午3:51
  */
 
-namespace Server\Controllers;
+namespace app\Controllers;
 
+use app\Models\TestModel;
 use Server\Asyn\Mysql\Miner;
 use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\Components\Consul\ConsulServices;
@@ -16,7 +17,6 @@ use Server\CoreBase\Controller;
 use Server\CoreBase\SelectCoroutine;
 use Server\Memory\Cache;
 use Server\Memory\Lock;
-use Server\Models\TestModel;
 use Server\Tasks\TestTask;
 
 class TestController extends Controller

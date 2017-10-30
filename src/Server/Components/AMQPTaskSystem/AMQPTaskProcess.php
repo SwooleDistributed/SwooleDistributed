@@ -36,7 +36,7 @@ abstract class AMQPTaskProcess extends Process
     protected function connectAMQP($active = null)
     {
         if (!$this->config->has('amqp')) {
-            print_r("未发现AMQP配置文件\n");
+            secho("AMQP", "未发现AMQP配置文件");
             while (true) {
 
             }
