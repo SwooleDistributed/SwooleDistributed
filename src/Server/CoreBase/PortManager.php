@@ -334,7 +334,7 @@ class PortManager
     {
         $fdinfo = get_instance()->getFdInfo($fd);
         $server_port = $fdinfo["server_port"];
-        $uid = $fdinfo['uid'] ?? 0;
+        $uid = get_instance()->getUidFromFd($fd);
         $type = $this->getPortType($server_port);
         if ($type == self::SOCK_HTTP) {
             return;
@@ -366,5 +366,24 @@ class PortManager
             ->getController($controller_name);
         Coroutine::startCoroutine([$controller_instance, 'setClientData'], [null, $fd, null,
             $controller_name, $method_name, null]);
+    }
+
+    /**
+     * 获取端口状态
+     * @return array
+     */
+    public function getPortStatus()
+    {
+        $status = $this->portConfig;
+        foreach ($status as &$value) {
+            $value['fdcount'] = 0;
+        }
+        foreach (get_instance()->server->connections as $fd) {
+            $port = get_instance()->getServerPort($fd);
+            if (array_key_exists($port, $status)) {
+                $status[$port]['fdcount']++;
+            }
+        }
+        return $status;
     }
 }

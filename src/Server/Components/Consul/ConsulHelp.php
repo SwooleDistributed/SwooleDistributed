@@ -20,7 +20,6 @@ class ConsulHelp
     protected static $session_id;
     protected static $table;
     const DISPATCH_KEY = 'consul_service';
-    const LEADER_KEY = 'consul_leader';
     const HEALTH = '_consul_health';
 
     /**
@@ -35,19 +34,9 @@ class ConsulHelp
                     ->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
                 ConsulHelp::getMessgae($result);
             });
-            //提取SDHelpProcess中的leader
-            Coroutine::startCoroutine(function () {
-                $result = yield ProcessManager::getInstance()
-                    ->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::LEADER_KEY);
-                ConsulHelp::leaderChange($result);
-            });
             //监听服务改变
             EventDispatcher::getInstance()->add(ConsulHelp::DISPATCH_KEY, function (Event $event) {
                 ConsulHelp::getMessgae($event->data);
-            });
-            //监听leader改变
-            EventDispatcher::getInstance()->add(ConsulHelp::LEADER_KEY, function (Event $event) {
-                ConsulHelp::leaderChange($event->data);
             });
         }
     }
@@ -62,37 +51,4 @@ class ConsulHelp
             ConsulServices::getInstance()->updateServies($key, $value);
         }
     }
-
-
-    /**
-     * leader变更
-     * @param $is_leader
-     */
-    public static function leaderChange($is_leader)
-    {
-        if (get_instance()->server->worker_id == 0) {
-            if ($is_leader !== self::$is_leader) {
-                if ($is_leader) {
-                    secho("CONSUL", "Leader变更，被选举为Leader");
-                } else {
-                    secho("CONSUL", "Leader变更，本机不是Leader");
-                }
-            }
-        }
-        self::$is_leader = $is_leader;
-    }
-
-    /**
-     * 是否是leader
-     * @return bool
-     */
-    public static function isLeader()
-    {
-        if (self::$is_leader == null) {
-            return false;
-        }
-        return self::$is_leader;
-    }
-
-
 }

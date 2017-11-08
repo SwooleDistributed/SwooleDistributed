@@ -72,6 +72,12 @@ class SwooleMarco
      * 进程间通讯
      */
     const PROCESS_RPC = 20000;
+
+    /**
+     * 进程间通讯
+     */
+    const PROCESS_RPC_RESULT = 20001;
+
     /**
      * redis uid和全局usid映射表的hashkey
      * @var string

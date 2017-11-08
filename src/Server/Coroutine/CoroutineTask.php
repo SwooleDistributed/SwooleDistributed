@@ -30,7 +30,7 @@ class CoroutineTask
 
     public function __construct()
     {
-
+        $this->stack = new \SplStack();
     }
 
     /**
@@ -40,7 +40,9 @@ class CoroutineTask
      */
     public function init(\Generator $routine)
     {
-        $this->stack = new \SplStack();
+        while (!$this->stack->isEmpty()) {
+            $this->stack->pop();
+        }
         $this->routine = $routine;
         return $this;
     }
@@ -50,7 +52,7 @@ class CoroutineTask
      */
     public function run()
     {
-        if (!$this->routine) {//已经出错了就直接return
+        if (!$this->routine) {
             return;
         }
         try {
@@ -76,12 +78,10 @@ class CoroutineTask
                 }
                 return;
             }
-            //无效的
+            //有效的
             if ($this->routine->valid()) {
                 $this->routine->send($value);
-                if (!$this->stack->isEmpty()) {
-                    $this->run();
-                }
+                $this->run();
                 return;
             }
             //返回上级
@@ -94,6 +94,7 @@ class CoroutineTask
                 $this->routine = $this->stack->pop();
                 $this->routine->send($result);
                 $this->run();
+                return;
             }
         } catch (\Exception $e) {
             $this->throwEx($this->routine, $e);
@@ -146,8 +147,6 @@ class CoroutineTask
     {
         $this->e = null;
         $this->routine = null;
-        $this->stack = null;
-        $this->isError = false;
         Pool::getInstance()->push($this);
     }
 

@@ -218,6 +218,10 @@ function getBindIp()
  */
 function getNodeName()
 {
+    global $node_name;
+    if (!empty($node_name)) {
+        return $node_name;
+    }
     $env_SD_NODE_NAME = getenv("SD_NODE_NAME");
     if (!empty($env_SD_NODE_NAME)) {
         $node_name = $env_SD_NODE_NAME;
@@ -302,12 +306,21 @@ function secho($tile, $message)
             }
         }
     }
-    if ($could) {
-        $content = explode("\n", $content);
-        foreach ($content as $value) {
-            if (!empty($value)) {
-                echo "[$tile]\t$value\n";
+
+    $content = explode("\n", $content);
+    $send = "";
+    foreach ($content as $value) {
+        if (!empty($value)) {
+            $echo = "[$tile]\t$value\n";
+            $send = $send . $echo;
+            if ($could) {
+                echo $echo;
             }
         }
+    }
+    try {
+        get_instance()->pub('$SYS/' . getNodeName() . "/echo", $send);
+    } catch (Exception $e) {
+
     }
 }

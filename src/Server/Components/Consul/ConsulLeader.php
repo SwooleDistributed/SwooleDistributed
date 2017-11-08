@@ -13,6 +13,7 @@ use Server\Asyn\HttpClient\HttpClient;
 use Server\Components\Event\EventDispatcher;
 use Server\Components\Process\ProcessManager;
 use Server\Components\SDHelp\SDHelpProcess;
+use Server\Start;
 
 class ConsulLeader
 {
@@ -102,11 +103,7 @@ class ConsulLeader
                     } else {
                         $leader = false;
                     }
-                    //发送到进程
-                    EventDispatcher::getInstance()->dispatch(ConsulHelp::LEADER_KEY, $leader, false, true);
-                    //存儲在SDHelpProcess中
-                    ProcessManager::getInstance()->getProcess(SDHelpProcess::class)
-                        ->setData(ConsulHelp::LEADER_KEY, $leader);
+                    Start::setLeader($leader);
                     //继续监听
                     $this->checkLeader($index);
                 });

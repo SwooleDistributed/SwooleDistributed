@@ -11,6 +11,7 @@ namespace Server\Components\Cluster;
 use Ds\Set;
 use Server\Asyn\HttpClient\HttpClient;
 use Server\Components\Process\Process;
+use Server\Start;
 
 class ClusterProcess extends Process
 {
@@ -50,9 +51,13 @@ class ClusterProcess extends Process
      */
     public function my_addUid($uid)
     {
+        if (empty($uid)) return;
         $this->map[$this->node_name]->add($uid);
         foreach ($this->client as $client) {
             $client->addNodeUid($this->node_name, $uid);
+        }
+        if (Start::isLeader()) {
+            get_instance()->pub('$SYS/uidcount', $this->countOnline());
         }
     }
 
@@ -62,6 +67,7 @@ class ClusterProcess extends Process
      */
     public function my_removeUid($uid)
     {
+        if (empty($uid)) return;
         if (get_instance()->isCluster()) {
             $this->map[$this->node_name]->remove($uid);
             foreach ($this->client as $client) {
@@ -69,6 +75,9 @@ class ClusterProcess extends Process
             }
         }
         $this->my_clearUidSub($uid);
+        if (Start::isLeader()) {
+            get_instance()->pub('$SYS/uidcount', $this->countOnline());
+        }
     }
 
     /**
@@ -77,6 +86,7 @@ class ClusterProcess extends Process
      */
     public function my_kickUid($uid)
     {
+        if (empty($uid)) return;
         $node_name = $this->searchUid($uid);
         if ($node_name) {
             $this->client[$node_name]->kickUid($uid);
@@ -89,6 +99,7 @@ class ClusterProcess extends Process
      */
     public function my_sendToUid($uid, $data)
     {
+        if (empty($uid)) return;
         $node_name = $this->searchUid($uid);
         if ($node_name) {
             if (!isset($this->client[$node_name])) return;
@@ -132,6 +143,7 @@ class ClusterProcess extends Process
      */
     public function my_addSub($topic, $uid)
     {
+        if (empty($uid)) return;
         if (!isset($this->subArr[$topic])) {
             $this->subArr[$topic] = new Set();
         }
@@ -145,6 +157,7 @@ class ClusterProcess extends Process
      */
     public function my_removeSub($topic, $uid)
     {
+        if (empty($uid)) return;
         if (isset($this->subArr[$topic])) {
             $this->subArr[$topic]->remove($uid);
         }
@@ -238,6 +251,7 @@ class ClusterProcess extends Process
      */
     public function my_clearUidSub($uid)
     {
+        if (empty($uid)) return;
         foreach ($this->subArr as $sub) {
             $sub->remove($uid);
         }
@@ -266,10 +280,14 @@ class ClusterProcess extends Process
      */
     public function th_addUid($node_name, $uid)
     {
+        if (empty($uid)) return;
         if (!isset($this->map[$node_name])) {
             $this->map[$node_name] = new Set();
         }
         $this->map[$node_name]->add($uid);
+        if (Start::isLeader()) {
+            get_instance()->pub('$SYS/uidcount', $this->countOnline());
+        }
     }
 
     /**
@@ -279,8 +297,12 @@ class ClusterProcess extends Process
      */
     public function th_removeUid($node_name, $uid)
     {
+        if (empty($uid)) return;
         if (isset($this->map[$node_name])) {
             $this->map[$node_name]->remove($uid);
+        }
+        if (Start::isLeader()) {
+            get_instance()->pub('$SYS/uidcount', $this->countOnline());
         }
     }
 
@@ -362,7 +384,12 @@ class ClusterProcess extends Process
                 $client->syncNodeData($this->node_name, $content);
             }
             $this->client[$node_name] = $client;
-            $this->map[$node_name] = new Set();
+            if (!isset($this->map[$node_name])) {
+                $this->map[$node_name] = new Set();
+            }
+            if (Start::isLeader()) {
+                get_instance()->pub('$SYS/nodes', array_keys($this->map));
+            }
         });
     }
 
@@ -375,6 +402,9 @@ class ClusterProcess extends Process
         unset($this->map[$node_name]);
         $this->client[$node_name]->close();
         unset($this->client[$node_name]);
+        if (Start::isLeader()) {
+            get_instance()->pub('$SYS/nodes', array_keys($this->map));
+        }
     }
 
     /**
@@ -384,6 +414,7 @@ class ClusterProcess extends Process
      */
     protected function searchUid($uid)
     {
+        if (empty($uid)) return false;
         foreach ($this->map as $node_name => $set) {
             if ($set->contains($uid)) {
                 return $node_name;
@@ -421,12 +452,39 @@ class ClusterProcess extends Process
     }
 
     /**
+     * 获取所有的Sub
+     * @return array
+     */
+    public function my_getAllSub()
+    {
+        $status[$this->node_name] = $this->th_getAllSub();
+        foreach ($this->client as $node_name => $client) {
+            $token = $client->getAllSub();
+            $status[$node_name] = yield $client->getTokenResult($token);
+        }
+        return $status;
+    }
+
+    /**
+     * @return array
+     */
+    public function th_getAllSub()
+    {
+        $status = [];
+        foreach ($this->subArr as $key => $value) {
+            $status[$key] = $value->count();
+        }
+        return $status;
+    }
+
+    /**
      * 是否在线
      * @param $uid
      * @return bool
      */
     public function isOnline($uid)
     {
+        if (empty($uid)) return false;
         foreach ($this->map as $node_name => $set) {
             if ($set->contains($uid)) {
                 return true;
@@ -443,6 +501,7 @@ class ClusterProcess extends Process
     {
         $sum = 0;
         foreach ($this->map as $node_name => $set) {
+
             $sum += $set->count();
         }
         return $sum;
@@ -471,5 +530,81 @@ class ClusterProcess extends Process
         $data['nodes'] = array_keys($this->map);
         $data['count'] = $this->countOnline();
         return $data;
+    }
+
+    /**
+     * 设置debug模式
+     * @param $node_name
+     * @param $bool
+     */
+    public function my_setDebug($node_name, $bool)
+    {
+        if ($node_name == getNodeName()) {
+            Start::setDebug($bool);
+        } else {
+            if (array_key_exists($node_name, $this->client)) {
+                $this->client[$node_name]->setDebug($bool);
+            }
+        }
+    }
+
+    /**
+     * reload
+     * @param $node_name
+     */
+    public function my_reload($node_name)
+    {
+        if ($node_name == getNodeName()) {
+            get_instance()->server->reload();
+        } else {
+            if (array_key_exists($node_name, $this->client)) {
+                $this->client[$node_name]->reload();
+            }
+        }
+    }
+
+    /**
+     * 发送状态
+     */
+    public function my_status()
+    {
+        yield get_instance()->getStatus();
+        foreach ($this->client as $client) {
+            $client->status();
+        }
+    }
+
+    /**
+     * 发送状态
+     */
+    public function th_status()
+    {
+        yield get_instance()->getStatus();
+    }
+
+    /**
+     * 获取节点
+     * @return array
+     */
+    public function getNodes()
+    {
+        return array_keys($this->map);
+    }
+
+    /**
+     * 获取uid相关的信息
+     * @param $uid
+     * @return null
+     */
+    public function my_getUidInfo($uid)
+    {
+        $node_name = $this->searchUid($uid);
+        if ($node_name) {
+            if (!isset($this->client[$node_name])) return null;
+            $token = $this->client[$node_name]->getUidInfo($uid);
+            $fdInfo = yield $this->client[$node_name]->getTokenResult($token);
+            return $fdInfo;
+        }
+        return null;
     }
 }

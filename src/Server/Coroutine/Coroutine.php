@@ -45,11 +45,13 @@ class Coroutine
     public function run()
     {
         foreach ($this->routineList as $k => $task) {
-            $task->run();
             if ($task->isFinished()) {
                 $task->destroy();
                 unset($this->routineList[$k]);
+            } else {
+                $task->run();
             }
+
         }
         swoole_timer_after(self::TICK_INTERVAL, [$this, 'run']);
     }
@@ -132,5 +134,6 @@ class Coroutine
     {
         $task = Pool::getInstance()->get(CoroutineTask::class)->init($routine);
         $this->routineList[] = $task;
+        $task->run();
     }
 }

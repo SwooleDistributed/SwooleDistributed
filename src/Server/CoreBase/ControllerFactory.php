@@ -63,7 +63,8 @@ class ControllerFactory
             $controller_instance->core_name = $controller;
             return AOP::getAOP($controller_instance);
         }
-        $class_name = "app\\Controllers\\$controller";
+        $controller_new = str_replace('/', '\\', $controller);
+        $class_name = "app\\Controllers\\$controller_new";
         if (class_exists($class_name)) {
             $controller_instance = new $class_name;
             $controller_instance->core_name = $controller;
@@ -72,7 +73,7 @@ class ControllerFactory
             if (!$this->allow_ServerController) {
                 return null;
             }
-            $class_name = "Server\\Controllers\\$controller";
+            $class_name = "Server\\Controllers\\$controller_new";
             if (class_exists($class_name)) {
                 $controller_instance = new $class_name;
                 $controller_instance->core_name = $controller;
@@ -93,5 +94,17 @@ class ControllerFactory
             $controller->destroy();
         }
         $this->pool[$controller->core_name]->push($controller);
+    }
+
+    /**
+     * 获取状态
+     */
+    public function getStatus()
+    {
+        $status = [];
+        foreach ($this->pool as $key => $value) {
+            $status[$key] = count($value);
+        }
+        return $status;
     }
 }

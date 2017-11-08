@@ -108,9 +108,9 @@ abstract class SwooleHttpServer extends SwooleServer
         if (Start::$testUnity) {
             $server_port = $request->server_port;
         } else {
-            $fdinfo = $this->server->connection_info($request->fd);
-            $server_port = $fdinfo['server_port'];
+            $server_port = $this->getServerPort($request->fd);
         }
+
         Coroutine::startCoroutine(function () use ($request, $response, $server_port) {
             $middleware_names = $this->portManager->getMiddlewares($server_port);
             $context = [];

@@ -29,10 +29,12 @@ class Status extends Controller
         $status['now_task'] = get_instance()->getServerAllTaskMessage();
         if ($this->config['consul']['enable']) {
             $data = yield ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
-            foreach ($data as $key => $value) {
-                $data[$key] = json_decode($value, true);
-                foreach ($data[$key] as &$one) {
-                    $one = $one['Service'];
+            if (!empty($data)) {
+                foreach ($data as $key => $value) {
+                    $data[$key] = json_decode($value, true);
+                    foreach ($data[$key] as &$one) {
+                        $one = $one['Service'];
+                    }
                 }
             }
             $status['consul_services'] = $data;
