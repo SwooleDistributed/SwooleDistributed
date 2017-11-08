@@ -44,7 +44,7 @@ class Pool
         if ($pool == null) {
             $pool = $this->applyNewPool($class);
         }
-        if ($pool->count()) {
+        if (!$pool->isEmpty()) {
             return $pool->shift();
         } else {
             return new $class;
@@ -72,5 +72,17 @@ class Pool
             $pool = $this->applyNewPool($class);
         }
         $pool->push($classInstance);
+    }
+
+    /**
+     * 获取状态
+     */
+    public function getStatus()
+    {
+        $status = [];
+        foreach ($this->map as $key => $value) {
+            $status[$key] = count($value);
+        }
+        return $status;
     }
 }

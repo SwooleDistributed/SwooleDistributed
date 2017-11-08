@@ -26,9 +26,20 @@ class Start
     protected static $debug_filter;
 
     /**
-     * @var bool
+     * @var
      */
-    protected static $debug = false;
+    protected static $debug;
+
+    /**
+     * @var string
+     */
+    protected static $startTime;
+
+    /**
+     * @var
+     */
+    protected static $leader;
+
     /**
      * 单元测试
      * @var bool
@@ -60,6 +71,9 @@ class Start
      */
     public static function run()
     {
+        self::$debug = new \swoole_atomic(0);
+        self::$leader = new \swoole_atomic(0);
+        self::$startTime = date('Y-m-d H:i:s');
         self::checkSapiEnv();
         self::init();
         self::parseCommand();
@@ -347,11 +361,43 @@ class Start
 
     public static function getDebug()
     {
-        return self::$debug;
+        return self::$debug->get() == 1 ? true : false;
+    }
+
+    public static function setDebug($debug)
+    {
+        self::$debug->set($debug ? 1 : 0);
+        if ($debug) {
+            secho("SYS", "DEBUG开启");
+        } else {
+            secho("SYS", "DEBUG关闭");
+        }
+    }
+
+    public static function isLeader()
+    {
+        return self::$leader->get() == 1 ? true : false;
+    }
+
+    public static function setLeader($bool)
+    {
+        self::$leader->set($bool ? 1 : 0);
+        if (get_instance()->isCluster()) {
+            if ($bool) {
+                secho("CONSUL", "Leader变更，被选举为Leader");
+            } else {
+                secho("CONSUL", "Leader变更，本机不是Leader");
+            }
+        }
     }
 
     public static function getDebugFilter()
     {
         return self::$debug_filter ?? [];
+    }
+
+    public static function getStartTime()
+    {
+        return self::$startTime;
     }
 }

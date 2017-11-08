@@ -45,10 +45,10 @@ class ModelFactory
     {
         $model = str_replace('/', '\\', $old_model);
         if (!array_key_exists($model, $this->pool)) {
-            $this->pool[$model] = [];
+            $this->pool[$model] = new \SplStack();;
         }
-        if (count($this->pool[$model]) > 0) {
-            $model_instance = array_pop($this->pool[$model]);
+        if (!$this->pool[$model]->isEmpty()) {
+            $model_instance = $this->pool[$model]->shift();
             $model_instance->reUse();
             return $model_instance;
         }
@@ -84,6 +84,18 @@ class ModelFactory
         if (!$model->is_destroy) {
             $model->destroy();
         }
-        $this->pool[$model->core_name][] = $model;
+        $this->pool[$model->core_name]->push($model);
+    }
+
+    /**
+     * 获取状态
+     */
+    public function getStatus()
+    {
+        $status = [];
+        foreach ($this->pool as $key => $value) {
+            $status[$key] = count($value);
+        }
+        return $status;
     }
 }

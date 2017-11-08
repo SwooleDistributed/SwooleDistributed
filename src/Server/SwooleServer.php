@@ -32,7 +32,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.6.5";
+    const version = "2.7.0-beta";
 
     /**
      * server name
@@ -98,6 +98,25 @@ abstract class SwooleServer extends Child
      */
     protected $middlewareManager;
 
+    /**
+     * @var int
+     */
+    public $workerId;
+
+    /**
+     * 共享内存表
+     * @var \swoole_table
+     */
+    protected $uid_fd_table;
+    /**
+     * @var \swoole_table
+     */
+    protected $fd_uid_table;
+
+    /**
+     * @var int
+     */
+    protected $max_connection;
 
     /**
      * 设置monolog的loghandler
@@ -118,12 +137,14 @@ abstract class SwooleServer extends Child
         }
     }
 
+    /**
+     * SwooleServer constructor.
+     */
     public function __construct()
     {
         $this->onErrorHandel = [$this, 'onErrorHandel'];
         Start::initServer($this);
-        // 加载配置
-        $this->config = new Config(getConfigDir());
+        $this->setConfig();
         $this->middlewareManager = new MiddlewareManager();
         $this->user = $this->config->get('server.set.user', '');
         $this->setLogHandler();
@@ -136,10 +157,18 @@ abstract class SwooleServer extends Child
     }
 
     /**
+     * 加载配置
+     */
+    protected function setConfig()
+    {
+        $this->config = new Config(getConfigDir());
+    }
+
+    /**
      * 设置自定义Loader
      * @param ILoader $loader
      */
-    public function setLoader(ILoader $loader)
+    protected function setLoader(ILoader $loader)
     {
         $this->loader = $loader;
     }
@@ -208,7 +237,23 @@ abstract class SwooleServer extends Child
      */
     public function beforeSwooleStart()
     {
+        //创建uid->fd共享内存表
+        $this->createUidTable();
+    }
 
+    /**
+     * 创建uid->fd共享内存表
+     */
+    protected function createUidTable()
+    {
+        $this->max_connection = $this->config['server']['set']['max_connection'] ?? 65536;
+        $this->uid_fd_table = new \swoole_table($this->max_connection);
+        $this->uid_fd_table->column('fd', \swoole_table::TYPE_INT, 8);
+        $this->uid_fd_table->create();
+
+        $this->fd_uid_table = new \swoole_table($this->max_connection);
+        $this->fd_uid_table->column('uid', \swoole_table::TYPE_STRING, 10);
+        $this->fd_uid_table->create();
     }
 
     /**
@@ -230,6 +275,7 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleWorkerStart($serv, $workerId)
     {
+        $this->workerId = $workerId;
         //清除apc缓存
         if (function_exists('apc_clear_cache')) {
             apc_clear_cache();
@@ -271,9 +317,8 @@ abstract class SwooleServer extends Child
     public function onSwooleReceive($serv, $fd, $from_id, $data, $server_port = null)
     {
         if (!Start::$testUnity) {
-            $fdinfo = $serv->connection_info($fd);
-            $server_port = $fdinfo['server_port'];
-            $uid = $fdinfo['uid'] ?? 0;
+            $server_port = $this->getServerPort($fd);
+            $uid = $this->getUidFromFd($fd);
         } else {
             $fd = 'self';
             $uid = $fd;
@@ -550,12 +595,37 @@ abstract class SwooleServer extends Child
     }
 
     /**
+     * 获取workerId
+     * @return int
+     */
+    public function getWorkerId()
+    {
+        return $this->workerId;
+    }
+
+    /**
+     * 是不是worker进程
+     */
+    public function isWorker()
+    {
+        return $this->workerId < $this->worker_num ? true : false;
+    }
+
+    /**
      * 是否是task进程
      * @return bool
      */
     public function isTaskWorker()
     {
         return $this->server->taskworker ?? false;
+    }
+
+    /**
+     * 是不是用户进程
+     */
+    public function isUserProcess()
+    {
+        return $this->workerId >= $this->worker_num + $this->task_num ? true : false;
     }
 
     /**
@@ -618,5 +688,42 @@ abstract class SwooleServer extends Child
     public function getServerPort($fd)
     {
         return $this->server->connection_info($fd)['server_port'];
+    }
+
+    /**
+     *
+     * @param $fd
+     */
+    public function protect($fd)
+    {
+        $this->server->protect($fd);
+    }
+
+    /**
+     * 通过Uid获取fd
+     * @param $uid
+     * @return mixed
+     */
+    public function getFdFromUid($uid)
+    {
+        $data = $this->uid_fd_table->get($uid);
+        if ($data == false) {
+            return false;
+        }
+        return $data['fd'];
+    }
+
+    /**
+     * 通过fd获取uid
+     * @param $fd
+     * @return mixed
+     */
+    public function getUidFromFd($fd)
+    {
+        $data = $this->fd_uid_table->get($fd);
+        if ($data == false) {
+            return false;
+        }
+        return $data['uid'];
     }
 }

@@ -10,13 +10,15 @@ namespace Server\Components\Cluster;
 
 use Server\Components\Event\EventDispatcher;
 use Server\Components\Process\ProcessManager;
+use Server\CoreBase\Child;
+use Server\Start;
 
 /**
  * 集群控制器
  * Class Cluster
  * @package Server\Controllers
  */
-class ClusterController
+class ClusterController extends Child
 {
     /**
      * 同步数据
@@ -77,5 +79,45 @@ class ClusterController
     public function dispatchEvent($type, $data)
     {
         EventDispatcher::getInstance()->dispatch($type, $data, false, true);
+    }
+
+    public function setDebug($bool)
+    {
+        Start::setDebug($bool);
+    }
+
+    public function reload()
+    {
+        get_instance()->server->reload();
+    }
+
+    public function status()
+    {
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_status();
+    }
+
+    /**
+     * @param $uid
+     * @return mixed|null
+     */
+    public function getUidInfo($uid)
+    {
+        $fd = get_instance()->getFdFromUid($uid);
+        if (!empty($fd)) {
+            $fdInfo = get_instance()->getFdInfo($fd);
+            $fdInfo['node'] = getNodeName();
+            return $fdInfo;
+        } else {
+            return [];
+        }
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getAllSub()
+    {
+        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getAllSub();
+        return $result;
     }
 }

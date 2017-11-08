@@ -2,6 +2,7 @@
 
 namespace Server\CoreBase;
 
+use ArgumentCountError;
 use Monolog\Logger;
 use Server\Start;
 use Server\SwooleMarco;
@@ -160,6 +161,8 @@ class Controller extends CoreBase
             }
         } catch (\Exception $e) {
             yield $this->getProxy()->onExceptionHandle($e);
+        } catch (ArgumentCountError $e) {
+            yield $this->getProxy()->onExceptionHandle($e);
         }
     }
 
@@ -200,10 +203,10 @@ class Controller extends CoreBase
 
     /**
      * 异常的回调(如果需要继承$autoSendAndDestroy传flase)
-     * @param \Exception $e
+     * @param \Throwable $e
      * @param callable $handle
      */
-    public function onExceptionHandle(\Exception $e, $handle = null)
+    public function onExceptionHandle(\Throwable $e, $handle = null)
     {
         //必须的代码
         if ($e instanceof SwooleRedirectException) {
@@ -391,7 +394,6 @@ class Controller extends CoreBase
         if (!empty($this->uid)) {
             throw new \Exception("已经绑定过uid");
         }
-        $uid = (int)$uid;
         if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'bindUid', 'fd' => $this->fd, 'uid' => $uid];
         } else {
@@ -409,7 +411,7 @@ class Controller extends CoreBase
         if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'unBindUid', 'uid' => $this->uid];
         } else {
-            get_instance()->unBindUid($this->uid);
+            get_instance()->unBindUid($this->uid, $this->fd);
         }
     }
 

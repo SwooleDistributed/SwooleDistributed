@@ -91,4 +91,18 @@ class ProcessManager
         }
         return $this->map[$class_name . $name];
     }
+
+    /**
+     * @param $workerId
+     * @return Process
+     */
+    public function getProcessFromID($workerId)
+    {
+        foreach ($this->map as $process) {
+            if ($process->worker_id == $workerId) {
+                return $process;
+            }
+        }
+        return null;
+    }
 }

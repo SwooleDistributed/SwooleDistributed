@@ -160,9 +160,8 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      */
     public function onSwooleWSAllMessage($serv, $fd, $data)
     {
-        $fdinfo = $serv->connection_info($fd);
-        $server_port = $fdinfo['server_port'];
-        $uid = $fdinfo['uid'] ?? 0;
+        $server_port = $this->getServerPort($fd);
+        $uid = $this->getUidFromFd($fd);
         $pack = $this->portManager->getPack($server_port);
         //反序列化，出现异常断开连接
         try {
