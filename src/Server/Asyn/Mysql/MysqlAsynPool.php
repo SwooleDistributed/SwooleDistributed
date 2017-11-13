@@ -139,7 +139,7 @@ class MysqlAsynPool extends AsynPool
             if ($client) {
                 if ($client->isClose??false) {
                     $this->reconnect($client);
-                    $this->commands->push($data);
+                    $this->commands->unshift($data);
                     return;
                 }
                 if ($bind_id != null) {//添加绑定
@@ -154,6 +154,7 @@ class MysqlAsynPool extends AsynPool
         $client->query($sql, function ($client, $result) use ($data) {
             if ($result === false) {
                 if ($client->errno == 2006 || $client->errno == 2013) {//断线重连
+                    $client->close();
                     $this->reconnect($client);
                     if (!isset($data['bind_id'])) {//非事务可以重新执行
                         $this->commands->unshift($data);
@@ -162,7 +163,7 @@ class MysqlAsynPool extends AsynPool
                 } else {//发生错误
                     if (isset($data['bind_id'])) {//事务的话要rollback
                         $data['sql'] = 'rollback';
-                        $this->commands->push($data);
+                        $this->commands->unshift($data);
                     }
                     //设置错误信息
                     $data['result']['error'] = "[mysql]:" . $client->error . "[sql]:" . $data['sql'];
@@ -200,6 +201,7 @@ class MysqlAsynPool extends AsynPool
             $client = new \swoole_mysql();
         }
         $set = $this->config['mysql'][$this->active];
+        $client->on('Close', [$this, 'onClose']);
         $client->connect($set, function ($client, $result) {
             if (!$result) {
                 throw new SwooleException($client->connect_error);
@@ -208,7 +210,6 @@ class MysqlAsynPool extends AsynPool
                 $this->pushToPool($client);
             }
         });
-        $client->on('Close', [$this, 'onClose']);
     }
 
     /**
