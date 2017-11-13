@@ -16,7 +16,7 @@ class AMQP extends AbstractConnection
     /**
      * @param string $host
      * @param string $port
-     * @param string $user
+     * @param string $userswoo
      * @param string $password
      * @param string $vhost
      * @param bool $insist
