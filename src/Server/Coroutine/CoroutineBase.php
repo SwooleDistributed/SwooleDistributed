@@ -51,7 +51,7 @@ abstract class CoroutineBase implements ICoroutineBase
     /**
      * @var bool
      */
-    private $isFaile;
+    protected $isFaile;
     /**
      * @var bool
      */
@@ -59,7 +59,7 @@ abstract class CoroutineBase implements ICoroutineBase
 
     protected $token;
 
-    private $noExceptionReturn;
+    protected $noExceptionReturn;
 
     public function __construct()
     {
