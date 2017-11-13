@@ -32,7 +32,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.7.0-beta4";
+    const version = "2.7.0-beta5";
 
     /**
      * server name
