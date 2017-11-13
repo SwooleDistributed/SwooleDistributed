@@ -47,4 +47,45 @@ class MysqlSyncHelp implements ArrayAccess
     {
         unset($this->elements[$offset]);
     }
+
+    /**
+     * @return mixed
+     */
+    public function result_array()
+    {
+        return $this->elements['result'];
+    }
+
+    /**
+     * @param $index
+     * @return null
+     */
+    public function row_array($index)
+    {
+        return $this->elements['result'][$index] ?? null;
+    }
+
+    /**
+     * @return null
+     */
+    public function row()
+    {
+        return $this->elements['result'][0] ?? null;
+    }
+
+    /**
+     * @return int
+     */
+    public function num_rows()
+    {
+        return count($this->elements['result']);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function insert_id()
+    {
+        return $this->elements['insert_id'];
+    }
 }
