@@ -4,6 +4,7 @@ namespace Server\CoreBase;
 
 use ArgumentCountError;
 use Monolog\Logger;
+use Server\Asyn\Mysql\Miner;
 use Server\Start;
 use Server\SwooleMarco;
 
@@ -79,6 +80,10 @@ class Controller extends CoreBase
      */
     protected $rpc_request_id;
 
+    /**
+     * @var Miner
+     */
+    public $db;
     /**
      * Controller constructor.
      * @param string $proxy
@@ -188,6 +193,7 @@ class Controller extends CoreBase
         }
         if ($this->mysql_pool != null) {
             $this->installMysqlPool($this->mysql_pool);
+            $this->db = $this->mysql_pool->dbQueryBuilder;
         }
     }
 

@@ -32,7 +32,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.7.0-beta";
+    const version = "2.7.0-beta2";
 
     /**
      * server name
@@ -357,7 +357,6 @@ abstract class SwooleServer extends Child
                 }
             } catch (\Exception $e) {
             }
-
             try {
                 yield $this->middlewareManager->after($middlewares, $path);
             } catch (\Exception $e) {

@@ -5,6 +5,7 @@
  * Date: 16-9-2
  * Time: 下午1:44
  */
+
 namespace Server\Asyn\Mysql;
 
 use Server\Memory\Pool;
@@ -1836,6 +1837,15 @@ class Miner
     }
 
     /**
+     * @param $sql
+     * @return MySqlCoroutine|MysqlSyncHelp
+     */
+    public function coroutineQuery($sql)
+    {
+        return $this->coroutineSend(null, $sql = null);
+    }
+
+    /**
      * 协程的方式
      * @param null $bind_id
      * @param null $sql
@@ -2540,11 +2550,11 @@ class Miner
     {
         $this->activeConfig = $activeConfig;
         $dsn = 'mysql:dbname=' . $activeConfig["database"] . ';host=' .
-            $activeConfig["host"] . ';port=' . $activeConfig['port']??3306;
+            $activeConfig["host"] . ';port=' . $activeConfig['port'] ?? 3306;
         $pdo = new \PDO(
             $dsn,
             $activeConfig["user"], $activeConfig["password"],
-            [\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . $activeConfig['charset']??'utf8']
+            [\PDO::MYSQL_ATTR_INIT_COMMAND => 'SET NAMES ' . $activeConfig['charset'] ?? 'utf8']
         );
         $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
         $pdo->setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);

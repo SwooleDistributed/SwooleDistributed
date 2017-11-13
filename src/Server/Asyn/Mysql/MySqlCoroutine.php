@@ -20,6 +20,7 @@ class MySqlCoroutine extends CoroutineBase
     public $mysqlAsynPool;
     public $bind_id;
     public $sql;
+    protected $resultHandle;
 
     public function __construct()
     {
@@ -45,6 +46,7 @@ class MySqlCoroutine extends CoroutineBase
         });
         return $this;
     }
+
     public function send($callback)
     {
         $this->token = $this->mysqlAsynPool->query($callback, $this->bind_id, $this->sql);
@@ -54,7 +56,17 @@ class MySqlCoroutine extends CoroutineBase
     {
         $result = parent::getResult();
         if (is_array($result) && isset($result['error'])) {
-            throw new SwooleException($result['error']);
+            if (!$this->noException) {
+                $this->isFaile = true;
+                $ex = new SwooleException($result['error']);
+                $this->destroy();
+                throw $ex;
+            } else {
+                $this->result = $this->noExceptionReturn;
+            }
+        }
+        if ($this->resultHandle != null && is_array($result)) {
+            $result = call_user_func($this->resultHandle, $result);
         }
         return $result;
     }
@@ -78,5 +90,74 @@ class MySqlCoroutine extends CoroutineBase
         if ($this->mysqlAsynPool != null) {
             $this->mysqlAsynPool->destoryGarbage($this->token);
         }
+    }
+
+    /**
+     * 注册结果处理函数
+     * @param callable $handle
+     */
+    protected function registResultFuc(callable $handle)
+    {
+        $this->resultHandle = $handle;
+    }
+
+
+    /**
+     * @return $this
+     */
+    public function result_array()
+    {
+        $this->resultHandle = function ($result) {
+            return $result['result'];
+        };
+        return $this;
+    }
+
+    /**
+     * 返回某一个
+     * @param $index
+     * @return $this
+     */
+    public function row_array($index)
+    {
+        $this->resultHandle = function ($result) use ($index) {
+            return $result['result'][$index] ?? null;
+        };
+        return $this;
+    }
+
+    /**
+     * 返回一个
+     * @return $this
+     */
+    public function row()
+    {
+        $this->resultHandle = function ($result) {
+            return $result['result'][0] ?? null;
+        };
+        return $this;
+    }
+
+    /**
+     * 返回数量
+     * @return $this
+     */
+    public function num_rows()
+    {
+        $this->resultHandle = function ($result) {
+            return count($result['result']);
+        };
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function insert_id()
+    {
+        $this->resultHandle = function ($result) {
+            return $result['insert_id'];
+        };
+        return $this;
     }
 }
