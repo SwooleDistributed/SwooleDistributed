@@ -332,10 +332,13 @@ class PortManager
      */
     public function eventClose($fd)
     {
-        $fdinfo = get_instance()->getFdInfo($fd);
-        $server_port = $fdinfo["server_port"];
+        $server_port = get_instance()->getServerPort($fd);
         $uid = get_instance()->getUidFromFd($fd);
-        $type = $this->getPortType($server_port);
+        try {
+            $type = $this->getPortType($server_port);
+        } catch (\Exception $e) {
+            return;
+        }
         if ($type == self::SOCK_HTTP) {
             return;
         }
