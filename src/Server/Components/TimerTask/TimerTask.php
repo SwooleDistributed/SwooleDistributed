@@ -168,15 +168,21 @@ class TimerTask extends CoreBase
     {
         EventDispatcher::getInstance()->add(TimerTask::TIMERTASK, function (Event $event) {
             $timer_task = $event->data;
+            $child = Pool::getInstance()->get(Child::class);
             if (!empty($timer_task['task_name'])) {
-                $task = get_instance()->loader->task($timer_task['task_name'], get_instance());
+                $task = get_instance()->loader->task($timer_task['task_name'], $child);
                 call_user_func([$task, $timer_task['method_name']]);
-                $task->startTask(null);
+                $task->startTask(-1, function () use (&$child) {
+                    $child->clearContext();
+                    $child->destroy();
+                    Pool::getInstance()->push($child);
+                });
+
             } else {
-                $child = Pool::getInstance()->get(Child::class);
                 $model = get_instance()->loader->model($timer_task['model_name'], $child);
                 Coroutine::startCoroutine(function () use (&$child, &$model, &$timer_task) {
                     yield call_user_func([$model, $timer_task['method_name']]);
+                    $child->clearContext();
                     $child->destroy();
                     Pool::getInstance()->push($child);
                 });

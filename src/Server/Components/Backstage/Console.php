@@ -85,6 +85,14 @@ class Console extends Controller
     }
 
     /**
+     * 获取所有的uid
+     */
+    public function back_getAllUids()
+    {
+        $uids = yield get_instance()->coroutineGetAllUids();
+        $this->autoSend($uids);
+    }
+    /**
      * 获取统计信息
      * @param $node_name
      * @param $index
