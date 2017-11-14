@@ -16,6 +16,7 @@ use Server\Components\TimerTask\TimerTask;
 class SDHelpProcess extends Process
 {
     public $data = [];
+    protected $statisticsMap = [];
 
     public function start($process)
     {
@@ -48,4 +49,42 @@ class SDHelpProcess extends Process
         return true;
     }
 
+    /**
+     * 添加统计
+     * @param $path
+     * @param $time
+     */
+    public function addStatistics($path, $time)
+    {
+        if (!array_key_exists($path, $this->statisticsMap)) {
+            $this->statisticsMap[$path]['times'] = 0;
+            $this->statisticsMap[$path]['used'] = 0;
+            $this->statisticsMap[$path]['min'] = 9999999;
+            $this->statisticsMap[$path]['max'] = 0;
+        }
+        $this->statisticsMap[$path]['times']++;
+        $this->statisticsMap[$path]['used'] += $time;
+        if ($time < $this->statisticsMap[$path]['min']) {
+            $this->statisticsMap[$path]['min'] = $time;
+        }
+        if ($time > $this->statisticsMap[$path]['max']) {
+            $this->statisticsMap[$path]['max'] = $time;
+        }
+    }
+
+    /**
+     * 获取统计数据
+     * @param int $index
+     * @param int $num
+     * @return array
+     */
+    public function getStatistics($index = -1, $num = 100)
+    {
+        if ($index < 0) {
+            return $this->statisticsMap;
+        }
+        $data['total'] = ceil(count($this->statisticsMap) / $num);
+        $data['data'] = array_slice($this->statisticsMap, $num * $index, $num);
+        return $data;
+    }
 }

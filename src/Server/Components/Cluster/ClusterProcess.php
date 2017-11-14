@@ -607,4 +607,19 @@ class ClusterProcess extends Process
         }
         return null;
     }
+
+    /**
+     * 获取统计信息
+     * @param $node_name
+     * @param $index
+     * @param $num
+     * @return null
+     */
+    public function my_getStatistics($node_name, $index, $num)
+    {
+        if (!isset($this->client[$node_name])) return null;
+        $token = $this->client[$node_name]->getStatistics($index, $num);
+        $map = yield $this->client[$node_name]->getTokenResult($token);
+        return $map;
+    }
 }

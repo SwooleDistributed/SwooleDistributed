@@ -547,9 +547,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function onSwooleClose($serv, $fd)
     {
         parent::onSwooleClose($serv, $fd);
-        $info = $serv->connection_info($fd, 0, true);
-        $uid = $info['uid'] ?? 0;
-        $this->unBindUid($uid, $fd);
+        $uid = $this->getUidFromFd($fd);
+        if ($uid != false) {
+            $this->unBindUid($uid, $fd);
+        }
     }
 
     /**
@@ -560,9 +561,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function onSwooleWSClose($serv, $fd)
     {
         parent::onSwooleWSClose($serv, $fd);
-        $info = $serv->connection_info($fd, 0, true);
-        $uid = $info['uid'] ?? 0;
-        $this->unBindUid($uid, $fd);
+        $uid = $this->getUidFromFd($fd);
+        if ($uid != false) {
+            $this->unBindUid($uid, $fd);
+        }
     }
 
     /**
@@ -726,14 +728,29 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
+     * @var int
+     */
+    protected $lastTime = 0;
+
+    /**
+     * @var int
+     */
+    protected $lastReqTimes = 0;
+
+    /**
      * 获得服务器状态
      * @return mixed
      */
     public function getStatus()
     {
         $status = get_instance()->server->stats();
+        $now_time = getMillisecond();
+        $qps = (int)(($status['request_count'] - $this->lastReqTimes) / ($now_time - $this->lastTime) * 1000);
+        $this->lastTime = $now_time;
+        $this->lastReqTimes = $status['request_count'];
         $status['isDebug'] = Start::getDebug();
         $status['isLeader'] = Start::isLeader();
+        $status['qps'] = $qps;
         $status['system'] = PHP_OS;
         $status['Swoole_version'] = SWOOLE_VERSION;
         $status['SD_version'] = SwooleServer::version;
