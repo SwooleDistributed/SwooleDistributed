@@ -10,6 +10,7 @@ namespace Server\Components\Backstage;
 
 use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Process\ProcessManager;
+use Server\Components\SDHelp\SDHelpProcess;
 use Server\CoreBase\Controller;
 use Server\Start;
 use Server\SwooleMarco;
@@ -81,6 +82,22 @@ class Console extends Controller
     {
         $uidInfo = yield get_instance()->getUidInfo($uid);
         $this->autoSend($uidInfo);
+    }
+
+    /**
+     * 获取统计信息
+     * @param $node_name
+     * @param $index
+     * @param $num
+     */
+    public function back_getStatistics($node_name, $index, $num)
+    {
+        if (!get_instance()->isCluster() || $node_name == getNodeName()) {
+            $map = yield ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getStatistics($index, $num);
+        } else {
+            $map = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getStatistics($node_name, $index, $num);
+        }
+        $this->autoSend($map);
     }
 
     /**

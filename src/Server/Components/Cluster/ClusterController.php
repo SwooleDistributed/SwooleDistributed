@@ -10,6 +10,7 @@ namespace Server\Components\Cluster;
 
 use Server\Components\Event\EventDispatcher;
 use Server\Components\Process\ProcessManager;
+use Server\Components\SDHelp\SDHelpProcess;
 use Server\CoreBase\Child;
 use Server\Start;
 
@@ -118,6 +119,18 @@ class ClusterController extends Child
     public function getAllSub()
     {
         $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getAllSub();
+        return $result;
+    }
+
+    /**
+     * 获取统计信息
+     * @param $index
+     * @param $num
+     * @return mixed
+     */
+    public function getStatistics($index, $num)
+    {
+        $result = yield ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getStatistics($index, $num);
         return $result;
     }
 }
