@@ -13,6 +13,8 @@ use Server\Asyn\HttpClient\HttpClient;
 use Server\Asyn\HttpClient\HttpClientPool;
 use Server\Components\Event\Event;
 use Server\Components\Event\EventDispatcher;
+use Server\Components\Process\ProcessManager;
+use Server\Components\SDHelp\SDHelpProcess;
 use Server\CoreBase\Child;
 use Server\CoreBase\CoreBase;
 use Server\CoreBase\SwooleException;
@@ -172,19 +174,27 @@ class TimerTask extends CoreBase
             if (!empty($timer_task['task_name'])) {
                 $task = get_instance()->loader->task($timer_task['task_name'], $child);
                 call_user_func([$task, $timer_task['method_name']]);
-                $task->startTask(-1, function () use (&$child) {
+                $startTime = getMillisecond();
+                $path = "[TimerTask] " . $timer_task['task_name'] . "::" . $timer_task['method_name'];
+                $task->startTask(-1, function () use (&$child, $path, $startTime) {
                     $child->clearContext();
                     $child->destroy();
                     Pool::getInstance()->push($child);
+                    $usedTime = getMillisecond() - $startTime;
+                    ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->addStatistics($path, $usedTime);
                 });
 
             } else {
                 $model = get_instance()->loader->model($timer_task['model_name'], $child);
-                Coroutine::startCoroutine(function () use (&$child, &$model, &$timer_task) {
+                $startTime = getMillisecond();
+                $path = "[TimerTask] " . $timer_task['model_name'] . "::" . $timer_task['method_name'];
+                Coroutine::startCoroutine(function () use (&$child, &$model, &$timer_task, &$path, &$startTime) {
                     yield call_user_func([$model, $timer_task['method_name']]);
                     $child->clearContext();
                     $child->destroy();
                     Pool::getInstance()->push($child);
+                    $usedTime = getMillisecond() - $startTime;
+                    ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->addStatistics($path, $usedTime);
                 });
             }
         });
