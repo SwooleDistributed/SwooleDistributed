@@ -138,7 +138,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      */
     public function onSwooleWSOpen($server, $request)
     {
-        $this->portManager->eventConnect($request->fd,$request);
+        $this->portManager->eventConnect($request->fd, $request);
     }
 
     /**

@@ -360,7 +360,7 @@ class PortManager
      * @param $fd
      * @param null $request
      */
-    public function eventConnect($fd,$request=null)
+    public function eventConnect($fd, $request = null)
     {
         $server_port = get_instance()->getServerPort($fd);
         $config = $this->portConfig[$server_port];
@@ -368,7 +368,7 @@ class PortManager
         $method_name = ($config['method_prefix'] ?? '') . ($config['connect_method_name'] ?? get_instance()->getConnectMethodName());
         $controller_instance = ControllerFactory::getInstance()
             ->getController($controller_name);
-        if($request!=null){
+        if ($request != null) {
             $controller_instance->setRequest($request);
         }
         Coroutine::startCoroutine([$controller_instance, 'setClientData'], [null, $fd, null,
