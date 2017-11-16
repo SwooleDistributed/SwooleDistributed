@@ -72,9 +72,9 @@ class InotifyReload
 
     public function unUseInotify()
     {
-        secho("[SYS]", "非inotify模式，性能极低，不建议在正式环境启用。请安装inotify扩展");
+        secho("SYS", "非inotify模式，性能极低，不建议在正式环境启用。请安装inotify扩展");
         if (isDarwin()) {
-            secho("[SYS]", "mac开启auto_reload可能会导致cpu占用过高。");
+            secho("SYS", "mac开启auto_reload可能会导致cpu占用过高。");
         }
         swoole_timer_tick(1, function () {
             global $last_mtime;
