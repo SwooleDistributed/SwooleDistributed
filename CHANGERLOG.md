@@ -275,3 +275,20 @@ php start_swoole_server.php start -de --f "[ip] => 127.0.0.1"
 6.协程逻辑进一步得到了优化
 
 7.一些细节方面的检修
+
+# 2.7.0
+正式版本
+
+1.“$SYS”服务器监控专用订阅主题，开发者可以订阅$SYS主题获得服务器监控信息 
+
+2.服务器间的RPC由单向通知改为双向交互
+
+3.UID现在不限制为int，可以使用String。
+
+4.Controller的onExceptionHandle方法参数类型由Exception改为了Throwable
+
+5.协程逻辑进一步得到了优化
+
+6.增加Timer定时器，该定时器在多进程中共享
+
+7.各进程间，用户进程和worker进程间均可以进行RPC通讯
