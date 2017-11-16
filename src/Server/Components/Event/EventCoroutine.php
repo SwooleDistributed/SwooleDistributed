@@ -32,12 +32,12 @@ class EventCoroutine extends CoroutineBase
     public function send($event)
     {
         $this->result = $event->data;
+        EventDispatcher::getInstance()->remove($this->eventType, [$this, 'send']);
     }
 
     public function destroy()
     {
         parent::destroy();
-        EventDispatcher::getInstance()->remove($this->eventType, [$this, 'send']);
         $this->eventType = null;
         Pool::getInstance()->push($this);
     }

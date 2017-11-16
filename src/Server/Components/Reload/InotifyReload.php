@@ -91,7 +91,7 @@ class InotifyReload
                 }
                 // check mtime
                 if ($last_mtime < $file->getMTime()) {
-                    secho("[RELOAD]", $file . " update");
+                    secho("RELOAD", $file . " update");
                     //reload
                     $this->server->reload();
                     $last_mtime = $file->getMTime();

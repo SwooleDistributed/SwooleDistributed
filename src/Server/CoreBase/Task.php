@@ -1,5 +1,7 @@
 <?php
+
 namespace Server\CoreBase;
+
 use Server\Memory\Pool;
 
 /**
@@ -14,9 +16,14 @@ use Server\Memory\Pool;
 class Task extends TaskProxy
 {
     protected $start_run_time;
+    protected static $efficiency_monitor_enable;
+
     public function __construct()
     {
         parent::__construct();
+        if (self::$efficiency_monitor_enable == null) {
+            self::$efficiency_monitor_enable = $this->config['log'][$this->config['log']['active']]['efficiency_monitor_enable'];
+        }
     }
 
     /**
@@ -31,7 +38,7 @@ class Task extends TaskProxy
     {
         $this->task_id = $task_id;
         $this->from_id = $from_id;
-        get_instance()->tid_pid_table->set($this->from_id.$this->task_id, ['pid' => $worker_pid, 'des' => "$task_name::$method_name", 'start_time' => time()]);
+        get_instance()->tid_pid_table->set($this->from_id . $this->task_id, ['pid' => $worker_pid, 'des' => "$task_name::$method_name", 'start_time' => time()]);
         $this->setContext($context);
         $this->start_run_time = microtime(true);
         $this->context['task_name'] = "$task_name:$method_name";
@@ -43,8 +50,10 @@ class Task extends TaskProxy
     public function destroy()
     {
         $this->context['execution_time'] = (microtime(true) - $this->start_run_time) * 1000;
-        $this->log('Monitor');
-        get_instance()->tid_pid_table->del($this->from_id.$this->task_id);
+        if (self::$efficiency_monitor_enable) {
+            $this->log('Monitor');
+        }
+        get_instance()->tid_pid_table->del($this->from_id . $this->task_id);
         parent::destroy();
         $this->task_id = 0;
         Pool::getInstance()->push($this);

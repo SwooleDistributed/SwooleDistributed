@@ -170,31 +170,28 @@ class TimerTask extends CoreBase
     {
         EventDispatcher::getInstance()->add(TimerTask::TIMERTASK, function (Event $event) {
             $timer_task = $event->data;
+            $context = [];
             $child = Pool::getInstance()->get(Child::class);
+            $child->setContext($context);
             if (!empty($timer_task['task_name'])) {
                 $task = get_instance()->loader->task($timer_task['task_name'], $child);
                 call_user_func([$task, $timer_task['method_name']]);
                 $startTime = getMillisecond();
                 $path = "[TimerTask] " . $timer_task['task_name'] . "::" . $timer_task['method_name'];
-                $task->startTask(-1, function () use (&$child, $path, $startTime) {
-                    $child->clearContext();
+                $task->startTask(-1, function () use (&$child, $startTime, $path) {
                     $child->destroy();
                     Pool::getInstance()->push($child);
-                    $usedTime = getMillisecond() - $startTime;
-                    ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->addStatistics($path, $usedTime);
+                    ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->addStatistics($path, getMillisecond() - $startTime);
                 });
-
             } else {
                 $model = get_instance()->loader->model($timer_task['model_name'], $child);
                 $startTime = getMillisecond();
                 $path = "[TimerTask] " . $timer_task['model_name'] . "::" . $timer_task['method_name'];
-                Coroutine::startCoroutine(function () use (&$child, &$model, &$timer_task, &$path, &$startTime) {
+                Coroutine::startCoroutine(function () use (&$child, &$model, &$timer_task, $path, $startTime) {
                     yield call_user_func([$model, $timer_task['method_name']]);
-                    $child->clearContext();
                     $child->destroy();
                     Pool::getInstance()->push($child);
-                    $usedTime = getMillisecond() - $startTime;
-                    ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->addStatistics($path, $usedTime);
+                    ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->addStatistics($path, getMillisecond() - $startTime);
                 });
             }
         });

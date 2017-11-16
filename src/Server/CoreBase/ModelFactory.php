@@ -14,6 +14,7 @@ class ModelFactory
      */
     private static $instance;
     private $pool = [];
+    private $pool_count = [];
 
     /**
      * ModelFactory constructor.
@@ -55,6 +56,7 @@ class ModelFactory
         if (class_exists($model)) {
             $model_instance = new $model;
             $model_instance->core_name = $old_model;
+            $this->addNewCount($old_model);
             return $model_instance;
         }
 
@@ -63,11 +65,13 @@ class ModelFactory
         if (class_exists($class_name)) {
             $model_instance = new $class_name;
             $model_instance->core_name = $old_model;
+            $this->addNewCount($old_model);
         } else {
             $class_name = "Server\\Models\\$model";
             if (class_exists($class_name)) {
                 $model_instance = new $class_name;
                 $model_instance->core_name = $old_model;
+                $this->addNewCount($old_model);
             } else {
                 throw new SwooleException("class $model is not exist");
             }
@@ -87,6 +91,15 @@ class ModelFactory
         $this->pool[$model->core_name]->push($model);
     }
 
+    private function addNewCount($name)
+    {
+        if (isset($this->pool_count[$name])) {
+            $this->pool_count[$name]++;
+        } else {
+            $this->pool_count[$name] = 1;
+        }
+    }
+
     /**
      * 获取状态
      */
@@ -94,7 +107,8 @@ class ModelFactory
     {
         $status = [];
         foreach ($this->pool as $key => $value) {
-            $status[$key] = count($value);
+            $status[$key . '[pool]'] = count($value);
+            $status[$key . '[new]'] = $this->pool_count[$key] ?? 0;
         }
         return $status;
     }

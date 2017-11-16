@@ -27,14 +27,14 @@ class BackstageHelp
             'connect_method_name' => "onConnect",
             'close_method_name' => "onClose",
             'method_prefix' => 'back_',
-            'middlewares' => ['MonitorMiddleware']
+            'middlewares' => ['MonitorMiddleware', 'NormalHttpMiddleware']
         ];
         get_instance()->config->set("ports", $ports);
         $timerTask = get_instance()->config["timerTask"];
         $timerTask[] = [
             'model_name' => ConsoleModel::class,
             'method_name' => 'getNodeStatus',
-            'interval_time' => '2',
+            'interval_time' => '1',
         ];
         get_instance()->config->set("timerTask", $timerTask);
     }

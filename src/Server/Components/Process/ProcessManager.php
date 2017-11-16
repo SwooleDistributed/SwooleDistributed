@@ -79,6 +79,17 @@ class ProcessManager
     }
 
     /**
+     * 通过wokerId发起RPC
+     * @param $wokerId
+     * @param bool $oneWay
+     * @return mixed
+     */
+    public function getRpcCallWorker($wokerId, $oneWay = false)
+    {
+        return Pool::getInstance()->get(RPCCall::class)->initworker($wokerId, $oneWay);
+    }
+
+    /**
      * @param $class_name
      * @param $name
      * @return mixed

@@ -11,7 +11,6 @@ use Server\Components\Cluster\ClusterHelp;
 use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Consul\ConsulHelp;
 use Server\Components\Consul\ConsulProcess;
-use Server\Components\Event\EventDispatcher;
 use Server\Components\GrayLog\GrayLogHelp;
 use Server\Components\Process\ProcessManager;
 use Server\Components\SDHelp\SDHelpProcess;
@@ -394,9 +393,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * 获取Topic的数量
      * @param $topic
      */
-    public function getSubMembersCountCoroutine($topic)
+    public function my_getSubMembersCountCoroutine($topic)
     {
-        return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getSubMembersCount($topic);
+        return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getSubMembersCount($topic);
     }
 
     /**
@@ -405,7 +404,17 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function getSubMembersCoroutine($topic)
     {
-        return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getSubMembers($topic);
+        return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getSubMembers($topic);
+    }
+
+    /**
+     * 获取uid的所有订阅
+     * @param $uid
+     * @return mixed
+     */
+    public function getUidTopicsCoroutine($uid)
+    {
+        return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getUidTopics($uid);
     }
 
     /**
@@ -438,26 +447,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         Utility::CheckTopicName($topic);
         ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_pub($topic, $data);
-    }
-
-    /**
-     * PipeMessage
-     * @param $serv
-     * @param $from_worker_id
-     * @param $message
-     */
-    public function onSwoolePipeMessage($serv, $from_worker_id, $message)
-    {
-        parent::onSwoolePipeMessage($serv, $from_worker_id, $message);
-        switch ($message['type']) {
-            case SwooleMarco::PROCESS_RPC_RESULT:
-                EventDispatcher::getInstance()->dispatch($message['message']['token'], $message['message']['result'], true);
-                break;
-            default:
-                if (!empty($message['func'])) {
-                    call_user_func($message['func'], $message['message']);
-                }
-        }
     }
 
     /**
@@ -548,9 +537,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         parent::onSwooleClose($serv, $fd);
         $uid = $this->getUidFromFd($fd);
-        if ($uid != false) {
-            $this->unBindUid($uid, $fd);
-        }
+        $this->unBindUid($uid, $fd);
     }
 
     /**
@@ -562,9 +549,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         parent::onSwooleWSClose($serv, $fd);
         $uid = $this->getUidFromFd($fd);
-        if ($uid != false) {
-            $this->unBindUid($uid, $fd);
-        }
+        $this->unBindUid($uid, $fd);
     }
 
     /**
@@ -618,7 +603,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         } else {
             get_instance()->pub('$SYS/uidcount', count($this->uid_fd_table));
         }
-        //加入共享内存
         $this->uid_fd_table->set($uid, ['fd' => $fd]);
         $this->fd_uid_table->set($fd, ['uid' => $uid]);
     }
@@ -736,7 +720,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @var int
      */
     protected $lastReqTimes = 0;
-
     /**
      * 获得服务器状态
      * @return mixed
@@ -760,10 +743,12 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $status['max_connection'] = $this->max_connection;
         $status['start_time'] = Start::getStartTime();
         $status['run_time'] = date('H:i:s', strtotime(date('Y-m-d H:i:s')) - strtotime(Start::getStartTime()) - 60 * 60 * 8);
+        $poolStatus = yield $this->helpGetAllStatus();
+        $status['coroutine_num'] = $poolStatus['coroutine_num'];
+        $status['pool'] = $poolStatus['pool'];
+        $status['model_pool'] = $poolStatus['model_pool'];
+        $status['controller_pool'] = $poolStatus['controller_pool'];
         $status['ports'] = $this->portManager->getPortStatus();
-        $status['pool'] = Pool::getInstance()->getStatus();
-        $status['model_pool'] = ModelFactory::getInstance()->getStatus();
-        $status['controller_pool'] = ControllerFactory::getInstance()->getStatus();
         $data = yield ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
         if (!empty($data)) {
             foreach ($data as $key => $value) {
@@ -775,6 +760,51 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         }
         $status['consul_services'] = $data;
         $this->pub('$SYS/' . getNodeName() . '/status', $status);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function getPoolStatus()
+    {
+        $status['pool'] = Pool::getInstance()->getStatus();
+        $status['model_pool'] = ModelFactory::getInstance()->getStatus();
+        $status['controller_pool'] = ControllerFactory::getInstance()->getStatus();
+        $status['coroutine_num'] = Coroutine::getInstance()->getStatus();
+        return $status;
+    }
+
+    /**
+     * @return array
+     */
+    protected function helpGetAllStatus()
+    {
+        $status = ['pool' => [], 'model_pool' => [], 'controller_pool' => [], 'coroutine_num' => 0];
+        for ($i = 0; $i < $this->worker_num; $i++) {
+            $result = yield ProcessManager::getInstance()->getRpcCallWorker($i)->getPoolStatus();
+            $this->helpMerge($status['pool'], $result['pool']);
+            $this->helpMerge($status['model_pool'], $result['model_pool']);
+            $this->helpMerge($status['controller_pool'], $result['controller_pool']);
+            $status['coroutine_num'] += $result['coroutine_num'];
+        }
+        return $status;
+    }
+
+    /**
+     * @param $a1
+     * @param $a2
+     * @return mixed
+     */
+    protected function helpMerge(&$a1, $a2)
+    {
+        foreach ($a2 as $key => $value) {
+            if (array_key_exists($key, $a1)) {
+                $a1[$key] += $a2[$key];
+            } else {
+                $a1[$key] = $a2[$key];
+            }
+        }
+        return $a1;
     }
 
     /**

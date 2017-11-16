@@ -51,7 +51,6 @@ class ClusterProcess extends Process
      */
     public function my_addUid($uid)
     {
-        if (empty($uid)) return;
         $this->map[$this->node_name]->add($uid);
         foreach ($this->client as $client) {
             $client->addNodeUid($this->node_name, $uid);
@@ -67,7 +66,6 @@ class ClusterProcess extends Process
      */
     public function my_removeUid($uid)
     {
-        if (empty($uid)) return;
         if (get_instance()->isCluster()) {
             $this->map[$this->node_name]->remove($uid);
             foreach ($this->client as $client) {
@@ -280,7 +278,6 @@ class ClusterProcess extends Process
      */
     public function th_addUid($node_name, $uid)
     {
-        if (empty($uid)) return;
         if (!isset($this->map[$node_name])) {
             $this->map[$node_name] = new Set();
         }
@@ -297,7 +294,6 @@ class ClusterProcess extends Process
      */
     public function th_removeUid($node_name, $uid)
     {
-        if (empty($uid)) return;
         if (isset($this->map[$node_name])) {
             $this->map[$node_name]->remove($uid);
         }
@@ -428,7 +424,23 @@ class ClusterProcess extends Process
      * @param $topic
      * @return int
      */
-    public function getSubMembersCount($topic)
+    public function my_getSubMembersCount($topic)
+    {
+        $count = $this->th_getSubMembersCount($topic);
+        foreach ($this->client as $client) {
+            $token = $client->getSubMembersCount($topic);
+            $one_count = yield $client->getTokenResult($token);
+            $count += $one_count;
+        }
+        return $count;
+    }
+
+    /**
+     * 获取topic数量
+     * @param $topic
+     * @return int
+     */
+    public function th_getSubMembersCount($topic)
     {
         if (array_key_exists($topic, $this->subArr) && !empty($this->subArr[$topic])) {
             return $this->subArr[$topic]->count();
@@ -442,7 +454,23 @@ class ClusterProcess extends Process
      * @param $topic
      * @return array
      */
-    public function getSubMembers($topic)
+    public function my_getSubMembers($topic)
+    {
+        $array = $this->th_getSubMembers($topic);
+        foreach ($this->client as $client) {
+            $token = $client->getSubMembers($topic);
+            $one_array = yield $client->getTokenResult($token);
+            $array = array_merge($array, $one_array);
+        }
+        return $array;
+    }
+
+    /**
+     * 获取topic Members
+     * @param $topic
+     * @return array
+     */
+    public function th_getSubMembers($topic)
     {
         if (array_key_exists($topic, $this->subArr) && !empty($this->subArr[$topic])) {
             return $this->subArr[$topic]->toArray();
@@ -451,6 +479,37 @@ class ClusterProcess extends Process
         }
     }
 
+    /**
+     * 获取uid的所有订阅
+     * @param $uid
+     * @return mixed
+     */
+    public function my_getUidTopics($uid)
+    {
+        $array = $this->th_getUidTopics($uid);
+        foreach ($this->client as $client) {
+            $token = $client->getUidTopics($uid);
+            $one_array = yield $client->getTokenResult($token);
+            $array = array_merge($array, $one_array);
+        }
+        return $array;
+    }
+
+    /**
+     * 获取uid的所有订阅
+     * @param $uid
+     * @return mixed
+     */
+    public function th_getUidTopics($uid)
+    {
+        $arr = [];
+        foreach ($this->subArr as $topic => $set) {
+            if ($set->contains($uid)) {
+                $arr[] = $topic;
+            }
+        }
+        return $arr;
+    }
     /**
      * 获取所有的Sub
      * @return array

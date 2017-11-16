@@ -7,9 +7,10 @@ use Monolog\Handler\GelfHandler;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Noodlehaus\Config;
+use Server\Components\Event\EventDispatcher;
 use Server\Components\GrayLog\UdpTransport;
 use Server\Components\Middleware\MiddlewareManager;
-use Server\CoreBase\Child;
+use Server\Components\Process\ProcessRPC;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\ILoader;
 use Server\CoreBase\Loader;
@@ -22,7 +23,7 @@ use Server\Coroutine\Coroutine;
  * Date: 16-6-28
  * Time: 上午11:37
  */
-abstract class SwooleServer extends Child
+abstract class SwooleServer extends ProcessRPC
 {
     /**
      * 配置文件版本
@@ -32,7 +33,7 @@ abstract class SwooleServer extends Child
     /**
      * 版本
      */
-    const version = "2.7.0-beta7";
+    const version = "2.7.0";
 
     /**
      * server name
@@ -252,7 +253,7 @@ abstract class SwooleServer extends Child
         $this->uid_fd_table->create();
 
         $this->fd_uid_table = new \swoole_table($this->max_connection);
-        $this->fd_uid_table->column('uid', \swoole_table::TYPE_STRING, 10);
+        $this->fd_uid_table->column('uid', \swoole_table::TYPE_STRING, 20);
         $this->fd_uid_table->create();
     }
 
@@ -262,6 +263,7 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleStart($serv)
     {
+        setTimezone();
         Start::setProcessTitle(getServerName() . '-Master');
         if (Start::getDebug()) {
             secho("SYS", "工作在DEBUG模式");
@@ -275,6 +277,7 @@ abstract class SwooleServer extends Child
      */
     public function onSwooleWorkerStart($serv, $workerId)
     {
+        setTimezone();
         $this->workerId = $workerId;
         //清除apc缓存
         if (function_exists('apc_clear_cache')) {
@@ -437,7 +440,18 @@ abstract class SwooleServer extends Child
      */
     public function onSwoolePipeMessage($serv, $from_worker_id, $message)
     {
-
+        switch ($message['type']) {
+            case SwooleMarco::PROCESS_RPC_RESULT:
+                EventDispatcher::getInstance()->dispatch($message['message']['token'], $message['message']['result'], true);
+                break;
+            case SwooleMarco::PROCESS_RPC:
+                $this->processPpcRun($message['message']);
+                break;
+            default:
+                if (!empty($message['func'])) {
+                    call_user_func($message['func'], $message['message']);
+                }
+        }
     }
 
     /**
@@ -604,10 +618,15 @@ abstract class SwooleServer extends Child
 
     /**
      * 是不是worker进程
+     * @param null $worker_id
+     * @return bool
      */
-    public function isWorker()
+    public function isWorker($worker_id = null)
     {
-        return $this->workerId < $this->worker_num ? true : false;
+        if ($worker_id == null) {
+            $worker_id = $this->workerId;
+        }
+        return $worker_id < $this->worker_num ? true : false;
     }
 
     /**
@@ -621,10 +640,16 @@ abstract class SwooleServer extends Child
 
     /**
      * 是不是用户进程
+     * @param null $worker_id
+     * @return bool
      */
-    public function isUserProcess()
+    public function isUserProcess($worker_id = null)
     {
-        return $this->workerId >= $this->worker_num + $this->task_num ? true : false;
+        //一定要===
+        if ($worker_id === null) {
+            $worker_id = $this->workerId;
+        }
+        return $worker_id >= $this->worker_num + $this->task_num ? true : false;
     }
 
     /**
@@ -705,11 +730,7 @@ abstract class SwooleServer extends Child
      */
     public function getFdFromUid($uid)
     {
-        $data = $this->uid_fd_table->get($uid);
-        if ($data == false) {
-            return false;
-        }
-        return $data['fd'];
+        return $this->uid_fd_table->get($uid, 'fd');
     }
 
     /**
@@ -719,10 +740,6 @@ abstract class SwooleServer extends Child
      */
     public function getUidFromFd($fd)
     {
-        $data = $this->fd_uid_table->get($fd);
-        if ($data == false) {
-            return false;
-        }
-        return $data['uid'];
+        return $this->fd_uid_table->get($fd, 'uid');
     }
 }
