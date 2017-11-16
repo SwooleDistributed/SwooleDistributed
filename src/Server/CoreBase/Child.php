@@ -106,13 +106,6 @@ class Child extends AOP
     }
 
     /**
-     * 清除context
-     */
-    public function clearContext()
-    {
-        $this->context = [];
-    }
-    /**
      * 销毁，解除引用
      */
     public function destroy()

@@ -324,3 +324,8 @@ function secho($tile, $message)
 
     }
 }
+
+function setTimezone()
+{
+    date_default_timezone_set('Asia/Shanghai');
+}

@@ -18,6 +18,7 @@ class ControllerFactory
      */
     private static $instance;
     private $pool = [];
+    private $pool_count = [];
     private $allow_ServerController = true;
 
     /**
@@ -61,6 +62,7 @@ class ControllerFactory
         if (class_exists($controller)) {
             $controller_instance = new $controller;
             $controller_instance->core_name = $controller;
+            $this->addNewCount($controller);
             return AOP::getAOP($controller_instance);
         }
         $controller_new = str_replace('/', '\\', $controller);
@@ -68,6 +70,7 @@ class ControllerFactory
         if (class_exists($class_name)) {
             $controller_instance = new $class_name;
             $controller_instance->core_name = $controller;
+            $this->addNewCount($controller);
             return AOP::getAOP($controller_instance);
         } else {
             if (!$this->allow_ServerController) {
@@ -77,6 +80,7 @@ class ControllerFactory
             if (class_exists($class_name)) {
                 $controller_instance = new $class_name;
                 $controller_instance->core_name = $controller;
+                $this->addNewCount($controller);
                 return AOP::getAOP($controller_instance);
             } else {
                 return null;
@@ -96,14 +100,25 @@ class ControllerFactory
         $this->pool[$controller->core_name]->push($controller);
     }
 
+    private function addNewCount($name)
+    {
+        if (isset($this->pool_count[$name])) {
+            $this->pool_count[$name]++;
+        } else {
+            $this->pool_count[$name] = 1;
+        }
+    }
+
     /**
      * 获取状态
      */
     public function getStatus()
     {
         $status = [];
+
         foreach ($this->pool as $key => $value) {
-            $status[$key] = count($value);
+            $status[$key . '[pool]'] = count($value);
+            $status[$key . '[new]'] = $this->pool_count[$key] ?? 0;
         }
         return $status;
     }

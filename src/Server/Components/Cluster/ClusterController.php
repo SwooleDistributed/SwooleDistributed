@@ -133,4 +133,34 @@ class ClusterController extends Child
         $result = yield ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getStatistics($index, $num);
         return $result;
     }
+
+    /**
+     * @param $topic
+     * @return mixed
+     */
+    public function getSubMembersCount($topic)
+    {
+        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getSubMembersCount($topic);
+        return $result;
+    }
+
+    /**
+     * @param $topic
+     * @return mixed
+     */
+    public function getSubMembers($topic)
+    {
+        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getSubMembers($topic);
+        return $result;
+    }
+
+    /**
+     * @param $uid
+     * @return mixed
+     */
+    public function getUidTopics($uid)
+    {
+        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getUidTopics($uid);
+        return $result;
+    }
 }

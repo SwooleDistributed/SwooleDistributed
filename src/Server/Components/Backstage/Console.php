@@ -92,6 +92,27 @@ class Console extends Controller
         $uids = yield get_instance()->coroutineGetAllUids();
         $this->autoSend($uids);
     }
+
+    /**
+     * 获取sub的uid
+     * @param $topic
+     */
+    public function back_getSubUid($topic)
+    {
+        $uids = yield get_instance()->getSubMembersCoroutine($topic);
+        $this->autoSend($uids);
+    }
+
+    /**
+     * 获取uid所有的订阅
+     * @param $uid
+     */
+    public function back_getUidTopics($uid)
+    {
+        $topics = yield get_instance()->getUidTopicsCoroutine($uid);
+        $this->autoSend($topics);
+    }
+
     /**
      * 获取统计信息
      * @param $node_name
@@ -113,13 +134,18 @@ class Console extends Controller
      */
     protected function autoSend($data)
     {
+        if (is_array($data) || is_object($data)) {
+            $output = json_encode($data, JSON_UNESCAPED_UNICODE);
+        } else {
+            $output = $data;
+        }
         switch ($this->request_type) {
             case SwooleMarco::TCP_REQUEST:
-                $this->send($data);
+                $this->send($output);
                 break;
             case SwooleMarco::HTTP_REQUEST:
                 $this->http_output->setHeader("Access-Control-Allow-Origin", "*");
-                $this->http_output->end($data);
+                $this->http_output->end($output);
                 break;
         }
     }

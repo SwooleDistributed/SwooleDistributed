@@ -19,6 +19,7 @@ class Pool
 {
     private static $instance;
     private $map;
+    private $pool_count = [];
 
     public function __construct()
     {
@@ -47,7 +48,17 @@ class Pool
         if (!$pool->isEmpty()) {
             return $pool->shift();
         } else {
+            $this->addNewCount($class);
             return new $class;
+        }
+    }
+
+    private function addNewCount($name)
+    {
+        if (isset($this->pool_count[$name])) {
+            $this->pool_count[$name]++;
+        } else {
+            $this->pool_count[$name] = 1;
         }
     }
 
@@ -81,7 +92,8 @@ class Pool
     {
         $status = [];
         foreach ($this->map as $key => $value) {
-            $status[$key] = count($value);
+            $status[$key . '[pool]'] = count($value);
+            $status[$key . '[new]'] = $this->pool_count[$key] ?? 0;
         }
         return $status;
     }

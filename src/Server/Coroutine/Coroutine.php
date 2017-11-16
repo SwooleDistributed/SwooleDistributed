@@ -136,4 +136,12 @@ class Coroutine
         $this->routineList[] = $task;
         $task->run();
     }
+
+    /**
+     * getStatus
+     */
+    public function getStatus()
+    {
+        return count($this->routineList);
+    }
 }
