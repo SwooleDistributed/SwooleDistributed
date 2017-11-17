@@ -29,6 +29,7 @@ class ConsoleModel extends Model
                 sort($nodes);
                 $status["nodes"] = $nodes;
             } else {
+                $status["nodes"] = [getNodeName()];
                 yield get_instance()->getStatus();
             }
             get_instance()->pub('$SYS/status', $status);
