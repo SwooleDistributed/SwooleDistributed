@@ -10,6 +10,8 @@
 namespace Server;
 
 
+use Server\Components\Process\ProcessManager;
+use Server\Components\SDHelp\SDHelpProcess;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\HttpInput;
 use Server\Coroutine\Coroutine;
@@ -21,6 +23,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      */
     protected $fdRequest = [];
     protected $custom_handshake = false;
+
     public function __construct()
     {
         parent::__construct();
@@ -70,6 +73,31 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $this->portManager->buildPort($this, $first_config['socket_port']);
         $this->beforeSwooleStart();
         $this->server->start();
+    }
+
+    /**
+     * @param $serv
+     */
+    public function onSwooleWorkerStop($serv, $workerId)
+    {
+        parent::onSwooleWorkerStart($serv, $workerId);
+        ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->setData("wsRequest:$workerId", $this->fdRequest);
+    }
+
+    /**
+     * @param $serv
+     */
+    public function onSwooleWorkerStart($serv, $workerId)
+    {
+        parent::onSwooleWorkerStart($serv, $workerId);
+        if (!$this->isTaskWorker()) {
+            Coroutine::startCoroutine(function () use ($workerId) {
+                $result = yield ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getData("wsRequest:$workerId");
+                if ($result != null) {
+                    $this->fdRequest = $result;
+                }
+            });
+        }
     }
 
     /**
@@ -283,7 +311,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         }
 
         $response->status(101);
-        $this->fdRequest[$request->fd] = $request;
+        $this->fdRequest[$request->fd] = $this->transformationRequest($request);
         $response->end();
 
         $this->server->defer(function () use ($request) {
@@ -291,4 +319,19 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         });
         return true;
     }
+
+    /**
+     * @param $request
+     * @return \stdClass
+     */
+    private function transformationRequest($request)
+    {
+        $_arr = get_object_vars($request);
+        $new_request = new \stdClass();
+        foreach ($_arr as $key => $val) {
+            $new_request->$key = $val;
+        }
+        return $new_request;
+    }
 }
+

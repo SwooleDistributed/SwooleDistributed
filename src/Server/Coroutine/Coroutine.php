@@ -93,7 +93,20 @@ class Coroutine
     public static function startCoroutine(callable $function, array $params = null)
     {
         if ($params == null) $params = [];
-        $generator = call_user_func_array($function, $params);
+        try {
+            $generator = call_user_func_array($function, $params);
+        } catch (\Exception $e) {
+            $function_name = '';
+            if (is_array($function)) {
+                $function_name = get_class($function[0]) . "::" . $function[1];
+            }
+            secho("EX", "---------------------[协程同步模式异常警告]---------------------" . date("Y-m-d h:i:s"));
+            $message = "[" . $function_name . "]" . $e->getMessage();
+            secho("EX", $message);
+            get_instance()->log->addWarning($message);
+            $result = new CoroutineTaskException($e->getMessage(), $e->getCode());
+            return $result;
+        }
         if ($generator instanceof \Generator) {
             if (self::$instance != null) {//协程标志
                 self::$instance->start($generator);

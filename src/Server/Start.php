@@ -170,7 +170,7 @@ class Start
                 if ($command2 === '-d') {
                     self::$daemonize = true;
                 } else if ($command2 === '-debug' || $command2 === '-de') {
-                    self::$debug = true;
+                    self::setDebug(true);
                     if (!empty($command3)) {
                         if ($command3 === "--f") {
                             self::$debug_filter = array_slice($argv, 4);
