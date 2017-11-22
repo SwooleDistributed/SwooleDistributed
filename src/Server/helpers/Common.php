@@ -329,3 +329,12 @@ function setTimezone()
 {
     date_default_timezone_set('Asia/Shanghai');
 }
+
+function format_date($time)
+{
+    $day = (int)($time / 60 / 60 / 24);
+    $hour = (int)($time / 60 / 60) - 24 * $day;
+    $mi = (int)($time / 60) - 60 * $hour - 60 * 24 * $day;
+    $se = $time - 60 * $mi - 60 * 60 * $hour - 60 * 60 * 24 * $day;
+    return "$day 天 $hour 小时 $mi 分 $se 秒";
+}

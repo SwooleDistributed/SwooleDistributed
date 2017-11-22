@@ -742,7 +742,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $status['task_num'] = $this->task_num;
         $status['max_connection'] = $this->max_connection;
         $status['start_time'] = Start::getStartTime();
-        $status['run_time'] = date('H:i:s', strtotime(date('Y-m-d H:i:s')) - strtotime(Start::getStartTime()) - 60 * 60 * 8);
+        $status['run_time'] = format_date(strtotime(date('Y-m-d H:i:s')) - strtotime(Start::getStartTime()));
         $poolStatus = yield $this->helpGetAllStatus();
         $status['coroutine_num'] = $poolStatus['coroutine_num'];
         $status['pool'] = $poolStatus['pool'];
