@@ -292,3 +292,12 @@ php start_swoole_server.php start -de --f "[ip] => 127.0.0.1"
 6.增加Timer定时器，该定时器在多进程中共享
 
 7.各进程间，用户进程和worker进程间均可以进行RPC通讯
+
+# 2.7.1
+1.修复websocket进行reload的时候会丢失request信息的问题
+
+2.修复了setDebug导致报错的问题
+
+3.修复了Task中抛出异常有机会导致报错的问题
+
+4.修复了监控服务器运行时间统计错误的问题
