@@ -62,12 +62,11 @@ SD框架全称SwooleDistributed，从名称上看一个是Swoole一个是Distrib
 * 服务器监控系统
 	提供了一个服务器监控后台，可以对集群进行监控，也可以监控某一台服务器的具体运行状况。
     下面是一些截图
-    ![](https://git.kancloud.cn/repos/tmtbe/sd/raw/0b38d681e62e76ba76dee499dfb9ad52da040d95/images/screenshot_1511494439977.png?access-token=1f351bb8c8f0d060a9b375c2da391abc)
-    ![](https://git.kancloud.cn/repos/tmtbe/sd/raw/0b38d681e62e76ba76dee499dfb9ad52da040d95/images/screenshot_1511494520746.png?access-token=1f351bb8c8f0d060a9b375c2da391abc)
-    ![](https://git.kancloud.cn/repos/tmtbe/sd/raw/0b38d681e62e76ba76dee499dfb9ad52da040d95/images/screenshot_1511494552885.png?access-token=1f351bb8c8f0d060a9b375c2da391abc)
-    ![](https://git.kancloud.cn/repos/tmtbe/sd/raw/0b38d681e62e76ba76dee499dfb9ad52da040d95/images/screenshot_1511494572162.png?access-token=1f351bb8c8f0d060a9b375c2da391abc)
-    ![](https://git.kancloud.cn/repos/tmtbe/sd/raw/0b38d681e62e76ba76dee499dfb9ad52da040d95/images/screenshot_1511494591862.png?access-token=1f351bb8c8f0d060a9b375c2da391abc)
-    
+    ![](https://raw.githubusercontent.com/tmtbe/SwooleDistributed/v2/screenshots/screenshot_1511494439977.png)
+    ![](https://raw.githubusercontent.com/tmtbe/SwooleDistributed/v2/screenshots/screenshot_1511494520746.png)
+    ![](https://raw.githubusercontent.com/tmtbe/SwooleDistributed/v2/screenshots/screenshot_1511494552885.png)
+    ![](https://raw.githubusercontent.com/tmtbe/SwooleDistributed/v2/screenshots/screenshot_1511494572162.png)
+    ![](https://raw.githubusercontent.com/tmtbe/SwooleDistributed/v2/screenshots/screenshot_1511494591862.png)
 ## SD框架远远不止现在
 
 SD框架一直在高速发展中，有更多开发者的参与才会有更好的未来。
