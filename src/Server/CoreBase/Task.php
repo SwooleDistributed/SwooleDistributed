@@ -2,6 +2,8 @@
 
 namespace Server\CoreBase;
 
+use Server\Components\AOP\Proxy;
+use Server\Coroutine\CoroutineNull;
 use Server\Memory\Pool;
 
 /**
@@ -20,7 +22,7 @@ class Task extends TaskProxy
 
     public function __construct()
     {
-        parent::__construct();
+        parent::__construct(TheTaskProxy::class);
         if (self::$efficiency_monitor_enable == null) {
             self::$efficiency_monitor_enable = $this->config['log'][$this->config['log']['active']]['efficiency_monitor_enable'];
         }
@@ -86,5 +88,27 @@ class Task extends TaskProxy
     protected function sendToAll($data)
     {
         get_instance()->sendToAll($data);
+    }
+}
+class TheTaskProxy extends Proxy
+{
+
+    public function beforeCall($name, $arguments = null)
+    {
+
+    }
+
+    public function afterCall($name, $arguments = null)
+    {
+
+    }
+
+    public function __call($name, $arguments)
+    {
+        $result = call_user_func_array([$this->own, $name], $arguments);
+        if($result==null){
+            $result = CoroutineNull::getInstance();
+        }
+        return $result;
     }
 }

@@ -46,9 +46,11 @@ class InotifyReload
                 continue;
             }
             // 把文件加入inotify监控，这里只监控了IN_MODIFY文件更新事件
-            $wd = inotify_add_watch($this->inotifyFd, $file, IN_MODIFY);
+            $wd = inotify_add_watch($this->inotifyFd, $file, IN_ATTRIB);
             $monitor_files[$wd] = $file;
+
         }
+
         // 监控inotify句柄可读事件
         swoole_event_add($this->inotifyFd, function ($inotify_fd) {
             global $monitor_files;
@@ -58,11 +60,14 @@ class InotifyReload
                 // 检查哪些文件被更新了
                 foreach ($events as $ev) {
                     // 更新的文件
+                    if(!array_key_exists($ev['wd'],$monitor_files)){
+                        continue;
+                    }
                     $file = $monitor_files[$ev['wd']];
                     secho("RELOAD", $file . " update");
                     unset($monitor_files[$ev['wd']]);
                     // 需要把文件重新加入监控
-                    $wd = inotify_add_watch($inotify_fd, $file, IN_MODIFY);
+                    $wd = inotify_add_watch($inotify_fd, $file, IN_ATTRIB);
                     $monitor_files[$wd] = $file;
                 }
                 $this->server->reload();

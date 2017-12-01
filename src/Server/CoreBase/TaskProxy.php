@@ -23,10 +23,11 @@ class TaskProxy extends CoreBase
 
     /**
      * TaskProxy constructor.
+     * @param string $proxy
      */
-    public function __construct()
+    public function __construct($proxy = ChildProxy::class)
     {
-        parent::__construct();
+        parent::__construct($proxy);
     }
 
     public function initialization($task_id, $from_id, $worker_pid, $task_name, $method_name, $context)
