@@ -272,7 +272,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $task_fuc_name = $message['task_fuc_name'];
                 $task_data = $message['task_fuc_data'];
                 $task_context = $message['task_context'];
-                $call = [$task, $task_fuc_name];
+                $call = [$task->getProxy(), $task_fuc_name];
                 if (is_callable($call)) {
                     //给task做初始化操作
                     $task->initialization($task_id, $from_id, $this->server->worker_pid, $task_name, $task_fuc_name, $task_context);
@@ -782,6 +782,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $status = ['pool' => [], 'model_pool' => [], 'controller_pool' => [], 'coroutine_num' => 0];
         for ($i = 0; $i < $this->worker_num; $i++) {
             $result = yield ProcessManager::getInstance()->getRpcCallWorker($i)->getPoolStatus();
+            if(empty($result)) return;
             $this->helpMerge($status['pool'], $result['pool']);
             $this->helpMerge($status['model_pool'], $result['model_pool']);
             $this->helpMerge($status['controller_pool'], $result['controller_pool']);
