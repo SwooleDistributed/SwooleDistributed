@@ -308,3 +308,8 @@ php start_swoole_server.php start -de --f "[ip] => 127.0.0.1"
 2.修复了task的一个内存泄露的隐患
 
 3.task无论是否有返回始终都会有回调
+
+# 2.7.3
+1.修复Cache存在的bug
+
+2.后台监控整理（VIP）
