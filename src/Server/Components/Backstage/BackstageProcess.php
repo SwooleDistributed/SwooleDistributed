@@ -20,7 +20,7 @@ class BackstageProcess extends Process
     public function start($process)
     {
         if (!is_file(BIN_DIR . "/exec/backstage")) {
-            secho("[Backstage]", "backstage没有安装,请下载最新的UI安装至bin/exec目录,或者在config/backstage.php中取消使能");
+            secho("[Backstage]", "后台监控没有安装,如需要请联系白猫获取（需VIP客户）");
             get_instance()->server->shutdown();
             return;
         }
