@@ -7,6 +7,7 @@ use Monolog\Handler\GelfHandler;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Noodlehaus\Config;
+use Server\Components\Backstage\BackstageHelp;
 use Server\Components\Event\EventDispatcher;
 use Server\Components\GrayLog\UdpTransport;
 use Server\Components\Middleware\MiddlewareManager;
@@ -33,7 +34,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "2.7.3";
+    const version = "2.7.3.1";
 
     /**
      * server name
@@ -163,6 +164,7 @@ abstract class SwooleServer extends ProcessRPC
     protected function setConfig()
     {
         $this->config = new Config(getConfigDir());
+        BackstageHelp::init();
     }
 
     /**

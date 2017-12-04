@@ -13,8 +13,18 @@ use Server\CoreBase\PortManager;
 
 class BackstageHelp
 {
-    public static function init($name = '127.0.0.1', $port = 8083)
+    public static $set = false;
+
+    public static function init()
     {
+        if (self::$set) {
+            return;
+        }
+        if (!get_instance()->config->get('backstage.enable', false)) {
+            return;
+        }
+        $name = get_instance()->config->get('backstage.socket');
+        $port = get_instance()->config->get('backstage.websocket_port');
         $ports = get_instance()->config["ports"];
         $ports[] = [
             'socket_type' => PortManager::SOCK_WS,
@@ -37,5 +47,6 @@ class BackstageHelp
             'interval_time' => '1',
         ];
         get_instance()->config->set("timerTask", $timerTask);
+        self::$set = true;
     }
 }

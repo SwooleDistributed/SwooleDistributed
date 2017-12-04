@@ -732,7 +732,12 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         $status = get_instance()->server->stats();
         $now_time = getMillisecond();
-        $qps = (int)(($status['request_count'] - $this->lastReqTimes) / ($now_time - $this->lastTime) * 1000);
+        $exTime = $now_time - $this->lastTime;
+        if ($exTime == 0) {
+            $qps = 0;
+        } else {
+            $qps = (int)(($status['request_count'] - $this->lastReqTimes) / $exTime * 1000);
+        }
         $this->lastTime = $now_time;
         $this->lastReqTimes = $status['request_count'];
         $status['isDebug'] = Start::getDebug();
