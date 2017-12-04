@@ -24,9 +24,13 @@ class AppController extends Controller
         $this->AppModel = $this->loader->model('AppModel', $this);
     }
 
+    public function bind($uid)
+    {
+        $this->bindUid($uid);
+        $this->send("ok.$uid");
+    }
     public function sub($sub)
     {
-        $this->bindUid($this->fd);
         $this->addSub($sub);
         $this->send("ok.$this->fd");
     }
@@ -41,6 +45,7 @@ class AppController extends Controller
 
     public function pub($sub, $data)
     {
+        var_dump($sub);
         $this->sendPub($sub, $data);
     }
 
@@ -56,13 +61,11 @@ class AppController extends Controller
 
     public function onClose()
     {
-        var_dump('close');
         $this->destroy();
     }
 
     public function onConnect()
     {
-        var_dump('connect');
         $this->destroy();
     }
 

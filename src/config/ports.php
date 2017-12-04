@@ -18,15 +18,6 @@ $config['ports'][] = [
 ];
 
 $config['ports'][] = [
-    'socket_type' => PortManager::SOCK_TCP,
-    'socket_name' => '0.0.0.0',
-    'socket_port' => 1883,
-    'pack_tool' => 'MqttPack',
-    'route_tool' => 'NormalRoute',
-    'middlewares' => ['MonitorMiddleware']
-];
-
-$config['ports'][] = [
     'socket_type' => PortManager::SOCK_HTTP,
     'socket_name' => '0.0.0.0',
     'socket_port' => 8081,
@@ -42,7 +33,6 @@ $config['ports'][] = [
     'route_tool' => 'NormalRoute',
     'pack_tool' => 'NonJsonPack',
     'opcode' => PortManager::WEBSOCKET_OPCODE_TEXT,
-    'middlewares' => ['MonitorMiddleware']
+    'middlewares' => ['MonitorMiddleware', 'NormalHttpMiddleware']
 ];
-
 return $config;

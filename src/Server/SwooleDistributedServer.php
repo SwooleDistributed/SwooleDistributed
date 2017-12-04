@@ -7,6 +7,7 @@ use Server\Asyn\Mysql\Miner;
 use Server\Asyn\Mysql\MysqlAsynPool;
 use Server\Asyn\Redis\RedisAsynPool;
 use Server\Asyn\Redis\RedisLuaManager;
+use Server\Components\Backstage\BackstageProcess;
 use Server\Components\Cluster\ClusterHelp;
 use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Consul\ConsulHelp;
@@ -185,6 +186,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         //consul进程
         if ($this->config->get('consul.enable', false)) {
             ProcessManager::getInstance()->addProcess(ConsulProcess::class, false);
+        }
+        if ($this->config->get('backstage.enable', false)) {
+            ProcessManager::getInstance()->addProcess(BackstageProcess::class, false);
         }
         //Cluster进程
         ProcessManager::getInstance()->addProcess(ClusterProcess::class);
@@ -782,7 +786,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $status = ['pool' => [], 'model_pool' => [], 'controller_pool' => [], 'coroutine_num' => 0];
         for ($i = 0; $i < $this->worker_num; $i++) {
             $result = yield ProcessManager::getInstance()->getRpcCallWorker($i)->getPoolStatus();
-            if(empty($result)) return;
+            if (empty($result)) return;
             $this->helpMerge($status['pool'], $result['pool']);
             $this->helpMerge($status['model_pool'], $result['model_pool']);
             $this->helpMerge($status['controller_pool'], $result['controller_pool']);
