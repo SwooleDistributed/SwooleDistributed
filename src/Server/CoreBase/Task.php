@@ -90,6 +90,7 @@ class Task extends TaskProxy
         get_instance()->sendToAll($data);
     }
 }
+
 class TheTaskProxy extends Proxy
 {
 
@@ -106,7 +107,7 @@ class TheTaskProxy extends Proxy
     public function __call($name, $arguments)
     {
         $result = call_user_func_array([$this->own, $name], $arguments);
-        if($result==null){
+        if ($result == null) {
             $result = CoroutineNull::getInstance();
         }
         return $result;

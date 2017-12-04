@@ -60,7 +60,7 @@ class InotifyReload
                 // 检查哪些文件被更新了
                 foreach ($events as $ev) {
                     // 更新的文件
-                    if(!array_key_exists($ev['wd'],$monitor_files)){
+                    if (!array_key_exists($ev['wd'], $monitor_files)) {
                         continue;
                     }
                     $file = $monitor_files[$ev['wd']];

@@ -1,6 +1,7 @@
 <?php
 namespace app;
 
+use Server\Components\Backstage\BackstageHelp;
 use Server\CoreBase\HttpInput;
 use Server\CoreBase\Loader;
 use Server\SwooleDistributedServer;
@@ -21,6 +22,15 @@ class AppServer extends SwooleDistributedServer
     {
         $this->setLoader(new Loader());
         parent::__construct();
+    }
+
+    /**
+     * 可以在这修改配置
+     */
+    protected function setConfig()
+    {
+        parent::setConfig();
+        BackstageHelp::init("0.0.0.0", "18083");
     }
 
     /**

@@ -10,6 +10,7 @@ namespace Server\Memory;
 
 
 use Server\CoreBase\SwooleException;
+use Server\Coroutine\CoroutineNull;
 
 /**
  * 跨进程的内存缓存系统
@@ -46,7 +47,11 @@ class Cache
     public function __call($name, $arguments)
     {
         $this->task->__call($name, $arguments);
-        return $this->task->startTaskWait(0.5, $this->db);
+        $result = $this->task->startTaskWait(0.5, $this->db);
+        if ($result instanceof CoroutineNull) {
+            $result = null;
+        }
+        return $result;
     }
 
     public function __destruct()

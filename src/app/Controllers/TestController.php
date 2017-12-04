@@ -147,7 +147,9 @@ class TestController extends Controller
      */
     public function http_smysql()
     {
-        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 10004)->coroutineSend();
+        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')
+            ->from('account')
+            ->coroutineSend()->row();
         $this->http_output->end($result, false);
     }
 
@@ -394,4 +396,5 @@ class TestController extends Controller
         $uids = yield get_instance()->coroutineGetAllUids();
         $this->http_output->end($uids);
     }
+
 }

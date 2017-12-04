@@ -14,7 +14,7 @@ class MyProcess extends Process
 {
     public function start($process)
     {
-        parent::start($process);
+
     }
 
     public function getData()

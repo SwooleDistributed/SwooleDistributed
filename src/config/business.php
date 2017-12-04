@@ -5,6 +5,7 @@
  * Date: 16-7-14
  * Time: 下午1:58
  */
+
 //强制关闭gzip
 $config['http']['gzip_off'] = false;
 

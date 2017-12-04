@@ -29,8 +29,7 @@ class TaskCoroutine extends CoroutineBase
         $this->task_proxy_data = $task_proxy_data;
         $this->id = $id;
         $this->send(function ($serv, $task_id, $data) {
-            if($data instanceof CoroutineNull)
-            {
+            if ($data instanceof CoroutineNull) {
                 $data = null;
             }
             $this->result = $data;
