@@ -46,7 +46,7 @@ class InotifyReload
                 continue;
             }
             // 把文件加入inotify监控，这里只监控了IN_MODIFY文件更新事件
-            $wd = inotify_add_watch($this->inotifyFd, $file, IN_ATTRIB);
+            $wd = inotify_add_watch($this->inotifyFd, $file, IN_MODIFY);
             $monitor_files[$wd] = $file;
 
         }
@@ -67,7 +67,7 @@ class InotifyReload
                     secho("RELOAD", $file . " update");
                     unset($monitor_files[$ev['wd']]);
                     // 需要把文件重新加入监控
-                    $wd = inotify_add_watch($inotify_fd, $file, IN_ATTRIB);
+                    $wd = inotify_add_watch($inotify_fd, $file, IN_MODIFY);
                     $monitor_files[$wd] = $file;
                 }
                 $this->server->reload();
