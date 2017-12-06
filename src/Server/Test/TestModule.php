@@ -84,6 +84,7 @@ class TestModule
                 }
             }
             get_instance()->server->shutdown();
+            exit();
         }
     }
 
