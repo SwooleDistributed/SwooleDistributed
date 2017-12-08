@@ -322,3 +322,8 @@ php start_swoole_server.php start -de --f "[ip] => 127.0.0.1"
 2.后台监控整理（VIP）
 
 热烈庆祝群主猫咖店开张～留个纪念，来深圳撸猫啊
+
+# 2.7.3.3
+1.backstage可以设置bin_path
+
+2.Install可以新增文件
