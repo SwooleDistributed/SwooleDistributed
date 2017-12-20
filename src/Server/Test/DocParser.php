@@ -11,6 +11,21 @@ namespace Server\Test;
 
 class DocParser
 {
+    /**
+     * @var DocParser
+     */
+    private static $instance;
+
+    /**
+     * @return DocParser
+     */
+    public static function getInstance()
+    {
+        if (self::$instance == null) {
+            self::$instance = new DocParser();
+        }
+        return self::$instance;
+    }
     private $params = array();
 
     function parse($doc = '')

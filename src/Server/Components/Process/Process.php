@@ -46,6 +46,8 @@ abstract class Process extends ProcessRPC
 
     public function __start($process)
     {
+        \swoole_process::signal(SIGTERM, [$this, "__shutDown"]);
+
         get_instance()->workerId = $this->worker_id;
         if (!isDarwin()) {
             $process->name($this->name);
@@ -69,6 +71,17 @@ abstract class Process extends ProcessRPC
     public abstract function start($process);
 
     /**
+     * 关服处理
+     */
+    public function __shutDown()
+    {
+        $this->onShutDown();
+        secho("Process:$this->worker_id", get_class($this) . "关闭成功");
+        exit();
+    }
+
+    abstract protected function onShutDown();
+    /**
      * onRead
      */
     public function onRead()
@@ -91,5 +104,15 @@ abstract class Process extends ProcessRPC
                 EventDispatcher::getInstance()->dispatch($message['token'], $message['result'], true);
                 break;
         }
+    }
+
+    /**
+     * 执行外部命令
+     * @param $path
+     * @param $params
+     */
+    protected function exec($path, $params)
+    {
+        $this->process->exec($path, $params);
     }
 }

@@ -681,4 +681,9 @@ class ClusterProcess extends Process
         $map = yield $this->client[$node_name]->getTokenResult($token);
         return $map;
     }
+
+    protected function onShutDown()
+    {
+        // TODO: Implement onShutDown() method.
+    }
 }

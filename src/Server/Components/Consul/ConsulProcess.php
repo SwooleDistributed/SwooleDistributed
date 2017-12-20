@@ -27,7 +27,7 @@ class ConsulProcess extends Process
             exit();
         }
 
-        $process->exec(BIN_DIR . "/exec/consul", ['agent', '-ui', '-config-dir', BIN_DIR . '/exec/consul.d']);
+        $this->exec(BIN_DIR . "/exec/consul", ['agent', '-ui', '-config-dir', BIN_DIR . '/exec/consul.d']);
     }
 
     /**
@@ -87,4 +87,8 @@ class ConsulProcess extends Process
         file_put_contents(BIN_DIR . "/exec/consul.d/consul_config.json", json_encode($newConfig));
     }
 
+    protected function onShutDown()
+    {
+        // TODO: Implement onShutDown() method.
+    }
 }

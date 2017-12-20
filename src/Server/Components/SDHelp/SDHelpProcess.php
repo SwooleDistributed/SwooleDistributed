@@ -87,4 +87,9 @@ class SDHelpProcess extends Process
         $data['data'] = array_slice($this->statisticsMap, $num * $index, $num);
         return $data;
     }
+
+    protected function onShutDown()
+    {
+        // TODO: Implement onShutDown() method.
+    }
 }

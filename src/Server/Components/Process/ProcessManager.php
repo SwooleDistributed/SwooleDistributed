@@ -23,7 +23,7 @@ class ProcessManager
     protected static $instance;
     protected $atomic;
     protected $map = [];
-
+    public $oneWayFucName = [];
     /**
      * ProcessManager constructor.
      */
@@ -65,12 +65,12 @@ class ProcessManager
 
     /**
      * @param $class_name
-     * @param bool $oneWay
+     * @param bool|string $oneWay
      * @param string $name
      * @return mixed
      * @throws \Exception
      */
-    public function getRpcCall($class_name, $oneWay = false, $name = '')
+    public function getRpcCall($class_name, $oneWay = 'auto', $name = '')
     {
         if (!array_key_exists($class_name . $name, $this->map)) {
             throw new \Exception("不存在$class_name 进程");
@@ -81,10 +81,10 @@ class ProcessManager
     /**
      * 通过wokerId发起RPC
      * @param $wokerId
-     * @param bool $oneWay
+     * @param bool|string $oneWay
      * @return mixed
      */
-    public function getRpcCallWorker($wokerId, $oneWay = false)
+    public function getRpcCallWorker($wokerId, $oneWay = 'auto')
     {
         return Pool::getInstance()->get(RPCCall::class)->initworker($wokerId, $oneWay);
     }
@@ -92,7 +92,7 @@ class ProcessManager
     /**
      * @param $class_name
      * @param $name
-     * @return mixed
+     * @return ProcessRPC
      * @throws \Exception
      */
     public function getProcess($class_name, $name = '')
@@ -116,4 +116,5 @@ class ProcessManager
         }
         return null;
     }
+
 }

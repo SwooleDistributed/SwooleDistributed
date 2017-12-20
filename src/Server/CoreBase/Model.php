@@ -21,7 +21,9 @@ class Model extends CoreBase
     public function initialization(&$context)
     {
         $this->setContext($context);
-        $this->installMysqlPool($this->mysql_pool);
+        if ($this->mysql_pool != null) {
+            $this->installMysqlPool($this->mysql_pool);
+        }
     }
 
     /**
