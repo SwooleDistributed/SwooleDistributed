@@ -67,6 +67,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $this->server->on('open', [$this, 'onSwooleWSOpen']);
         $this->server->on('message', [$this, 'onSwooleWSMessage']);
         $this->server->on('close', [$this, 'onSwooleWSClose']);
+        $this->server->on('Shutdown', [$this, 'onSwooleShutdown']);
         if ($this->custom_handshake) {
             $this->server->on('handshake', [$this, 'onSwooleWSHandShake']);
         }

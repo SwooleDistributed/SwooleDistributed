@@ -34,7 +34,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "2.7.3.3";
+    const version = "2.7.4";
 
     /**
      * server name
@@ -226,6 +226,7 @@ abstract class SwooleServer extends ProcessRPC
             $this->server->on('ManagerStart', [$this, 'onSwooleManagerStart']);
             $this->server->on('ManagerStop', [$this, 'onSwooleManagerStop']);
             $this->server->on('Packet', [$this, 'onSwoolePacket']);
+            $this->server->on('Shutdown', [$this, 'onSwooleShutdown']);
             $this->portManager->buildPort($this, $first_config['socket_port']);
             $this->beforeSwooleStart();
             $this->server->start();
@@ -255,7 +256,7 @@ abstract class SwooleServer extends ProcessRPC
         $this->uid_fd_table->create();
 
         $this->fd_uid_table = new \swoole_table($this->max_connection);
-        $this->fd_uid_table->column('uid', \swoole_table::TYPE_STRING, 20);
+        $this->fd_uid_table->column('uid', \swoole_table::TYPE_STRING, 32);
         $this->fd_uid_table->create();
     }
 
@@ -410,6 +411,14 @@ abstract class SwooleServer extends ProcessRPC
 
     }
 
+    /**
+     * onSwooleShutdown
+     * @param $serv
+     */
+    public function onSwooleShutdown($serv)
+    {
+
+    }
     /**
      * onSwooleTask
      * @param $serv

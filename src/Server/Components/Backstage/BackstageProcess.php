@@ -31,7 +31,11 @@ class BackstageProcess extends Process
             exit();
         }
 
-        $process->exec($path, [$this->config->get("backstage.port"), $this->config->get("backstage.websocket_port")]);
+        $this->exec($path, [$this->config->get("backstage.port"), $this->config->get("backstage.websocket_port")]);
     }
 
+    protected function onShutDown()
+    {
+        // TODO: Implement onShutDown() method.
+    }
 }

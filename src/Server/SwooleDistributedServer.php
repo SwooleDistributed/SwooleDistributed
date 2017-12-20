@@ -8,6 +8,7 @@ use Server\Asyn\Mysql\MysqlAsynPool;
 use Server\Asyn\Redis\RedisAsynPool;
 use Server\Asyn\Redis\RedisLuaManager;
 use Server\Components\Backstage\BackstageProcess;
+use Server\Components\CatCache\CatCacheProcess;
 use Server\Components\Cluster\ClusterHelp;
 use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Consul\ConsulHelp;
@@ -63,6 +64,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * 中断task的id内存锁
      */
     public $task_lock;
+
     /**
      * @var \Redis
      */
@@ -192,6 +194,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         }
         //Cluster进程
         ProcessManager::getInstance()->addProcess(ClusterProcess::class);
+        //CatCache进程
+        if ($this->config->get('catCache.enable', false)) {
+            ProcessManager::getInstance()->addProcess(CatCacheProcess::class, false);
+        }
     }
 
     /**
@@ -557,6 +563,16 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
+     * 正常关服操作
+     * @param $serv
+     */
+    public function onSwooleShutdown($serv)
+    {
+        parent::onSwooleShutdown($serv);
+        secho("SYS", "顺利关服");
+    }
+
+    /**
      * 是否开启集群
      * @return bool
      */
@@ -724,6 +740,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @var int
      */
     protected $lastReqTimes = 0;
+
     /**
      * 获得服务器状态
      * @return mixed

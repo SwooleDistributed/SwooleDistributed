@@ -14,7 +14,6 @@ use Server\Memory\Pool;
 
 class RPCCall
 {
-
     const INIT_PROCESS = 0;
     const INIT_WORKERID = 1;
     /**
@@ -25,7 +24,7 @@ class RPCCall
     protected $workerId;
     protected $case;
 
-    public function init($process, $oneWay = false)
+    public function init($process, $oneWay = 'auto')
     {
         $this->case = self::INIT_PROCESS;
         $this->process = $process;
@@ -33,7 +32,7 @@ class RPCCall
         return $this;
     }
 
-    public function initworker($workerId, $oneWay = false)
+    public function initworker($workerId, $oneWay = 'auto')
     {
         $this->case = self::INIT_WORKERID;
         $this->workerId = $workerId;
@@ -48,6 +47,9 @@ class RPCCall
      */
     public function __call($name, $arguments)
     {
+        if ($this->oneWay == 'auto') {
+            $this->oneWay = $this->process->isOneWay($name);
+        }
         $token = 0;
         switch ($this->case) {
             case self::INIT_PROCESS:
@@ -57,7 +59,6 @@ class RPCCall
                 $token = get_instance()->processRpcCall($name, $arguments, $this->oneWay, $this->workerId);
                 break;
         }
-
         Pool::getInstance()->push($this);
         if (!$this->oneWay) {
             return EventDispatcher::getInstance()->addOnceCoroutine($token);

@@ -327,3 +327,11 @@ php start_swoole_server.php start -de --f "[ip] => 127.0.0.1"
 1.backstage可以设置bin_path
 
 2.Install可以新增文件
+
+# 2.7.4
+1.增加CatCache，仿Redis可落地高速缓存，可以在某些情况下代替Redis，访问QPS比Redis高。可以配置catCache.php,设置自动落地表的时间和位置。
+可以通过设置CatCache的RPC代理，实现自己的缓存方法调用。
+
+2.完善Process进程管理
+
+3.修复一些bug
