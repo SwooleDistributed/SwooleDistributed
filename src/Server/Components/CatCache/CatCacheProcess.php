@@ -53,6 +53,10 @@ class CatCacheProcess extends Process
     /**
      * @var
      */
+    protected $delimiter;
+    /**
+     * @var
+     */
     protected $read_buffer;
 
     protected $ready = false;
@@ -66,8 +70,9 @@ class CatCacheProcess extends Process
     {
         parent::__construct($name, $worker_id, $coroutine_need);
         $this->lock = new \swoole_lock(SWOOLE_MUTEX);
-        $this->map = new CatCacheHash($this);
         $this->cache_config = $this->config->get('catCache');
+        $this->delimiter = $this->cache_config['delimiter'] ?? ".";
+        $this->map = new CatCacheHash($this, $this->delimiter);
         $this->auto_save_time = $this->cache_config['auto_save_time'];
         $this->save_dir = $this->cache_config['save_dir'];
         $this->save_file = $this->save_dir . "catCache.catdb";

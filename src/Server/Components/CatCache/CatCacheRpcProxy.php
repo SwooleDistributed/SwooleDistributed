@@ -8,14 +8,12 @@
 
 namespace Server\Components\CatCache;
 
-use Server\Components\Process\ProcessManager;
-
 /**
  * 緩存的RPC代理
  * Class CatCacheRpcProxy
  * @package Server\Components\CatCache
  */
-class CatCacheRpcProxy
+class CatCacheRpcProxy implements \ArrayAccess
 {
     private static $rpc;
     /**
@@ -28,24 +26,9 @@ class CatCacheRpcProxy
         $this->map = $map;
     }
 
-
-    /**
-     * @param $key
-     * @param $value
-     * @oneWay
-     */
-    public function set($key, $value)
+    public function __call($name, $arguments)
     {
-        $this->map[$key] = $value;
-    }
-
-    /**
-     * @param $key
-     * @return mixed
-     */
-    public function get($key)
-    {
-        return $this->map[$key] ?? null;
+        return call_user_func_array([$this, $name], $arguments);
     }
 
     /**
@@ -57,6 +40,43 @@ class CatCacheRpcProxy
     }
 
     /**
+     * @param $offset
+     * @return mixed
+     */
+    public function offsetExists($offset)
+    {
+        return $this->map->offsetExists($offset);
+    }
+
+    /**
+     * @param $offset
+     * @return mixed
+     */
+    public function offsetGet($offset)
+    {
+        return $this->map->offsetGet($offset);
+    }
+
+    /**
+     * @param mixed $offset
+     * @param mixed $value
+     * @oneWay
+     */
+    public function offsetSet($offset, $value)
+    {
+        $this->map->offsetSet($offset, $value);
+    }
+
+    /**
+     * @param mixed $offset
+     * @oneWay
+     */
+    public function offsetUnset($offset)
+    {
+        $this->map->offsetUnset($offset);
+    }
+
+    /**
      * @return CatCacheRpcProxy
      */
     public static function getRpc()
@@ -65,13 +85,5 @@ class CatCacheRpcProxy
             self::$rpc = new CatCacheRpc();
         }
         return self::$rpc;
-    }
-}
-
-class CatCacheRpc
-{
-    public function __call($name, $arguments)
-    {
-        return ProcessManager::getInstance()->getRpcCall(CatCacheProcess::class)->__call($name, $arguments);
     }
 }

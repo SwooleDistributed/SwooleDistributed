@@ -16,12 +16,15 @@ class CatCacheHash implements \ArrayAccess
      */
     protected $process;
 
-    public function __construct(CatCacheProcess $process)
+    protected $delimiter;
+
+    protected $container = [];
+
+    public function __construct(CatCacheProcess $process, $delimiter)
     {
         $this->process = $process;
+        $this->delimiter = $delimiter;
     }
-
-    private $container = [];
 
     /**
      * Whether a offset exists
@@ -37,7 +40,18 @@ class CatCacheHash implements \ArrayAccess
      */
     public function offsetExists($offset)
     {
-        return isset($this->container[$offset]);
+        $path = explode($this->delimiter, $offset);
+        $deep = &$this->container;
+        $count = count($path);
+        for ($i = 0; $i < $count; $i++) {
+            $point = $path[$i];
+            if (array_key_exists($point, $deep)) {
+                $deep = &$deep[$point];
+            } else {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**
@@ -51,7 +65,18 @@ class CatCacheHash implements \ArrayAccess
      */
     public function offsetGet($offset)
     {
-        return isset($this->container[$offset]) ? $this->container[$offset] : null;
+        $path = explode($this->delimiter, $offset);
+        $deep = &$this->container;
+        $count = count($path);
+        for ($i = 0; $i < $count; $i++) {
+            $point = $path[$i];
+            if (array_key_exists($point, $deep)) {
+                $deep = &$deep[$point];
+            } else {
+                return null;
+            }
+        }
+        return $deep;
     }
 
     /**
@@ -68,16 +93,28 @@ class CatCacheHash implements \ArrayAccess
      */
     public function offsetSet($offset, $value)
     {
-        $this->_offsetSet($offset, $value);
-        $this->process->writeLog("_offsetSet", [$offset, $value]);
+        $this->_offsetSet($offset, $value, $this->delimiter);
+        $this->process->writeLog("_offsetSet", [$offset, $value, $this->delimiter]);
     }
 
-    public function _offsetSet($offset, $value)
+    public function _offsetSet($offset, $value, $delimiter = '.')
     {
         if (is_null($offset)) {
             $this->container[] = $value;
         } else {
-            $this->container[$offset] = $value;
+            $path = explode($delimiter, $offset);
+            $deep = &$this->container;
+            $count = count($path) - 1;
+            for ($i = 0; $i < $count; $i++) {
+                $point = $path[$i];
+                if (array_key_exists($point, $deep)) {
+                    $deep = &$deep[$point];
+                } else {
+                    $deep[$point] = [];
+                    $deep = &$deep[$point];
+                }
+            }
+            $deep[$path[$count]] = $value;
         }
     }
 
@@ -92,13 +129,24 @@ class CatCacheHash implements \ArrayAccess
      */
     public function offsetUnset($offset)
     {
-        $this->_offsetUnset($offset);
-        $this->process->writeLog("_offsetUnset", [$offset]);
+        $this->_offsetUnset($offset, $this->delimiter);
+        $this->process->writeLog("_offsetUnset", [$offset, $this->delimiter]);
     }
 
-    public function _offsetUnset($offset)
+    public function _offsetUnset($offset, $delimiter = '.')
     {
-        unset($this->container[$offset]);
+        $path = explode($delimiter, $offset);
+        $deep = &$this->container;
+        $count = count($path) - 1;
+        for ($i = 0; $i < $count; $i++) {
+            $point = $path[$i];
+            if (array_key_exists($point, $deep)) {
+                $deep = &$deep[$point];
+            } else {
+                return;
+            }
+        }
+        unset($deep[$path[$count]]);
     }
 
     /**
