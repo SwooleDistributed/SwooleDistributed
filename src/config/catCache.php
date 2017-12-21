@@ -18,6 +18,8 @@ $config['catCache']['auto_save_time'] = 1000;
 $config['catCache']['save_dir'] = BIN_DIR . '/cache/';
 //RPC代理
 $config['catCache']['rpcProxyClass'] = CatCacheRpcProxy::class;
+//分割符
+$config['catCache']['delimiter'] = ".";
 /**
  * 最终的返回，固定写这里
  */
