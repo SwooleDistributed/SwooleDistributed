@@ -130,6 +130,7 @@ abstract class ProcessRPC extends Child
     {
         if (get_instance()->isUserProcess($worker_id)) {
             $process = ProcessManager::getInstance()->getProcessFromID($worker_id);
+            if($process==null)  return;
             if ($worker_id == get_instance()->workerId) {
                 $process->readData($data);
             } else {
