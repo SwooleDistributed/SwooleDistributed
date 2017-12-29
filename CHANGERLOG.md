@@ -335,3 +335,20 @@ php start_swoole_server.php start -de --f "[ip] => 127.0.0.1"
 2.完善Process进程管理
 
 3.修复一些bug
+
+# 2.7.5
+1.增加了TimerCallBack，通过CatCache和EventDispatch实现了按时间触发的消息队列，重启服务器可恢复，使用简单。
+
+需要开启CatCache,延迟调用Model方法。
+```php
+ $token = yield TimerCallBack::addTimer(2,TestModel::class,'testTimerCall',[123]);
+ $this->http_output->end($token);
+ 
+ public function testTimerCall($value,$token)
+ {
+     var_dump($token);
+     TimerCallBack::ack($token);
+ }
+```
+
+2.修复了集群下的一些错误。
