@@ -275,11 +275,15 @@ class RedisAsynPool extends AsynPool
                 case 'eval':
                 case 'evalsha':
                     $sha1 = $arguments[0];
-                    $args = $arguments[1];
+                    $keys = $arguments[1];
                     $keynum =  $arguments[2]??0;
-                    $arguments = $args;
+                    $args = $arguments[3] ?? [];
+                    $arguments = $keys;
                     array_unshift($arguments, $keynum);
                     array_unshift($arguments, $sha1);
+                    foreach ($args as $value) {
+                        $arguments[] = $value;
+                    }
                     break;
             }
             $arguments[] = function ($client, $result) use ($data) {

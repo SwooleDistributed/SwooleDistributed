@@ -87,6 +87,7 @@ class ClusterProcess extends Process
         if (empty($uid)) return;
         $node_name = $this->searchUid($uid);
         if ($node_name) {
+            if (!isset($this->client[$node_name])) return;
             $this->client[$node_name]->kickUid($uid);
         }
     }
@@ -114,7 +115,7 @@ class ClusterProcess extends Process
         foreach ($this->map as $node_name => $array) {
             $guids = [];
             foreach ($uids as $uid) {
-                if (isset($array[$uid])) {
+                if ($array->contains($uid)) {
                     $guids[] = $uid;
                 }
             }

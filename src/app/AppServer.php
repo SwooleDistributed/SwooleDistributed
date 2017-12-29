@@ -25,15 +25,6 @@ class AppServer extends SwooleDistributedServer
     }
 
     /**
-     * 可以在这修改配置
-     */
-    protected function setConfig()
-    {
-        parent::setConfig();
-        BackstageHelp::init("0.0.0.0", "18083");
-    }
-
-    /**
      * 开服初始化(支持协程)
      * @return mixed
      */

@@ -7,6 +7,7 @@
  */
 
 namespace Server\Components\CatCache;
+use Server\Components\Event\EventDispatcher;
 
 /**
  * 緩存的RPC代理
@@ -20,15 +21,58 @@ class CatCacheRpcProxy implements \ArrayAccess
      * @var CatCacheHash
      */
     protected $map;
+    protected $time = 0;
+    protected $time_count = 0;
 
     public function setMap(&$map)
     {
         $this->map = $map;
     }
 
+    public function start()
+    {
+        \swoole_timer_tick(1000, function () {
+            $timer_back = $this->map['timer_back'] ?? [];
+            ksort($timer_back);
+            $time = time() * 1000;
+            foreach ($timer_back as $key => $value) {
+                if ($key > $time) break;
+                $value['param_arr'][] = $key;
+                EventDispatcher::getInstance()->randomDispatch(TimerCallBack::KEY, $value);
+            }
+        });
+    }
+
     public function __call($name, $arguments)
     {
         return call_user_func_array([$this, $name], $arguments);
+    }
+
+    /**
+     * 完成回调
+     * @param $key
+     */
+    public function ackTimerCallBack($key)
+    {
+        unset($this->map["timer_back.$key"]);
+    }
+
+    /**
+     * @param $time
+     * @param $data
+     * @return string
+     */
+    public function setTimerCallBack($time, $data)
+    {
+        if ($time != $this->time) {
+            $this->time = $time;
+            $this->time_count = 0;
+        }
+        $this->time_count++;
+        $time = $time * 1000 + $this->time_count;
+        $key = "timer_back.$time";
+        $this->map[$key] = $data;
+        return $key;
     }
 
     /**
