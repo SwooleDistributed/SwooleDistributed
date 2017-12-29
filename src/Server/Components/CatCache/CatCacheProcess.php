@@ -94,6 +94,7 @@ class CatCacheProcess extends Process
         }
         $this->readFromDb();
         swoole_timer_tick($this->auto_save_time * 1000, [$this, 'autoSave']);
+        $this->rpcProxy->start();
     }
 
     /**

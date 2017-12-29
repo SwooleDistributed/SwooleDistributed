@@ -9,6 +9,7 @@ use Server\Asyn\Redis\RedisAsynPool;
 use Server\Asyn\Redis\RedisLuaManager;
 use Server\Components\Backstage\BackstageProcess;
 use Server\Components\CatCache\CatCacheProcess;
+use Server\Components\CatCache\TimerCallBack;
 use Server\Components\Cluster\ClusterHelp;
 use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Consul\ConsulHelp;
@@ -509,6 +510,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if (!$this->isTaskWorker()) {
             ConsulHelp::start();
             TimerTask::start();
+            if ($this->config->get('catCache.enable', false)) {
+                TimerCallBack::init();
+            }
         }
     }
 

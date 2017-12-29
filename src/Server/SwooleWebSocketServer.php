@@ -142,10 +142,8 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             parent::send($fd, $data, $ifPack, $topic);
             return;
         }
-        if (!$this->server->exist($fd)) {
-            return;
-        }
         $fdinfo = $this->server->connection_info($fd);
+        if (empty($fdinfo)) return;
         $server_port = $fdinfo['server_port'];
         if ($ifPack) {
             $pack = $this->portManager->getPack($server_port);
