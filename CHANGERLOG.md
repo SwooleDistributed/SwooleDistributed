@@ -352,3 +352,12 @@ php start_swoole_server.php start -de --f "[ip] => 127.0.0.1"
 ```
 
 2.修复了集群下的一些错误。
+
+# 2.7.5.1
+1.新增Actor模型，可创建Actor，加速游戏开发。
+```
+ Actor::create(TestActor::class, "actor");
+ Actor::call("actor", "test");
+ Actor::call("actor", "destroy");
+```
+2.修复404页面http头不对的问题
