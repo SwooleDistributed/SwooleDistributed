@@ -167,6 +167,10 @@ class SdTcpRpcPool extends AsynPool
 
     /**
      * 帮助去构建一个SD的请求结构体
+     * @param $context
+     * @param $controllerName
+     * @param $method
+     * @return array
      */
     public function helpToBuildSDControllerQuest($context, $controllerName, $method)
     {

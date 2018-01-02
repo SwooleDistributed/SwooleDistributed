@@ -97,4 +97,5 @@ class Loader implements ILoader
         $template = get_instance()->templateEngine->make($template);
         return $template;
     }
+
 }

@@ -7,6 +7,7 @@
  */
 
 namespace Server\Components\CatCache;
+
 use Server\Components\Event\EventDispatcher;
 
 /**
