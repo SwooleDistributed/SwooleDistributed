@@ -1,7 +1,6 @@
 <?php
 namespace app;
 
-use Server\Components\Backstage\BackstageHelp;
 use Server\CoreBase\HttpInput;
 use Server\CoreBase\Loader;
 use Server\SwooleDistributedServer;

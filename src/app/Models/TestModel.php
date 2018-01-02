@@ -104,7 +104,7 @@ class TestModel extends Model
         }
     }
 
-    public function testTimerCall($value,$token)
+    public function testTimerCall($value, $token)
     {
         var_dump($token);
         TimerCallBack::ack($token);
