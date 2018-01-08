@@ -13,17 +13,30 @@ use Server\CoreBase\Actor;
 
 class TestActor extends Actor
 {
+
     public function test()
     {
-        var_dump(2);
-        $this->tick(1000, function () {
-            var_dump("test");
-        });
+        $this->setStatus('status', 1);
     }
 
-    public function destroy()
+
+    /**
+     * 处理注册状态
+     * @param $key
+     * @param $value
+     */
+    public function registStatusHandle($key, $value)
     {
-        var_dump("destory");
-        parent::destroy();
+        switch ($key) {
+            case 'status':
+                switch ($value) {
+                    case 1:
+                        $this->tick(100, function () {
+                            echo "1\n";
+                        });
+                        break;
+                }
+                break;
+        }
     }
 }

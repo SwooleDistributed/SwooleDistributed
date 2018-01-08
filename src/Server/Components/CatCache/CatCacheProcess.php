@@ -8,12 +8,14 @@
 
 namespace Server\Components\CatCache;
 
+use Server\Components\Event\EventDispatcher;
 use Server\Components\Process\Process;
 
 class CatCacheProcess extends Process
 {
     const DB_LOG_HEADER = 'catdblog';
     const DB_HEADER = 'catdb';
+    const READY = 'catcache_ready';
     /**
      * @var CatCacheHash
      */
@@ -214,6 +216,8 @@ class CatCacheProcess extends Process
                     $content = $this->checkFileHeader($content, self::DB_LOG_HEADER, self::DB_LOG_HEADER);
                 }
                 if (empty($content)) {
+                    $this->autoSave();
+                    EventDispatcher::getInstance()->dispatch(self::READY, null, false, true);
                     secho("CatCache", "已完成加载缓存文件");
                     $this->lock->unlock();
                     $this->ready = true;

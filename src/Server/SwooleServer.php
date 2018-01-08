@@ -34,7 +34,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "2.7.5.1";
+    const version = "2.7.5.2";
 
     /**
      * server name
@@ -190,6 +190,11 @@ abstract class SwooleServer extends ProcessRPC
         $this->task_num = $set['task_worker_num'];
         $set['daemonize'] = Start::getDaemonize();
         $this->server->set($set);
+        swoole_async_set([
+            'aio_mode' => SWOOLE_AIO_BASE,
+            'thread_num' => 100,
+            'socket_buffer_size' => 128 * 1024 * 1024
+        ]);
     }
 
     /**

@@ -135,6 +135,10 @@ class CatCacheHash implements \ArrayAccess
 
     public function _offsetUnset($offset, $delimiter = '.')
     {
+        if ($offset == "@command:flushdb@") {
+            $this->container = [];
+            return;
+        }
         $path = explode($delimiter, $offset);
         $deep = &$this->container;
         $count = count($path) - 1;

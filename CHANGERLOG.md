@@ -361,3 +361,10 @@ php start_swoole_server.php start -de --f "[ip] => 127.0.0.1"
  Actor::call("actor", "destroy");
 ```
 2.修复404页面http头不对的问题
+
+# 2.7.5.2
+1.完善Actor，支持自动恢复状态
+
+2.修复进程间RPC的一个bug
+
+3.修复EventDispatch的一个bug
