@@ -14,11 +14,13 @@ use Server\Components\Cluster\ClusterHelp;
 use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Consul\ConsulHelp;
 use Server\Components\Consul\ConsulProcess;
+use Server\Components\Event\EventDispatcher;
 use Server\Components\GrayLog\GrayLogHelp;
 use Server\Components\Process\ProcessManager;
 use Server\Components\SDHelp\SDHelpProcess;
 use Server\Components\TimerTask\Timer;
 use Server\Components\TimerTask\TimerTask;
+use Server\CoreBase\Actor;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\ModelFactory;
 use Server\CoreBase\SwooleException;
@@ -512,6 +514,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             TimerTask::start();
             if ($this->config->get('catCache.enable', false)) {
                 TimerCallBack::init();
+                Coroutine::startCoroutine(function () use ($workerId) {
+                    yield EventDispatcher::getInstance()->addOnceCoroutine(CatCacheProcess::READY);
+                    yield Actor::recovery($workerId);
+                });
             }
         }
     }
@@ -819,6 +825,26 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $status['coroutine_num'] += $result['coroutine_num'];
         }
         return $status;
+    }
+
+    public function getOneActor()
+    {
+        return Actor::getActors();
+    }
+
+    /**
+     * 获取所有的Actors
+     * @return array|void
+     */
+    public function getAllActors()
+    {
+        $data = [];
+        for ($i = 0; $i < $this->worker_num; $i++) {
+            $result = yield ProcessManager::getInstance()->getRpcCallWorker($i)->getOneActor();
+            if (empty($result)) continue;
+            $data = array_merge($data, $result);
+        }
+        return $data;
     }
 
     /**

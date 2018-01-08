@@ -47,9 +47,7 @@ class EventDispatcher
         if (!array_key_exists($type, $this->_eventListeners)) {
             $this->_eventListeners [$type] = array();
         }
-        if (!in_array($listener, $this->_eventListeners [$type])) {
-            array_push($this->_eventListeners [$type], $listener);
-        }
+        array_push($this->_eventListeners [$type], $listener);
     }
 
     /**

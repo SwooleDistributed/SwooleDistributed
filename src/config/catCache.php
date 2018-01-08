@@ -6,8 +6,6 @@
  * Time: 下午1:58
  */
 
-use Server\Components\CatCache\CatCacheRpcProxy;
-
 /**
  * 是否启动CatCache
  */
@@ -16,8 +14,6 @@ $config['catCache']['enable'] = true;
 $config['catCache']['auto_save_time'] = 1000;
 //落地文件夹
 $config['catCache']['save_dir'] = BIN_DIR . '/cache/';
-//RPC代理
-$config['catCache']['rpcProxyClass'] = CatCacheRpcProxy::class;
 //分割符
 $config['catCache']['delimiter'] = ".";
 /**

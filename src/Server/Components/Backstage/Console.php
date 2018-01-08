@@ -8,9 +8,11 @@
 
 namespace Server\Components\Backstage;
 
+use Server\Components\CatCache\CatCacheRpcProxy;
 use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Process\ProcessManager;
 use Server\Components\SDHelp\SDHelpProcess;
+use Server\CoreBase\Actor;
 use Server\CoreBase\Controller;
 use Server\Start;
 use Server\SwooleMarco;
@@ -127,6 +129,74 @@ class Console extends Controller
             $map = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getStatistics($node_name, $index, $num);
         }
         $this->autoSend($map);
+    }
+
+    /**
+     * 获取CatCache信息
+     * @param $path
+     */
+    public function back_getCatCacheKeys($path)
+    {
+        $result = yield CatCacheRpcProxy::getRpc()->getKeys($path);
+        $this->autoSend($result);
+    }
+
+    /**
+     * 获取CatCache信息
+     * @param $path
+     */
+    public function back_getCatCacheValue($path)
+    {
+        $result = yield CatCacheRpcProxy::getRpc()[$path];
+        $this->autoSend($result);
+    }
+
+    /**
+     * 删除CatCache信息
+     * @param $path
+     */
+    public function back_delCatCache($path)
+    {
+        unset(CatCacheRpcProxy::getRpc()[$path]);
+        $this->autoSend("ok");
+    }
+
+    /**
+     * 获取所有Actor
+     */
+    public function back_getAllActor()
+    {
+        $result = yield get_instance()->getAllActors();
+        $this->autoSend($result);
+    }
+
+    /**
+     * 获取Actor信息
+     * @param $name
+     */
+    public function back_getActorInfo($name)
+    {
+        $result = yield CatCacheRpcProxy::getRpc()["@Actor.$name"];
+        $this->autoSend($result);
+    }
+
+    /**
+     * 销毁Actor
+     * @param $name
+     */
+    public function back_destroyActor($name)
+    {
+        Actor::destroyActor($name);
+        $this->autoSend("ok");
+    }
+
+    /**
+     * 销毁全部Actor
+     */
+    public function back_destroyAllActor()
+    {
+        Actor::destroyAllActor();
+        $this->autoSend("ok");
     }
 
     /**
