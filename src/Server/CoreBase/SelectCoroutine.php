@@ -29,6 +29,7 @@ class SelectCoroutine extends CoroutineBase
         parent::__construct();
         $this->coroutines = $coroutines;
         $this->matchFunc = $matchFunc;
+        $this->getCount = getTickTime();
     }
 
     public static function Select($matchFunc, CoroutineBase ...$coroutines)

@@ -65,7 +65,7 @@ abstract class CoroutineBase implements ICoroutineBase
     {
         $this->MAX_TIMERS = get_instance()->config->get('coroution.timerOut', 1000);
         $this->result = CoroutineNull::getInstance();
-        $this->getCount = 0;
+        $this->getCount = getTickTime();
         $this->noException = false;
     }
 
@@ -85,11 +85,10 @@ abstract class CoroutineBase implements ICoroutineBase
         //迁移操作
         if ($this->result instanceof CoroutineChangeToken) {
             $this->token = $this->result->token;
-            $this->getCount = 0;
+            $this->getCount = getTickTime();
             $this->result = CoroutineNull::getInstance();
         }
-        $this->getCount++;
-        if ($this->getCount > $this->MAX_TIMERS && $this->result instanceof CoroutineNull) {
+        if ((getTickTime() - $this->getCount) > $this->MAX_TIMERS && $this->result instanceof CoroutineNull) {
             $this->onTimerOutHandle();
             if (!$this->noException) {
                 $this->isFaile = true;

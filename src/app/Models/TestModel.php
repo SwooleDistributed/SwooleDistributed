@@ -109,7 +109,6 @@ class TestModel extends Model
         var_dump($token);
         TimerCallBack::ack($token);
     }
-
 }
 
 class TestModelProxy extends ChildProxy

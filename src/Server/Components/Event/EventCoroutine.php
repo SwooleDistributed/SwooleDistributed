@@ -25,6 +25,7 @@ class EventCoroutine extends CoroutineBase
     {
         $this->eventType = $eventType;
         $this->request = '[Event]' . $eventType;
+        $this->getCount = getTickTime();
         EventDispatcher::getInstance()->add($this->eventType, [$this, 'send']);
         return $this;
     }

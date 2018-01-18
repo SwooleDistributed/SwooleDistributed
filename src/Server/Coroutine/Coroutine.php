@@ -27,7 +27,11 @@ class Coroutine
         self::$instance = $this;
         $this->routineList = [];
         $this->startTick();
-        $this->run();
+        if (is_callable("swoole_event_cycle")) {
+            swoole_event_cycle([$this, "run"]);
+        } else {
+            $this->run_old();
+        }
     }
 
     private function startTick()
@@ -53,9 +57,16 @@ class Coroutine
             }
 
         }
-        swoole_timer_after(self::TICK_INTERVAL, [$this, 'run']);
     }
 
+    /**
+     * 旧方式
+     */
+    public function run_old()
+    {
+        $this->run();
+        swoole_timer_after(self::TICK_INTERVAL, [$this, 'run_old']);
+    }
     /**
      * 服务器运行到现在的毫秒数
      * @return int

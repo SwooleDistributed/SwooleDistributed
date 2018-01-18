@@ -131,6 +131,29 @@ class RedisAsynPool extends AsynPool
             }
             //特别处理下M命令(批量)
             switch ($dataName) {
+                case 'set':
+                    if (count($arguments) == 3) {
+                        $harray = array_pop($arguments);
+                        if (is_array($harray)) {
+                            if (isset($harray['EX'])) {
+                                $arguments[] = 'EX';
+                                $arguments[] = $harray['EX'];
+                            } elseif (isset($harray['PX'])) {
+                                $arguments[] = 'PX';
+                                $arguments[] = $harray['PX'];
+                            }
+                            if (in_array("NX", $harray)) {
+                                $arguments[] = "NX";
+                            } elseif (in_array("XX", $harray)) {
+                                $arguments[] = "XX";
+                            }
+                        } elseif (is_numeric($harray)) {
+                            $arguments[] = "EX";
+                            $arguments[] = $harray;
+                        }
+                    }
+                    var_dump($arguments);
+                    break;
                 case 'lpush':
                 case 'srem':
                 case 'zrem':

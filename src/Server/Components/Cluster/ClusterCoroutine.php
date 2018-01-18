@@ -28,6 +28,7 @@ class ClusterCoroutine extends CoroutineBase
         $this->receive_call = $receive_call;
         $this->token = $token;
         $this->request = "[ClusetRPC]$token";
+        $this->getCount = getTickTime();
         $receive_call[$token] = function ($data) {
             $this->result = $data;
         };

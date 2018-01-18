@@ -193,7 +193,7 @@ function isDarwin()
  */
 function sleepCoroutine($time)
 {
-    return \Server\Memory\Pool::getInstance()->get(\Server\CoreBase\SleepCoroutine::class)->setTimeout($time);
+    return \Server\Memory\Pool::getInstance()->get(\Server\CoreBase\SleepCoroutine::class)->init()->setTimeout($time);
 }
 
 /**

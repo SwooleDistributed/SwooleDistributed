@@ -194,6 +194,7 @@ class ConsulServices
 
     /**
      * @param $serviceName
+     * @param $context
      * @return ConsulRest
      * @throws SwooleException
      */
@@ -211,6 +212,7 @@ class ConsulServices
 
     /**
      * @param $serviceName
+     * @param $context
      * @return ConsulRpc
      * @throws SwooleException
      */

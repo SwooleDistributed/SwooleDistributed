@@ -35,6 +35,7 @@ class HttpClientRequestCoroutine extends CoroutineBase
         $this->pool = $pool;
         $this->data = $data;
         $this->request = '[httpClient]' . $pool->baseUrl.$data['path'];
+        $this->getCount = getTickTime();
         if ($this->fuse()) {//启动断路器
             $this->send(function ($result) {
                 $this->result = $result;

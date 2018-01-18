@@ -17,11 +17,14 @@ use Server\Coroutine\CoroutineBase;
  */
 class SleepCoroutine extends CoroutineBase
 {
-
+    public function init()
+    {
+        $this->getCount = getTickTime();
+        return $this;
+    }
     public function getResult()
     {
-        $this->getCount++;
-        if ($this->getCount > $this->MAX_TIMERS) {
+        if ((getTickTime() - $this->getCount) > $this->MAX_TIMERS) {
             return true;
         }
         return $this->result;
