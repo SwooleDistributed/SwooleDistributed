@@ -368,3 +368,13 @@ php start_swoole_server.php start -de --f "[ip] => 127.0.0.1"
 2.修复进程间RPC的一个bug
 
 3.修复EventDispatch的一个bug
+
+# 2.7.5.3
+1.优化定时器
+
+2.优化协程
+
+3.redis的set支持标签
+```php
+$result = yield $this->redis_pool->getCoroutine()->set('testroute', 21,["XX","EX"=>10]);
+```

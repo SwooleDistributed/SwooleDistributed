@@ -38,6 +38,7 @@ class RedisCoroutine extends CoroutineBase
         $this->name = $name;
         $this->arguments = $arguments;
         $this->request = "#redis: $name";
+        $this->getCount = getTickTime();
         $this->send(function ($result) {
             $this->result = $result;
             $this->immediateExecution();

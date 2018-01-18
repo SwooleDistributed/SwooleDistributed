@@ -19,15 +19,11 @@ class TaskCoroutine extends CoroutineBase
     public $task_proxy_data;
     public $task_id;
 
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     public function init($task_proxy_data, $id)
     {
         $this->task_proxy_data = $task_proxy_data;
         $this->id = $id;
+        $this->getCount = getTickTime();
         $this->send(function ($serv, $task_id, $data) {
             if ($data instanceof CoroutineNull) {
                 $data = null;

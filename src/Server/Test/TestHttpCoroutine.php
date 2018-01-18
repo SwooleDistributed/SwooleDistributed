@@ -28,6 +28,12 @@ class TestHttpCoroutine extends CoroutineBase
         get_instance()->onSwooleRequest($this->testRequest, $this->testResponse);
     }
 
+    public function init()
+    {
+        $this->getCount = getTickTime();
+        return $this;
+    }
+
     public function send($callback)
     {
 

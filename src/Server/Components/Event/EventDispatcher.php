@@ -154,6 +154,17 @@ class EventDispatcher
     }
 
     /**
+     * 派发给指定进程
+     * @param $workerId
+     * @param $type
+     * @param null $data
+     */
+    public function dispathToWorkerId($workerId, $type, $data = null)
+    {
+        get_instance()->sendToOneWorker($workerId, SwooleMarco::DISPATCHER_NAME, [$type, $data], EventDispatcher::class . "::workerDispatchEventWith");
+    }
+
+    /**
      * @param $type
      * @param null $data
      */

@@ -256,6 +256,26 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     }
 
     /**
+     * 发送给指定进程
+     * @param $workerId
+     * @param $type
+     * @param $uns_data
+     * @param string $callStaticFuc
+     */
+    public function sendToOneWorker($workerId, $type, $uns_data, string $callStaticFuc)
+    {
+        $send_data = get_instance()->packServerMessageBody($type, $uns_data, $callStaticFuc);
+        if ($this->server->worker_id == $workerId) {
+            //自己的进程是收不到消息的所以这里执行下
+            get_instance()->server->defer(function () use ($callStaticFuc, $uns_data) {
+                call_user_func($callStaticFuc, $uns_data);
+            });
+        } else {
+            get_instance()->server->sendMessage($send_data, $workerId);
+        }
+    }
+
+    /**
      * task异步任务
      * @param $serv
      * @param $task_id

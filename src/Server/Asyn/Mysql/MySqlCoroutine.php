@@ -40,6 +40,7 @@ class MySqlCoroutine extends CoroutineBase
         $this->bind_id = $_bind_id;
         $this->sql = $_sql;
         $this->request = '#Mysql:' . $_sql;
+        $this->getCount = getTickTime();
         $this->send(function ($result) {
             $this->result = $result;
             $this->immediateExecution();
@@ -81,6 +82,7 @@ class MySqlCoroutine extends CoroutineBase
         $this->mysqlAsynPool = null;
         $this->bind_id = null;
         $this->sql = null;
+        $this->resultHandle = null;
         Pool::getInstance()->push($this);
     }
 
@@ -96,7 +98,7 @@ class MySqlCoroutine extends CoroutineBase
      * 注册结果处理函数
      * @param callable $handle
      */
-    protected function registResultFuc(callable $handle)
+    public function registResultFuc(callable $handle)
     {
         $this->resultHandle = $handle;
     }

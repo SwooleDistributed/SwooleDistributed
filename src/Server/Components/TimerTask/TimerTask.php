@@ -71,10 +71,24 @@ class TimerTask extends CoreBase
                 continue;
             }
             $method_name = $timer_task['method_name'];
+            $span = '';
             if (!array_key_exists('start_time', $timer_task)) {
                 $start_time = time();
             } else {
                 $start_time = strtotime(date($timer_task['start_time']));
+                if (strpos($timer_task['start_time'], "i")) {
+                    $span = " +1 minute";
+                } else if (strpos($timer_task['start_time'], "H")) {
+                    $span = " +1 hour";
+                } else if (strpos($timer_task['start_time'], "d")) {
+                    $span = " +1 day";
+                } else if (strpos($timer_task['start_time'], "m")) {
+                    $span = " +1 month";
+                } else if (strpos($timer_task['start_time'], "Y")) {
+                    $span = " +1 year";
+                } else {
+                    $span = '';
+                }
             }
             if (!array_key_exists('end_time', $timer_task)) {
                 $end_time = -1;
@@ -98,7 +112,8 @@ class TimerTask extends CoreBase
                 'interval_time' => $interval_time,
                 'max_exec' => $max_exec,
                 'now_exec' => 0,
-                'delay' => $delay
+                'delay' => $delay,
+                'span' => $span
             ];
         }
     }
@@ -115,8 +130,8 @@ class TimerTask extends CoreBase
                 $timer_task['next_time'] = $timer_task['start_time'] + $count * $timer_task['interval_time'];
             }
             if ($timer_task['end_time'] != -1 && $time > $timer_task['end_time']) {//说明执行完了一轮，开始下一轮的初始化
-                $timer_task['end_time'] += 86400;
-                $timer_task['start_time'] += 86400;
+                $timer_task['start_time'] = strtotime(date("Y-m-d H:i:s", $timer_task['start_time']) . $timer_task['span']);
+                $timer_task['end_time'] = strtotime(date("Y-m-d H:i:s", $timer_task['end_time']) . $timer_task['span']);
                 $timer_task['next_time'] = $timer_task['start_time'];
                 $timer_task['now_exec'] = 0;
             }

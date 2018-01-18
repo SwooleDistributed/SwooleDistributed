@@ -39,6 +39,7 @@ class TcpClientRequestCoroutine extends CoroutineBase
         $this->pool = $pool;
         $this->data = $data;
         $this->oneway = $oneway;
+        $this->getCount = getTickTime();
         if (!array_key_exists('path', $data)) {
             throw new SwooleException('tcp data must has path');
         }
