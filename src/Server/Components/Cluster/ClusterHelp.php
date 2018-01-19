@@ -49,6 +49,10 @@ class ClusterHelp
         if (!get_instance()->isCluster()) return;
         //创建dispatch端口用于连接dispatch
         $this->port = get_instance()->server->listen('0.0.0.0', $this->config['cluster']['port'], SWOOLE_SOCK_TCP);
+        if ($this->port == false) {
+            $port = $this->config['cluster']['port'];
+            throw new \Exception("$port 端口被占用");
+        }
         $this->port->set($this->pack->getProbufSet());
         $this->port->on('connect', function ($serv, $fd) {
             //设置保护模式，不被心跳切断

@@ -50,7 +50,11 @@ class ConsulProcess extends Process
             foreach ($config['services'] as $service) {
                 list($service_name, $service_port) = explode(":", $service);
                 $service_port = (int)$service_port;
-                $port_type = get_instance()->portManager->getPortType($service_port);
+                try {
+                    $port_type = get_instance()->portManager->getPortType($service_port);
+                } catch (\Exception $e) {
+                    throw new \Exception("consul.php中['consul']['services']配置端口有误");
+                }
                 switch ($port_type) {
                     case PortManager::SOCK_TCP:
                     case PortManager::SOCK_TCP6:
