@@ -10,18 +10,16 @@ namespace Server\CoreBase;
 
 
 use Server\Components\CatCache\CatCacheRpcProxy;
-use Server\Components\Event\Event;
+use Server\Components\Cluster\ClusterProcess;
+use Server\Components\Event\EventCoroutine;
 use Server\Components\Event\EventDispatcher;
+use Server\Components\Process\ProcessManager;
 use Server\Coroutine\Coroutine;
 use Server\Memory\Pool;
 
 abstract class Actor extends CoreBase
 {
-    /**
-     * 存储所有的Actor
-     * @var array
-     */
-    protected static $actors = [];
+    protected static $RPCtoken = 0;
     const SAVE_NAME = "@Actor";
     const ALL_COMMAND = "@All_Command";
     /**
@@ -42,6 +40,21 @@ abstract class Actor extends CoreBase
      * @var ActorContext
      */
     protected $saveContext;
+    /**
+     * 事务id
+     * @var int
+     */
+    protected $beginId = 0;
+    /**
+     * 当前事务ID
+     * @var int
+     */
+    protected $nowAffairId = 0;
+    /**
+     * 邮箱
+     * @var array
+     */
+    protected $mailbox = [];
 
 
     /**
@@ -51,12 +64,12 @@ abstract class Actor extends CoreBase
      */
     public function initialization($name, $saveContext = null)
     {
-        //这里仅仅对本进程做了判断，其实应该对所有进程做判断
-        if (array_key_exists($name, self::$actors)) {
+        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_addActor($name);
+        //恢复的时候不需要判断重名问题，只有在创建的时候才需要
+        if (!$result && $saveContext == null) {
             throw new \Exception("Actor不允许重名");
         }
         $this->name = $name;
-        self::$actors[$name] = $name;
         if ($saveContext == null) {
             $delimiter = $this->config->get("catCache.delimiter", ".");
             $path = self::SAVE_NAME . $delimiter . $name;
@@ -67,10 +80,15 @@ abstract class Actor extends CoreBase
         }
         $this->messageId = self::SAVE_NAME . $name;
         //接收自己的消息
-        EventDispatcher::getInstance()->add($this->messageId, [$this, '_handle']);
+        EventDispatcher::getInstance()->add($this->messageId, function ($event) {
+            $this->handle($event->data);
+        });
         //接收管理器统一派发的消息
-        EventDispatcher::getInstance()->add(self::SAVE_NAME . Actor::ALL_COMMAND, [$this, '_handle']);
+        EventDispatcher::getInstance()->add(self::SAVE_NAME . Actor::ALL_COMMAND, function ($event) {
+            $this->handle($event->data);
+        });
         $this->execRegistHandle();
+        $this->saveContext->save();
     }
 
     /**
@@ -114,11 +132,89 @@ abstract class Actor extends CoreBase
     }
 
     /**
-     * @param Event $event
+     * 处理函数
+     * @param $data
      */
-    public function _handle(Event $event)
+    protected function handle($data)
     {
-        Coroutine::startCoroutine([$this, $event->data['call']], $event->data['params']);
+        $function = $data['call'];
+        $params = $data['params'] ?? [];
+        $token = $data['token'];
+        $workerId = $data['worker_id'];
+        $oneWay = $data['oneWay'];
+        $node = $data['node'];
+        $bindId = $data['bindId'];
+        if (!empty($this->nowAffairId)) {//代表有事务
+            if ($bindId != $this->nowAffairId || empty($bindId)) {//不是当前的事务，或者不是事务就放进邮箱中
+                array_push($this->mailbox, $data);
+                return;
+            }
+        }
+        $generator = call_user_func_array([$this, $function], $params);
+        if ($generator instanceof \Generator) {
+            Coroutine::startCoroutine(function () use (&$generator, $workerId, $token, $oneWay, $node) {
+                $result = yield $generator;
+                if (!$oneWay) {
+                    $this->rpcBack($workerId, $token, $result, $node);
+                }
+            });
+        } else {
+            if (!$oneWay) {
+                $this->rpcBack($workerId, $token, $generator, $node);
+            }
+        }
+    }
+
+    /**
+     * 开启事务
+     * @return int
+     */
+    public function begin()
+    {
+        $this->beginId++;
+        $this->nowAffairId = $this->beginId;
+        return $this->beginId;
+    }
+
+    /**
+     * 结束事务
+     * @param $beginId
+     * @return bool
+     */
+    public function end($beginId)
+    {
+        if ($this->nowAffairId == $beginId) {
+            $this->nowAffairId = 0;
+        } else {
+            return false;
+        }
+        //邮箱中有消息
+        if (count($this->mailbox) > 0) {
+            while (true) {
+                if (count($this->mailbox) == 0) break;
+                $data = array_shift($this->mailbox);
+                $this->handle($data);
+                if ($data['call'] == "begin") {
+                    break;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * @param $workerId
+     * @param $token
+     * @param $result
+     * @param $node
+     */
+    protected function rpcBack($workerId, $token, $result, $node)
+    {
+        if (!get_instance()->isCluster() || $node == getNodeName()) {//非集群或者就是自己机器直接发
+            EventDispatcher::getInstance()->dispathToWorkerId($workerId, $token, $result);
+        } else {
+            ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->callActorBack($workerId, $token, $result, $node);
+        }
     }
 
     /**
@@ -134,9 +230,17 @@ abstract class Actor extends CoreBase
         return $actor;
     }
 
+    /**
+     * 恢复注册
+     * recoveryRegister
+     */
+    public function recoveryRegister()
+    {
+        yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->recoveryRegisterActor($this->name);
+    }
+
     public function destroy()
     {
-        unset(self::$actors[$this->name]);
         EventDispatcher::getInstance()->removeAll($this->messageId);
         EventDispatcher::getInstance()->remove(self::SAVE_NAME . Actor::ALL_COMMAND, [$this, '_handle']);
         foreach ($this->timerIdArr as $id) {
@@ -146,6 +250,8 @@ abstract class Actor extends CoreBase
         Pool::getInstance()->push($this->saveContext);
         $this->saveContext = null;
         $this->timerIdArr = [];
+        $this->beginId = 0;
+        $this->nowAffairId = 0;
         parent::destroy();
     }
 
@@ -194,17 +300,42 @@ abstract class Actor extends CoreBase
     }
 
     /**
+     * @param $actorName
+     * @return ActorRpc
+     */
+    public static function getRpc($actorName)
+    {
+        return Pool::getInstance()->get(ActorRpc::class)->init($actorName);
+    }
+    /**
      * 呼叫Actor
      * @param $actorName
      * @param $call
      * @param $params
-     * @internal param $data
+     * @param bool $oneWay
+     * @param null $bindId
+     * @return EventCoroutine
      */
-    public static function call($actorName, $call, $params = null)
+    public static function call($actorName, $call, $params = null, $oneWay = false, $bindId = null)
     {
         $data['call'] = $call;
         $data['params'] = $params;
-        EventDispatcher::getInstance()->dispatch(self::SAVE_NAME . $actorName, $data);
+        $data['bindId'] = $bindId;
+        $data['oneWay'] = $oneWay;
+        $data['node'] = getNodeName();
+        $data['worker_id'] = get_instance()->getWorkerId();
+        self::$RPCtoken++;
+        $data['token'] = 'Actor-' . get_instance()->getWorkerId() . '-' . self::$RPCtoken;
+        $result = null;
+        if (!$oneWay) {
+            $result = Pool::getInstance()->get(EventCoroutine::class)->init($data['token']);
+        }
+        if (get_instance()->isCluster()) {//集群通过ClusterProcess进行分发
+            ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->callActor($actorName, $data);
+        } else {//非集群直接发
+            EventDispatcher::getInstance()->dispatch(self::SAVE_NAME . $actorName, $data);
+        }
+        return $result;
     }
 
     /**
@@ -216,7 +347,7 @@ abstract class Actor extends CoreBase
     public static function create($class, $name)
     {
         $actor = Pool::getInstance()->get($class);
-        $actor->initialization($name);
+        yield $actor->initialization($name);
         return $actor;
     }
 
@@ -238,35 +369,26 @@ abstract class Actor extends CoreBase
     }
 
     /**
-     * 获取本进程的Actors
-     * @return array
-     */
-    public static function getActors()
-    {
-        return self::$actors;
-    }
-
-
-    /**
      * 恢复Actor
      * @param $worker_id
+     * @return \Generator
      */
     public static function recovery($worker_id)
     {
         $data = yield CatCacheRpcProxy::getRpc()[Actor::SAVE_NAME];
         $delimiter = get_instance()->config->get("catCache.delimiter", ".");
         if ($data != null) {
-            if ($worker_id == 0) {
-                $count = count($data);
-                secho("Actor", "自动恢复了$count 个Actor。");
-            }
             foreach ($data as $key => $value) {
                 if ($value[ActorContext::WORKER_ID_KEY] == $worker_id) {
                     $path = Actor::SAVE_NAME . $delimiter . $key;
                     $saveContext = Pool::getInstance()->get(ActorContext::class)->initialization($path, $value[ActorContext::CLASS_KEY], $worker_id, $value);
                     $actor = Pool::getInstance()->get($saveContext->getClass());
-                    $actor->initialization($key, $saveContext);
+                    yield $actor->initialization($key, $saveContext);
                 }
+            }
+            if ($worker_id == 0) {
+                $count = count($data);
+                secho("Actor", "自动恢复了$count 个Actor。");
             }
         }
     }

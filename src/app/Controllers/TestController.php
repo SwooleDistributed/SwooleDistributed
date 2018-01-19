@@ -234,7 +234,7 @@ class TestController extends Controller
      */
     public function http_setRedis()
     {
-        $result = yield $this->redis_pool->getCoroutine()->set('testroute', 1);
+        $result = yield $this->redis_pool->getCoroutine()->set('testroute', 21, ["XX", "EX" => 10]);
         $this->http_output->end($result);
     }
 
@@ -370,7 +370,7 @@ class TestController extends Controller
      */
     public function http_getEvent()
     {
-        $data = yield EventDispatcher::getInstance()->addOnceCoroutine('unlock')->setTimeout(1000);
+        $data = yield EventDispatcher::getInstance()->addOnceCoroutine('unlock')->setTimeout(100000);
         //这里会等待事件到达，或者超时
         $this->http_output->end($data);
     }
@@ -440,15 +440,26 @@ class TestController extends Controller
 
     public function http_testActor()
     {
-        Actor::create(TestActor::class, "actor");
-        Actor::call("actor", "test");
+        yield Actor::create(TestActor::class, "Test1");
+        yield Actor::create(TestActor::class, "Test2");
         $this->http_output->end(123);
     }
 
     public function http_testActor2()
     {
-        Actor::call("actor", "destroy");
-        $this->http_output->end(123);
+        $rpc = Actor::getRpc("Test2");
+        try {
+            $beginid = yield $rpc->beginCo();
+            $result = yield $rpc->test1();
+            $result = yield $rpc->test2();
+            //var_dump($result);
+            $result = yield $rpc->test3();
+            //var_dump($result);
+        } finally {
+            //var_dump("finally end");
+            $rpc->end();
+        }
+        $this->http_output->end(1);
     }
 
 }

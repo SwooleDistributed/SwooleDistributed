@@ -233,6 +233,15 @@ class CatCacheProcess extends Process
     }
 
     /**
+     * 是否就绪
+     * @return mixed
+     */
+    public function isReady()
+    {
+        return $this->ready;
+    }
+
+    /**
      * 【帮助】解包
      */
     protected function HELP_pack($func)

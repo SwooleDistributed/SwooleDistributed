@@ -11,6 +11,7 @@ namespace Server\Components\Cluster;
 use Server\Components\Event\EventDispatcher;
 use Server\Components\Process\ProcessManager;
 use Server\Components\SDHelp\SDHelpProcess;
+use Server\CoreBase\Actor;
 use Server\CoreBase\Child;
 use Server\Start;
 
@@ -24,12 +25,13 @@ class ClusterController extends Child
     /**
      * 同步数据
      * @param $node_name
-     * @param $uids
+     * @param $datas
+     * @param $type
      */
-    public function syncNodeData($node_name, $uids)
+    public function syncNodeData($node_name, $datas, $type)
     {
-        $uids = array_values($uids);
-        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_syncData($node_name, $uids);
+        $datas = array_values($datas);
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_syncData($node_name, $datas, $type);
     }
 
     /**
@@ -162,5 +164,42 @@ class ClusterController extends Child
     {
         $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getUidTopics($uid);
         return $result;
+    }
+
+    /**
+     * @param $node_name
+     * @param $actor
+     */
+    public function addNodeActor($node_name, $actor)
+    {
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_addActor($node_name, $actor);
+    }
+
+    /**
+     * @param $node_name
+     * @param $actor
+     */
+    public function removeNodeActor($node_name, $actor)
+    {
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_removeActor($node_name, $actor);
+    }
+
+    /**
+     * @param $actor
+     * @param $data
+     */
+    public function callActor($actor, $data)
+    {
+        EventDispatcher::getInstance()->dispatch(Actor::SAVE_NAME . $actor, $data, false, true);
+    }
+
+    /**
+     * @param $workerId
+     * @param $token
+     * @param $result
+     */
+    public function callActorBack($workerId, $token, $result)
+    {
+        EventDispatcher::getInstance()->dispathToWorkerId($workerId, $token, $result);
     }
 }
