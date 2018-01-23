@@ -535,8 +535,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         parent::onSwooleWorkerStart($serv, $workerId);
         $this->initAsynPools($workerId);
-        $this->redis_pool = $this->asynPools['redisPool'] ?? null;
-        $this->mysql_pool = $this->asynPools['mysqlPool'] ?? null;
         //进程锁保证只有一个进程会执行以下的代码,reload也不会执行
         if (!$this->isTaskWorker() && $this->initLock->trylock()) {
             //进程启动后进行开服的初始化
@@ -576,6 +574,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if ($this->config->get('mysql.enable', true)) {
             $this->asynPools['mysqlPool'] = new MysqlAsynPool($this->config, $this->config->get('mysql.active'));
         }
+        $this->redis_pool = $this->asynPools['redisPool'] ?? null;
+        $this->mysql_pool = $this->asynPools['mysqlPool'] ?? null;
     }
 
     /**

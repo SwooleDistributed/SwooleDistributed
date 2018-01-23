@@ -34,7 +34,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "2.7.6";
+    const version = "2.7.7-beta";
 
     /**
      * server name
@@ -145,7 +145,6 @@ abstract class SwooleServer extends ProcessRPC
     public function __construct()
     {
         $this->onErrorHandel = [$this, 'onErrorHandel'];
-        Start::initServer($this);
         $this->setConfig();
         $this->middlewareManager = new MiddlewareManager();
         $this->user = $this->config->get('server.set.user', '');
