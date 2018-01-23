@@ -100,6 +100,22 @@ class CatCacheProcess extends Process
     }
 
     /**
+     * 清理Actor
+     */
+    public function clearActor()
+    {
+        unset($this->map["@Actor"]);
+    }
+
+    /**
+     * 清理定时器
+     */
+    public function clearTimerBack()
+    {
+        unset($this->map["timer_back"]);
+    }
+
+    /**
      * 设置RPC代理
      * @param $object
      */

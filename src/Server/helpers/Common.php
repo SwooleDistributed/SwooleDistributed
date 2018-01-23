@@ -162,14 +162,6 @@ function checkExtension()
         secho("STA", "配置文件有不兼容的可能，请将vendor/tmtbe/swooledistributed/src/config目录替换src/config目录，然后重新配置");
         $check = false;
     }
-
-    $dispatch_enable = get_instance()->config->get('dispatch.enable', false);
-    if ($dispatch_enable) {
-        if (!get_instance()->config->get('redis.enable', true)) {
-            secho("STA", "开启dispatch，就必须启动redis的配置");
-            $check = false;
-        }
-    }
     return $check;
 }
 
@@ -311,15 +303,17 @@ function secho($tile, $message)
     $send = "";
     foreach ($content as $value) {
         if (!empty($value)) {
-            $echo = "[$tile]\t$value\n";
+            $echo = "<fg=white>> [$tile] $value</>";
             $send = $send . $echo;
             if ($could) {
-                echo $echo;
+                \Server\Start::$io->text($echo);
             }
         }
     }
     try {
-        get_instance()->pub('$SYS/' . getNodeName() . "/echo", $send);
+        if (get_instance() != null) {
+            get_instance()->pub('$SYS/' . getNodeName() . "/echo", $send);
+        }
     } catch (Exception $e) {
 
     }

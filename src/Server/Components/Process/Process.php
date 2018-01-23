@@ -38,10 +38,12 @@ abstract class Process extends ProcessRPC
         $this->name = $name;
         $this->worker_id = $worker_id;
         $this->coroutine_need = $coroutine_need;
-        $this->process = new \swoole_process([$this, '__start'], false, 2);
         $this->config = get_instance()->config;
         $this->log = get_instance()->log;
-        get_instance()->server->addProcess($this->process);
+        if (get_instance()->server != null) {
+            $this->process = new \swoole_process([$this, '__start'], false, 2);
+            get_instance()->server->addProcess($this->process);
+        }
     }
 
     public function __start($process)
