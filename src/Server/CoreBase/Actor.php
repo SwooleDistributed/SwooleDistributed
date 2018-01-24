@@ -241,6 +241,7 @@ abstract class Actor extends CoreBase
 
     public function destroy()
     {
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_removeActor($this->name);
         EventDispatcher::getInstance()->removeAll($this->messageId);
         EventDispatcher::getInstance()->remove(self::SAVE_NAME . Actor::ALL_COMMAND, [$this, '_handle']);
         foreach ($this->timerIdArr as $id) {

@@ -185,11 +185,11 @@ class ClusterProcess extends Process
             foreach ($this->client as $client) {
                 $client->removeNodeUid($this->node_name, $uid);
             }
+            if (Start::isLeader()) {
+                get_instance()->pub('$SYS/uidcount', $this->countOnline());
+            }
         }
         $this->my_clearUidSub($uid);
-        if (Start::isLeader()) {
-            get_instance()->pub('$SYS/uidcount', $this->countOnline());
-        }
     }
 
     /**

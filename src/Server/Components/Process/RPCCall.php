@@ -50,13 +50,14 @@ class RPCCall
         $token = 0;
         switch ($this->case) {
             case self::INIT_PROCESS:
-                if ($this->oneWay == 'auto') {
+                if ($this->oneWay === 'auto') {
                     $this->oneWay = $this->process->isOneWay($name);
                 }
+
                 $token = $this->process->processRpcCall($name, $arguments, $this->oneWay, $this->process->worker_id);
                 break;
             case self::INIT_WORKERID:
-                if ($this->oneWay == 'auto') {
+                if ($this->oneWay === 'auto') {
                     $this->oneWay = false;
                 }
                 $token = get_instance()->processRpcCall($name, $arguments, $this->oneWay, $this->workerId);
