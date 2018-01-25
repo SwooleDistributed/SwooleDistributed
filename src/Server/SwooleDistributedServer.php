@@ -146,7 +146,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if (!$this->isCluster()) {
             Start::setLeader(true);
         }
-        return parent::start();
+        parent::start();
     }
 
     /**

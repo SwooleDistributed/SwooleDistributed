@@ -75,6 +75,9 @@ class ProcessManager
         if (!array_key_exists($class_name . $name, $this->map)) {
             throw new \Exception("不存在$class_name 进程");
         }
+        if (get_instance()->isTaskWorker()) {
+            throw new \Exception("不能在Task中执行");
+        }
         return Pool::getInstance()->get(RPCCall::class)->init($this->map[$class_name . $name], $oneWay);
     }
 
