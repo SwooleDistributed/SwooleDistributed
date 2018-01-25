@@ -34,7 +34,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "2.7.7-beta3";
+    const version = "2.7.7-beta4";
 
     /**
      * server name
@@ -190,8 +190,6 @@ abstract class SwooleServer extends ProcessRPC
         $set['daemonize'] = Start::getDaemonize();
         $this->server->set($set);
         swoole_async_set([
-            'aio_mode' => SWOOLE_AIO_BASE,
-            'thread_num' => 100,
             'socket_buffer_size' => 128 * 1024 * 1024
         ]);
     }
