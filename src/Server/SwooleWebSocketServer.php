@@ -82,7 +82,9 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
     public function onSwooleWorkerStop($serv, $workerId)
     {
         parent::onSwooleWorkerStart($serv, $workerId);
-        ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->setData("wsRequest:$workerId", $this->fdRequest);
+        if(!$this->isTaskWorker()) {
+            ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->setData("wsRequest:$workerId", $this->fdRequest);
+        }
     }
 
     /**
