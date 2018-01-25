@@ -151,7 +151,8 @@ class MysqlAsynPool extends AsynPool
         }
 
         $sql = $data['sql'];
-        $client->query($sql, function ($client, $result) use ($data) {
+        $client->query($sql, function ($client, $result) use ($data, $sql) {
+            $sql = strtolower($sql);
             if ($result === false) {
                 if ($client->errno == 2006 || $client->errno == 2013) {//断线重连
                     $client->close();
@@ -161,15 +162,14 @@ class MysqlAsynPool extends AsynPool
                     }
                     return;
                 } else {//发生错误
-                    if (isset($data['bind_id'])) {//事务的话要rollback
+                    if (isset($data['bind_id']) && $sql != 'rollback') {//事务的话要rollback
                         $data['sql'] = 'rollback';
                         $this->commands->unshift($data);
                     }
                     //设置错误信息
-                    $data['result']['error'] = "[mysql]:" . $client->error . "[sql]:" . $data['sql'];
+                    $data['result']['error'] = "[mysql]:" . $client->error . " [sql]:" . $sql;
                 }
             }
-            $sql = strtolower($data['sql']);
             if ($sql == 'begin') {
                 $data['result'] = $data['bind_id'];
             } else {
@@ -218,11 +218,13 @@ class MysqlAsynPool extends AsynPool
      */
     public function free_bind($bind_id)
     {
-        $client = $this->bind_pool[$bind_id]['client'];
-        if ($client != null) {
-            $this->pushToPool($client);
+        if (array_key_exists($bind_id, $this->bind_pool)) {
+            $client = $this->bind_pool[$bind_id]['client'];
+            if ($client != null) {
+                $this->pushToPool($client);
+            }
+            unset($this->bind_pool[$bind_id]);
         }
-        unset($this->bind_pool[$bind_id]);
     }
 
     /**
