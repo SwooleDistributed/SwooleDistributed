@@ -30,8 +30,12 @@ class BackstageProcess extends Process
             get_instance()->server->shutdown();
             exit();
         }
-
-        $this->exec($path, [$this->config->get("backstage.port"), $this->config->get("backstage.websocket_port")]);
+        $newPath = str_replace('backstage',getServerName()."-backstage",$path);
+        if (!is_file($newPath)) {
+            copy($path, $newPath);
+        }
+        chmod($newPath,0777);
+        $this->exec($newPath, [$this->config->get("backstage.port"), $this->config->get("backstage.websocket_port")]);
     }
 
     protected function onShutDown()

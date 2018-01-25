@@ -303,10 +303,10 @@ function secho($tile, $message)
     $send = "";
     foreach ($content as $value) {
         if (!empty($value)) {
-            $echo = "<fg=white>> [$tile] $value</>";
+            $echo = "[$tile] $value";
             $send = $send . $echo;
             if ($could) {
-                \Server\Start::$io->text($echo);
+                echo " > $echo.\n";
             }
         }
     }
