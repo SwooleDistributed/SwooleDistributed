@@ -1875,8 +1875,12 @@ class Miner
             }
             return new MysqlSyncHelp($sql, $data);
         } else {
+            $return = Pool::getInstance()->get(MySqlCoroutine::class)->init($this->mysql_pool, $bind_id, $sql);
+            if ($this->isUpdate()) {
+                $return->setTimeout(15000);
+            }
             $this->clear();
-            return Pool::getInstance()->get(MySqlCoroutine::class)->init($this->mysql_pool, $bind_id, $sql);
+            return $return;
         }
     }
 
