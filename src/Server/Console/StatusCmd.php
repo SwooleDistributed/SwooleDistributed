@@ -35,7 +35,7 @@ class StatusCmd extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $io = new SymfonyStyle($input, $output);
-        $server_name = getServerName();
+        $server_name = $this->config['name'] ?? 'SWD';
         $master_pid = exec("ps -ef | grep $server_name-Master | grep -v 'grep ' | awk '{print $2}'");
         $io->title('WELLCOME START SWOOLE DISTRIBUTED, HAVE FUN!');
         $io->table(

@@ -31,7 +31,7 @@ class KillCmd extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $io = new SymfonyStyle($input, $output);
-        $server_name = getServerName();
+        $server_name = $this->config['name'] ?? 'SWD';
         $result = $io->confirm("Kill the $server_name server?", false);
         if (!$result) {
             $io->warning("Cancel by user");

@@ -30,11 +30,11 @@ class BackstageProcess extends Process
             get_instance()->server->shutdown();
             exit();
         }
-        $newPath = str_replace('backstage',getServerName()."-backstage",$path);
+        $newPath = str_replace('backstage', getServerName() . "-backstage", $path);
         if (!is_file($newPath)) {
             copy($path, $newPath);
         }
-        chmod($newPath,0777);
+        chmod($newPath, 0777);
         $this->exec($newPath, [$this->config->get("backstage.port"), $this->config->get("backstage.websocket_port")]);
     }
 
