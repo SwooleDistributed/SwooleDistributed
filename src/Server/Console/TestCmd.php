@@ -10,6 +10,7 @@ namespace Server\Console;
 
 
 use app\AppServer;
+use Noodlehaus\Config;
 use Server\Start;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -24,6 +25,7 @@ class TestCmd extends Command
     public function __construct($name = null)
     {
         parent::__construct($name);
+        $this->config = new Config(getConfigDir());
     }
 
     protected function configure()

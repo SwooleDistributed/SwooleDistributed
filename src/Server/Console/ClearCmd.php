@@ -10,6 +10,7 @@ namespace Server\Console;
 
 
 use app\AppServer;
+use Noodlehaus\Config;
 use Server\Components\CatCache\CatCacheProcess;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -23,6 +24,7 @@ class ClearCmd extends Command
     public function __construct($name = null)
     {
         parent::__construct($name);
+        $this->config = new Config(getConfigDir());
     }
 
     protected function configure()
