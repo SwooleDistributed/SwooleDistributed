@@ -273,6 +273,9 @@ class ClusterProcess extends Process
         if (empty($uid)) return;
         if (isset($this->subArr[$topic])) {
             $this->subArr[$topic]->remove($uid);
+            if($this->subArr[$topic]->count()==0){
+                unset($this->subArr[$topic]);
+            }
         }
     }
 
