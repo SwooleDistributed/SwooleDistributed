@@ -28,7 +28,7 @@ class FabioProcess extends Process
         $fabio = get_instance()->config['fabio'];
         $http_port=isset($fabio['http_port'])?$fabio['http_port']:6666;
         $tcp_port=isset($fabio['tcp_port'])?$fabio['tcp_port']:1234;
-        $this->exec(BIN_DIR . "/exec/fabio", ['-proxy.addr',":$http_port,:$tcp_port;proto=tcp"]);
+        $this->exec(BIN_DIR . "/exec/fabio", ['-proxy.addr',":$http_port,:$tcp_port;proto=http"]);
     }
     protected function onShutDown()
     {
