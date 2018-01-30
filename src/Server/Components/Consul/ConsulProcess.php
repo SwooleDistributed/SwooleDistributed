@@ -89,7 +89,7 @@ class ConsulProcess extends Process
                             }
                         }
                         $newConfig['services'][] = [
-                            'id' => "{$service_name}tcp".getBindIp().':'.$service_port,
+                            'id' => "{$service_name}http".getBindIp().':'.$service_port,
                             'name' => $service_name,
                             'address' => getBindIp(),
                             'port' => $service_port,
