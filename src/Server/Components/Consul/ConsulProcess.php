@@ -72,18 +72,34 @@ class ConsulProcess extends Process
                             ]];
                         break;
                     case PortManager::SOCK_HTTP:
+                        $tag=['http'];
+                        //如果开启fabio则写入
+                        if ($fabio['enable']&&isset($fabio['services'][$service_name])){
+                            try {
+                                foreach ($fabio['services'][$service_name] as $service){
+                                    if (strpos($service,'/')===0)
+                                        $tag[]='urlprefix-'.$service;
+                                    else{
+                                        $tag[]='urlprefix-/'.$service;
+                                    }
+                                }
+                            } catch (\Exception $e) {
+                                throw new \Exception("consul.php中['fabio']['services']配置有误");
+                            }
+                        }
                         $newConfig['services'][] = [
                             'id' => "Http_$service_name",
                             'name' => $service_name,
                             'address' => getBindIp(),
                             'port' => $service_port,
-                            'tags' => ['http'],
+                            'tags' => $tag,
                             'check' => [
                                 'name' => 'status',
                                 'http' => "http://localhost:$service_port/$service_name/" . ConsulHelp::HEALTH,
                                 'interval' => "10s",
                                 'timeout' => "1s"
                             ]];
+                        unset($tag);
                         break;
                 }
             }

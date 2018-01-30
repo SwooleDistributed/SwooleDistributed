@@ -29,4 +29,23 @@ $config['consul']['services'] = ['MathService:9091', 'MathService:8081', 'TestCo
 $config['cluster']['enable'] = true;
 //TCP集群端口
 $config['cluster']['port'] = 9999;
+
+//是否开启fabio
+$config['fabio']['enable'] = true;
+
+//发布服务
+/*
+发布fabio服务后 访问本地地址http://127.0.0.1:6666/MathService/add  就可以访问到对应的服务，如果是多台服务器就会自动分配其中一台
+目前仅支持HTTP服务
+*/
+$config['fabio']['services'] =[
+    'MathService'=>['/MathService/add','/MathService/sum'],
+];
+//fabio地址 默认为回路地址 由于fabio和consul一样都需要每台服务器都安装，因此设置回路地址就好，可以不填
+$fabio['address']='127.0.0.1';
+//fabio http负载均衡端口
+$fabio['http_port']=6666;
+//fabio TCP负载均衡默认端口，TCP尚未开发完善
+$fabio['tcp_port']=1234;
+
 return $config;
