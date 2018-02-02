@@ -15,6 +15,7 @@ use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\Components\CatCache\CatCacheRpcProxy;
 use Server\Components\CatCache\TimerCallBack;
 use Server\Components\Consul\ConsulServices;
+use Server\Components\Consul\FabioServices;
 use Server\Components\Event\EventDispatcher;
 use Server\CoreBase\Actor;
 use Server\CoreBase\Controller;
@@ -345,6 +346,14 @@ class TestController extends Controller
         $rest = ConsulServices::getInstance()->getRPCService('MathService', $this->context);
         $reuslt = yield $rest->call('add', [1, 2], true);
         $this->http_output->end($reuslt);
+    }
+
+    public function http_testFabio()
+    {
+        $rest = FabioServices::getInstance()->getRESTService('MathService', $this->context);
+        $rest->setQuery(['one' => 1, 'two' => 2]);
+        $reuslt = yield $rest->add();
+        $this->http_output->end($reuslt['body']);
     }
 
     public function http_testRedisLua()
