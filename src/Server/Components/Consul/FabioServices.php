@@ -24,7 +24,7 @@ class FabioServices
         $http_port=isset($this->config['fabio']['http_port'])?$this->config['fabio']['http_port']:9999;
         $tcp_port=isset($this->config['fabio']['tcp_port'])?$this->config['fabio']['tcp_port']:1234;
         $this->http_services = new FabioRest($this->config, "http://$address:$http_port");
-        //$this->tcp_services = new FabioRpc($this->config, 'consul',"$address:$tcp_port");
+        $this->tcp_services = new FabioRpc($this->config, 'consul',"$address:$tcp_port");
     }
 
     public static function getInstance()
