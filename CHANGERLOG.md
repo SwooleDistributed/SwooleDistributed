@@ -413,3 +413,15 @@ try {
 
 # 2.7.7
 正式版，已经历线上产品验证，稳定
+
+# 2.7.8
+1.修复bug
+2.business配置支持路由到控制器
+```php
+'default' =>
+        [
+            'index' => ['TestController', 'test'] //转到控制器
+        ]
+    ,
+```
+通过传递给index一个数组即可路由到TestController的test方法，记住这里方法不需要加前缀

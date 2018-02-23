@@ -12,11 +12,13 @@ abstract class HttpMiddleware extends Middleware
 {
     protected $request;
     protected $response;
+    protected $httpRoot;
 
     public function init($request, $response)
     {
         $this->response = $response;
         $this->request = $request;
+        $this->httpRoot = $this->config['http']['root'];
     }
 
     /**
@@ -26,9 +28,9 @@ abstract class HttpMiddleware extends Middleware
      */
     public function getHostRoot($host)
     {
-        $root_path = $this->config['http']['root'][$host]['root'] ?? '';
+        $root_path = $this->httpRoot[$host]['root'] ?? '';
         if (empty($root_path)) {
-            $root_path = $this->config['http']['root']['default']['root'] ?? '';
+            $root_path = $this->httpRoot['default']['root'] ?? '';
         }
         if (!empty($root_path)) {
             $root_path = WWW_DIR . "/$root_path/";
@@ -45,7 +47,7 @@ abstract class HttpMiddleware extends Middleware
      */
     public function getHostIndex($host)
     {
-        $index = $this->config['http']['root'][$host]['index'] ?? $this->config['http']['root']['default']['index'] ?? 'index.html';
+        $index = $this->httpRoot[$host]['index'] ?? $this->httpRoot['default']['index'] ?? 'index.html';
         return $index;
     }
 
