@@ -245,7 +245,7 @@ abstract class Actor extends CoreBase
         EventDispatcher::getInstance()->removeAll($this->messageId);
         EventDispatcher::getInstance()->remove(self::SAVE_NAME . Actor::ALL_COMMAND, [$this, '_handle']);
         foreach ($this->timerIdArr as $id) {
-            \swoole_timer_clear($id);
+            @\swoole_timer_clear($id);
         }
         $this->saveContext->destroy();
         Pool::getInstance()->push($this->saveContext);
@@ -296,7 +296,7 @@ abstract class Actor extends CoreBase
      */
     public function clearTimer($id)
     {
-        \swoole_timer_clear($id);
+        @\swoole_timer_clear($id);
         unset($this->timerIdArr[$id]);
     }
 

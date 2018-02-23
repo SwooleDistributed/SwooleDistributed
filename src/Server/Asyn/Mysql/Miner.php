@@ -1876,7 +1876,7 @@ class Miner
             return new MysqlSyncHelp($sql, $data);
         } else {
             $return = Pool::getInstance()->get(MySqlCoroutine::class)->init($this->mysql_pool, $bind_id, $sql);
-            if ($this->isUpdate()) {
+            if (!$this->isSelect()) {
                 $return->setTimeout(15000);
             }
             $this->clear();
@@ -2478,7 +2478,7 @@ class Miner
         $isSelect = false;
         if ($sql != null) {//代表手动执行的sql
             $str = strtolower(substr(trim($sql), 0, 6));
-            if ($str == 'select' || strripos($sql, 'show') !== false) {
+            if ($str == 'select' || strripos($str, 'show') !== false) {
                 $isSelect = true;
             }
         }

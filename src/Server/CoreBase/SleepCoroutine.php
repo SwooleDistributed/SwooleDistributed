@@ -35,6 +35,7 @@ class SleepCoroutine extends CoroutineBase
     {
 
     }
+
     public function destroy()
     {
         parent::destroy();

@@ -35,12 +35,19 @@ class NormalHttpMiddleware extends HttpMiddleware
         }
         $extension = pathinfo($path, PATHINFO_EXTENSION);
         if ($path == "/") {//寻找主页
-            $www_path = $this->getHostRoot($host) . $this->getHostIndex($host);
-            $result = httpEndFile($www_path, $this->request, $this->response);
-            if (!$result) {
-                $this->redirect404();
+            $index = $this->getHostIndex($host);
+            if (is_string($index)) {
+                $www_path = $this->getHostRoot($host) . $this->getHostIndex($host);
+                $result = httpEndFile($www_path, $this->request, $this->response);
+                if (!$result) {
+                    $this->redirect404();
+                } else {
+                    $this->interrupt();
+                }
+            } elseif (is_array($index)) {
+                $this->request->server['path_info'] = "/" . implode("/", $index);
             } else {
-                $this->interrupt();
+                $this->redirect404();
             }
         } else if (!empty($extension)) {//有后缀
             $www_path = $this->getHostRoot($host) . $path;
