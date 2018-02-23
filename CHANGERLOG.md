@@ -416,6 +416,7 @@ try {
 
 # 2.7.8
 1.修复bug
+
 2.business配置支持路由到控制器
 ```php
 'default' =>
