@@ -25,12 +25,12 @@ class ConsoleModel extends Model
             $status["isCluster"] = get_instance()->isCluster();
             if (get_instance()->isCluster()) {
                 ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_status();
-                $nodes = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getNodes();
+                $nodes = ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getNodes();
                 sort($nodes);
                 $status["nodes"] = $nodes;
             } else {
                 $status["nodes"] = [getNodeName()];
-                yield get_instance()->getStatus();
+                get_instance()->getStatus();
             }
             get_instance()->pub('$SYS/status', $status);
         }

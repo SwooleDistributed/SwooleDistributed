@@ -13,27 +13,34 @@ use Server\Memory\Pool;
 
 class EventCoroutine extends CoroutineBase
 {
-
     public $eventType;
-
     public function __construct()
     {
         parent::__construct();
     }
 
-    public function init($eventType)
+    public function init($eventType, $set)
     {
         $this->eventType = $eventType;
         $this->request = '[Event]' . $eventType;
-        $this->getCount = getTickTime();
+        $this->set($set);
         EventDispatcher::getInstance()->add($this->eventType, [$this, 'send']);
-        return $this;
+        return $this->returnInit();
+    }
+
+    protected function coPush($data)
+    {
+        $this->result = $data;
+        if ($this->chan == null) return;
+        if (!$this->delayRecv || $this->startRecv) {
+            $this->chan->push($data);
+        }
     }
 
     public function send($event)
     {
-        $this->result = $event->data;
         EventDispatcher::getInstance()->remove($this->eventType, [$this, 'send']);
+        $this->coPush($event->data);
     }
 
     public function destroy()

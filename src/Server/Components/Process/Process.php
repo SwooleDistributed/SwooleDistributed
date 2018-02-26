@@ -10,7 +10,6 @@ namespace Server\Components\Process;
 
 
 use Server\Components\Event\EventDispatcher;
-use Server\Coroutine\Coroutine;
 use Server\SwooleMarco;
 
 abstract class Process extends ProcessRPC
@@ -21,23 +20,15 @@ abstract class Process extends ProcessRPC
     protected $log;
     protected $token = 0;
     /**
-     * 协程支持
-     * @var bool
-     */
-    protected $coroutine_need = true;
-
-    /**
      * Process constructor.
      * @param $name
      * @param $worker_id
-     * @param bool $coroutine_need
      */
-    public function __construct($name, $worker_id, $coroutine_need = true)
+    public function __construct($name, $worker_id)
     {
         parent::__construct();
         $this->name = $name;
         $this->worker_id = $worker_id;
-        $this->coroutine_need = $coroutine_need;
         $this->config = get_instance()->config;
         $this->log = get_instance()->log;
         if (get_instance()->server != null) {
@@ -57,13 +48,9 @@ abstract class Process extends ProcessRPC
         swoole_event_add($process->pipe, [$this, 'onRead']);
         get_instance()->server->worker_id = $this->worker_id;
         get_instance()->server->taskworker = false;
-        if ($this->coroutine_need) {
-            //协成支持
-            Coroutine::init();
-            Coroutine::startCoroutine([$this, 'start'], [$process]);
-        } else {
+        go(function () use ($process) {
             $this->start($process);
-        }
+        });
     }
 
 
@@ -83,6 +70,7 @@ abstract class Process extends ProcessRPC
     }
 
     abstract protected function onShutDown();
+
     /**
      * onRead
      */

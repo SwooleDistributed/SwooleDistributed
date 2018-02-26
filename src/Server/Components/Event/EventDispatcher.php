@@ -45,9 +45,9 @@ class EventDispatcher
     public function add($type, $listener)
     {
         if (!array_key_exists($type, $this->_eventListeners)) {
-            $this->_eventListeners [$type] = array();
+            $this->_eventListeners [$type] = [];
         }
-        array_push($this->_eventListeners [$type], $listener);
+        array_push($this->_eventListeners[$type], $listener);
     }
 
     /**
@@ -122,7 +122,7 @@ class EventDispatcher
             return;
         }
         foreach ($listeners as $listener) {
-            call_user_func($listener, $event);
+            \co::call_user_func($listener, $event);
         }
     }
 
@@ -186,10 +186,11 @@ class EventDispatcher
     /**
      * 协程的仅仅一次的回调
      * @param $eventType
+     * @param callable $set
      * @return EventCoroutine
      */
-    public function addOnceCoroutine($eventType)
+    public function addOnceCoroutine($eventType, callable $set = null)
     {
-        return Pool::getInstance()->get(EventCoroutine::class)->init($eventType);
+        return Pool::getInstance()->get(EventCoroutine::class)->init($eventType, $set);
     }
 }

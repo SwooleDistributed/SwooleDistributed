@@ -146,9 +146,9 @@ class TcpClientPool extends AsynPool
      * @param bool $oneway
      * @return TcpClientRequestCoroutine
      */
-    public function coroutineSend($send, $oneway = false)
+    public function coroutineSend($send, $oneway = false, callable $set = null)
     {
-        return Pool::getInstance()->get(TcpClientRequestCoroutine::class)->init($this, $send, $oneway);
+        return Pool::getInstance()->get(TcpClientRequestCoroutine::class)->init($this, $send, $oneway, $set);
     }
 
     /**

@@ -44,11 +44,6 @@ class CatCacheRpcProxy implements \ArrayAccess
         });
     }
 
-    public function __call($name, $arguments)
-    {
-        return call_user_func_array([$this, $name], $arguments);
-    }
-
     /**
      * 完成回调
      * @param $key
@@ -141,7 +136,7 @@ class CatCacheRpcProxy implements \ArrayAccess
     }
 
     /**
-     * @return CatCacheRpcProxy
+     * @return CatCacheRpc
      */
     public static function getRpc()
     {

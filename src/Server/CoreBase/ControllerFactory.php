@@ -2,8 +2,6 @@
 
 namespace Server\CoreBase;
 
-use Server\Components\AOP\AOP;
-
 /**
  * 控制器工厂模式
  * Created by PhpStorm.
@@ -57,13 +55,13 @@ class ControllerFactory
         if (!$controllers->isEmpty()) {
             $controller_instance = $controllers->shift();
             $controller_instance->reUse();
-            return AOP::getAOP($controller_instance);
+            return $controller_instance;
         }
         if (class_exists($controller)) {
             $controller_instance = new $controller;
             $controller_instance->core_name = $controller;
             $this->addNewCount($controller);
-            return AOP::getAOP($controller_instance);
+            return $controller_instance;
         }
         $controller_new = str_replace('/', '\\', $controller);
         $class_name = "app\\Controllers\\$controller_new";
@@ -71,7 +69,7 @@ class ControllerFactory
             $controller_instance = new $class_name;
             $controller_instance->core_name = $controller;
             $this->addNewCount($controller);
-            return AOP::getAOP($controller_instance);
+            return $controller_instance;
         } else {
             if (!$this->allow_ServerController) {
                 return null;
@@ -81,7 +79,7 @@ class ControllerFactory
                 $controller_instance = new $class_name;
                 $controller_instance->core_name = $controller;
                 $this->addNewCount($controller);
-                return AOP::getAOP($controller_instance);
+                return $controller_instance;
             } else {
                 return null;
             }

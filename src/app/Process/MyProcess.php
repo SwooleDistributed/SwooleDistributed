@@ -21,4 +21,9 @@ class MyProcess extends Process
     {
         return '123';
     }
+
+    protected function onShutDown()
+    {
+        // TODO: Implement onShutDown() method.
+    }
 }

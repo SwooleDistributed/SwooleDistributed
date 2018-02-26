@@ -1,4 +1,5 @@
 <?php
+
 namespace Server\Tasks;
 
 use Server\CoreBase\Task;
@@ -35,14 +36,14 @@ class TestTask extends Task
     public function test_task()
     {
         $testModel = $this->loader->model('TestModel', $this);
-        $result = yield $testModel->test_task();
+        $result = $testModel->test_task();
         print_r($result);
     }
 
     public function testPdo()
     {
         $testModel = $this->loader->model('TestModel', $this);
-        yield $testModel->test_pdo();
+        $testModel->test_pdo();
     }
 
     public function testLong()
@@ -66,25 +67,25 @@ class TestTask extends Task
 
     public function testRedis()
     {
-        yield $this->helpRedis();
-        yield $this->helpRedis();
-        yield $this->helpRedis();
+        $this->helpRedis();
+        $this->helpRedis();
+        $this->helpRedis();
         return 1;
     }
 
     public function helpRedis()
     {
-        $result = yield $this->redis_pool->getCoroutine()->get('test');
-        $result = yield $this->redis_pool->getCoroutine()->get('test2');
-        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('task')
+        $result = $this->redis_pool->getCoroutine()->get('test');
+        $result = $this->redis_pool->getCoroutine()->get('test2');
+        $result = $this->mysql_pool->dbQueryBuilder->select('*')->from('task')
             ->whereIn('type', [0, 1])->where('status', 1)->coroutineSend();
-        yield $this->testMysql();
+        $this->testMysql();
         return 1;
     }
 
     public function testMysql()
     {
-        yield $this->mysql_pool->dbQueryBuilder->coroutineSend(null,
+        $this->mysql_pool->dbQueryBuilder->coroutineSend(null,
             "update account set phone = 1 WHERE uid = 1");
         throw new \Exception("aaaaaaaa");
     }

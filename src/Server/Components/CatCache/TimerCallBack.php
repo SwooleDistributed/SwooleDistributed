@@ -12,7 +12,6 @@ namespace Server\Components\CatCache;
 use Server\Components\Event\Event;
 use Server\Components\Event\EventDispatcher;
 use Server\CoreBase\Child;
-use Server\Coroutine\Coroutine;
 use Server\Memory\Pool;
 
 class TimerCallBack
@@ -50,13 +49,11 @@ class TimerCallBack
     public static function init()
     {
         EventDispatcher::getInstance()->add(TimerCallBack::KEY, function (Event $event) {
-            Coroutine::startCoroutine(function () use ($event) {
-                $child = Pool::getInstance()->get(Child::class);
-                $model = get_instance()->loader->model($event->data['model_name'], $child);
-                yield call_user_func_array([$model, $event->data['model_fuc']], $event->data['param_arr']);
-                $child->destroy();
-                Pool::getInstance()->push($child);
-            });
+            $child = Pool::getInstance()->get(Child::class);
+            $model = get_instance()->loader->model($event->data['model_name'], $child);
+            \co::call_user_func_array([$model, $event->data['model_fuc']], $event->data['param_arr']);
+            $child->destroy();
+            Pool::getInstance()->push($child);
         });
     }
 }

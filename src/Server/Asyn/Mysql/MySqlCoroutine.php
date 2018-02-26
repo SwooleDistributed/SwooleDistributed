@@ -30,22 +30,41 @@ class MySqlCoroutine extends CoroutineBase
     /**
      * 对象池模式代替__construct
      * @param $_mysqlAsynPool
-     * @param null $_bind_id
-     * @param null $_sql
+     * @param $_bind_id
+     * @param $_sql
+     * @param $set
      * @return $this
      */
-    public function init($_mysqlAsynPool, $_bind_id = null, $_sql = null)
+    public function init($_mysqlAsynPool, $_bind_id, $_sql, $set)
     {
         $this->mysqlAsynPool = $_mysqlAsynPool;
         $this->bind_id = $_bind_id;
         $this->sql = $_sql;
         $this->request = '#Mysql:' . $_sql;
         $this->getCount = getTickTime();
+        $this->set($set);
         $this->send(function ($result) {
-            $this->result = $result;
-            $this->immediateExecution();
+            $this->coPush($result);
         });
-        return $this;
+        return $this->returnInit();
+    }
+
+    public function recv()
+    {
+        $result = parent::recv();
+        if (is_array($result) && isset($result['error'])) {
+            if (!$this->noException) {
+                $this->isFaile = true;
+                $ex = new SwooleException($result['error']);
+                throw $ex;
+            } else {
+                $this->result = $this->noExceptionReturn;
+            }
+        }
+        if ($this->resultHandle != null && is_array($result)) {
+            $result = \co::call_user_func($this->resultHandle, $result);
+        }
+        return $result;
     }
 
     public function send($callback)
@@ -53,24 +72,6 @@ class MySqlCoroutine extends CoroutineBase
         $this->token = $this->mysqlAsynPool->query($callback, $this->bind_id, $this->sql);
     }
 
-    public function getResult()
-    {
-        $result = parent::getResult();
-        if (is_array($result) && isset($result['error'])) {
-            if (!$this->noException) {
-                $this->isFaile = true;
-                $ex = new SwooleException($result['error']);
-                $this->destroy();
-                throw $ex;
-            } else {
-                $this->result = $this->noExceptionReturn;
-            }
-        }
-        if ($this->resultHandle != null && is_array($result)) {
-            $result = call_user_func($this->resultHandle, $result);
-        }
-        return $result;
-    }
 
     public function destroy()
     {

@@ -14,7 +14,6 @@ use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Event\EventCoroutine;
 use Server\Components\Event\EventDispatcher;
 use Server\Components\Process\ProcessManager;
-use Server\Coroutine\Coroutine;
 use Server\Memory\Pool;
 
 abstract class Actor extends CoreBase
@@ -64,7 +63,7 @@ abstract class Actor extends CoreBase
      */
     public function initialization($name, $saveContext = null)
     {
-        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_addActor($name);
+        $result = ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_addActor($name);
         //恢复的时候不需要判断重名问题，只有在创建的时候才需要
         if (!$result && $saveContext == null) {
             throw new \Exception("Actor不允许重名");
@@ -105,7 +104,7 @@ abstract class Actor extends CoreBase
     {
         if ($this->saveContext['@status'] == null) return;
         foreach ($this->saveContext['@status'] as $key => $value) {
-            Coroutine::startCoroutine([$this, "registStatusHandle"], [$key, $value]);
+            $this->registStatusHandle($key, $value);
         }
     }
 
@@ -128,7 +127,7 @@ abstract class Actor extends CoreBase
             //二维数组需要自己手动调用save
             $this->saveContext->save();
         }
-        Coroutine::startCoroutine([$this, "registStatusHandle"], [$key, $value]);
+        $this->registStatusHandle($key, $value);
     }
 
     /**
@@ -150,18 +149,9 @@ abstract class Actor extends CoreBase
                 return;
             }
         }
-        $generator = call_user_func_array([$this, $function], $params);
-        if ($generator instanceof \Generator) {
-            Coroutine::startCoroutine(function () use (&$generator, $workerId, $token, $oneWay, $node) {
-                $result = yield $generator;
-                if (!$oneWay) {
-                    $this->rpcBack($workerId, $token, $result, $node);
-                }
-            });
-        } else {
-            if (!$oneWay) {
-                $this->rpcBack($workerId, $token, $generator, $node);
-            }
+        $generator = \co::call_user_func_array([$this, $function], $params);
+        if (!$oneWay) {
+            $this->rpcBack($workerId, $token, $generator, $node);
         }
     }
 
@@ -236,7 +226,7 @@ abstract class Actor extends CoreBase
      */
     public function recoveryRegister()
     {
-        yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->recoveryRegisterActor($this->name);
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->recoveryRegisterActor($this->name);
     }
 
     public function destroy()
@@ -308,6 +298,7 @@ abstract class Actor extends CoreBase
     {
         return Pool::getInstance()->get(ActorRpc::class)->init($actorName);
     }
+
     /**
      * 呼叫Actor
      * @param $actorName
@@ -315,9 +306,10 @@ abstract class Actor extends CoreBase
      * @param $params
      * @param bool $oneWay
      * @param null $bindId
+     * @param callable|null $set
      * @return EventCoroutine
      */
-    public static function call($actorName, $call, $params = null, $oneWay = false, $bindId = null)
+    public static function call($actorName, $call, $params = null, $oneWay = false, $bindId = null, callable $set = null)
     {
         $data['call'] = $call;
         $data['params'] = $params;
@@ -329,14 +321,23 @@ abstract class Actor extends CoreBase
         $data['token'] = 'Actor-' . get_instance()->getWorkerId() . '-' . self::$RPCtoken;
         $result = null;
         if (!$oneWay) {
-            $result = Pool::getInstance()->get(EventCoroutine::class)->init($data['token']);
+            $result = Pool::getInstance()->get(EventCoroutine::class)->init($data['token'], function (EventCoroutine $eventCoroutine) use ($set) {
+                $eventCoroutine->setDelayRecv();
+                if ($set != null) {
+                    $set($eventCoroutine);
+                }
+            });
         }
         if (get_instance()->isCluster()) {//集群通过ClusterProcess进行分发
             ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->callActor($actorName, $data);
         } else {//非集群直接发
             EventDispatcher::getInstance()->dispatch(self::SAVE_NAME . $actorName, $data);
         }
-        return $result;
+        if ($oneWay) {
+            return null;
+        } else {
+            return $result->recv();
+        }
     }
 
     /**
@@ -348,7 +349,7 @@ abstract class Actor extends CoreBase
     public static function create($class, $name)
     {
         $actor = Pool::getInstance()->get($class);
-        yield $actor->initialization($name);
+        $actor->initialization($name);
         return $actor;
     }
 
@@ -376,7 +377,7 @@ abstract class Actor extends CoreBase
      */
     public static function recovery($worker_id)
     {
-        $data = yield CatCacheRpcProxy::getRpc()[Actor::SAVE_NAME];
+        $data = CatCacheRpcProxy::getRpc()[Actor::SAVE_NAME];
         $delimiter = get_instance()->config->get("catCache.delimiter", ".");
         if ($data != null) {
             foreach ($data as $key => $value) {
@@ -384,7 +385,7 @@ abstract class Actor extends CoreBase
                     $path = Actor::SAVE_NAME . $delimiter . $key;
                     $saveContext = Pool::getInstance()->get(ActorContext::class)->initialization($path, $value[ActorContext::CLASS_KEY], $worker_id, $value);
                     $actor = Pool::getInstance()->get($saveContext->getClass());
-                    yield $actor->initialization($key, $saveContext);
+                    $actor->initialization($key, $saveContext);
                 }
             }
             if ($worker_id == 0) {

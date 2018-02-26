@@ -1,4 +1,5 @@
 <?php
+
 namespace Server\CoreBase;
 
 use Server\Memory\Pool;
@@ -73,11 +74,12 @@ class TaskProxy extends CoreBase
     /**
      * 异步的协程模式
      * @param int $dst_worker_id
+     * @param callable|null $set
      * @return TaskCoroutine
      */
-    public function coroutineSend($dst_worker_id = -1)
+    public function coroutineSend($dst_worker_id = -1, callable $set = null)
     {
-        return Pool::getInstance()->get(TaskCoroutine::class)->init($this->task_proxy_data, $dst_worker_id);
+        return Pool::getInstance()->get(TaskCoroutine::class)->init($this->task_proxy_data, $dst_worker_id, $set);
     }
 
     /**

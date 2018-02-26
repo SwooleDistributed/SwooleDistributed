@@ -158,7 +158,7 @@ class HttpClient
                     $data['headers'] = $client->headers;
                     $data['body'] = $client->body;
                     $data['statusCode'] = $client->statusCode;
-                    call_user_func($callBack, $data);
+                    \co::call_user_func($callBack, $data);
                 });
             });
         } else {
@@ -182,7 +182,7 @@ class HttpClient
                 $data['headers'] = $client->headers;
                 $data['body'] = $client->body;
                 $data['statusCode'] = $client->statusCode;
-                call_user_func($callBack, $data);
+                \co::call_user_func($callBack, $data);
             });
         }
     }
@@ -190,10 +190,11 @@ class HttpClient
     /**
      * 协程版执行
      * @param $path
+     * @param callable|null $set
      * @return HttpClientRequestCoroutine
      * @throws SwooleException
      */
-    public function coroutineExecute($path)
+    public function coroutineExecute($path, callable $set = null)
     {
         if (empty($this->baseUrl)) {
             throw new SwooleException('httpClient not set baseUrl!');
@@ -202,7 +203,7 @@ class HttpClient
         $data['path'] = $path;
         $data['callMethod'] = 'execute';
         $this->reset();
-        return Pool::getInstance()->get(HttpClientRequestCoroutine::class)->init($this->pool, $data);
+        return Pool::getInstance()->get(HttpClientRequestCoroutine::class)->init($this->pool, $data, $set);
     }
 
     /**
@@ -224,10 +225,11 @@ class HttpClient
      * @param string $path
      * @param string $filename
      * @param int $offset
+     * @param callable|null $set
      * @return HttpClientRequestCoroutine
      * @throws SwooleException
      */
-    public function coroutineDownload(string $path, string $filename, int $offset = 0)
+    public function coroutineDownload(string $path, string $filename, int $offset = 0, callable $set = null)
     {
         if (empty($this->baseUrl)) {
             throw new SwooleException('httpclient not set base url');
@@ -236,6 +238,6 @@ class HttpClient
         $data['filename'] = $filename;
         $data['offset'] = $offset;
         $data['callMethod'] = 'download';
-        return Pool::getInstance()->get(HttpClientRequestCoroutine::class)->init($this->pool, $data);
+        return Pool::getInstance()->get(HttpClientRequestCoroutine::class)->init($this->pool, $data, $set);
     }
 }

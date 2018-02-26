@@ -15,21 +15,22 @@ class TestActor extends Actor
 {
     public function test1()
     {
-        yield $this->redis_pool->getCoroutine()->set("test", 199);
+        $this->redis_pool->getCoroutine()->set("test", 199);
         return 1;
     }
 
     public function test2()
     {
-        $result = yield $this->redis_pool->getCoroutine()->get("test");
+        $result = $this->redis_pool->getCoroutine()->get("test");
         return $result;
     }
 
     public function test3()
     {
-        $result = yield $this->redis_pool->getCoroutine()->del("test");
+        $result = $this->redis_pool->getCoroutine()->del("test");
         return "3";
     }
+
     /**
      * 处理注册状态
      * @param $key

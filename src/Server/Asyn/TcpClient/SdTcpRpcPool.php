@@ -158,11 +158,12 @@ class SdTcpRpcPool extends AsynPool
      * 协程的发送
      * @param $send
      * @param bool $oneway
+     * @param callable|null $set
      * @return TcpClientRequestCoroutine
      */
-    public function coroutineSend($send, $oneway = false)
+    public function coroutineSend($send, $oneway = false, callable $set = null)
     {
-        return Pool::getInstance()->get(TcpClientRequestCoroutine::class)->init($this, $send, $oneway);
+        return Pool::getInstance()->get(TcpClientRequestCoroutine::class)->init($this, $send, $oneway, $set);
     }
 
     /**

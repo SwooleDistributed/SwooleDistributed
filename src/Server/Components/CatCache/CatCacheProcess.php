@@ -241,7 +241,7 @@ class CatCacheProcess extends Process
                 }
                 $this->read_buffer .= $content;
                 $this->HELP_pack(function ($one) {
-                    call_user_func_array([$this->map, $one[0]], $one[1]);
+                    \co::call_user_func_array([$this->map, $one[0]], $one[1]);
                 });
                 return true;
             });
@@ -284,4 +284,5 @@ class CatCacheProcess extends Process
         $this->autoSave();
         secho("CatCache", "缓存保存成功");
     }
+
 }

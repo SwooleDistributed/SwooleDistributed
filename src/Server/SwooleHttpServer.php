@@ -13,7 +13,6 @@ namespace Server;
 use League\Plates\Engine;
 use Server\Components\Consul\ConsulHelp;
 use Server\CoreBase\ControllerFactory;
-use Server\Coroutine\Coroutine;
 
 abstract class SwooleHttpServer extends SwooleServer
 {
@@ -112,50 +111,47 @@ abstract class SwooleHttpServer extends SwooleServer
             $server_port = $this->getServerPort($request->fd);
         }
 
-        Coroutine::startCoroutine(function () use ($request, $response, $server_port) {
-            $middleware_names = $this->portManager->getMiddlewares($server_port);
-            $context = [];
-            $path = $request->server['path_info'];
-            $middlewares = $this->middlewareManager->create($middleware_names, $context, [$request, $response], true);
-            //before
+        $middleware_names = $this->portManager->getMiddlewares($server_port);
+        $context = [];
+        $path = $request->server['path_info'];
+        $middlewares = $this->middlewareManager->create($middleware_names, $context, [$request, $response], true);
+        //before
+        try {
+            $this->middlewareManager->before($middlewares);
+            //client_data进行处理
+            $route = $this->portManager->getRoute($server_port);
             try {
-                yield $this->middlewareManager->before($middlewares);
-                //client_data进行处理
-                $route = $this->portManager->getRoute($server_port);
-                try {
-                    $route->handleClientRequest($request);
-                    $controller_name = $route->getControllerName();
-                    $method_name = $this->portManager->getMethodPrefix($server_port) . $route->getMethodName();
-                    $path = $route->getPath();
-                    $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
-                    if ($controller_instance != null) {
-                        $controller_instance->setContext($context);
-                        if ($route->getMethodName() == ConsulHelp::HEALTH) {//健康检查
-                            $response->end('ok');
-                            $controller_instance->destroy();
-                        } else {
-                            yield $controller_instance->setRequestResponse($request, $response, $controller_name, $method_name, $route->getParams());
-                        }
+                $route->handleClientRequest($request);
+                $controller_name = $route->getControllerName();
+                $method_name = $this->portManager->getMethodPrefix($server_port) . $route->getMethodName();
+                $path = $route->getPath();
+                $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
+                if ($controller_instance != null) {
+                    $controller_instance->setContext($context);
+                    if ($route->getMethodName() == ConsulHelp::HEALTH) {//健康检查
+                        $response->end('ok');
+                        $controller_instance->destroy();
                     } else {
-                        throw new \Exception('no controller');
+                        $controller_instance->setRequestResponse($request, $response, $controller_name, $method_name, $route->getParams());
                     }
-                } catch (\Exception $e) {
-                    $route->errorHttpHandle($e, $request, $response);
+                } else {
+                    throw new \Exception('no controller');
                 }
             } catch (\Exception $e) {
+                $route->errorHttpHandle($e, $request, $response);
             }
-            //after
-            try {
-                yield $this->middlewareManager->after($middlewares, $path);
-            } catch (\Exception $e) {
-            }
-            $this->middlewareManager->destory($middlewares);
-            if (Start::getDebug()) {
-                secho("DEBUG", $context);
-            }
-            unset($context);
-        });
-
+        } catch (\Exception $e) {
+        }
+        //after
+        try {
+            $this->middlewareManager->after($middlewares, $path);
+        } catch (\Exception $e) {
+        }
+        $this->middlewareManager->destory($middlewares);
+        if (Start::getDebug()) {
+            secho("DEBUG", $context);
+        }
+        unset($context);
     }
 
 }

@@ -33,7 +33,7 @@ class MiddlewareManager
             }
             $one->setContext($context);
             if (is_callable([$one, 'init'])) {
-                call_user_func_array([$one, 'init'], $params);
+                $one->init(...$params);
             }
             $m[] = $one;
         }
@@ -70,7 +70,7 @@ class MiddlewareManager
     {
         $count = count($middlewares);
         for ($i = 0; $i < $count; $i++) {
-            yield $middlewares[$i]->getProxy()->before_handle();
+            $middlewares[$i]->getProxy()->before_handle();
         }
     }
 
@@ -83,7 +83,7 @@ class MiddlewareManager
     {
         $count = count($middlewares);
         for ($i = $count - 1; $i >= 0; $i--) {
-            yield $middlewares[$i]->getProxy()->after_handle($path);
+            $middlewares[$i]->getProxy()->after_handle($path);
         }
     }
 }

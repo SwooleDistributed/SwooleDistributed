@@ -79,10 +79,10 @@ class ConsulLeader
         if (empty($this->sessionID)) {
             $this->consul_leader->setData(json_encode(['LockDelay' => 0, 'Behavior' => 'release', 'Name' => $this->leader_name]))->setMethod('PUT')->execute('/v1/session/create', function ($data) use ($call) {
                 $this->sessionID = json_decode($data['body'], true)["ID"];
-                call_user_func($call, $this->sessionID);
+                $call($this->sessionID);
             });
         } else {
-            call_user_func($call, $this->sessionID);
+            $call($this->sessionID);
         }
     }
 

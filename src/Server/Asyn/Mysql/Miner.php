@@ -1849,9 +1849,10 @@ class Miner
      * 协程的方式
      * @param null $bind_id
      * @param null $sql
-     * @return MySqlCoroutine|MysqlSyncHelp
+     * @param callable|null $set
+     * @return MysqlSyncHelp
      */
-    public function coroutineSend($bind_id = null, $sql = null)
+    public function coroutineSend($bind_id = null, $sql = null, callable $set = null)
     {
         if ($sql == null) {
             $sql = $this->getStatement(false);
@@ -1875,10 +1876,7 @@ class Miner
             }
             return new MysqlSyncHelp($sql, $data);
         } else {
-            $return = Pool::getInstance()->get(MySqlCoroutine::class)->init($this->mysql_pool, $bind_id, $sql);
-            if (!$this->isSelect()) {
-                $return->setTimeout(15000);
-            }
+            $return = Pool::getInstance()->get(MySqlCoroutine::class)->init($this->mysql_pool, $bind_id, $sql, $set);
             $this->clear();
             return $return;
         }

@@ -34,17 +34,16 @@ class ProcessManager
 
     /**
      * @param $class_name
-     * @param bool $needCoroutine
      * @param string $name
      * @return Process
      * @throws \Exception
      */
-    public function addProcess($class_name, $needCoroutine = true, $name = '')
+    public function addProcess($class_name, $name = '')
     {
         $worker_id = get_instance()->worker_num + get_instance()->task_num + $this->atomic->get();
         $this->atomic->add();
         $names = explode("\\", $class_name);
-        $process = new $class_name(getServerName() . "-" . $names[count($names) - 1], $worker_id, $needCoroutine);
+        $process = new $class_name(getServerName() . "-" . $names[count($names) - 1], $worker_id);
         if (array_key_exists($class_name . $name, $this->map)) {
             throw new \Exception('存在相同类型的进程，需要设置别名');
         }
@@ -67,7 +66,7 @@ class ProcessManager
      * @param $class_name
      * @param bool|string $oneWay
      * @param string $name
-     * @return mixed
+     * @return RPCCall
      * @throws \Exception
      */
     public function getRpcCall($class_name, $oneWay = 'auto', $name = '')
@@ -85,7 +84,7 @@ class ProcessManager
      * 通过wokerId发起RPC
      * @param $wokerId
      * @param bool|string $oneWay
-     * @return mixed
+     * @return RPCCall
      */
     public function getRpcCallWorker($wokerId, $oneWay = 'auto')
     {

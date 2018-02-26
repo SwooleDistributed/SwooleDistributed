@@ -11,10 +11,12 @@ namespace app\Controllers;
 use app\Actors\TestActor;
 use app\Models\TestModel;
 use Server\Asyn\Mysql\Miner;
+use Server\Asyn\Mysql\MySqlCoroutine;
 use Server\Asyn\TcpClient\SdTcpRpcPool;
 use Server\Components\CatCache\CatCacheRpcProxy;
 use Server\Components\CatCache\TimerCallBack;
 use Server\Components\Consul\ConsulServices;
+use Server\Components\Event\EventCoroutine;
 use Server\Components\Event\EventDispatcher;
 use Server\CoreBase\Actor;
 use Server\CoreBase\Controller;
@@ -52,20 +54,20 @@ class TestController extends Controller
         $this->sdrpc = get_instance()->getAsynPool('RPC');
         $data = $this->sdrpc->helpToBuildSDControllerQuest($this->context, 'MathService', 'add');
         $data['params'] = [1, 2];
-        $result = yield $this->sdrpc->coroutineSend($data);
+        $result = $this->sdrpc->coroutineSend($data);
         $this->http_output->end($result);
     }
 
     public function http_ex()
     {
         $testModel = $this->loader->model('TestModel', $this);
-        yield $testModel->test_exception();
+        $testModel->test_exception();
     }
 
     public function http_mysql()
     {
         $model = $this->loader->model(TestModel::class, $this);
-        $result = yield $model->testMysql();
+        $result = $model->testMysql();
         $this->http_output->end($result);
     }
 
@@ -95,7 +97,7 @@ class TestController extends Controller
     {
         $this->getContext()['test'] = 1;
         $this->testModel = $this->loader->model('TestModel', $this);
-        yield $this->testModel->contextTest();
+        $this->testModel->contextTest();
         $this->http_output->end($this->getContext());
     }
 
@@ -104,15 +106,15 @@ class TestController extends Controller
      */
     public function http_mysql_begin_coroutine_test()
     {
-        $id = yield $this->mysql_pool->coroutineBegin($this);
-        $update_result = yield $this->mysql_pool->dbQueryBuilder->update('user_info')->set('sex', '1')->where('uid', 10000)->coroutineSend($id);
-        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('user_info')->where('uid', 10000)->coroutineSend($id);
+        $id = $this->mysql_pool->coroutineBegin($this);
+        $update_result = $this->mysql_pool->dbQueryBuilder->update('user_info')->set('sex', '1')->where('uid', 10000)->coroutineSend($id);
+        $result = $this->mysql_pool->dbQueryBuilder->select('*')->from('user_info')->where('uid', 10000)->coroutineSend($id);
         if ($result['result'][0]['channel'] == 1000) {
             $this->http_output->end('commit');
-            yield $this->mysql_pool->coroutineCommit($id);
+            $this->mysql_pool->coroutineCommit($id);
         } else {
             $this->http_output->end('rollback');
-            yield $this->mysql_pool->coroutineRollback($id);
+            $this->mysql_pool->coroutineRollback($id);
         }
     }
 
@@ -151,9 +153,11 @@ class TestController extends Controller
      */
     public function http_smysql()
     {
-        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')
-            ->from('account')
-            ->coroutineSend()->row();
+        $result = $this->db->select('*')
+            ->from('account')->limit(1)
+            ->coroutineSend(null, null, function (MySqlCoroutine $mySqlCoroutine) {
+                $mySqlCoroutine->setTimeout(1);
+            });
         $this->http_output->end($result, false);
     }
 
@@ -215,7 +219,7 @@ class TestController extends Controller
      */
     public function http_redis()
     {
-        $result = yield $this->redis_pool->getCoroutine()->get('testroute');
+        $result = $this->redis_pool->getCoroutine()->get('testroute');
         $this->http_output->end($result, false);
     }
 
@@ -234,7 +238,7 @@ class TestController extends Controller
      */
     public function http_setRedis()
     {
-        $result = yield $this->redis_pool->getCoroutine()->set('testroute', 21, ["XX", "EX" => 10]);
+        $result = $this->redis_pool->getCoroutine()->set('testroute', 21, ["XX", "EX" => 10]);
         $this->http_output->end($result);
     }
 
@@ -270,10 +274,10 @@ class TestController extends Controller
      */
     public function http_test_select()
     {
-        yield $this->redis_pool->getCoroutine()->set('test', 1);
+        $this->redis_pool->getCoroutine()->set('test', 1);
         $c1 = $this->redis_pool->getCoroutine()->get('test');
         $c2 = $this->redis_pool->getCoroutine()->get('test1');
-        $result = yield SelectCoroutine::Select(function ($result) {
+        $result = SelectCoroutine::Select(function ($result) {
             if ($result != null) {
                 return true;
             }
@@ -299,14 +303,14 @@ class TestController extends Controller
     public function http_lock()
     {
         $lock = new Lock('test1');
-        $result = yield $lock->coroutineLock();
+        $result = $lock->coroutineLock();
         $this->http_output->end($result);
     }
 
     public function http_unlock()
     {
         $lock = new Lock('test1');
-        $result = yield $lock->coroutineUnlock();
+        $result = $lock->coroutineUnlock();
         $this->http_output->end($result);
     }
 
@@ -321,7 +325,7 @@ class TestController extends Controller
     {
         $testTask = $this->loader->task(TestTask::class, $this);
         $testTask->testMysql();
-        $result = yield $testTask->coroutineSend();
+        $result = $testTask->coroutineSend();
         $this->http_output->end($result);
     }
 
@@ -329,27 +333,27 @@ class TestController extends Controller
     {
         $rest = ConsulServices::getInstance()->getRESTService('MathService', $this->context);
         $rest->setQuery(['one' => 1, 'two' => 2]);
-        $reuslt = yield $rest->add();
+        $reuslt = $rest->add();
         $this->http_output->end($reuslt['body']);
     }
 
     public function http_testConsul2()
     {
         $rest = ConsulServices::getInstance()->getRPCService('MathService', $this->context);
-        $reuslt = yield $rest->add(1, 2);
+        $reuslt = $rest->add(1, 2);
         $this->http_output->end($reuslt);
     }
 
     public function http_testConsul3()
     {
         $rest = ConsulServices::getInstance()->getRPCService('MathService', $this->context);
-        $reuslt = yield $rest->call('add', [1, 2], true);
+        $reuslt = $rest->call('add', [1, 2], true);
         $this->http_output->end($reuslt);
     }
 
     public function http_testRedisLua()
     {
-        $value = yield $this->redis_pool->getCoroutine()->evalSha(getLuaSha1('sadd_from_count'), ['testlua', 100], 2, [1, 2, 3]);
+        $value = $this->redis_pool->getCoroutine()->evalSha(getLuaSha1('sadd_from_count'), ['testlua', 100], 2, [1, 2, 3]);
         $this->http_output->end($value);
     }
 
@@ -357,7 +361,7 @@ class TestController extends Controller
     {
         $task = $this->loader->task('TestTask', $this);
         $task->testStop();
-        yield $task->coroutineSend();
+        $task->coroutineSend();
     }
 
     public function http_echo()
@@ -370,7 +374,9 @@ class TestController extends Controller
      */
     public function http_getEvent()
     {
-        $data = yield EventDispatcher::getInstance()->addOnceCoroutine('unlock')->setTimeout(100000);
+        $data = EventDispatcher::getInstance()->addOnceCoroutine('unlock', function (EventCoroutine $e) {
+            $e->setTimeout(10000);
+        });
         //这里会等待事件到达，或者超时
         $this->http_output->end($data);
     }
@@ -384,7 +390,7 @@ class TestController extends Controller
     public function http_testWhile()
     {
         $this->testModel = $this->loader->model('TestModel', $this);
-        yield $this->testModel->testWhile();
+        $this->testModel->testWhile();
         $this->http_output->end(1);
     }
 
@@ -397,13 +403,13 @@ class TestController extends Controller
 
     public function http_getAllUids()
     {
-        $uids = yield get_instance()->coroutineGetAllUids();
+        $uids = get_instance()->coroutineGetAllUids();
         $this->http_output->end($uids);
     }
 
     public function http_testSC1()
     {
-        $result = yield CatCacheRpcProxy::getRpc()->offsetExists('test.bc');
+        $result = CatCacheRpcProxy::getRpc()->offsetExists('test.bc');
         $this->http_output->end($result, false);
     }
 
@@ -422,26 +428,26 @@ class TestController extends Controller
 
     public function http_testSC4()
     {
-        $result = yield CatCacheRpcProxy::getRpc()['test'];
+        $result = CatCacheRpcProxy::getRpc()['test'];
         $this->http_output->end($result, false);
     }
 
     public function http_testSC5()
     {
-        $result = yield CatCacheRpcProxy::getRpc()->getAll();
+        $result = CatCacheRpcProxy::getRpc()->getAll();
         $this->http_output->end($result, false);
     }
 
     public function http_testTimerCallBack()
     {
-        $token = yield TimerCallBack::addTimer(2, TestModel::class, 'testTimerCall', [123]);
+        $token = TimerCallBack::addTimer(2, TestModel::class, 'testTimerCall', [123]);
         $this->http_output->end($token);
     }
 
     public function http_testActor()
     {
-        yield Actor::create(TestActor::class, "Test1");
-        yield Actor::create(TestActor::class, "Test2");
+        Actor::create(TestActor::class, "Test1");
+        Actor::create(TestActor::class, "Test2");
         $this->http_output->end(123);
     }
 
@@ -449,11 +455,11 @@ class TestController extends Controller
     {
         $rpc = Actor::getRpc("Test2");
         try {
-            $beginid = yield $rpc->beginCo();
-            $result = yield $rpc->test1();
-            $result = yield $rpc->test2();
+            $beginid = $rpc->beginCo();
+            $result = $rpc->test1();
+            $result = $rpc->test2();
             //var_dump($result);
-            $result = yield $rpc->test3();
+            $result = $rpc->test3();
             //var_dump($result);
         } finally {
             //var_dump("finally end");

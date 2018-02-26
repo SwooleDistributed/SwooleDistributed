@@ -420,10 +420,11 @@ class RedisAsynPool extends AsynPool
     /**
      * 协程模式
      * @param $name
-     * @param $arg
+     * @param array ...$arg
+     * @param callable $set
      * @return RedisCoroutine
      */
-    public function coroutineSend($name, ...$arg)
+    public function coroutineSend($name, $arg, callable $set = null)
     {
         if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式
             try {
@@ -434,7 +435,7 @@ class RedisAsynPool extends AsynPool
             }
             return $value;
         } else {
-            return Pool::getInstance()->get(RedisCoroutine::class)->init($this, $name, $arg);
+            return Pool::getInstance()->get(RedisCoroutine::class)->init($this, $name, $arg, $set);
         }
     }
 
