@@ -9,7 +9,9 @@
 namespace Server\Components\Process;
 
 
+use Server\Components\Event\Event;
 use Server\CoreBase\Child;
+use Server\Memory\Pool;
 use Server\SwooleMarco;
 use Server\Test\DocParser;
 
@@ -80,13 +82,34 @@ abstract class ProcessRPC extends Child
         $message['token'] = "[PR]$my_worker_id->$worker_id:" . $this->token;
         $message['oneWay'] = $oneWay;
         if ($my_worker_id == $worker_id) {
-            \swoole_event_defer(function () use (&$message) {
-                $this->processPpcRun($message);
-            });
-            return $message['token'];
+            $result = $this->processPpcRunHelp($message);
+            //本进程直接封装个Event返回
+            $event = Pool::getInstance()->get(Event::class)->reset('MineProcessRPC', $result);
+            return $event;
         }
         $this->sendMessage(get_instance()->packServerMessageBody(SwooleMarco::PROCESS_RPC, $message), $worker_id);
         return $message['token'];
+    }
+
+    /**
+     * 跨进程调用public方法
+     * @param $message
+     * @return mixed
+     */
+    protected function processPpcRunHelp($message)
+    {
+        $func = $message['func'];
+        $context = $this;
+        if ($this->rpcProxy != null && is_callable([$this->rpcProxy, $func])) {
+            $context = $this->rpcProxy;
+        }
+        if (!is_callable([$context, $func])) {
+            $class = get_class($context);
+            $result = new \Exception("$func 方法名 在 $class 中不存在");
+        } else {
+            $result = \co::call_user_func_array([$context, $func], $message['arg']);
+        }
+        return $result;
     }
 
     /**
@@ -96,25 +119,13 @@ abstract class ProcessRPC extends Child
      */
     protected function processPpcRun($message)
     {
-        go(function () use ($message) {
-            $func = $message['func'];
-            $context = $this;
-            if ($this->rpcProxy != null && is_callable([$this->rpcProxy, $func])) {
-                $context = $this->rpcProxy;
-            }
-            if (!is_callable([$context, $func])) {
-                $class = get_class($context);
-                $result = new \Exception("$func 方法名 在 $class 中不存在");
-            } else {
-                $result = \co::call_user_func_array([$context, $func], $message['arg']);
-            }
-            if (!$message['oneWay']) {
-                $newMessage['result'] = $result;
-                $newMessage['token'] = $message['token'];
-                $data = get_instance()->packServerMessageBody(SwooleMarco::PROCESS_RPC_RESULT, $newMessage);
-                $this->sendMessage($data, $message['worker_id']);
-            }
-        });
+        $result = $this->processPpcRunHelp($message);
+        if (!$message['oneWay']) {
+            $newMessage['result'] = $result;
+            $newMessage['token'] = $message['token'];
+            $data = get_instance()->packServerMessageBody(SwooleMarco::PROCESS_RPC_RESULT, $newMessage);
+            $this->sendMessage($data, $message['worker_id']);
+        }
     }
 
     /**

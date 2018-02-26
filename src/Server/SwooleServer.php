@@ -33,7 +33,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "3.0-beta";
+    const version = "3.0.1-beta";
 
     /**
      * server name
@@ -452,7 +452,7 @@ abstract class SwooleServer extends ProcessRPC
                 break;
             default:
                 if (!empty($message['func'])) {
-                    \co::call_user_func($message['func'], $message['message']);
+                    $message['func']($message['message']);
                 }
         }
     }

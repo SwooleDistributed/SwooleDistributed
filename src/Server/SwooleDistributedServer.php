@@ -551,9 +551,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             TimerTask::start();
             if ($this->config->get('catCache.enable', false)) {
                 TimerCallBack::init();
-                $ready = ProcessManager::getInstance()->getRpcCall(CatCacheProcess::class)->isReady();
-                if (!$isReload && !$ready) {
-                    EventDispatcher::getInstance()->addOnceCoroutine(CatCacheProcess::READY);
+                if (!$isReload) {
+                    $ready = ProcessManager::getInstance()->getRpcCall(CatCacheProcess::class)->isReady();
+                    if (!$ready) {
+                        EventDispatcher::getInstance()->addOnceCoroutine(CatCacheProcess::READY);
+                    }
                 }
                 Actor::recovery($workerId);
             }
@@ -823,22 +825,22 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $status['start_time'] = Start::getStartTime();
         $status['run_time'] = format_date(strtotime(date('Y-m-d H:i:s')) - strtotime(Start::getStartTime()));
         $poolStatus = $this->helpGetAllStatus();
-        $status['coroutine_num'] = $poolStatus['coroutine_num'];
-        $status['pool'] = $poolStatus['pool'];
-        $status['model_pool'] = $poolStatus['model_pool'];
-        $status['controller_pool'] = $poolStatus['controller_pool'];
-        $status['ports'] = $this->portManager->getPortStatus();
-        $data = ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
-        if (!empty($data)) {
-            foreach ($data as $key => $value) {
-                $data[$key] = json_decode($value, true);
-                foreach ($data[$key] as &$one) {
-                    $one = $one['Service'];
-                }
-            }
-        }
-        $status['consul_services'] = $data;
-        $this->pub('$SYS/' . getNodeName() . '/status', $status);
+        /* $status['coroutine_num'] = $poolStatus['coroutine_num'];
+         $status['pool'] = $poolStatus['pool'];
+         $status['model_pool'] = $poolStatus['model_pool'];
+         $status['controller_pool'] = $poolStatus['controller_pool'];
+         $status['ports'] = $this->portManager->getPortStatus();
+         $data = ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
+         if (!empty($data)) {
+             foreach ($data as $key => $value) {
+                 $data[$key] = json_decode($value, true);
+                 foreach ($data[$key] as &$one) {
+                     $one = $one['Service'];
+                 }
+             }
+         }
+         $status['consul_services'] = $data;
+         $this->pub('$SYS/' . getNodeName() . '/status', $status);*/
     }
 
     /**
@@ -860,7 +862,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         $status = ['pool' => [], 'model_pool' => [], 'controller_pool' => [], 'coroutine_num' => 0];
         for ($i = 0; $i < $this->worker_num; $i++) {
-            $result = ProcessManager::getInstance()->getRpcCallWorker($i)->getPoolStatus();
+            $result = ProcessManager::getInstance()->getRpcCallWorker(self::get_instance()->workerId)->getPoolStatus();
             if (empty($result)) return;
             $this->helpMerge($status['pool'], $result['pool']);
             $this->helpMerge($status['model_pool'], $result['model_pool']);

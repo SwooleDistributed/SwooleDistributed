@@ -85,15 +85,17 @@ abstract class Process extends ProcessRPC
      */
     public function readData($data)
     {
-        $message = $data['message'];
-        switch ($data['type']) {
-            case SwooleMarco::PROCESS_RPC:
-                $this->processPpcRun($message);
-                break;
-            case SwooleMarco::PROCESS_RPC_RESULT:
-                EventDispatcher::getInstance()->dispatch($message['token'], $message['result'], true);
-                break;
-        }
+        go(function () use ($data) {
+            $message = $data['message'];
+            switch ($data['type']) {
+                case SwooleMarco::PROCESS_RPC:
+                    $this->processPpcRun($message);
+                    break;
+                case SwooleMarco::PROCESS_RPC_RESULT:
+                    EventDispatcher::getInstance()->dispatch($message['token'], $message['result'], true);
+                    break;
+            }
+        });
     }
 
     /**

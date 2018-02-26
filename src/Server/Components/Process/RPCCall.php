@@ -9,6 +9,7 @@
 namespace Server\Components\Process;
 
 
+use Server\Components\Event\Event;
 use Server\Components\Event\EventDispatcher;
 use Server\Memory\Pool;
 
@@ -65,7 +66,11 @@ class RPCCall
         }
         Pool::getInstance()->push($this);
         if (!$this->oneWay) {
-            return EventDispatcher::getInstance()->addOnceCoroutine($token);
+            if ($token instanceof Event) {//说明是本进程的数据，直接返回数据就行
+                return $token->data;
+            } else {
+                return EventDispatcher::getInstance()->addOnceCoroutine($token);
+            }
         } else {
             return true;
         }
