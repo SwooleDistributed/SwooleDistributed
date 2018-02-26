@@ -426,3 +426,22 @@ try {
     ,
 ```
 通过传递给index一个数组即可路由到TestController的test方法，记住这里方法不需要加前缀
+
+# 3.0-beta
+
+SD3.0版本beta版本，支持swoole2.0协程，需要安装swoole2.0扩展，编译命令如下：
+```
+./configure --enable-async-redis  --enable-openssl --enable-coroutine
+```
+2.0版本迁移3.0需要做的修改，非常简单
+
+1.去除业务代码中所有的yield字样
+
+2.如果使用了协程超时，需要修改为这样，通过set回调函数设置协程的参数
+```php
+$data = EventDispatcher::getInstance()->addOnceCoroutine('unlock', function (EventCoroutine $e) {
+            $e->setTimeout(10000);
+        });
+```
+
+请注意这是一个测试版本，并没达到线上运行水平，已知框架问题和swoole2.0扩展问题还在积极修复。
