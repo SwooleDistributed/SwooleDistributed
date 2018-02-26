@@ -23,16 +23,16 @@ class ClusterCoroutine extends CoroutineBase
         parent::__construct();
     }
 
-    public function init($token, &$receive_call)
+    public function init($token, &$receive_call, $set)
     {
         $this->receive_call = $receive_call;
         $this->token = $token;
         $this->request = "[ClusetRPC]$token";
-        $this->getCount = getTickTime();
+        $this->set($set);
         $receive_call[$token] = function ($data) {
-            $this->result = $data;
+            $this->coPush($data);
         };
-        return $this;
+        return $this->returnInit();
     }
 
     public function destroy()

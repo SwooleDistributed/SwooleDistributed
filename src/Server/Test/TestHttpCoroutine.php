@@ -19,30 +19,17 @@ class TestHttpCoroutine extends CoroutineBase
     public $testRequest;
     public $testResponse;
 
-    public function __construct(TestRequest $testRequest)
+    public function init(TestRequest $testRequest)
     {
-        parent::__construct();
         $this->testRequest = $testRequest;
         $this->request = '#TestRequest:' . $testRequest->server['path_info'];
         $this->testResponse = new TestResponse();
         get_instance()->onSwooleRequest($this->testRequest, $this->testResponse);
-    }
-
-    public function init()
-    {
-        $this->getCount = getTickTime();
-        return $this;
+        return $this->testResponse;
     }
 
     public function send($callback)
     {
 
-    }
-
-    public function getResult()
-    {
-        parent::getResult();
-        $result = $this->testResponse->getResult();
-        return $result;
     }
 }

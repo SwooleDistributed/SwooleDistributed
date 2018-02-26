@@ -3,7 +3,6 @@
 namespace Server\CoreBase;
 
 use Server\Components\AOP\Proxy;
-use Server\Coroutine\Coroutine;
 use Server\Coroutine\CoroutineNull;
 use Server\Memory\Pool;
 
@@ -107,7 +106,7 @@ class TheTaskProxy extends Proxy
 
     public function __call($name, $arguments)
     {
-        $result = Coroutine::startCoroutine([$this->own, $name], $arguments);
+        $result = call_user_func_array([$this->own, $name], $arguments);
         if ($result == null) {
             $result = CoroutineNull::getInstance();
         }

@@ -120,7 +120,7 @@ class ClusterController extends Child
      */
     public function getAllSub()
     {
-        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getAllSub();
+        $result = ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getAllSub();
         return $result;
     }
 
@@ -132,7 +132,7 @@ class ClusterController extends Child
      */
     public function getStatistics($index, $num)
     {
-        $result = yield ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getStatistics($index, $num);
+        $result = ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getStatistics($index, $num);
         return $result;
     }
 
@@ -142,7 +142,7 @@ class ClusterController extends Child
      */
     public function getSubMembersCount($topic)
     {
-        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getSubMembersCount($topic);
+        $result = ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getSubMembersCount($topic);
         return $result;
     }
 
@@ -152,7 +152,7 @@ class ClusterController extends Child
      */
     public function getSubMembers($topic)
     {
-        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getSubMembers($topic);
+        $result = ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getSubMembers($topic);
         return $result;
     }
 
@@ -162,7 +162,7 @@ class ClusterController extends Child
      */
     public function getUidTopics($uid)
     {
-        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getUidTopics($uid);
+        $result = ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->th_getUidTopics($uid);
         return $result;
     }
 

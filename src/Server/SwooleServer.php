@@ -16,7 +16,6 @@ use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\ILoader;
 use Server\CoreBase\Loader;
 use Server\CoreBase\PortManager;
-use Server\Coroutine\Coroutine;
 
 /**
  * Created by PhpStorm.
@@ -34,7 +33,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "2.7.8";
+    const version = "3.0-beta";
 
     /**
      * server name
@@ -88,12 +87,6 @@ abstract class SwooleServer extends ProcessRPC
      * @var PortManager
      */
     public $portManager;
-
-    /**
-     * 是否需要协程支持(默认开启)
-     * @var bool
-     */
-    protected $needCoroutine = true;
 
     /**
      * @var MiddlewareManager
@@ -294,9 +287,6 @@ abstract class SwooleServer extends ProcessRPC
         // 重新加载配置
         $this->config = $this->config->load(getConfigDir());
         if (!$serv->taskworker) {//worker进程
-            if ($this->needCoroutine) {//启动协程调度器
-                Coroutine::init();
-            }
             Start::setProcessTitle(getServerName() . "-Worker");
         } else {
             Start::setProcessTitle(getServerName() . "-Tasker");
@@ -339,43 +329,42 @@ abstract class SwooleServer extends ProcessRPC
             $pack->errorHandle($e, $fd);
             return;
         }
-        Coroutine::startCoroutine(function () use ($client_data, $server_port, $fd, $uid) {
-            $middleware_names = $this->portManager->getMiddlewares($server_port);
-            $context = [];
-            $path = '';
-            $middlewares = $this->middlewareManager->create($middleware_names, $context, [$fd, &$client_data]);
-            //client_data进行处理
+
+        $middleware_names = $this->portManager->getMiddlewares($server_port);
+        $context = [];
+        $path = '';
+        $middlewares = $this->middlewareManager->create($middleware_names, $context, [$fd, &$client_data]);
+        //client_data进行处理
+        try {
+            $this->middlewareManager->before($middlewares);
+            $route = $this->portManager->getRoute($server_port);
             try {
-                yield $this->middlewareManager->before($middlewares);
-                $route = $this->portManager->getRoute($server_port);
-                try {
-                    $client_data = $route->handleClientData($client_data);
-                    $controller_name = $route->getControllerName();
-                    $method_name = $this->portManager->getMethodPrefix($server_port) . $route->getMethodName();
-                    $path = $route->getPath();
-                    $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
-                    if ($controller_instance != null) {
-                        $controller_instance->setContext($context);
-                        yield $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
-                    } else {
-                        throw new \Exception('no controller');
-                    }
-                } catch (\Exception $e) {
-                    $route->errorHandle($e, $fd);
+                $client_data = $route->handleClientData($client_data);
+                $controller_name = $route->getControllerName();
+                $method_name = $this->portManager->getMethodPrefix($server_port) . $route->getMethodName();
+                $path = $route->getPath();
+                $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
+                if ($controller_instance != null) {
+                    $controller_instance->setContext($context);
+                    $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
+                } else {
+                    throw new \Exception('no controller');
                 }
             } catch (\Exception $e) {
+                $route->errorHandle($e, $fd);
             }
-            try {
-                yield $this->middlewareManager->after($middlewares, $path);
-            } catch (\Exception $e) {
+        } catch (\Exception $e) {
+        }
+        try {
+            $this->middlewareManager->after($middlewares, $path);
+        } catch (\Exception $e) {
 
-            }
-            $this->middlewareManager->destory($middlewares);
-            if (Start::getDebug()) {
-                secho("DEBUG", $context);
-            }
-            unset($context);
-        });
+        }
+        $this->middlewareManager->destory($middlewares);
+        if (Start::getDebug()) {
+            secho("DEBUG", $context);
+        }
+        unset($context);
     }
 
     /**
@@ -421,6 +410,7 @@ abstract class SwooleServer extends ProcessRPC
     {
 
     }
+
     /**
      * onSwooleTask
      * @param $serv
@@ -462,7 +452,7 @@ abstract class SwooleServer extends ProcessRPC
                 break;
             default:
                 if (!empty($message['func'])) {
-                    call_user_func($message['func'], $message['message']);
+                    \co::call_user_func($message['func'], $message['message']);
                 }
         }
     }
@@ -483,7 +473,7 @@ abstract class SwooleServer extends ProcessRPC
         $log .= json_encode($data);
         $this->log->alert($log);
         if ($this->onErrorHandel != null) {
-            call_user_func($this->onErrorHandel, '【！！！】服务器进程异常退出', $log);
+            \co::call_user_func($this->onErrorHandel, '【！！！】服务器进程异常退出', $log);
         }
     }
 
@@ -539,7 +529,7 @@ abstract class SwooleServer extends ProcessRPC
      */
     public function __call($name, $arguments)
     {
-        return call_user_func_array(array($this->server, $name), $arguments);
+        return \co::call_user_func_array(array($this->server, $name), $arguments);
     }
 
     /**
@@ -556,7 +546,7 @@ abstract class SwooleServer extends ProcessRPC
         $log .= "$error_string ($filename:$line)";
         $this->log->error($log);
         if ($this->onErrorHandel != null) {
-            call_user_func($this->onErrorHandel, '服务器发生严重错误', $log);
+            \co::call_user_func($this->onErrorHandel, '服务器发生严重错误', $log);
         }
     }
 
@@ -601,7 +591,7 @@ abstract class SwooleServer extends ProcessRPC
                     }
                     $this->log->error($log);
                     if ($this->onErrorHandel != null) {
-                        call_user_func($this->onErrorHandel, '服务器发生崩溃事件', $log);
+                        \co::call_user_func($this->onErrorHandel, '服务器发生崩溃事件', $log);
                     }
                     break;
                 default:

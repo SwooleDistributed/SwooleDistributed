@@ -8,8 +8,6 @@
 
 namespace Server\Components\Cluster;
 
-
-use Server\Coroutine\Coroutine;
 use Server\Memory\Pool;
 use Server\Pack\ClusterPack;
 
@@ -72,28 +70,14 @@ class ClusterHelp
             $params = $unserialize_data['p'];
             $token = $unserialize_data['t'];
             $controller = Pool::getInstance()->get(ClusterController::class);
-            $result = call_user_func_array([$controller, $method], $params);
-            if ($result instanceof \Generator) {
-                Coroutine::startCoroutine(function () use ($result, $token, $fd, $controller) {
-                    $real = yield $result;
-                    $data = [];
-                    $data['t'] = $token;
-                    $data['r'] = $real;
-                    $serialize_data = $this->pack->pack($data);
-                    get_instance()->send($fd, $serialize_data);
-                    $controller->destroy();
-                    Pool::getInstance()->push($controller);
-                });
-            } else {
-                $data = [];
-                $data['t'] = $token;
-                $data['r'] = $result;
-                $serialize_data = $this->pack->pack($data);
-                get_instance()->send($fd, $serialize_data);
-
-                $controller->destroy();
-                Pool::getInstance()->push($controller);
-            }
+            $result = \co::call_user_func_array([$controller, $method], $params);
+            $data = [];
+            $data['t'] = $token;
+            $data['r'] = $result;
+            $serialize_data = $this->pack->pack($data);
+            get_instance()->send($fd, $serialize_data);
+            $controller->destroy();
+            Pool::getInstance()->push($controller);
         });
     }
 }

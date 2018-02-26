@@ -55,7 +55,7 @@ class Lock
     {
         $count = 0;
         do {
-            $isLock = yield $this->redis_pool->getCoroutine()->setnx(self::LOCK_PREFIX . $this->lock_id, 0);
+            $isLock = $this->redis_pool->getCoroutine()->setnx(self::LOCK_PREFIX . $this->lock_id, 0);
             if ($maxTime > 0 && $count >= $maxTime) {
                 break;
             }
@@ -73,7 +73,7 @@ class Lock
      */
     public function coroutineTrylock()
     {
-        $result = yield $this->redis_pool->getCoroutine()->setnx(self::LOCK_PREFIX . $this->lock_id, 1);
+        $result = $this->redis_pool->getCoroutine()->setnx(self::LOCK_PREFIX . $this->lock_id, 1);
         return $result;
     }
 
@@ -83,7 +83,7 @@ class Lock
      */
     public function coroutineUnlock()
     {
-        $result = yield $this->redis_pool->getCoroutine()->del(self::LOCK_PREFIX . $this->lock_id);
+        $result = $this->redis_pool->getCoroutine()->del(self::LOCK_PREFIX . $this->lock_id);
         return $result;
     }
 

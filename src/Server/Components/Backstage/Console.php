@@ -73,7 +73,7 @@ class Console extends Controller
      */
     public function back_getAllSub()
     {
-        $result = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getAllSub();
+        $result = ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getAllSub();
         $this->autoSend($result);
     }
 
@@ -82,7 +82,7 @@ class Console extends Controller
      */
     public function back_getUidInfo($uid)
     {
-        $uidInfo = yield get_instance()->getUidInfo($uid);
+        $uidInfo = get_instance()->getUidInfo($uid);
         $this->autoSend($uidInfo);
     }
 
@@ -91,7 +91,7 @@ class Console extends Controller
      */
     public function back_getAllUids()
     {
-        $uids = yield get_instance()->coroutineGetAllUids();
+        $uids = get_instance()->coroutineGetAllUids();
         $this->autoSend($uids);
     }
 
@@ -101,7 +101,7 @@ class Console extends Controller
      */
     public function back_getSubUid($topic)
     {
-        $uids = yield get_instance()->getSubMembersCoroutine($topic);
+        $uids = get_instance()->getSubMembersCoroutine($topic);
         $this->autoSend($uids);
     }
 
@@ -111,7 +111,7 @@ class Console extends Controller
      */
     public function back_getUidTopics($uid)
     {
-        $topics = yield get_instance()->getUidTopicsCoroutine($uid);
+        $topics = get_instance()->getUidTopicsCoroutine($uid);
         $this->autoSend($topics);
     }
 
@@ -124,9 +124,9 @@ class Console extends Controller
     public function back_getStatistics($node_name, $index, $num)
     {
         if (!get_instance()->isCluster() || $node_name == getNodeName()) {
-            $map = yield ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getStatistics($index, $num);
+            $map = ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getStatistics($index, $num);
         } else {
-            $map = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getStatistics($node_name, $index, $num);
+            $map = ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getStatistics($node_name, $index, $num);
         }
         $this->autoSend($map);
     }
@@ -137,7 +137,7 @@ class Console extends Controller
      */
     public function back_getCatCacheKeys($path)
     {
-        $result = yield CatCacheRpcProxy::getRpc()->getKeys($path);
+        $result = CatCacheRpcProxy::getRpc()->getKeys($path);
         $this->autoSend($result);
     }
 
@@ -147,7 +147,7 @@ class Console extends Controller
      */
     public function back_getCatCacheValue($path)
     {
-        $result = yield CatCacheRpcProxy::getRpc()[$path];
+        $result = CatCacheRpcProxy::getRpc()[$path];
         $this->autoSend($result);
     }
 
@@ -167,7 +167,7 @@ class Console extends Controller
      */
     public function back_getActorInfo($name)
     {
-        $result = yield CatCacheRpcProxy::getRpc()["@Actor.$name"];
+        $result = CatCacheRpcProxy::getRpc()["@Actor.$name"];
         $this->autoSend($result);
     }
 

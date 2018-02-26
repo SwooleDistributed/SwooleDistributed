@@ -9,6 +9,7 @@
 namespace Server\Test;
 
 use Server\CoreBase\CoreBase;
+use Server\Memory\Pool;
 
 /**
  * 用 @depends 标注来表达依赖关系
@@ -21,11 +22,11 @@ use Server\CoreBase\CoreBase;
 abstract class TestCase extends CoreBase
 {
     /**
-     * @var \Server\DataBase\RedisAsynPool
+     * @var \Server\Asyn\Redis\RedisAsynPool
      */
     public $redis_pool;
     /**
-     * @var \Server\DataBase\MysqlAsynPool
+     * @var \Server\Asyn\Mysql\MysqlAsynPool
      */
     public $mysql_pool;
 
@@ -73,7 +74,7 @@ abstract class TestCase extends CoreBase
      */
     public function coroutineRequestHttpController(TestRequest $testRequest)
     {
-        return new TestHttpCoroutine($testRequest);
+        return Pool::getInstance()->get(TestHttpCoroutine::class)->init($testRequest);
     }
 
     /**
@@ -83,10 +84,10 @@ abstract class TestCase extends CoreBase
      * @return TestTcpCoroutine
      * @internal param $port
      */
-    public function coroutineRequestTcpController($port, $data)
-    {
-        return new TestTcpCoroutine($port, $data);
-    }
+    /* public function coroutineRequestTcpController($port, $data)
+     {
+         return new TestTcpCoroutine($port, $data);
+     }*/
 
     public function assertEquals($expected, $actual, string $message = '')
     {

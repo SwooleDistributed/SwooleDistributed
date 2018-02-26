@@ -577,7 +577,7 @@ class ClusterProcess extends Process
         $count = $this->th_getSubMembersCount($topic);
         foreach ($this->client as $client) {
             $token = $client->getSubMembersCount($topic);
-            $one_count = yield $client->getTokenResult($token);
+            $one_count = $client->getTokenResult($token);
             $count += $one_count;
         }
         return $count;
@@ -607,7 +607,7 @@ class ClusterProcess extends Process
         $array = $this->th_getSubMembers($topic);
         foreach ($this->client as $client) {
             $token = $client->getSubMembers($topic);
-            $one_array = yield $client->getTokenResult($token);
+            $one_array = $client->getTokenResult($token);
             $array = array_merge($array, $one_array);
         }
         return $array;
@@ -637,7 +637,7 @@ class ClusterProcess extends Process
         $array = $this->th_getUidTopics($uid);
         foreach ($this->client as $client) {
             $token = $client->getUidTopics($uid);
-            $one_array = yield $client->getTokenResult($token);
+            $one_array = $client->getTokenResult($token);
             $array = array_merge($array, $one_array);
         }
         return $array;
@@ -668,7 +668,7 @@ class ClusterProcess extends Process
         $status[$this->node_name] = $this->th_getAllSub();
         foreach ($this->client as $node_name => $client) {
             $token = $client->getAllSub();
-            $status[$node_name] = yield $client->getTokenResult($token);
+            $status[$node_name] = $client->getTokenResult($token);
         }
         return $status;
     }
@@ -776,7 +776,7 @@ class ClusterProcess extends Process
      */
     public function my_status()
     {
-        yield get_instance()->getStatus();
+        get_instance()->getStatus();
         foreach ($this->client as $client) {
             $client->status();
         }
@@ -787,7 +787,7 @@ class ClusterProcess extends Process
      */
     public function th_status()
     {
-        yield get_instance()->getStatus();
+        get_instance()->getStatus();
     }
 
     /**
@@ -810,7 +810,7 @@ class ClusterProcess extends Process
         if ($node_name) {
             if (!isset($this->client[$node_name])) return null;
             $token = $this->client[$node_name]->getUidInfo($uid);
-            $fdInfo = yield $this->client[$node_name]->getTokenResult($token);
+            $fdInfo = $this->client[$node_name]->getTokenResult($token);
             return $fdInfo;
         }
         return null;
@@ -827,7 +827,7 @@ class ClusterProcess extends Process
     {
         if (!isset($this->client[$node_name])) return null;
         $token = $this->client[$node_name]->getStatistics($index, $num);
-        $map = yield $this->client[$node_name]->getTokenResult($token);
+        $map = $this->client[$node_name]->getTokenResult($token);
         return $map;
     }
 

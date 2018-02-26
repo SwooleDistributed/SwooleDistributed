@@ -29,7 +29,7 @@ class AppServer extends SwooleDistributedServer
      */
     public function onOpenServiceInitialization()
     {
-        yield parent::onOpenServiceInitialization();
+        parent::onOpenServiceInitialization();
     }
 
     /**

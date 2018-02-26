@@ -9,6 +9,7 @@
 namespace Server\CoreBase;
 
 
+use Server\Components\Event\EventCoroutine;
 use Server\Memory\Pool;
 
 class ActorRpc
@@ -34,7 +35,9 @@ class ActorRpc
      */
     public function beginCo($timeOut = 10000)
     {
-        $this->beginId = yield Actor::call($this->actorName, "begin")->setTimeout($timeOut);
+        $this->beginId = Actor::call($this->actorName, "begin", null, false, null, function (EventCoroutine $eventCoroutine) use ($timeOut) {
+            $eventCoroutine->setTimeout($timeOut);
+        });
         return $this->beginId;
     }
 

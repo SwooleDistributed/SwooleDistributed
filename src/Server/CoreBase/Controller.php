@@ -84,6 +84,7 @@ class Controller extends CoreBase
      * @var Miner
      */
     public $db;
+
     /**
      * Controller constructor.
      * @param string $proxy
@@ -119,7 +120,7 @@ class Controller extends CoreBase
             $this->isRPC = false;
         }
         $this->request_type = SwooleMarco::TCP_REQUEST;
-        yield $this->execute($controller_name, $method_name, $params);
+        $this->execute($controller_name, $method_name, $params);
     }
 
     /**
@@ -142,7 +143,7 @@ class Controller extends CoreBase
         $this->isRPC = empty($this->rpc_request_id) ? false : true;
         $this->request_type = SwooleMarco::HTTP_REQUEST;
         $this->fd = $request->fd;
-        yield $this->execute($controller_name, $method_name, $params);
+        $this->execute($controller_name, $method_name, $params);
     }
 
     /**
@@ -158,16 +159,12 @@ class Controller extends CoreBase
             $method_name = 'defaultMethod';
         }
         try {
-            yield $this->initialization($controller_name, $method_name);
-            if ($params == null) {
-                yield call_user_func([$this->getProxy(), $method_name]);
-            } else {
-                yield call_user_func_array([$this->getProxy(), $method_name], $params);
-            }
+            $this->initialization($controller_name, $method_name);
+            $this->$method_name($params);
         } catch (\Exception $e) {
-            yield $this->getProxy()->onExceptionHandle($e);
+            $this->getProxy()->onExceptionHandle($e);
         } catch (ArgumentCountError $e) {
-            yield $this->getProxy()->onExceptionHandle($e);
+            $this->getProxy()->onExceptionHandle($e);
         }
     }
 
@@ -239,7 +236,7 @@ class Controller extends CoreBase
                     break;
             }
         } else {
-            call_user_func($handle, $e);
+            \co::call_user_func($handle, $e);
         }
     }
 

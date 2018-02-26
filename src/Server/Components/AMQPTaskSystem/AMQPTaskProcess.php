@@ -14,7 +14,6 @@ use Server\Asyn\AMQP\AMQP;
 use Server\Asyn\Mysql\MysqlAsynPool;
 use Server\Asyn\Redis\RedisAsynPool;
 use Server\Components\Process\Process;
-use Server\Coroutine\Coroutine;
 use Server\Memory\Pool;
 
 abstract class AMQPTaskProcess extends Process
@@ -96,11 +95,11 @@ abstract class AMQPTaskProcess extends Process
      */
     public function process_message(AMQPMessage $message)
     {
-        Coroutine::startCoroutine(function () use ($message) {
+        go(function () use ($message) {
             $task = Pool::getInstance()->get($this->route($message->getBody()));
             $task->reUse();
-            yield $task->initialization($message);
-            yield $task->handle($message->getBody());
+            $task->initialization($message);
+            $task->handle($message->getBody());
         });
     }
 

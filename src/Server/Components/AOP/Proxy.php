@@ -28,7 +28,7 @@ abstract class Proxy implements IProxy
     public function __call($name, $arguments)
     {
         $this->beforeCall($name, $arguments);
-        $result = call_user_func_array([$this->own, $name], $arguments);
+        $result = \co::call_user_func_array([$this->own, $name], $arguments);
         $this->afterCall($name, $arguments);
         return $result;
     }

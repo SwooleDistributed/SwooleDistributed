@@ -41,8 +41,8 @@ class TestModel extends Model
 
     public function test_coroutine()
     {
-        $redisCoroutine = $this->redis_pool->coroutineSend('get', 'test');
-        $result = yield $redisCoroutine;
+        $redisCoroutine = $this->redis_pool->coroutineSend('get', ['test']);
+        $result = $redisCoroutine;
         return $result;
     }
 
@@ -58,14 +58,14 @@ class TestModel extends Model
 
     public function test_exception()
     {
-        $result = yield $this->redis_pool->coroutineSend('get', 'test');
+        $result = $this->redis_pool->coroutineSend('get', 'test');
         throw new SwooleException('test');
     }
 
     public function test_exceptionII()
     {
         try {
-            yield $this->test_exception();
+            $this->test_exception();
         } catch (\Exception $e) {
             print_r(1);
         }
@@ -80,15 +80,15 @@ class TestModel extends Model
 
     public function test_pdo()
     {
-        $result = yield $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 36)->coroutineSend();
-        $result = yield $this->mysql_pool->dbQueryBuilder->update('account')->where('uid', 36)->set(['status' => 1])->coroutineSend();
-        $result = yield $this->mysql_pool->dbQueryBuilder->replace('account')->where('uid', 91)->set(['status' => 1])->coroutineSend();
+        $result = $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->where('uid', 36)->coroutineSend();
+        $result = $this->mysql_pool->dbQueryBuilder->update('account')->where('uid', 36)->set(['status' => 1])->coroutineSend();
+        $result = $this->mysql_pool->dbQueryBuilder->replace('account')->where('uid', 91)->set(['status' => 1])->coroutineSend();
         print_r($result);
     }
 
     public function testRedis()
     {
-        $result = yield $this->redis_pool->getCoroutine()->get('test');
+        $result = $this->redis_pool->getCoroutine()->get('test');
         return 1;
     }
 

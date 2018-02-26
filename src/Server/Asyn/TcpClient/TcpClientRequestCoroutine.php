@@ -21,20 +21,16 @@ class TcpClientRequestCoroutine extends CoroutineBase
     public $data;
     public $oneway;
 
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     /**
      * 对象池模式代替__construct
      * @param $pool
      * @param $data
-     * @param $oneway
+     * @param bool $oneway
+     * @param $set
      * @return $this
      * @throws SwooleException
      */
-    public function init($pool, $data, $oneway=false)
+    public function init($pool, $data, $oneway = false, $set)
     {
         $this->pool = $pool;
         $this->data = $data;
@@ -45,12 +41,13 @@ class TcpClientRequestCoroutine extends CoroutineBase
         }
         $this->request = '[tcpClient]' .$pool->connect. $data['path'];
         unset($this->data['path']);
+        $this->set($set);
         if ($this->fuse()) {//启动断路器
             $this->send(function ($result) {
-                $this->result = $result;
+                $this->coPush($result);
             });
         }
-        return $this;
+        return $this->returnInit();
     }
 
     public function send($callback)

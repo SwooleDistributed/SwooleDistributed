@@ -18,7 +18,6 @@ use Server\Components\SDHelp\SDHelpProcess;
 use Server\CoreBase\Child;
 use Server\CoreBase\CoreBase;
 use Server\CoreBase\SwooleException;
-use Server\Coroutine\Coroutine;
 use Server\Memory\Pool;
 
 class TimerTask extends CoreBase
@@ -190,7 +189,7 @@ class TimerTask extends CoreBase
             $child->setContext($context);
             if (!empty($timer_task['task_name'])) {
                 $task = get_instance()->loader->task($timer_task['task_name'], $child);
-                call_user_func([$task, $timer_task['method_name']]);
+                \co::call_user_func([$task, $timer_task['method_name']]);
                 $startTime = getMillisecond();
                 $path = "[TimerTask] " . $timer_task['task_name'] . "::" . $timer_task['method_name'];
                 $task->startTask(-1, function () use (&$child, $startTime, $path) {
@@ -202,12 +201,10 @@ class TimerTask extends CoreBase
                 $model = get_instance()->loader->model($timer_task['model_name'], $child);
                 $startTime = getMillisecond();
                 $path = "[TimerTask] " . $timer_task['model_name'] . "::" . $timer_task['method_name'];
-                Coroutine::startCoroutine(function () use (&$child, &$model, &$timer_task, $path, $startTime) {
-                    yield call_user_func([$model, $timer_task['method_name']]);
-                    $child->destroy();
-                    Pool::getInstance()->push($child);
-                    ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->addStatistics($path, getMillisecond() - $startTime);
-                });
+                \co::call_user_func([$model, $timer_task['method_name']]);
+                $child->destroy();
+                Pool::getInstance()->push($child);
+                ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->addStatistics($path, getMillisecond() - $startTime);
             }
         });
     }

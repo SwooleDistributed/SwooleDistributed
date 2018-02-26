@@ -19,31 +19,25 @@ class RedisCoroutine extends CoroutineBase
     public $redisAsynPool;
     public $name;
     public $arguments;
-
-    public function __construct()
-    {
-        parent::__construct();
-    }
-
     /**
      * 对象池模式用来代替__construct
      * @param $redisAsynPool
      * @param $name
      * @param $arguments
+     * @param $set
      * @return $this
      */
-    public function init($redisAsynPool, $name, $arguments)
+    public function init($redisAsynPool, $name, $arguments, $set)
     {
         $this->redisAsynPool = $redisAsynPool;
         $this->name = $name;
         $this->arguments = $arguments;
         $this->request = "#redis: $name";
-        $this->getCount = getTickTime();
+        $this->set($set);
         $this->send(function ($result) {
-            $this->result = $result;
-            $this->immediateExecution();
+            $this->coPush($result);
         });
-        return $this;
+        return $this->returnInit();
     }
 
     public function send($callback)

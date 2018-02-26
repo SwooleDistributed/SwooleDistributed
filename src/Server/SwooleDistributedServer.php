@@ -198,19 +198,19 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function startProcess()
     {
         //timerTask,reload进程
-        ProcessManager::getInstance()->addProcess(SDHelpProcess::class, false);
+        ProcessManager::getInstance()->addProcess(SDHelpProcess::class);
         //consul进程
         if ($this->config->get('consul.enable', false)) {
-            ProcessManager::getInstance()->addProcess(ConsulProcess::class, false);
+            ProcessManager::getInstance()->addProcess(ConsulProcess::class);
         }
         if ($this->config->get('backstage.enable', false)) {
-            ProcessManager::getInstance()->addProcess(BackstageProcess::class, false);
+            ProcessManager::getInstance()->addProcess(BackstageProcess::class);
         }
         //Cluster进程
         ProcessManager::getInstance()->addProcess(ClusterProcess::class);
         //CatCache进程
         if ($this->config->get('catCache.enable', false)) {
-            ProcessManager::getInstance()->addProcess(CatCacheProcess::class, false);
+            ProcessManager::getInstance()->addProcess(CatCacheProcess::class);
         }
     }
 
@@ -228,7 +228,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $this->server->sendMessage($send_data, $i);
         }
         //自己的进程是收不到消息的所以这里执行下
-        call_user_func($callStaticFuc, $uns_data);
+        \co::call_user_func($callStaticFuc, $uns_data);
     }
 
     /**
@@ -245,7 +245,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $this->server->sendMessage($send_data, $i);
         }
         //自己的进程是收不到消息的所以这里执行下
-        call_user_func($callStaticFuc, $uns_data);
+        \co::call_user_func($callStaticFuc, $uns_data);
     }
 
     /**
@@ -260,7 +260,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $id = rand(0, get_instance()->worker_num - 1);
         if ($this->server->worker_id == $id) {
             //自己的进程是收不到消息的所以这里执行下
-            call_user_func($callStaticFuc, $uns_data);
+            \co::call_user_func($callStaticFuc, $uns_data);
         } else {
             get_instance()->server->sendMessage($send_data, $id);
         }
@@ -278,7 +278,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $send_data = get_instance()->packServerMessageBody($type, $uns_data, $callStaticFuc);
         if ($this->server->worker_id == $workerId) {
             //自己的进程是收不到消息的所以这里执行下
-            call_user_func($callStaticFuc, $uns_data);
+            \co::call_user_func($callStaticFuc, $uns_data);
         } else {
             get_instance()->server->sendMessage($send_data, $workerId);
         }
@@ -318,7 +318,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 if (is_callable($call)) {
                     //给task做初始化操作
                     $task->initialization($task_id, $from_id, $this->server->worker_pid, $task_name, $task_fuc_name, $task_context);
-                    $result = Coroutine::startCoroutine($call, $task_data);
+                    $result = call_user_func_array($call, $task_data);
                 } else {
                     throw new SwooleException("method $task_fuc_name not exist in $task_name");
                 }
@@ -538,7 +538,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         //进程锁保证只有一个进程会执行以下的代码,reload也不会执行
         if (!$this->isTaskWorker() && $this->initLock->trylock()) {
             //进程启动后进行开服的初始化
-            Coroutine::startCoroutine([$this, 'onOpenServiceInitialization']);
+            $this->onOpenServiceInitialization();
             if (Start::$testUnity) {
                 new TestModule(Start::$testUnityDir);
             }
@@ -551,12 +551,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             TimerTask::start();
             if ($this->config->get('catCache.enable', false)) {
                 TimerCallBack::init();
-                Coroutine::startCoroutine(function () use ($workerId, $isReload) {
-                    if (!$isReload) {
-                        yield EventDispatcher::getInstance()->addOnceCoroutine(CatCacheProcess::READY);
-                    }
-                    yield Actor::recovery($workerId);
-                });
+                $ready = ProcessManager::getInstance()->getRpcCall(CatCacheProcess::class)->isReady();
+                if (!$isReload && !$ready) {
+                    EventDispatcher::getInstance()->addOnceCoroutine(CatCacheProcess::READY);
+                }
+                Actor::recovery($workerId);
             }
         }
     }
@@ -703,7 +702,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function coroutineUidIsOnline($uid)
     {
         if ($this->isCluster()) {
-            return yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->isOnline($uid);
+            return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->isOnline($uid);
         } else {
             return $this->uid_fd_table->exist($uid);
         }
@@ -718,7 +717,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function coroutineCountOnline()
     {
         if ($this->isCluster()) {
-            return yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->countOnline();
+            return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->countOnline();
         } else {
             return count($this->uid_fd_table);
         }
@@ -732,7 +731,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     public function coroutineGetAllUids()
     {
         if ($this->isCluster()) {
-            return yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getAllUids();
+            return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->getAllUids();
         } else {
             $uids = [];
             foreach ($this->uid_fd_table as $key => $value) {
@@ -823,13 +822,13 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $status['max_connection'] = $this->max_connection;
         $status['start_time'] = Start::getStartTime();
         $status['run_time'] = format_date(strtotime(date('Y-m-d H:i:s')) - strtotime(Start::getStartTime()));
-        $poolStatus = yield $this->helpGetAllStatus();
+        $poolStatus = $this->helpGetAllStatus();
         $status['coroutine_num'] = $poolStatus['coroutine_num'];
         $status['pool'] = $poolStatus['pool'];
         $status['model_pool'] = $poolStatus['model_pool'];
         $status['controller_pool'] = $poolStatus['controller_pool'];
         $status['ports'] = $this->portManager->getPortStatus();
-        $data = yield ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
+        $data = ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class)->getData(ConsulHelp::DISPATCH_KEY);
         if (!empty($data)) {
             foreach ($data as $key => $value) {
                 $data[$key] = json_decode($value, true);
@@ -850,7 +849,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $status['pool'] = Pool::getInstance()->getStatus();
         $status['model_pool'] = ModelFactory::getInstance()->getStatus();
         $status['controller_pool'] = ControllerFactory::getInstance()->getStatus();
-        $status['coroutine_num'] = Coroutine::getInstance()->getStatus();
+        $status['coroutine_num'] = 0;
         return $status;
     }
 
@@ -861,7 +860,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         $status = ['pool' => [], 'model_pool' => [], 'controller_pool' => [], 'coroutine_num' => 0];
         for ($i = 0; $i < $this->worker_num; $i++) {
-            $result = yield ProcessManager::getInstance()->getRpcCallWorker($i)->getPoolStatus();
+            $result = ProcessManager::getInstance()->getRpcCallWorker($i)->getPoolStatus();
             if (empty($result)) return;
             $this->helpMerge($status['pool'], $result['pool']);
             $this->helpMerge($status['model_pool'], $result['model_pool']);
@@ -900,7 +899,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             if (!$this->isCluster()) {
                 return [];
             } else {
-                $fdInfo = yield ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getUidInfo($uid);
+                $fdInfo = ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->my_getUidInfo($uid);
                 return $fdInfo;
             }
         } else {

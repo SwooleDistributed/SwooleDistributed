@@ -10,7 +10,6 @@ namespace Server\Components\Process;
 
 
 use Server\CoreBase\Child;
-use Server\Coroutine\Coroutine;
 use Server\SwooleMarco;
 use Server\Test\DocParser;
 
@@ -49,7 +48,7 @@ abstract class ProcessRPC extends Child
             $info = DocParser::getInstance()->parse($doc);
             $method_name = $method->getName();
             if (isset($info['oneWay'])) {
-                get_instance()->processManager->oneWayFucName[$method_name] = $method_name;
+                ProcessManager::getInstance()->oneWayFucName[$method_name] = $method_name;
             }
         }
     }
@@ -63,6 +62,7 @@ abstract class ProcessRPC extends Child
     {
         return array_key_exists($func, ProcessManager::getInstance()->oneWayFucName);
     }
+
     /**
      * @param $name
      * @param $arguments
@@ -96,30 +96,25 @@ abstract class ProcessRPC extends Child
      */
     protected function processPpcRun($message)
     {
-        $func = $message['func'];
-        $result = call_user_func_array([$this->rpcProxy ?? $this, $func], $message['arg']);
-        if ($result instanceof \Generator)//需要协程调度
-        {
-            if (!$this->coroutine_need) {
-                throw new \Exception("该进程不支持协程调度器");
+        go(function () use ($message) {
+            $func = $message['func'];
+            $context = $this;
+            if ($this->rpcProxy != null && is_callable([$this->rpcProxy, $func])) {
+                $context = $this->rpcProxy;
             }
-            Coroutine::startCoroutine(function () use ($result, $message) {
-                $result = yield $result;
-                if (!$message['oneWay']) {
-                    $newMessage['result'] = $result;
-                    $newMessage['token'] = $message['token'];
-                    $data = get_instance()->packServerMessageBody(SwooleMarco::PROCESS_RPC_RESULT, $newMessage);
-                    $this->sendMessage($data, $message['worker_id']);
-                }
-            });
-        } else {
+            if (!is_callable([$context, $func])) {
+                $class = get_class($context);
+                $result = new \Exception("$func 方法名 在 $class 中不存在");
+            } else {
+                $result = \co::call_user_func_array([$context, $func], $message['arg']);
+            }
             if (!$message['oneWay']) {
                 $newMessage['result'] = $result;
                 $newMessage['token'] = $message['token'];
                 $data = get_instance()->packServerMessageBody(SwooleMarco::PROCESS_RPC_RESULT, $newMessage);
                 $this->sendMessage($data, $message['worker_id']);
             }
-        }
+        });
     }
 
     /**

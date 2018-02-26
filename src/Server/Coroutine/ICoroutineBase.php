@@ -13,11 +13,5 @@ interface ICoroutineBase
 {
     function send($callback);
 
-    function getResult();
-
     function destroy();
-
-    function setCoroutineTask($coroutineTask);
-
-    function immediateExecution();
 }
