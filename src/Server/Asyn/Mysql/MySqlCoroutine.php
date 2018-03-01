@@ -49,21 +49,22 @@ class MySqlCoroutine extends CoroutineBase
         return $this->returnInit();
     }
 
-    public function recv()
+    public function recv(callable $fuc = null)
     {
-        $result = parent::recv();
-        if (is_array($result) && isset($result['error'])) {
-            if (!$this->noException) {
-                $this->isFaile = true;
-                $ex = new SwooleException($result['error']);
-                throw $ex;
-            } else {
-                $this->result = $this->noExceptionReturn;
+        $result = parent::recv(function (&$result) {
+            if (is_array($result) && isset($result['error'])) {
+                if (!$this->noException) {
+                    $this->isFaile = true;
+                    $ex = new SwooleException($result['error']);
+                    throw $ex;
+                } else {
+                    $this->result = $this->noExceptionReturn;
+                }
             }
-        }
-        if ($this->resultHandle != null && is_array($result)) {
-            $result = \co::call_user_func($this->resultHandle, $result);
-        }
+            if ($this->resultHandle != null && is_array($result)) {
+                $result = \co::call_user_func($this->resultHandle, $result);
+            }
+        });
         return $result;
     }
 

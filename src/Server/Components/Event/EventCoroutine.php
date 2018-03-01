@@ -28,15 +28,6 @@ class EventCoroutine extends CoroutineBase
         return $this->returnInit();
     }
 
-    protected function coPush($data)
-    {
-        $this->result = $data;
-        if ($this->chan == null) return;
-        if (!$this->delayRecv || $this->startRecv) {
-            $this->chan->push($data);
-        }
-    }
-
     public function send($event)
     {
         EventDispatcher::getInstance()->remove($this->eventType, [$this, 'send']);

@@ -11,7 +11,6 @@ namespace Server\Components\Consul;
 
 use Server\Asyn\HttpClient\HttpClient;
 use Server\Components\Event\EventDispatcher;
-use Server\Components\Process\ProcessManager;
 use Server\Components\SDHelp\SDHelpProcess;
 use Server\Start;
 
@@ -22,13 +21,18 @@ class ConsulLeader
     protected $leader_name;
     protected $config;
     protected $sessionID;
+    /**
+     * @var SDHelpProcess
+     */
+    protected $sdHelpProcess;
 
-    public function __construct()
+    public function __construct($sdHelpProcess)
     {
+        $this->sdHelpProcess = $sdHelpProcess;
         $this->config = get_instance()->config;
         $this->leader_name = $this->config['consul']['leader_service_name'];
         $this->consul_leader = new HttpClient(null, 'http://127.0.0.1:8500');
-        swoole_timer_after(1000, function () {
+        swoole_timer_after(2000, function () {
             $this->leader();
             $this->serviceHealthCheck();
         });
@@ -60,8 +64,7 @@ class ConsulLeader
             }
             $result[$watch] = $data['body'];
             //存儲在SDHelpProcess中
-            ProcessManager::getInstance()->getProcess(SDHelpProcess::class)
-                ->data[ConsulHelp::DISPATCH_KEY][$watch] = $data['body'];
+            $this->sdHelpProcess->data[ConsulHelp::DISPATCH_KEY][$watch] = $data['body'];
             //分发到进程中去
             EventDispatcher::getInstance()->dispatch(ConsulHelp::DISPATCH_KEY, $result);
             //继续监听

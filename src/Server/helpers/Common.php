@@ -308,9 +308,9 @@ function secho($tile, $message)
     foreach ($content as $value) {
         if (!empty($value)) {
             $echo = "[$tile] $value";
-            $send = $send . $echo;
+            $send = $send . $echo . "\n";
             if ($could) {
-                echo " > $echo.\n";
+                echo " > $echo\n";
             }
         }
     }

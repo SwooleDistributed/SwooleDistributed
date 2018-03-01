@@ -67,7 +67,9 @@ class RPCCall
         Pool::getInstance()->push($this);
         if (!$this->oneWay) {
             if ($token instanceof Event) {//说明是本进程的数据，直接返回数据就行
-                return $token->data;
+                $data = $token->data;
+                Pool::getInstance()->push($token);
+                return $data;
             } else {
                 return EventDispatcher::getInstance()->addOnceCoroutine($token);
             }

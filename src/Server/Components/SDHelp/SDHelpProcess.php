@@ -17,12 +17,11 @@ class SDHelpProcess extends Process
 {
     public $data = [];
     protected $statisticsMap = [];
-
     public function start($process)
     {
         new TimerTask();
         if (get_instance()->config->get('consul.enable', false)) {
-            new ConsulLeader();
+            new ConsulLeader($this);
         }
         if (get_instance()->config->get('auto_reload_enable', false)) {//代表启动单独进程进行reload管理
             new InotifyReload();
