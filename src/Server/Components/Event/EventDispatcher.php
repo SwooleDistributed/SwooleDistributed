@@ -187,7 +187,7 @@ class EventDispatcher
      * 协程的仅仅一次的回调
      * @param $eventType
      * @param callable $set
-     * @return EventCoroutine
+     * @return
      */
     public function addOnceCoroutine($eventType, callable $set = null)
     {

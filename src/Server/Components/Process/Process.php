@@ -29,6 +29,7 @@ abstract class Process extends ProcessRPC
         parent::__construct();
         $this->name = $name;
         $this->worker_id = $worker_id;
+        get_instance()->workerId = $worker_id;
         $this->config = get_instance()->config;
         $this->log = get_instance()->log;
         if (get_instance()->server != null) {

@@ -30,7 +30,6 @@ class ClusterProcess extends Process
      * @var HttpClient
      */
     protected $consul;
-
     public function start($process)
     {
         $this->node_name = getNodeName();
@@ -48,7 +47,7 @@ class ClusterProcess extends Process
             }
             $this->consul = new HttpClient(null, 'http://127.0.0.1:8500');
             $this->port = $this->config['cluster']['port'];
-            swoole_timer_after(1000, function () {
+            swoole_timer_after(2000, function () {
                 $this->updateFromConsul();
             });
         }

@@ -84,7 +84,9 @@ abstract class CoroutineBase implements ICoroutineBase
         if ($this->chan == null) return;
         $this->result = $data;
         if (!$this->delayRecv || $this->startRecv) {
-            $this->chan->push($data);
+            go(function () use ($data) {
+                $this->chan->push($data);
+            });
         }
     }
 
@@ -97,11 +99,23 @@ abstract class CoroutineBase implements ICoroutineBase
         }
     }
 
-    public function recv()
+    public function recv(callable $fuc = null)
     {
+        if ($this->isFaile && $this->useFuse) {//启动了断路器并且还失败了
+            if (empty($this->downgrade)) {
+                //没有降级操作就直接快速失败
+                $this->result = $this->fastFail();
+            } else {
+                $this->result = $this->downgrade;
+            }
+        }
         $this->startRecv = true;
         if ($this->result !== CoroutineNull::getInstance()) {//有值了
             $result = $this->getResult($this->result);
+            if ($fuc != null) {
+                $fuc($result);
+            }
+            $this->destroy();
             return $result;
         } else {
             $this->chan = new \chan();
@@ -117,55 +131,34 @@ abstract class CoroutineBase implements ICoroutineBase
             $this->onTimerOutHandle();
             $result = $this->getResult($result);
         }
+        if ($fuc != null) {
+            $fuc($result);
+        }
+        $this->destroy();
         return $result;
     }
 
     protected function getResult($result)
     {
         if ($result instanceof \Throwable) {
-            if (!$this->noException) {
-                $this->destroy();
-                throw $result;
+            //迁移操作
+            if ($result instanceof CoroutineChangeToken) {
+                $this->token = $result->token;
+                $result = $this->getResult($this->chan->pop());
             } else {
-                $this->result = $this->noExceptionReturn;
+                $this->isFaile = true;
+                if (!$this->noException) {
+                    $this->destroy();
+                    throw $result;
+                } else {
+                    $this->result = $this->noExceptionReturn;
+                }
             }
         }
-        $this->destroy();
         return $result;
     }
 
     public abstract function send($callback);
-
-    /* public function getResult()
-     {
-         if ($this->isFaile && $this->useFuse) {
-             if (empty($this->downgrade)) {
-                 //没有降级操作就直接快速失败
-                 $this->fastFail();
-             } else {
-                 $this->result = call_user_func($this->downgrade);
-                 return $this->result;
-             }
-         }
-         //迁移操作
-         if ($this->result instanceof CoroutineChangeToken) {
-             $this->token = $this->result->token;
-             $this->getCount = getTickTime();
-             $this->result = CoroutineNull::getInstance();
-         }
-         if ((getTickTime() - $this->getCount) > $this->MAX_TIMERS && $this->result instanceof CoroutineNull) {
-             $this->onTimerOutHandle();
-             if (!$this->noException) {
-                 $this->isFaile = true;
-                 $ex = new SwooleException("[CoroutineTask]: Time Out!, [Request]: $this->request");
-                 $this->destroy();
-                 throw $ex;
-             } else {
-                 $this->result = $this->noExceptionReturn;
-             }
-         }
-         return $this->result;
-     }*/
 
     /**
      * dump
@@ -181,7 +174,7 @@ abstract class CoroutineBase implements ICoroutineBase
      */
     protected function fastFail()
     {
-        throw new \Exception('Circuit breaker');
+        return new \Exception('Circuit breaker');
     }
 
     /**

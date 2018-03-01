@@ -160,7 +160,11 @@ class Controller extends CoreBase
         }
         try {
             $this->initialization($controller_name, $method_name);
-            $this->$method_name($params);
+            if ($params == null) {
+                $this->$method_name($params);
+            } else {
+                \co::call_user_func_array([$this, $method_name], $params);
+            }
         } catch (\Exception $e) {
             $this->getProxy()->onExceptionHandle($e);
         } catch (ArgumentCountError $e) {
