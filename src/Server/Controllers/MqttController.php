@@ -44,26 +44,24 @@ class MqttController extends Controller
      */
     public function connect(CONNECT $connect)
     {
-        go(function () use ($connect) {
-            $connack = new CONNACK($this->pack);
-            if ($connect->getUserNameFlag()) {
-                list($auth, $uid) = $this->auth($connect->username, $connect->password);
-                if ($auth) {
-                    $this->bindUid($uid);
-                    $connack->setReturnCode(0);
-                    $connack->setSessionPresent(0);
-                    $this->send($connack);
-                } else {
-                    $connack->setReturnCode(0x04);
-                    $connack->setSessionPresent(0);
-                    $this->send($connack);
-                }
+        $connack = new CONNACK($this->pack);
+        if ($connect->getUserNameFlag()) {
+            list($auth, $uid) = $this->auth($connect->username, $connect->password);
+            if ($auth) {
+                $this->bindUid($uid);
+                $connack->setReturnCode(0);
+                $connack->setSessionPresent(0);
+                $this->send($connack);
             } else {
-                $connack->setReturnCode(0x05);
+                $connack->setReturnCode(0x04);
                 $connack->setSessionPresent(0);
                 $this->send($connack);
             }
-        });
+        } else {
+            $connack->setReturnCode(0x05);
+            $connack->setSessionPresent(0);
+            $this->send($connack);
+        }
     }
 
     /**

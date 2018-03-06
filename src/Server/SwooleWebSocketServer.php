@@ -224,7 +224,6 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
                 }
             } catch (\Exception $e) {
                 $route->errorHandle($e, $fd);
-                return;
             }
         } catch (\Exception $e) {
 

@@ -36,6 +36,10 @@ class SwooleMarco
      */
     const MSG_TYPE_KICK_UID = 3;
     /**
+     * 全服广播
+     */
+    const MSG_TYPE_SEND_ALL_FD = 4;
+    /**
      * 添加server
      */
     const ADD_SERVER = 3003;

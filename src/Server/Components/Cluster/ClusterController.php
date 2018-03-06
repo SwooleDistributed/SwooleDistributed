@@ -69,6 +69,11 @@ class ClusterController extends Child
         get_instance()->sendToAll($data, true);
     }
 
+    public function sendToAllFd($data)
+    {
+        get_instance()->sendToAllFd($data, true);
+    }
+
     public function kickUid($uid)
     {
         get_instance()->kickUid($uid, true);

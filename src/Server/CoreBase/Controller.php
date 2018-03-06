@@ -378,6 +378,26 @@ class Controller extends CoreBase
     }
 
     /**
+     * sendToAllFd
+     * @param $data
+     * @param $destroy
+     * @throws SwooleException
+     */
+    protected function sendToAllFd($data, $destroy = true)
+    {
+        if ($this->is_destroy) {
+            throw new SwooleException('controller is destroy can not send data');
+        }
+        if (Start::$testUnity) {
+            $this->testUnitSendStack[] = ['action' => 'sendToAllFd', 'data' => $data];
+        } else {
+            get_instance()->sendToAllFd($data);
+        }
+        if ($destroy) {
+            $this->getProxy()->destroy();
+        }
+    }
+    /**
      * 踢用户
      * @param $uid
      */

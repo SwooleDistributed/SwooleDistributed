@@ -42,6 +42,11 @@ class Start
     /**
      * @var
      */
+    protected static $startMillisecond;
+
+    /**
+     * @var
+     */
     protected static $leader;
 
     /**
@@ -70,6 +75,7 @@ class Start
         self::$debug = new \swoole_atomic(0);
         self::$leader = new \swoole_atomic(0);
         self::$startTime = date('Y-m-d H:i:s');
+        self::$startMillisecond = getMillisecond();
         self::setProcessTitle(getServerName());
         $application = new Application();
         $input = new ArgvInput();
@@ -176,5 +182,10 @@ class Start
     public static function getStartTime()
     {
         return self::$startTime;
+    }
+
+    public static function getStartMillisecond()
+    {
+        return self::$startMillisecond;
     }
 }

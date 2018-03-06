@@ -151,7 +151,7 @@ class MysqlAsynPool extends AsynPool
         }
 
         $sql = $data['sql'];
-        $client->query($sql, function ($client, $result) use ($data, $sql) {
+        $result = $client->query($sql, function ($client, $result) use ($data, $sql) {
             $sql = strtolower($sql);
             if ($result === false) {
                 if ($client->errno == 2006 || $client->errno == 2013) {//断线重连
@@ -189,6 +189,11 @@ class MysqlAsynPool extends AsynPool
                 }
             }
         });
+        if (!$result) {
+            $this->reconnect($client);
+            $this->commands->unshift($data);
+            return;
+        }
     }
 
     /**

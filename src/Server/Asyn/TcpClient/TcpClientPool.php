@@ -106,7 +106,7 @@ class TcpClientPool extends AsynPool
     }
 
     /**
-     * 准备一个httpClient
+     * 准备一个Client
      */
     public function prepareOne()
     {
