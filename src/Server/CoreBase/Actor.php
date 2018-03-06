@@ -377,7 +377,7 @@ abstract class Actor extends CoreBase
      */
     public static function recovery($worker_id)
     {
-        $data = CatCacheRpcProxy::getRpc()[Actor::SAVE_NAME];
+        $data = CatCacheRpcProxy::getRpc()->offsetGet(Actor::SAVE_NAME);
         $delimiter = get_instance()->config->get("catCache.delimiter", ".");
         if ($data != null) {
             foreach ($data as $key => $value) {
