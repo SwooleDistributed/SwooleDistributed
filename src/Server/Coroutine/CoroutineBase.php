@@ -81,8 +81,8 @@ abstract class CoroutineBase implements ICoroutineBase
 
     protected function coPush($data)
     {
-        if ($this->chan == null) return;
         $this->result = $data;
+        if ($this->chan == null) return;
         if (!$this->delayRecv || $this->startRecv) {
             go(function () use ($data) {
                 $this->chan->push($data);

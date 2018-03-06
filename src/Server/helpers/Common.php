@@ -20,7 +20,7 @@ function &get_instance()
  */
 function getTickTime()
 {
-    return getMillisecond()-\Server\Start::getStartMillisecond();
+    return getMillisecond() - \Server\Start::getStartMillisecond();
 }
 
 /**
