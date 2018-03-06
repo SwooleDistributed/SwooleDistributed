@@ -308,6 +308,11 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                     $this->send($row['fd'], $message['data'], true);
                 }
                 return null;
+            case SwooleMarco::MSG_TYPE_SEND_ALL_FD;//发送广播
+                foreach ($serv->connections as $fd) {
+                    $serv->send($fd, $message['data'], true);
+                }
+                return null;
             case SwooleMarco::SERVER_TYPE_TASK://task任务
                 $task_name = $message['task_name'];
                 $task = $this->loader->task($task_name, $this);
@@ -348,6 +353,30 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         return $this->redis_pool->getSync();
     }
+    /**
+     * 广播(全部FD)
+     * @param $data
+     * @param bool $fromDispatch
+     */
+    public function sendToAllFd($data, $fromDispatch = false)
+    {
+        $send_data = $this->packServerMessageBody(SwooleMarco::MSG_TYPE_SEND_ALL_FD, ['data' => $data]);
+        if ($this->isTaskWorker()) {
+            $this->onSwooleTask($this->server, 0, 0, $send_data);
+        } else {
+            if ($this->task_num > 0) {
+                $this->server->task($send_data);
+            } else {
+                foreach ($this->server->connections as $fd) {
+                    $this->server->send($fd, $data, true);
+                }
+            }
+        }
+        if ($fromDispatch) return;
+        if ($this->isCluster()) {
+            ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_sendToAllFd($data);
+        }
+    }
 
     /**
      * 广播
@@ -360,7 +389,13 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if ($this->isTaskWorker()) {
             $this->onSwooleTask($this->server, 0, 0, $send_data);
         } else {
-            $this->server->task($send_data);
+            if ($this->task_num > 0) {
+                $this->server->task($send_data);
+            } else {
+                foreach ($this->uid_fd_table as $row) {
+                    $this->send($row['fd'], $data, true);
+                }
+            }
         }
         if ($fromDispatch) return;
         if ($this->isCluster()) {
@@ -415,7 +450,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 unset($uids[$key]);
             }
         }
-        if (count($current_fds) > $this->send_use_task_num) {//过多人就通过task
+        if (count($current_fds) > $this->send_use_task_num && $this->task_num > 0) {//过多人就通过task
             $task_data = $this->packServerMessageBody(SwooleMarco::MSG_TYPE_SEND_BATCH, ['data' => $data, 'fd' => $current_fds]);
             if ($this->isTaskWorker()) {
                 $this->onSwooleTask($this->server, 0, 0, $task_data);

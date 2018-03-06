@@ -248,6 +248,12 @@ class ClusterProcess extends Process
         }
     }
 
+    public function my_sendToAllFd($data)
+    {
+        foreach ($this->client as $client) {
+            $client->sendToAllFd($data);
+        }
+    }
     /**
      * 添加订阅
      * @param $topic

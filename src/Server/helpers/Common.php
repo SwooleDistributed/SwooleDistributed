@@ -20,9 +20,13 @@ function &get_instance()
  */
 function getTickTime()
 {
-    return \Server\SwooleDistributedServer::get_instance()->tickTime;
+    return getMillisecond()-\Server\Start::getStartMillisecond();
 }
 
+/**
+ * 获取当前的时间(毫秒)
+ * @return float
+ */
 function getMillisecond()
 {
     list($t1, $t2) = explode(' ', microtime());
