@@ -39,6 +39,10 @@ class ActorContext implements \ArrayAccess
         return $this;
     }
 
+    public function &getData()
+    {
+        return $this->data;
+    }
     /**
      * @return mixed
      */
