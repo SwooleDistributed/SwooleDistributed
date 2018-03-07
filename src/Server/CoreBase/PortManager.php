@@ -361,8 +361,7 @@ class PortManager
         $config = $this->portConfig[$server_port];
         $controller_name = $config['event_controller_name'] ?? get_instance()->getEventControllerName();
         $method_name = ($config['method_prefix'] ?? '') . ($config['connect_method_name'] ?? get_instance()->getConnectMethodName());
-        $controller_instance = ControllerFactory::getInstance()
-            ->getController($controller_name);
+        $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
         if ($request != null) {
             $controller_instance->setRequest($request);
         }

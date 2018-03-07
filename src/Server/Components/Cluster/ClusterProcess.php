@@ -30,6 +30,7 @@ class ClusterProcess extends Process
      * @var HttpClient
      */
     protected $consul;
+
     public function start($process)
     {
         $this->node_name = getNodeName();
@@ -254,6 +255,7 @@ class ClusterProcess extends Process
             $client->sendToAllFd($data);
         }
     }
+
     /**
      * 添加订阅
      * @param $topic
@@ -288,12 +290,13 @@ class ClusterProcess extends Process
      * 发布订阅
      * @param $topic
      * @param $data
+     * @param array $excludeUids
      */
-    public function my_pub($topic, $data)
+    public function my_pub($topic, $data, $excludeUids = [])
     {
-        $this->th_pub($topic, $data);
+        $this->th_pub($topic, $data, $excludeUids);
         foreach ($this->client as $client) {
-            $client->pub($topic, $data);
+            $client->pub($topic, $data, $excludeUids);
         }
     }
 
@@ -381,14 +384,17 @@ class ClusterProcess extends Process
     /**
      * @param $topic
      * @param $data
+     * @param $excludeUids
      */
-    public function th_pub($topic, $data)
+    public function th_pub($topic, $data, $excludeUids = [])
     {
         $tree = $this->buildTrees($topic);
         foreach ($tree as $one) {
             if (isset($this->subArr[$one])) {
                 foreach ($this->subArr[$one] as $uid) {
-                    get_instance()->pubToUid($uid, $data, $topic);
+                    if (!in_array($uid, $excludeUids)) {
+                        get_instance()->pubToUid($uid, $data, $topic);
+                    }
                 }
             }
         }

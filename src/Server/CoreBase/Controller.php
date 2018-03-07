@@ -397,6 +397,7 @@ class Controller extends CoreBase
             $this->getProxy()->destroy();
         }
     }
+
     /**
      * 踢用户
      * @param $uid
@@ -524,13 +525,15 @@ class Controller extends CoreBase
     }
 
     /**
+     * 发布
      * @param $topic
      * @param $data
-     * @param $destroy
+     * @param array $excludeUids 需要排除的uids
+     * @param bool $destroy
      */
-    protected function sendPub($topic, $data, $destroy = true)
+    protected function sendPub($topic, $data, $excludeUids = [], $destroy = true)
     {
-        get_instance()->pub($topic, $data);
+        get_instance()->pub($topic, $data, $excludeUids);
         if ($destroy) {
             $this->getProxy()->destroy();
         }

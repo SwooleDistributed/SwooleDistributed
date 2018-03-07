@@ -166,9 +166,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      */
     public function onSwooleWSOpen($server, $request)
     {
-        go(function () use ($request) {
-            $this->portManager->eventConnect($request->fd, $request);
-        });
+        $this->portManager->eventConnect($request->fd, $request);
     }
 
     /**
@@ -314,7 +312,9 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $response->end();
 
         $this->server->defer(function () use ($request) {
-            $this->onSwooleWSOpen($this->server, $request);
+            go(function () use ($request) {
+                $this->onSwooleWSOpen($this->server, $request);
+            });
         });
         return true;
     }

@@ -46,7 +46,7 @@ class StartCmd extends Command
             $io->warning("$server_name server already running");
             return;
         }
-        $io->title('WELLCOME START SWOOLE DISTRIBUTED, HAVE FUN!');
+        $io->title('WELCOME START SWOOLE DISTRIBUTED, HAVE FUN!');
         $io->table(
             [
                 "System",
