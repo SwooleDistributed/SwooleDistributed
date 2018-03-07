@@ -1,7 +1,10 @@
 # SD3.X
 支持swoole2，采用内置协程，摆脱yield。
+
 完善的教学文档：https://www.kancloud.cn/tmtbe/sd3
+
 丰富的高级功能
+
 创新的Actor模型
 
 # SwooleDistributed
