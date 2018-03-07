@@ -1,3 +1,9 @@
+# SD3.X
+支持swoole2，采用内置协程，摆脱yield。
+完善的教学文档：https://www.kancloud.cn/tmtbe/sd3
+丰富的高级功能
+创新的Actor模型
+
 # SwooleDistributed
 
 今年年底历时2年多的迭代，这是SD框架硕果满满的一年，通过不断的迭代和改进SD框架已经在圈内有良好的口碑，不少新生的框架借鉴了SD的设计思想，SD框架也被不少创业型公司和大型企业使用。
