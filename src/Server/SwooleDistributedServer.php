@@ -528,11 +528,12 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * 发布订阅
      * @param $topic
      * @param $data
+     * @param array $excludeUids
      */
-    public function pub($topic, $data)
+    public function pub($topic, $data, $excludeUids = [])
     {
         Utility::CheckTopicName($topic);
-        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_pub($topic, $data);
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_pub($topic, $data, $excludeUids);
     }
 
     /**

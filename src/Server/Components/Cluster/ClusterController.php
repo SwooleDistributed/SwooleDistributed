@@ -79,9 +79,9 @@ class ClusterController extends Child
         get_instance()->kickUid($uid, true);
     }
 
-    public function pub($sub, $data)
+    public function pub($sub, $data, $excludeUids)
     {
-        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_pub($sub, $data);
+        ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->th_pub($sub, $data, $excludeUids);
     }
 
     public function dispatchEvent($type, $data)
