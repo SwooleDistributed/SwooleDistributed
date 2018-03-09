@@ -2402,6 +2402,7 @@ class Miner
                 $this->clear();
                 return new MysqlSyncHelp($sql, $this->mysql_pool->query($sql, $timerOut, $this->client));
             } else {
+                var_dump(1);
                 $statement = $this->getStatement();
                 $holder = $this->getPlaceholderValues();
                 $sql = $this->getStatement(false);
