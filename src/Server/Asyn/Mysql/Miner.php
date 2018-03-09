@@ -2399,15 +2399,14 @@ class Miner
             return new MysqlSyncHelp($sql, $data);
         } else {
             if ($sql != null) {
+                $result = $this->mysql_pool->query($sql, $timerOut, $this->client);
                 $this->clear();
-                return new MysqlSyncHelp($sql, $this->mysql_pool->query($sql, $timerOut, $this->client));
+                return new MysqlSyncHelp($sql, $result);
             } else {
-                var_dump("start");
                 $statement = $this->getStatement();
                 $holder = $this->getPlaceholderValues();
                 $sql = $this->getStatement(false);
                 $result = $this->mysql_pool->prepare($sql, $statement, $holder, $this->client);
-                var_dump($result);
                 $this->clear();
                 return new MysqlSyncHelp($sql,$result);
             }
