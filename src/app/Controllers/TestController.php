@@ -66,8 +66,7 @@ class TestController extends Controller
 
     public function http_mysql()
     {
-        $model = $this->loader->model(TestModel::class, $this);
-        $result = $model->testMysql();
+        $this->db->update("account")->where("uid",238231)->set(["uid"=>238232])->query();
         $this->http_output->end($result);
     }
 
