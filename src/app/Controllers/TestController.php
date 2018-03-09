@@ -256,17 +256,10 @@ class TestController extends Controller
      */
     public function http_html_test()
     {
-        $template = $this->loader->view('server::error_404');
-        $this->http_output->end($template->render(['controller' => 'TestController\html_test', 'message' => '页面不存在！']));
+        $template = $this->loader->view('app::404', ['name' => '学院君']);
+        $this->http_output->end($template);
     }
 
-    /**
-     * html测试
-     */
-    public function http_html_file_test()
-    {
-        $this->http_output->endFile(SERVER_DIR, 'Views/test.html');
-    }
 
     /**
      * select方法测试
