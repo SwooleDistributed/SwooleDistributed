@@ -566,6 +566,7 @@ abstract class SwooleServer extends ProcessRPC
     {
         $log = "WORKER EXIT UNEXPECTED ";
         $error = error_get_last();
+        var_dump($error['type']);
         if (isset($error['type'])) {
             switch ($error['type']) {
                 case E_ERROR :
