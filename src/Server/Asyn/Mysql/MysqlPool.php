@@ -132,37 +132,13 @@ class MysqlPool implements IAsynPool
         $data['result'] = $res;
         $data['affected_rows'] = $client->affected_rows;
         $data['insert_id'] = $client->insert_id;
+        var_dump($data);
         return $data;
     }
 
     function getAsynName()
     {
         return self::AsynName . ":" . $this->active;
-    }
-
-    function distribute($data)
-    {
-        // TODO: Implement distribute() method.
-    }
-
-    function execute($data)
-    {
-        // TODO: Implement execute() method.
-    }
-
-    function pushToPool($client)
-    {
-        // TODO: Implement pushToPool() method.
-    }
-
-    function prepareOne()
-    {
-        // TODO: Implement prepareOne() method.
-    }
-
-    function addTokenCallback($callback)
-    {
-        // TODO: Implement addTokenCallback() method.
     }
 
     function getSync()
@@ -172,5 +148,10 @@ class MysqlPool implements IAsynPool
         $this->mysql_client = new Miner();
         $this->mysql_client->pdoConnect($activeConfig);
         return $this->mysql_client;
+    }
+
+    function pushToPool($client)
+    {
+        // TODO: Implement pushToPool() method.
     }
 }

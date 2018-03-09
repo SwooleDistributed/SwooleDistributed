@@ -66,7 +66,7 @@ class TestController extends Controller
 
     public function http_mysql()
     {
-        $result = $this->db->update("account")->where("uid",238231)->set(["uid"=>238232])->query();
+        $result = $this->db->update("account")->where("uid",238232)->set(["uid"=>99999])->query();
         $this->http_output->end($result);
     }
 
