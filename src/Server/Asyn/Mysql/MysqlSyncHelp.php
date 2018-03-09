@@ -20,7 +20,6 @@ class MysqlSyncHelp implements ArrayAccess
     {
         $this->mysql = $mysql;
         $this->elements = $data;
-        var_dump($data);
     }
 
     public function dump()
@@ -88,5 +87,13 @@ class MysqlSyncHelp implements ArrayAccess
     public function insert_id()
     {
         return $this->elements['insert_id'];
+    }
+
+    /**
+     * @return mixed
+     */
+    public function affected_rows()
+    {
+        return $this->elements['affected_rows'];
     }
 }
