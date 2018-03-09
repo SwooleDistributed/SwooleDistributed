@@ -104,11 +104,9 @@ class MysqlPool implements IAsynPool
      */
     public function prepare($sql, $statement, $holder, $client = null)
     {
-        var_dump(10);
         if ($client == null) {
             $client = $this->pool_chan->pop();
         }
-        var_dump(9);
         if (!$client->connected) {
             $set = $this->config['mysql'][$this->active];
             $result = $client->connect($set);
@@ -117,13 +115,10 @@ class MysqlPool implements IAsynPool
                 throw new SwooleException($client->connect_error);
             }
         }
-        var_dump(1);
         $res = $client->prepare($statement);
         if ($res != false) {
             $res = $res->execute($holder);
         }
-        var_dump(2);
-        var_dump($client);
         if ($res === false) {
             if ($client->errno == 110) {
                 throw new SwooleException("[CoroutineTask]: Time Out!, [Request]: $sql");
@@ -135,7 +130,6 @@ class MysqlPool implements IAsynPool
         $data['result'] = $res;
         $data['affected_rows'] = $client->affected_rows;
         $data['insert_id'] = $client->insert_id;
-        var_dump($data);
         return $data;
     }
 

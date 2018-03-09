@@ -20,6 +20,7 @@ class MysqlSyncHelp implements ArrayAccess
     {
         $this->mysql = $mysql;
         $this->elements = $data;
+        var_dump($data);
     }
 
     public function dump()
