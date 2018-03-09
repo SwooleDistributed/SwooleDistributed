@@ -7,6 +7,7 @@ use Monolog\Logger;
 use Server\Asyn\Mysql\Miner;
 use Server\Start;
 use Server\SwooleMarco;
+use Throwable;
 
 /**
  * Controller 控制器
@@ -165,9 +166,7 @@ class Controller extends CoreBase
             } else {
                 \co::call_user_func_array([$this, $method_name], $params);
             }
-        } catch (\Exception $e) {
-            $this->getProxy()->onExceptionHandle($e);
-        } catch (ArgumentCountError $e) {
+        } catch (Throwable $e) {
             $this->getProxy()->onExceptionHandle($e);
         }
     }
