@@ -145,6 +145,7 @@ abstract class SwooleServer extends ProcessRPC
         $this->setLogHandler();
         register_shutdown_function(array($this, 'checkErrors'));
         set_error_handler(array($this, 'displayErrorHandler'), E_ALL | E_STRICT);
+        set_exception_handler(array($this, 'displayExceptionHandler'));
         $this->portManager = new PortManager($this->config['ports']);
         if ($this->loader == null) {
             $this->loader = new Loader();
@@ -534,13 +535,19 @@ abstract class SwooleServer extends ProcessRPC
     }
 
     /**
-     * 全局错误监听
+     * @param \Exception $exception
+     * @throws ErrorException
+     */
+    public function displayExceptionHandler(\Exception $exception) {
+        throw new ErrorException($exception->getMessage(), $exception->getCode(), 1, $exception->getFile(), $exception->getLine());
+    }
+    /**
      * @param $error
      * @param $error_string
      * @param $filename
      * @param $line
      * @param $symbols
-     * @throws \ErrorException
+     * @throws ErrorException
      */
     public function displayErrorHandler($error, $error_string, $filename, $line, $symbols)
     {
