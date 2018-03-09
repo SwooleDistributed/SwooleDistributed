@@ -51,6 +51,17 @@ abstract class HttpMiddleware extends Middleware
         return $index;
     }
 
+    /**
+     * 获取模板
+     * @param $host
+     * @return null
+     */
+    public function getRender($host)
+    {
+        $index = $this->httpRoot[$host]['render'] ?? $this->httpRoot['default']['render'] ?? null;
+        return $index;
+    }
+
     public function redirect404()
     {
         $this->response->status(302);

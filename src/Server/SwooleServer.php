@@ -16,6 +16,7 @@ use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\ILoader;
 use Server\CoreBase\Loader;
 use Server\CoreBase\PortManager;
+use Whoops\Exception\ErrorException;
 
 /**
  * Created by PhpStorm.
@@ -33,7 +34,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "3.0.6";
+    const version = "3.1.0";
 
     /**
      * server name
@@ -143,7 +144,7 @@ abstract class SwooleServer extends ProcessRPC
         $this->user = $this->config->get('server.set.user', '');
         $this->setLogHandler();
         register_shutdown_function(array($this, 'checkErrors'));
-        set_error_handler(array($this, 'displayErrorHandler'));
+        set_error_handler(array($this, 'displayErrorHandler'), E_ALL | E_STRICT);
         $this->portManager = new PortManager($this->config['ports']);
         if ($this->loader == null) {
             $this->loader = new Loader();
@@ -539,15 +540,14 @@ abstract class SwooleServer extends ProcessRPC
      * @param $filename
      * @param $line
      * @param $symbols
+     * @throws \ErrorException
      */
     public function displayErrorHandler($error, $error_string, $filename, $line, $symbols)
     {
         $log = "WORKER Error ";
         $log .= "$error_string ($filename:$line)";
         $this->log->error($log);
-        if ($this->onErrorHandel != null) {
-            \co::call_user_func($this->onErrorHandel, '服务器发生严重错误', $log);
-        }
+        throw new ErrorException($error_string, $error, 1, $filename, $line);
     }
 
     /**

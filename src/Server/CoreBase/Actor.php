@@ -9,6 +9,7 @@
 namespace Server\CoreBase;
 
 
+use Server\Asyn\Mysql\Miner;
 use Server\Components\CatCache\CatCacheRpcProxy;
 use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Event\EventCoroutine;
@@ -55,6 +56,10 @@ abstract class Actor extends CoreBase
      */
     protected $mailbox = [];
 
+    /**
+     * @var Miner
+     */
+    protected $db;
 
     /**
      * @param $name
@@ -86,8 +91,10 @@ abstract class Actor extends CoreBase
         EventDispatcher::getInstance()->add(self::SAVE_NAME . Actor::ALL_COMMAND, function ($event) {
             $this->handle($event->data);
         });
-        $this->execRegistHandle();
         $this->saveContext->save();
+        $this->installMysqlPool($this->mysql_pool);
+        $this->db = $this->mysql_pool->dbQueryBuilder;
+        $this->execRegistHandle();
     }
 
     /**
@@ -123,10 +130,15 @@ abstract class Actor extends CoreBase
         if ($this->saveContext["@status"] == null) {
             $this->saveContext["@status"] = [$key => $value];
         } else {
+            //如果存在了并且相等就pass
+            if (isset($this->saveContext["@status"][$key]) && $this->saveContext["@status"][$key] == $value) {
+                return;
+            }
             $this->saveContext->getData()["@status"][$key] = $value;
             //二维数组需要自己手动调用save
             $this->saveContext->save();
         }
+
         $this->registStatusHandle($key, $value);
     }
 
@@ -149,7 +161,11 @@ abstract class Actor extends CoreBase
                 return;
             }
         }
-        $generator = \co::call_user_func_array([$this, $function], $params);
+        try {
+            $generator = \co::call_user_func_array([$this, $function], $params);
+        } catch (\Throwable $e) {
+            $generator = $e;
+        }
         if (!$oneWay) {
             $this->rpcBack($workerId, $token, $generator, $node);
         }
@@ -351,6 +367,21 @@ abstract class Actor extends CoreBase
         $actor = Pool::getInstance()->get($class);
         $actor->initialization($name);
         return $actor;
+    }
+
+    /**
+     * 是否存在
+     * @param $name
+     * @return bool
+     */
+    public static function has($name)
+    {
+        $result = ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->searchActor($name);
+        if ($result) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**

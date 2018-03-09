@@ -107,7 +107,11 @@ abstract class ProcessRPC extends Child
             $class = get_class($context);
             $result = new \Exception("$func 方法名 在 $class 中不存在");
         } else {
-            $result = \co::call_user_func_array([$context, $func], $message['arg']);
+            try {
+                $result = \co::call_user_func_array([$context, $func], $message['arg']);
+            } catch (\Throwable $e) {
+                $result = $e;
+            }
         }
         return $result;
     }

@@ -9,19 +9,23 @@
 
 namespace Server;
 
-
-use League\Plates\Engine;
+use Server\Components\Blade\Blade;
 use Server\Components\Consul\ConsulHelp;
+use Server\Components\Whoops\Handler\SDPageHandler;
 use Server\CoreBase\ControllerFactory;
+use Whoops\Run;
 
 abstract class SwooleHttpServer extends SwooleServer
 {
     /**
      * 模板引擎
-     * @var Engine
+     * @var Components\Blade\Blade
      */
     public $templateEngine;
-    protected $cache404;
+    /**
+     * @var Run
+     */
+    public $whoops;
 
     public function __construct()
     {
@@ -72,8 +76,8 @@ abstract class SwooleHttpServer extends SwooleServer
         $this->server->on('Shutdown', [$this, 'onSwooleShutdown']);
         $this->portManager->buildPort($this, $first_config['socket_port']);
         $this->beforeSwooleStart();
-        $this->server->start();
     }
+
 
     /**
      * workerStart
@@ -83,9 +87,15 @@ abstract class SwooleHttpServer extends SwooleServer
     public function onSwooleWorkerStart($serv, $workerId)
     {
         parent::onSwooleWorkerStart($serv, $workerId);
-        $this->setTemplateEngine();
-        $template = $this->loader->view('server::error_404');
-        $this->cache404 = $template->render();
+        if (!$this->isTaskWorker()) {
+            $this->whoops = new Run();
+            $this->whoops->writeToOutput(false);
+            $this->whoops->allowQuit(false);
+            $handler = new SDPageHandler();
+            $handler->setPageTitle("出现错误了");
+            $this->whoops->pushHandler($handler);
+            $this->setTemplateEngine();
+        }
     }
 
     /**
@@ -93,9 +103,22 @@ abstract class SwooleHttpServer extends SwooleServer
      */
     public function setTemplateEngine()
     {
-        $this->templateEngine = new Engine();
-        $this->templateEngine->addFolder('server', SERVER_DIR . '/Views');
-        $this->templateEngine->addFolder('app', APP_DIR . '/Views');
+        $this->templateEngine = new Blade(BIN_DIR . "/bladeCache");
+        $this->templateEngine->addNamespace("server", SERVER_DIR . '/Views');
+        $this->templateEngine->addNamespace("app", APP_DIR . '/Views');
+    }
+
+    public function getWhoops()
+    {
+        return $this->whoops;
+    }
+
+    /**
+     * @return Blade
+     */
+    public function getTemplateEngine()
+    {
+        return $this->templateEngine;
     }
 
     /**

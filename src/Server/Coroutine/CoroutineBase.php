@@ -106,7 +106,7 @@ abstract class CoroutineBase implements ICoroutineBase
                 //没有降级操作就直接快速失败
                 $this->result = $this->fastFail();
             } else {
-                $this->result = $this->downgrade;
+                $this->result = \co::call_user_func($this->downgrade);
             }
         }
         $this->startRecv = true;
@@ -127,7 +127,13 @@ abstract class CoroutineBase implements ICoroutineBase
             $result = $this->chan->pop();
             $result = $this->getResult($result);
         } else {//超时
-            $result = new SwooleException("[CoroutineTask]: Time Out!, [Request]: $this->request");
+            //有降级函数则访问降级函数
+            if (empty($this->downgrade)) {
+                $result = new SwooleException("[CoroutineTask]: Time Out!, [Request]: $this->request");
+            } else {
+                $result = \co::call_user_func($this->downgrade);
+                $this->isFaile = true;
+            }
             $this->onTimerOutHandle();
             $result = $this->getResult($result);
         }
@@ -231,9 +237,6 @@ abstract class CoroutineBase implements ICoroutineBase
      */
     public function setDowngrade(callable $func)
     {
-        if (!$this->useFuse) {
-            throw new SwooleException('not supper fuse');
-        }
         $this->downgrade = $func;
         return $this;
     }

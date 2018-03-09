@@ -193,7 +193,7 @@ function isDarwin()
  */
 function sleepCoroutine($time)
 {
-    \co::sleep($time);
+    \co::sleep($time / 1000);
 }
 
 /**

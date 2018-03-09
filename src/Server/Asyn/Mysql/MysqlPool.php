@@ -12,7 +12,7 @@ use Server\Asyn\IAsynPool;
 use Server\CoreBase\SwooleException;
 use Server\Memory\Pool;
 
-class MysqlAsynPool implements IAsynPool
+class MysqlPool implements IAsynPool
 {
     const AsynName = 'mysql';
     protected $pool_chan;
@@ -26,7 +26,7 @@ class MysqlAsynPool implements IAsynPool
     /**
      * @var Miner
      */
-    public $dbQueryBuilder;
+    protected $dbQueryBuilder;
     private $client_max_count;
 
     public function __construct($config, $active)
@@ -34,14 +34,13 @@ class MysqlAsynPool implements IAsynPool
         $this->active = $active;
         $this->config = get_instance()->config;
         $this->client_max_count = $this->config->get('mysql.asyn_max_count', 10);
-        if (get_instance()->isTaskWorker()) return;
         $this->pool_chan = new \chan($this->client_max_count);
         for ($i = 0; $i < $this->client_max_count; $i++) {
             $client = new \Swoole\Coroutine\MySQL();
-            $client->id = $i;
-            $this->pushToPool($client);
+            $this->pool_chan->push($client);
         }
     }
+
     /**
      * @return Miner
      */
@@ -54,6 +53,23 @@ class MysqlAsynPool implements IAsynPool
     public function begin(callable $fuc)
     {
         $client = $this->pool_chan->pop();
+        $client->query("begin");
+        try {
+            $this->dbQueryBuilder->setClient($client);
+            $fuc($this->dbQueryBuilder);
+            $client->query("commit");
+        } catch (\Exception $e) {
+            $client->query("rollback");
+        } finally {
+            $this->dbQueryBuilder->setClient(null);
+        }
+    }
+
+    public function query($sql, $timeOut = -1, $client = null)
+    {
+        if ($client == null) {
+            $client = $this->pool_chan->pop();
+        }
         if (!$client->connected) {
             $set = $this->config['mysql'][$this->active];
             $result = $client->connect($set);
@@ -62,34 +78,7 @@ class MysqlAsynPool implements IAsynPool
                 throw new SwooleException($client->connect_error);
             }
         }
-        $client->query("begin");
-        try {
-            $this->dbQueryBuilder->setClient($client);
-            $fuc();
-            $client->query("commit");
-        } catch (\Exception $e) {
-            $client->query("rollback");
-        }
-        $this->dbQueryBuilder->setClient(null);
-        $this->pushToPool($client);
-    }
-
-    public function query($sql, $timeOut = -1, $client = null)
-    {
-        $notPush = false;
-        if ($client == null) {
-            $client = $this->pool_chan->pop();
-        } else {
-            $notPush = true;
-        }
-        if (!$client->connected) {
-            $set = $this->config['mysql'][$this->active];
-            $result = $client->connect($set);
-            if (!$result) {
-                $this->pushToPool($client);
-                throw new SwooleException($client->connect_error);
-            }
-        }
+        var_dump($sql);
         $res = $client->query($sql, $timeOut);
         if ($res === false) {
             if ($client->errno == 110) {
@@ -98,13 +87,10 @@ class MysqlAsynPool implements IAsynPool
                 throw new SwooleException("[sql]:$sql,[err]:$client->error");
             }
         }
-        if (!$notPush) {
-            $this->pushToPool($client);
-        }
+        $this->pool_chan->push($client);
         $data['result'] = $res;
         $data['affected_rows'] = $client->affected_rows;
         $data['insert_id'] = $client->insert_id;
-        $data['client_id'] = $client->id;
         return $data;
     }
 
@@ -120,17 +106,14 @@ class MysqlAsynPool implements IAsynPool
      */
     public function prepare($sql, $statement, $holder, $client = null)
     {
-        $notPush = false;
         if ($client == null) {
             $client = $this->pool_chan->pop();
-        } else {
-            $notPush = true;
         }
         if (!$client->connected) {
             $set = $this->config['mysql'][$this->active];
             $result = $client->connect($set);
             if (!$result) {
-                $this->pushToPool($client);
+                $this->pool_chan->push($client);
                 throw new SwooleException($client->connect_error);
             }
         }
@@ -142,32 +125,49 @@ class MysqlAsynPool implements IAsynPool
             if ($client->errno == 110) {
                 throw new SwooleException("[CoroutineTask]: Time Out!, [Request]: $sql");
             } else {
-                throw new SwooleException("[sql]:$sql,[err]:$client->error");
+                throw new SwooleException($client->error);
             }
         }
-        if (!$notPush) {
-            $this->pushToPool($client);
-        }
+        $this->pool_chan->push($client);
         $data['result'] = $res;
         $data['affected_rows'] = $client->affected_rows;
         $data['insert_id'] = $client->insert_id;
-        $data['client_id'] = $client->id;
         return $data;
     }
 
-    public function getAsynName()
+    function getAsynName()
     {
         return self::AsynName . ":" . $this->active;
     }
 
-    public function pushToPool($client)
+    function distribute($data)
     {
-        $this->pool_chan->push($client);
+        // TODO: Implement distribute() method.
     }
 
-    public function getSync()
+    function execute($data)
     {
-        if ($this->mysql_client!=null) return $this->mysql_client;
+        // TODO: Implement execute() method.
+    }
+
+    function pushToPool($client)
+    {
+        // TODO: Implement pushToPool() method.
+    }
+
+    function prepareOne()
+    {
+        // TODO: Implement prepareOne() method.
+    }
+
+    function addTokenCallback($callback)
+    {
+        // TODO: Implement addTokenCallback() method.
+    }
+
+    function getSync()
+    {
+        if ($this->mysql_client != null) return $this->mysql_client;
         $activeConfig = $this->config['mysql'][$this->active];
         $this->mysql_client = new Miner();
         $this->mysql_client->pdoConnect($activeConfig);
