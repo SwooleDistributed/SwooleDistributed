@@ -117,10 +117,13 @@ class MysqlPool implements IAsynPool
                 throw new SwooleException($client->connect_error);
             }
         }
+        var_dump(1);
         $res = $client->prepare($statement);
         if ($res != false) {
             $res = $res->execute($holder);
         }
+        var_dump(2);
+        var_dump($client);
         if ($res === false) {
             if ($client->errno == 110) {
                 throw new SwooleException("[CoroutineTask]: Time Out!, [Request]: $sql");
