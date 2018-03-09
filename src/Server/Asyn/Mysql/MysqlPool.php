@@ -101,14 +101,14 @@ class MysqlPool implements IAsynPool
      * @param null $client
      * @return mixed
      * @throws SwooleException
-     * @internal param $sql
-     * @internal param int $timerOut
      */
     public function prepare($sql, $statement, $holder, $client = null)
     {
+        var_dump(10);
         if ($client == null) {
             $client = $this->pool_chan->pop();
         }
+        var_dump(9);
         if (!$client->connected) {
             $set = $this->config['mysql'][$this->active];
             $result = $client->connect($set);
