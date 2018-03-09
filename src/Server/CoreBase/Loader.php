@@ -43,7 +43,7 @@ class Loader implements ILoader
             if ($root->hasChild($model)) {
                 return $root->getChild($model);
             }
-            $root = $root->parent??null;
+            $root = $root->parent ?? null;
         }
         $model_instance = $this->_model_factory->getModel($model);
         $parent->addChild($model_instance);
@@ -90,12 +90,21 @@ class Loader implements ILoader
     /**
      * view 返回一个模板
      * @param $template
-     * @return \League\Plates\Template\Template
+     * @param array $data
+     * @param array $mergeData
+     * @return string
      */
-    public function view($template)
+    public function view($template, $data = [], $mergeData = [])
     {
-        $template = get_instance()->templateEngine->make($template);
+        $template = get_instance()->templateEngine->render($template, $data, $mergeData);
         return $template;
     }
 
+    /**
+     * @return \Illuminate\Contracts\View\Factory
+     */
+    public function getViewFactory()
+    {
+        return get_instance()->getTemplateEngine()->viewFactory();
+    }
 }

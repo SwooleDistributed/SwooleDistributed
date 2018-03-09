@@ -30,19 +30,19 @@ class Fuse
     /**
      * 阀值
      */
-    const THRESHOLD = 0.01;
+    private $THRESHOLD = 0.01;
     /**
      * 检查时间
      */
-    const CHECKTIME = 2000;
+    private $CHECKTIME = 2000;
     /**
      * 尝试打开的间隔
      */
-    const TRYTIME = 1000;
+    private $TRYTIME = 1000;
     /**
      * 尝试多少个
      */
-    const TRYMAX = 1;
+    private $TRYMAX = 3;
 
 
     private static $instance;
@@ -52,6 +52,10 @@ class Fuse
     public function __construct()
     {
         self::$instance = $this;
+        $this->THRESHOLD = get_instance()->config->get('fuse.threshold', 0.01);
+        $this->CHECKTIME = get_instance()->config->get('fuse.checktime', 2000);
+        $this->TRYTIME = get_instance()->config->get('fuse.trytime', 1000);
+        $this->TRYMAX = get_instance()->config->get('fuse.trymax', 3);
     }
 
     /**
@@ -79,7 +83,7 @@ class Fuse
         $fuse = &$this->fuses[$topic];
         switch ($fuse['state']) {
             case self::CLOSE://断路状态
-                if (getTickTime() - $fuse['stoptime'] >= self::TRYTIME) {//1秒后尝试打开
+                if (getTickTime() - $fuse['stoptime'] >= $this->TRYTIME) {//1秒后尝试打开
                     $fuse['state'] = self::TRY;
                     $fuse['trycount'] = 0;
                     $fuse['trysuccess'] = 0;
@@ -89,12 +93,12 @@ class Fuse
                 }
                 break;
             case self::TRY://尝试状态
-                if ($fuse['trysuccess'] >= self::TRYMAX) {//全部都尝试成功，那么可以放开流量试试
+                if ($fuse['trysuccess'] >= $this->TRYMAX) {//全部都尝试成功，那么可以放开流量试试
                     $fuse['state'] = self::OPEN;
                     $fuse['trysuccess'] = 0;
                     return self::OPEN;
                 }
-                if ($fuse['trycount'] < self::TRYMAX) {//放开1次请求看看情况
+                if ($fuse['trycount'] < $this->TRYMAX) {//放开1次请求看看情况
                     $fuse['trycount']++;
                     return self::OPEN;
                 } else {
@@ -105,7 +109,7 @@ class Fuse
                 $total = ($fuse['success'] + $fuse['fail']);
                 if ($total == 0) return self::OPEN;
                 $threshold = $fuse['fail'] / ($fuse['success'] + $fuse['fail']);
-                if ($threshold > self::THRESHOLD) {
+                if ($threshold > $this->THRESHOLD) {
                     $fuse['state'] = self::CLOSE;
                     $fuse['stoptime'] = getTickTime();
                     return self::CLOSE;
@@ -142,7 +146,7 @@ class Fuse
      */
     private function cleanData(&$fuse)
     {
-        if (getTickTime() - $fuse['time'] > self::CHECKTIME) {
+        if (getTickTime() - $fuse['time'] > $this->CHECKTIME) {
             $fuse['success'] = 0;
             $fuse['fail'] = 0;
             $fuse['time'] = getTickTime();

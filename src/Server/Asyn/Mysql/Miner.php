@@ -8,8 +8,6 @@
 
 namespace Server\Asyn\Mysql;
 
-use Server\Memory\Pool;
-
 /**
  * A dead simple PHP class for building SQL statements. No manual string
  * concatenation necessary.
@@ -153,7 +151,7 @@ class Miner
     const LOGICAL_RAW = "RAW";
 
     /**
-     * @var MysqlAsynPool
+     * @var MysqlPool
      */
     public $mysql_pool;
     /**
@@ -1836,51 +1834,6 @@ class Miner
         return $this->delete === true;
     }
 
-    /**
-     * @param $sql
-     * @return MySqlCoroutine|MysqlSyncHelp
-     */
-    public function coroutineQuery($sql)
-    {
-        return $this->coroutineSend(null, $sql = null);
-    }
-
-    /**
-     * 协程的方式
-     * @param null $bind_id
-     * @param null $sql
-     * @param callable|null $set
-     * @return MysqlSyncHelp
-     */
-    public function coroutineSend($bind_id = null, $sql = null, callable $set = null)
-    {
-        if ($sql == null) {
-            $sql = $this->getStatement(false);
-        }
-        if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式
-            $this->mergeInto($this->mysql_pool->getSync());
-            $this->clear();
-            $data = [];
-            switch ($sql) {
-                case 'commit':
-                    $this->mysql_pool->getSync()->pdoCommitTrans();
-                    break;
-                case 'begin':
-                    $this->mysql_pool->getSync()->pdoBeginTrans();
-                    break;
-                case 'rollback':
-                    $this->mysql_pool->getSync()->pdoRollBackTrans();
-                    break;
-                default:
-                    $data = $this->mysql_pool->getSync()->pdoQuery($sql);
-            }
-            return new MysqlSyncHelp($sql, $data);
-        } else {
-            $return = Pool::getInstance()->get(MySqlCoroutine::class)->init($this->mysql_pool, $bind_id, $sql, $set);
-            $this->clear();
-            return $return;
-        }
-    }
 
     /**
      * Merge this Miner into the given Miner.
@@ -2406,6 +2359,58 @@ class Miner
         return $this;
     }
 
+    /**
+     * @var
+     */
+    protected $client;
+
+    /**
+     * 事务用的client
+     * @param $client
+     */
+    public function setClient($client)
+    {
+        $this->client = $client;
+    }
+
+    /**
+     * 开始事务
+     * @param callable $fuc
+     */
+    public function begin(callable $fuc)
+    {
+        $this->mysql_pool->begin($fuc);
+    }
+
+    /**
+     * @param null $sql
+     * @param int $timerOut
+     * @return MysqlSyncHelp
+     */
+    public function query($sql = null, $timerOut = -1)
+    {
+        if ($timerOut > 0) {
+            $timerOut = $timerOut / 1000;
+        }
+        if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式
+            $this->mergeInto($this->mysql_pool->getSync());
+            $this->clear();
+            $data = $this->mysql_pool->getSync()->pdoQuery($sql);
+            return new MysqlSyncHelp($sql, $data);
+        } else {
+            if ($sql != null) {
+                $this->clear();
+                return new MysqlSyncHelp($sql, $this->mysql_pool->query($sql, $timerOut, $this->client));
+            } else {
+                $statement = $this->getStatement();
+                $holder = $this->getPlaceholderValues();
+                $sql = $this->getStatement(false);
+                $this->clear();
+                return new MysqlSyncHelp($sql, $this->mysql_pool->prepare($sql, $statement, $holder, $this->client));
+            }
+        }
+    }
+
     public function clear()
     {
         $this->option = array();
@@ -2431,6 +2436,7 @@ class Miner
         $this->havingPlaceholderValues = array();
 
         $this->isInto = false;
+        $this->client = null;
     }
 
     /**

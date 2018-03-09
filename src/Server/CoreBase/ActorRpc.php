@@ -30,14 +30,25 @@ class ActorRpc
 
     /**
      * 开启事务
+     * @param callable|null $run
+     * @param callable|null $fail
      * @param int $timeOut
      * @return null
      */
-    public function beginCo($timeOut = 10000)
+    public function beginCo(callable $run = null, callable $fail = null, $timeOut = 10000)
     {
         $this->beginId = Actor::call($this->actorName, "begin", null, false, null, function (EventCoroutine $eventCoroutine) use ($timeOut) {
             $eventCoroutine->setTimeout($timeOut);
         });
+        if ($run != null) {
+            try {
+                $run();
+            } catch (\Exception $e) {
+                if ($fail != null) $fail();
+            } finally {
+                $this->end();
+            }
+        }
         return $this->beginId;
     }
 

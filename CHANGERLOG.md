@@ -448,3 +448,8 @@ $data = EventDispatcher::getInstance()->addOnceCoroutine('unlock', function (Eve
 
 # 3.0.2
 3.0正式版，需要swoole扩展版本为2.1.1
+
+# 3.1.0
+1.mysql改版
+2.增加Whoops
+3.模板引擎更换为Laravel-blade

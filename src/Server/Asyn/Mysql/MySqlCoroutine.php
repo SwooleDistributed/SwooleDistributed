@@ -41,7 +41,6 @@ class MySqlCoroutine extends CoroutineBase
         $this->bind_id = $_bind_id;
         $this->sql = $_sql;
         $this->request = '#Mysql:' . $_sql;
-        $this->getCount = getTickTime();
         $this->set($set);
         $this->send(function ($result) {
             $this->coPush($result);

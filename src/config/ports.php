@@ -35,4 +35,5 @@ $config['ports'][] = [
     'opcode' => PortManager::WEBSOCKET_OPCODE_TEXT,
     'middlewares' => ['MonitorMiddleware', 'NormalHttpMiddleware']
 ];
+
 return $config;

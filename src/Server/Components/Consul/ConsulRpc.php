@@ -44,12 +44,13 @@ class ConsulRpc extends SdTcpRpcPool
      * @param $name
      * @param $arguments
      * @param $oneway
-     * @return \Server\Asyn\TcpClient\TcpClientRequestCoroutine
+     * @param callable $set
+     * @return mixed
      */
-    public function call($name,$arguments,$oneway)
+    public function call($name, $arguments, $oneway, callable $set = null)
     {
         $sendData = $this->helpToBuildSDControllerQuest($this->context, $this->service, $name);
         $sendData['params'] = $arguments;
-        return $this->coroutineSend($sendData,$oneway);
+        return $this->coroutineSend($sendData, $oneway, $set);
     }
 }

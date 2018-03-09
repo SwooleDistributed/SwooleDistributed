@@ -233,7 +233,10 @@ class Controller extends CoreBase
         if ($handle == null) {
             switch ($this->request_type) {
                 case SwooleMarco::HTTP_REQUEST:
-                    $this->http_output->end($e->getMessage());
+                    $e->request = $this->request;
+                    $data = get_instance()->getWhoops()->handleException($e);
+                    $this->http_output->setStatusHeader(500);
+                    $this->http_output->end($data);
                     break;
                 case SwooleMarco::TCP_REQUEST:
                     $this->send($e->getMessage());

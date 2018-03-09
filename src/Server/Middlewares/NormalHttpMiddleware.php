@@ -18,8 +18,8 @@ class NormalHttpMiddleware extends HttpMiddleware
     {
         parent::__construct();
         if (NormalHttpMiddleware::$cache404 == null) {
-            $template = get_instance()->loader->view('server::error_404');
-            NormalHttpMiddleware::$cache404 = $template->render();
+            $template = get_instance()->loader->view('server::404');
+            NormalHttpMiddleware::$cache404 = $template;
         }
     }
 
@@ -35,6 +35,14 @@ class NormalHttpMiddleware extends HttpMiddleware
         }
         $extension = pathinfo($path, PATHINFO_EXTENSION);
         if ($path == "/") {//寻找主页
+            //先查看有木有模板
+            $render = $this->getRender($host);
+            if ($render != null) {
+                $this->response->end(get_instance()->loader->view($render));
+                $this->interrupt();
+                return;
+            }
+            //再看有没有指定index
             $index = $this->getHostIndex($host);
             if (is_string($index)) {
                 $www_path = $this->getHostRoot($host) . $this->getHostIndex($host);

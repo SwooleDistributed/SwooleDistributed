@@ -20,13 +20,23 @@ $config['consul']['data_dir'] = "/tmp/consul";
 //consul join地址，可以是集群的任何一个，或者多个
 $config['consul']['start_join'] = ["192.168.8.85"];
 //本地网卡设备
-$config['consul']['bind_net_dev'] = "eth0";
+$config['consul']['bind_net_dev'] = "enp2s0";
 //监控服务
 $config['consul']['watches'] = ['MathService', 'TestController'];
 //发布服务
-$config['consul']['services'] = ['MathService:9091', 'MathService:8081', 'TestController:9091', 'TestController:8081'];
+$config['consul']['services'] = [];
 //是否开启TCP集群,启动consul才有用
 $config['cluster']['enable'] = true;
 //TCP集群端口
 $config['cluster']['port'] = 9999;
+
+//***断路器设置****
+//阀值
+$config['fuse']['threshold'] = 0.01;
+//检查时间
+$config['fuse']['checktime'] = 2000;
+//尝试打开的间隔
+$config['fuse']['trytime'] = 1000;
+//尝试多少个
+$config['fuse']['trymax'] = 3;
 return $config;
