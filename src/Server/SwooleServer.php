@@ -29,7 +29,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 配置文件版本
      */
-    const config_version = 2;
+    const config_version = 3;
 
     /**
      * 版本
