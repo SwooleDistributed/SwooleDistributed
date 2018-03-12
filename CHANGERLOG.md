@@ -451,5 +451,16 @@ $data = EventDispatcher::getInstance()->addOnceCoroutine('unlock', function (Eve
 
 # 3.1.0
 1.mysql改版
+
 2.增加Whoops
+
 3.模板引擎更换为Laravel-blade
+
+# 3.1.1
+1.Task调用直接返回结果不需要使用coroutineSend
+
+2.Controller自动destory，不再需要手动执行了，send命令也没有autoDestory参数了
+
+3.Controller增加interrupt指令用于中断后面执行的代码
+
+4.增加了一个错误搜集的模块error.php需要结合钉钉机器人实现错误推送
