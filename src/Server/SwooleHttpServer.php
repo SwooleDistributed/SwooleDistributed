@@ -148,17 +148,16 @@ abstract class SwooleHttpServer extends SwooleServer
                 $controller_name = $route->getControllerName();
                 $method_name = $this->portManager->getMethodPrefix($server_port) . $route->getMethodName();
                 $path = $route->getPath();
-                $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
-                if ($controller_instance != null) {
-                    $controller_instance->setContext($context);
-                    if ($route->getMethodName() == ConsulHelp::HEALTH) {//健康检查
-                        $response->end('ok');
-                        $controller_instance->destroy();
-                    } else {
-                        $controller_instance->setRequestResponse($request, $response, $controller_name, $method_name, $route->getParams());
-                    }
+                if ($route->getMethodName() == ConsulHelp::HEALTH) {//健康检查
+                    $response->end('ok');
                 } else {
-                    throw new \Exception('no controller');
+                    $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
+                    if ($controller_instance != null) {
+                        $controller_instance->setContext($context);
+                        $controller_instance->getProxy()->setRequestResponse($request, $response, $controller_name, $method_name, $route->getParams());
+                    } else {
+                        throw new \Exception('no controller');
+                    }
                 }
             } catch (\Exception $e) {
                 $route->errorHttpHandle($e, $request, $response);

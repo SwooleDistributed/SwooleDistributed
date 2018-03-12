@@ -59,9 +59,11 @@ class ControllerFactory
         }
         if (class_exists($controller)) {
             $controller_instance = new $controller;
-            $controller_instance->core_name = $controller;
-            $this->addNewCount($controller);
-            return $controller_instance;
+            if ($controller_instance instanceof Controller) {
+                $controller_instance->core_name = $controller;
+                $this->addNewCount($controller);
+                return $controller_instance;
+            }
         }
         $controller_new = str_replace('/', '\\', $controller);
         $class_name = "app\\Controllers\\$controller_new";

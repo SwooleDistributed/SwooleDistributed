@@ -89,6 +89,11 @@ class Task extends TaskProxy
     {
         get_instance()->sendToAll($data);
     }
+
+    protected function sendToAllFd($data)
+    {
+        get_instance()->sendToAllFd($data);
+    }
 }
 
 class TheTaskProxy extends Proxy

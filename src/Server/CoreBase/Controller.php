@@ -2,9 +2,9 @@
 
 namespace Server\CoreBase;
 
-use ArgumentCountError;
 use Monolog\Logger;
 use Server\Asyn\Mysql\Miner;
+use Server\Models\Error;
 use Server\Start;
 use Server\SwooleMarco;
 use Throwable;
@@ -32,6 +32,12 @@ class Controller extends CoreBase
      * @var string
      */
     public $request_type;
+
+    /**
+     * Http是否已经end
+     * @var bool
+     */
+    protected $isEnd;
     /**
      * fd
      * @var int
@@ -87,6 +93,14 @@ class Controller extends CoreBase
     public $db;
 
     /**
+     * @var bool
+     */
+    private $isEnableError;
+    /**
+     * @var Error
+     */
+    private $Error;
+    /**
      * Controller constructor.
      * @param string $proxy
      */
@@ -95,6 +109,10 @@ class Controller extends CoreBase
         parent::__construct($proxy);
         $this->http_input = new HttpInput();
         $this->http_output = new HttpOutput($this);
+        $this->isEnableError = $this->config->get('error.enable');
+        if ($this->isEnableError) {
+            $this->Error = $this->loader->model(Error::class, $this);
+        }
     }
 
     /**
@@ -169,6 +187,7 @@ class Controller extends CoreBase
         } catch (Throwable $e) {
             $this->getProxy()->onExceptionHandle($e);
         }
+        $this->destroy();
     }
 
     /**
@@ -221,6 +240,10 @@ class Controller extends CoreBase
             $this->http_output->end('end');
             return;
         }
+        //中断信号
+        if ($e instanceof SwooleInterruptException) {
+            return;
+        }
         if ($e instanceof SwooleException) {
             secho("EX", "--------------------------[报错指南]----------------------------" . date("Y-m-d h:i:s"));
             secho("EX", "异常消息：" . $e->getMessage());
@@ -228,14 +251,23 @@ class Controller extends CoreBase
             secho("EX", "--------------------------------------------------------------");
             $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
         }
+        if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
+            $e->request = $this->request;
+        }
+        $error_data = get_instance()->getWhoops()->handleException($e);
+        if ($this->isEnableError) {
+            try {
+                $this->Error->push($error_data);
+            } catch (Throwable $e) {
+
+            }
+        }
         //可以重写的代码
         if ($handle == null) {
             switch ($this->request_type) {
                 case SwooleMarco::HTTP_REQUEST:
-                    $e->request = $this->request;
-                    $data = get_instance()->getWhoops()->handleException($e);
                     $this->http_output->setStatusHeader(500);
-                    $this->http_output->end($data);
+                    $this->http_output->end($error_data);
                     break;
                 case SwooleMarco::TCP_REQUEST:
                     $this->send($e->getMessage());
@@ -249,14 +281,10 @@ class Controller extends CoreBase
     /**
      * 向当前客户端发送消息
      * @param $data
-     * @param $destroy
      * @throws SwooleException
      */
-    protected function send($data, $destroy = true)
+    protected function send($data)
     {
-        if ($this->is_destroy) {
-            throw new SwooleException('controller is destroy can not send data');
-        }
         if ($this->isRPC && !empty($this->rpc_token)) {
             $rpc_data['rpc_token'] = $this->rpc_token;
             $rpc_data['rpc_result'] = $data;
@@ -266,9 +294,6 @@ class Controller extends CoreBase
             $this->testUnitSendStack[] = ['action' => 'send', 'fd' => $this->fd, 'data' => $data];
         } else {
             get_instance()->send($this->fd, $data, true);
-        }
-        if ($destroy) {
-            $this->getProxy()->destroy();
         }
     }
 
@@ -281,6 +306,7 @@ class Controller extends CoreBase
             return;
         }
         parent::destroy();
+        $this->isEnd = false;
         $this->fd = null;
         $this->uid = null;
         $this->client_data = null;
@@ -308,7 +334,8 @@ class Controller extends CoreBase
     public function defaultMethod()
     {
         if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
-            $this->redirect404();
+            $this->http_output->setStatusHeader(302);
+            $this->http_output->end($this->loader->view("server::404"));
         } else {
             throw new SwooleException($this->context['raw_method_name'] . ' method not exist');
         }
@@ -318,21 +345,14 @@ class Controller extends CoreBase
      * sendToUid
      * @param $uid
      * @param $data
-     * @param bool $destroy
      * @throws SwooleException
      */
-    protected function sendToUid($uid, $data, $destroy = true)
+    protected function sendToUid($uid, $data)
     {
-        if ($this->is_destroy) {
-            throw new SwooleException('controller is destroy can not send data');
-        }
         if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'sendToUid', 'uid' => $this->uid, 'data' => $data];
         } else {
             get_instance()->sendToUid($uid, $data);
-        }
-        if ($destroy) {
-            $this->getProxy()->destroy();
         }
     }
 
@@ -340,63 +360,42 @@ class Controller extends CoreBase
      * sendToUids
      * @param $uids
      * @param $data
-     * @param $destroy
      * @throws SwooleException
      */
-    protected function sendToUids($uids, $data, $destroy = true)
+    protected function sendToUids($uids, $data)
     {
-        if ($this->is_destroy) {
-            throw new SwooleException('controller is destroy can not send data');
-        }
         if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'sendToUids', 'uids' => $uids, 'data' => $data];
         } else {
             get_instance()->sendToUids($uids, $data);
-        }
-        if ($destroy) {
-            $this->getProxy()->destroy();
         }
     }
 
     /**
      * sendToAll
      * @param $data
-     * @param $destroy
      * @throws SwooleException
      */
-    protected function sendToAll($data, $destroy = true)
+    protected function sendToAll($data)
     {
-        if ($this->is_destroy) {
-            throw new SwooleException('controller is destroy can not send data');
-        }
         if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'sendToAll', 'data' => $data];
         } else {
             get_instance()->sendToAll($data);
-        }
-        if ($destroy) {
-            $this->getProxy()->destroy();
         }
     }
 
     /**
      * sendToAllFd
      * @param $data
-     * @param $destroy
      * @throws SwooleException
      */
-    protected function sendToAllFd($data, $destroy = true)
+    protected function sendToAllFd($data)
     {
-        if ($this->is_destroy) {
-            throw new SwooleException('controller is destroy can not send data');
-        }
         if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'sendToAllFd', 'data' => $data];
         } else {
             get_instance()->sendToAllFd($data);
-        }
-        if ($destroy) {
-            $this->getProxy()->destroy();
         }
     }
 
@@ -447,17 +446,13 @@ class Controller extends CoreBase
 
     /**
      * 断开链接
-     * @param bool $autoDestroy
      */
-    protected function close($autoDestroy = true)
+    protected function close()
     {
         if (Start::$testUnity) {
             $this->testUnitSendStack[] = ['action' => 'close', 'fd' => $this->fd];
         } else {
             get_instance()->close($this->fd);
-        }
-        if ($autoDestroy) {
-            $this->getProxy()->destroy();
         }
     }
 
@@ -531,13 +526,37 @@ class Controller extends CoreBase
      * @param $topic
      * @param $data
      * @param array $excludeUids 需要排除的uids
-     * @param bool $destroy
      */
-    protected function sendPub($topic, $data, $excludeUids = [], $destroy = true)
+    protected function sendPub($topic, $data, $excludeUids = [])
     {
         get_instance()->pub($topic, $data, $excludeUids);
-        if ($destroy) {
-            $this->getProxy()->destroy();
+    }
+
+    /**
+     * 中断
+     * @throws SwooleInterruptException
+     */
+    public function interrupt()
+    {
+        if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
+            $this->http_output->end("");
         }
+        throw new SwooleInterruptException('interrupt');
+    }
+
+    /**
+     * @return bool
+     */
+    public function canEnd()
+    {
+        return !$this->isEnd;
+    }
+
+    /**
+     * endOver
+     */
+    public function endOver()
+    {
+        $this->isEnd = true;
     }
 }

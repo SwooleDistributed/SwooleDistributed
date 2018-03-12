@@ -86,7 +86,6 @@ class MqttController extends Controller
                 $this->send($pubrec, false);
                 break;
         }
-        $this->destroy();
     }
 
     /**

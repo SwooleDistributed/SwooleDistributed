@@ -36,13 +36,7 @@ class TaskProxy extends CoreBase
         $this->setContext($context);
     }
 
-    /**
-     * 代理
-     * @param $name
-     * @param $arguments
-     * @return int
-     */
-    public function __call($name, $arguments)
+    private function help_call($name, $arguments)
     {
         $this->task_proxy_data =
             [
@@ -58,38 +52,32 @@ class TaskProxy extends CoreBase
 
         list($c, $d) = explode("::", array_pop($this->getContext()['RunStack']));
         $this->getContext()['RunStack'][] = $this->core_name . "::" . $d;
-        return $this->task_id;
     }
 
     /**
-     * 开始异步任务
-     * @param int $dst_worker_id
-     * @param null $callback
+     * 代理
+     * @param $name
+     * @param $arguments
+     * @return int
      */
-    public function startTask($dst_worker_id = -1, $callback = null)
+    public function __call($name, $arguments)
     {
-        get_instance()->server->task($this->task_proxy_data, $dst_worker_id, $callback);
+        $this->help_call($name, $arguments);
+        return Pool::getInstance()->get(TaskCoroutine::class)->init($this->task_proxy_data, -1, null);
     }
+
 
     /**
      * 异步的协程模式
+     * @param $name
+     * @param $arguments
      * @param int $dst_worker_id
      * @param callable|null $set
      * @return TaskCoroutine
      */
-    public function coroutineSend($dst_worker_id = -1, callable $set = null)
+    public function call($name, $arguments, $dst_worker_id = -1, callable $set = null)
     {
+        $this->help_call($name, $arguments);
         return Pool::getInstance()->get(TaskCoroutine::class)->init($this->task_proxy_data, $dst_worker_id, $set);
-    }
-
-    /**
-     * 开始同步任务
-     * @param float $timeOut
-     * @param int $dst_worker_id
-     * @return
-     */
-    public function startTaskWait($timeOut = 0.5, $dst_worker_id = -1)
-    {
-        return get_instance()->server->taskwait($this->task_proxy_data, $timeOut, $dst_worker_id);
     }
 }

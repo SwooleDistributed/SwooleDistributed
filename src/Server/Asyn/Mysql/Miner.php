@@ -151,7 +151,7 @@ class Miner
     const LOGICAL_RAW = "RAW";
 
     /**
-     * @var MysqlPool
+     * @var MysqlAsynPool
      */
     public $mysql_pool;
     /**
@@ -2408,7 +2408,7 @@ class Miner
                 $sql = $this->getStatement(false);
                 $result = $this->mysql_pool->prepare($sql, $statement, $holder, $this->client);
                 $this->clear();
-                return new MysqlSyncHelp($sql,$result);
+                return new MysqlSyncHelp($sql, $result);
             }
         }
     }
@@ -2438,7 +2438,6 @@ class Miner
         $this->havingPlaceholderValues = array();
 
         $this->isInto = false;
-        $this->client = null;
     }
 
     /**
