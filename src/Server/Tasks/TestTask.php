@@ -25,7 +25,7 @@ class TestTask extends Task
     public function test()
     {
         print_r(date('y-m-d H:i:s', time()) . "\n");
-        //return 123;
+        return 123;
     }
 
     public function contextTest()

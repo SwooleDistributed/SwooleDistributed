@@ -64,6 +64,9 @@ class HttpOutput
      */
     public function setStatusHeader($code = 200)
     {
+        if (!$this->controller->canEnd()) {
+            return;
+        }
         $this->response->status($code);
         return $this;
     }
@@ -76,6 +79,9 @@ class HttpOutput
      */
     public function setContentType($mime_type)
     {
+        if (!$this->controller->canEnd()) {
+            return;
+        }
         $this->setHeader('Content-Type', $mime_type);
         return $this;
     }
@@ -88,6 +94,9 @@ class HttpOutput
      */
     public function setHeader($key, $value)
     {
+        if (!$this->controller->canEnd()) {
+            return;
+        }
         $this->response->header($key, $value);
         return $this;
     }
@@ -96,10 +105,12 @@ class HttpOutput
      * 发送
      * @param string $output
      * @param bool $gzip
-     * @param bool $destroy
      */
-    public function end($output = '', $gzip = true, $destroy = true)
+    public function end($output = '', $gzip = true)
     {
+        if (!$this->controller->canEnd()) {
+            return;
+        }
         if (!get_instance()->config->get('http.gzip_off', false)) {
             //低版本swoole的gzip方法存在效率问题
             if ($gzip) {
@@ -118,10 +129,7 @@ class HttpOutput
             $output = "<pre>$output</pre>";
         }
         $this->response->end($output);
-        if ($destroy) {
-            $this->controller->getProxy()->destroy();
-        }
-        return;
+        $this->controller->endOver();
     }
 
     /**
@@ -136,6 +144,9 @@ class HttpOutput
      */
     public function setCookie(string $key, string $value = '', int $expire = 0, string $path = '/', string $domain = '', bool $secure = false, bool $httponly = false)
     {
+        if (!$this->controller->canEnd()) {
+            return;
+        }
         $this->response->cookie($key, $value, $expire, $path, $domain, $secure, $httponly);
     }
 
@@ -143,15 +154,15 @@ class HttpOutput
      * 输出文件
      * @param $root_file
      * @param $file_name
-     * @param bool $destroy
      * @return mixed
      */
-    public function endFile($root_file, $file_name, $destroy = true)
+    public function endFile($root_file, $file_name)
     {
-        $result = httpEndFile($root_file . '/' . $file_name, $this->request, $this->response);
-        if ($destroy) {
-            $this->controller->getProxy()->destroy();
+        if (!$this->controller->canEnd()) {
+            return null;
         }
+        $result = httpEndFile($root_file . '/' . $file_name, $this->request, $this->response);
+        $this->controller->endOver();
         return $result;
     }
 }

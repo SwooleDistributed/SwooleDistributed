@@ -55,9 +55,11 @@ class ModelFactory
         }
         if (class_exists($model)) {
             $model_instance = new $model;
-            $model_instance->core_name = $old_model;
-            $this->addNewCount($old_model);
-            return $model_instance;
+            if ($model_instance instanceof Model) {
+                $model_instance->core_name = $old_model;
+                $this->addNewCount($old_model);
+                return $model_instance;
+            }
         }
 
         $class_name = "app\\Models\\$model";

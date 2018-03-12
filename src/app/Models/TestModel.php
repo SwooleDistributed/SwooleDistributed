@@ -58,7 +58,7 @@ class TestModel extends Model
 
     public function test_exception()
     {
-        $result = $this->redis_pool->coroutineSend('get', 'test');
+        $result = $this->redis_pool->coroutineSend('get', ['test']);
         throw new SwooleException('test');
     }
 
@@ -94,7 +94,7 @@ class TestModel extends Model
 
     public function testMysql()
     {
-        return $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->coroutineSend();
+        return $this->mysql_pool->dbQueryBuilder->select('*')->from('account')->query();
     }
 
     public function testWhile()

@@ -10,6 +10,7 @@ namespace Server\Components\Middleware;
 
 
 use Server\CoreBase\CoreBase;
+use Server\CoreBase\SwooleInterruptException;
 
 abstract class Middleware extends CoreBase implements IMiddleware
 {
@@ -19,6 +20,6 @@ abstract class Middleware extends CoreBase implements IMiddleware
 
     public function interrupt()
     {
-        throw new \Exception('interrupt');
+        throw new SwooleInterruptException('interrupt');
     }
 }

@@ -29,4 +29,9 @@ class MyAMQPTaskProcess extends AMQPTaskProcess
     {
         return TestAMQPTask::class;
     }
+
+    protected function onShutDown()
+    {
+        // TODO: Implement onShutDown() method.
+    }
 }

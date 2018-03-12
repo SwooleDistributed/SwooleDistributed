@@ -10,9 +10,21 @@ namespace app\Actors;
 
 
 use Server\CoreBase\Actor;
+use Server\CoreBase\ChildProxy;
 
 class TestActor extends Actor
 {
+    public function __construct($proxy = ChildProxy::class)
+    {
+        parent::__construct($proxy);
+    }
+
+    public function initialization($name, $saveContext = null)
+    {
+        parent::initialization($name, $saveContext);
+        $this->setStatus("status", 1);
+    }
+
     public function test1()
     {
         $this->redis_pool->getCoroutine()->set("test", 199);
@@ -38,16 +50,13 @@ class TestActor extends Actor
      */
     public function registStatusHandle($key, $value)
     {
-        /* switch ($key) {
+        switch ($key) {
              case 'status':
                  switch ($value) {
                      case 1:
-                         $this->tick(100, function () {
-                             echo "1\n";
-                         });
                          break;
                  }
                  break;
-         }*/
+        }
     }
 }

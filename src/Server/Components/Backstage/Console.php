@@ -28,7 +28,6 @@ class Console extends Controller
         $this->bindUid("#bs:" . getNodeName() . $this->fd);
         get_instance()->protect($this->fd);
         $this->addSub('$SYS/#');
-        $this->destroy();
     }
 
     /**
@@ -36,7 +35,7 @@ class Console extends Controller
      */
     public function back_onClose()
     {
-        $this->destroy();
+
     }
 
     /**
