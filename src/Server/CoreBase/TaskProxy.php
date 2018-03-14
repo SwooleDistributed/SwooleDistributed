@@ -68,6 +68,19 @@ class TaskProxy extends CoreBase
 
 
     /**
+     * 开始异步任务
+     * @param $name
+     * @param $arguments
+     * @param int $dst_worker_id
+     * @param null $callback
+     */
+    public function startTask($name, $arguments, $dst_worker_id = -1, $callback = null)
+    {
+        $this->help_call($name, $arguments);
+        get_instance()->server->task($this->task_proxy_data, $dst_worker_id, $callback);
+    }
+
+    /**
      * 异步的协程模式
      * @param $name
      * @param $arguments
