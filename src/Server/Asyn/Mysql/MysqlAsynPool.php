@@ -51,7 +51,7 @@ class MysqlAsynPool implements IAsynPool
         return $this->dbQueryBuilder;
     }
 
-    public function begin(callable $fuc)
+    public function begin(callable $fuc, callable $errorFuc)
     {
         $client = $this->pool_chan->pop();
         if (!$client->connected) {
@@ -69,6 +69,7 @@ class MysqlAsynPool implements IAsynPool
             $client->query("commit");
         } catch (\Throwable $e) {
             $client->query("rollback");
+            if ($errorFuc != null) $errorFuc();
         } finally {
             $this->dbQueryBuilder->setClient(null);
         }

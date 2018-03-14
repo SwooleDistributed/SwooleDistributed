@@ -2376,10 +2376,11 @@ class Miner
     /**
      * 开始事务
      * @param callable $fuc
+     * @param callable|null $errorFuc
      */
-    public function begin(callable $fuc)
+    public function begin(callable $fuc, callable $errorFuc = null)
     {
-        $this->mysql_pool->begin($fuc);
+        $this->mysql_pool->begin($fuc, $errorFuc);
     }
 
     /**
