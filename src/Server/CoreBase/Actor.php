@@ -164,7 +164,7 @@ abstract class Actor extends CoreBase
         try {
             $generator = \co::call_user_func_array([$this, $function], $params);
         } catch (\Throwable $e) {
-            $generator = $e;
+            $generator = new RPCThrowable($e);
         }
         if (!$oneWay) {
             $this->rpcBack($workerId, $token, $generator, $node);
@@ -291,7 +291,11 @@ abstract class Actor extends CoreBase
      */
     public function after($ms, $callback, $user_param = null)
     {
-        $id = \swoole_timer_after($ms, $callback, $user_param);
+        $id = \swoole_timer_after($ms, function ($user_param_one) use ($callback) {
+            go(function () use ($callback, $user_param_one) {
+                $callback($user_param_one);
+            });
+        }, $user_param);
         $this->timerIdArr[$id] = $id;
         return $id;
     }

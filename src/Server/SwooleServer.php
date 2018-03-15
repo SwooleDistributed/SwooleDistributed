@@ -15,6 +15,7 @@ use Server\Components\Process\ProcessRPC;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\ILoader;
 use Server\CoreBase\Loader;
+use Server\CoreBase\PackException;
 use Server\CoreBase\PortManager;
 use Whoops\Exception\ErrorException;
 
@@ -34,7 +35,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "3.1.2";
+    const version = "3.1.3";
 
     /**
      * server name

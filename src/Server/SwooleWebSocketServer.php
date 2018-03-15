@@ -124,7 +124,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         if (empty($fdinfo)) {
             throw new \Exception('fd not exist');
         }
-        if (array_key_exists('websocket_status', $fdinfo) && $fdinfo['websocket_status'] == WEBSOCKET_STATUS_FRAME) {
+        if (array_key_exists('websocket_status', $fdinfo)) {
             return $fdinfo['server_port'];
         }
         return false;

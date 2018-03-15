@@ -9,6 +9,7 @@
 namespace Server\Coroutine;
 
 
+use Server\CoreBase\RPCThrowable;
 use Server\CoreBase\SwooleException;
 
 /**
@@ -146,6 +147,9 @@ abstract class CoroutineBase implements ICoroutineBase
 
     protected function getResult($result)
     {
+        if ($result instanceof RPCThrowable) {
+            $result = $result->build();
+        }
         if ($result instanceof \Throwable) {
             //迁移操作
             if ($result instanceof CoroutineChangeToken) {
