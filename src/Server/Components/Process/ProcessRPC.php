@@ -11,6 +11,7 @@ namespace Server\Components\Process;
 
 use Server\Components\Event\Event;
 use Server\CoreBase\Child;
+use Server\CoreBase\RPCThrowable;
 use Server\Memory\Pool;
 use Server\SwooleMarco;
 use Server\Test\DocParser;
@@ -110,7 +111,7 @@ abstract class ProcessRPC extends Child
             try {
                 $result = \co::call_user_func_array([$context, $func], $message['arg']);
             } catch (\Throwable $e) {
-                $result = $e;
+                $result = new RPCThrowable($e);
             }
         }
         return $result;

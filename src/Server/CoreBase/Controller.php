@@ -100,6 +100,7 @@ class Controller extends CoreBase
      * @var Error
      */
     private $Error;
+
     /**
      * Controller constructor.
      * @param string $proxy
@@ -306,6 +307,9 @@ class Controller extends CoreBase
             return;
         }
         parent::destroy();
+        if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
+            $this->http_output->end('');
+        }
         $this->isEnd = false;
         $this->fd = null;
         $this->uid = null;
