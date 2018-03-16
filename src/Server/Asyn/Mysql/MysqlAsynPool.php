@@ -42,6 +42,7 @@ class MysqlAsynPool implements IAsynPool
             $this->pushToPool($client);
         }
     }
+
     /**
      * @return Miner
      */
@@ -76,13 +77,25 @@ class MysqlAsynPool implements IAsynPool
         $this->pushToPool($client);
     }
 
-    public function query($sql, $timeOut = -1, $client = null)
+    /**
+     * @param $sql
+     * @param null $client
+     * @param MySqlCoroutine $mysqlCoroutine
+     * @return mixed
+     * @throws SwooleException
+     */
+    public function query($sql, $client = null, MySqlCoroutine $mysqlCoroutine)
     {
         $notPush = false;
+        $delayRecv = $mysqlCoroutine->getDelayRecv();
         if ($client == null) {
             $client = $this->pool_chan->pop();
-        } else {
+            $client->setDefer($delayRecv);
+        } else {//这里代表是事务
             $notPush = true;
+            //事务不允许setDefer
+            $delayRecv = false;
+            $client->setDefer($delayRecv);
         }
         if (!$client->connected) {
             $set = $this->config['mysql'][$this->active];
@@ -92,22 +105,38 @@ class MysqlAsynPool implements IAsynPool
                 throw new SwooleException($client->connect_error);
             }
         }
-        $res = $client->query($sql, $timeOut);
+        $res = $client->query($sql, $mysqlCoroutine->getTimeout() / 1000);
         if ($res === false) {
             if ($client->errno == 110) {
-                throw new SwooleException("[CoroutineTask]: Time Out!, [Request]: $sql");
+                $result = $mysqlCoroutine->onTimeOut();
             } else {
-                throw new SwooleException("[sql]:$sql,[err]:$client->error");
+                $result = $mysqlCoroutine->getResult(new SwooleException("[sql]:$sql,[err]:$client->error"));
             }
+            $mysqlCoroutine->destroy();
+            return $result;
         }
-        if (!$notPush) {
-            $this->pushToPool($client);
+        $mysqlCoroutine->destroy();
+        if ($delayRecv)//延迟收包
+        {
+            $data['delay_recv_fuc'] = function () use ($client) {
+                $res = $client->recv();
+                $data['result'] = $res;
+                $data['affected_rows'] = $client->affected_rows;
+                $data['insert_id'] = $client->insert_id;
+                $data['client_id'] = $client->id;
+                $this->pushToPool($client);
+                return $data;
+            };
+            return new MysqlSyncHelp($sql, $data);
         }
         $data['result'] = $res;
         $data['affected_rows'] = $client->affected_rows;
         $data['insert_id'] = $client->insert_id;
         $data['client_id'] = $client->id;
-        return $data;
+        if (!$notPush) {
+            $this->pushToPool($client);
+        }
+        return new MysqlSyncHelp($sql, $data);
     }
 
     /**
@@ -115,18 +144,24 @@ class MysqlAsynPool implements IAsynPool
      * @param $statement
      * @param $holder
      * @param null $client
+     * @param MySqlCoroutine $mysqlCoroutine
      * @return mixed
      * @throws SwooleException
-     * @internal param $sql
-     * @internal param int $timerOut
      */
-    public function prepare($sql, $statement, $holder, $client = null)
+    public function prepare($sql, $statement, $holder, $client = null, MySqlCoroutine $mysqlCoroutine)
     {
+        //暂不支持----------
+        $delayRecv = false;
+        //-----------------
         $notPush = false;
         if ($client == null) {
             $client = $this->pool_chan->pop();
+            $client->setDefer($delayRecv);
         } else {
             $notPush = true;
+            //事务不允许setDefer
+            $delayRecv = false;
+            $client->setDefer($delayRecv);
         }
         if (!$client->connected) {
             $set = $this->config['mysql'][$this->active];
@@ -138,23 +173,39 @@ class MysqlAsynPool implements IAsynPool
         }
         $res = $client->prepare($statement);
         if ($res != false) {
-            $res = $res->execute($holder);
+            $res = $res->execute($holder, $mysqlCoroutine->getTimeout() / 1000);
         }
         if ($res === false) {
             if ($client->errno == 110) {
-                throw new SwooleException("[CoroutineTask]: Time Out!, [Request]: $sql");
+                $result = $mysqlCoroutine->onTimeOut();
             } else {
-                throw new SwooleException("[sql]:$sql,[err]:$client->error");
+                $result = $mysqlCoroutine->getResult(new SwooleException("[sql]:$sql,[err]:$client->error"));
             }
+            $mysqlCoroutine->destroy();
+            return $result;
         }
-        if (!$notPush) {
-            $this->pushToPool($client);
+        $mysqlCoroutine->destroy();
+        if ($delayRecv)//延迟收包
+        {
+            $data['delay_recv_fuc'] = function () use ($client) {
+                $res = $client->recv();
+                $data['result'] = $res;
+                $data['affected_rows'] = $client->affected_rows;
+                $data['insert_id'] = $client->insert_id;
+                $data['client_id'] = $client->id;
+                $this->pushToPool($client);
+                return $data;
+            };
+            return new MysqlSyncHelp($sql, $data);
         }
         $data['result'] = $res;
         $data['affected_rows'] = $client->affected_rows;
         $data['insert_id'] = $client->insert_id;
         $data['client_id'] = $client->id;
-        return $data;
+        if (!$notPush) {
+            $this->pushToPool($client);
+        }
+        return new MysqlSyncHelp($sql, $data);
     }
 
     public function getAsynName()
@@ -169,7 +220,7 @@ class MysqlAsynPool implements IAsynPool
 
     public function getSync()
     {
-        if ($this->mysql_client!=null) return $this->mysql_client;
+        if ($this->mysql_client != null) return $this->mysql_client;
         $activeConfig = $this->config['mysql'][$this->active];
         $this->mysql_client = new Miner();
         $this->mysql_client->pdoConnect($activeConfig);

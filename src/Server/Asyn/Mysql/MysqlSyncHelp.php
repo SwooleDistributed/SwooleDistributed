@@ -22,6 +22,25 @@ class MysqlSyncHelp implements ArrayAccess
         $this->elements = $data;
     }
 
+    /**
+     * 获取结果
+     * @return mixed
+     */
+    public function getResult()
+    {
+        return $this->elements;
+    }
+
+    /**
+     * 延迟收包
+     */
+    public function recv()
+    {
+        if (isset($this->elements["delay_recv_fuc"])) {
+            $this->elements = $this->elements["delay_recv_fuc"]();
+        }
+    }
+
     public function dump()
     {
         secho("MYSQL", $this->mysql);
