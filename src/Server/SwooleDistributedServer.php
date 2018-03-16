@@ -14,6 +14,7 @@ use Server\Components\Cluster\ClusterHelp;
 use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Consul\ConsulHelp;
 use Server\Components\Consul\ConsulProcess;
+use Server\Components\Consul\FabioProcess;
 use Server\Components\Event\EventDispatcher;
 use Server\Components\GrayLog\GrayLogHelp;
 use Server\Components\Process\ProcessManager;
@@ -202,6 +203,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         //consul进程
         if ($this->config->get('consul.enable', false)) {
             ProcessManager::getInstance()->addProcess(ConsulProcess::class, false);
+        }
+        //fabio进程
+        if ($this->config->get('fabio.enable', false)) {
+            ProcessManager::getInstance()->addProcess(FabioProcess::class, false);
         }
         if ($this->config->get('backstage.enable', false)) {
             ProcessManager::getInstance()->addProcess(BackstageProcess::class, false);
