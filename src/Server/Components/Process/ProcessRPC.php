@@ -77,7 +77,7 @@ abstract class ProcessRPC extends Child
         $message['worker_id'] = $my_worker_id;
         $message['arg'] = $arguments;
         $message['func'] = $name;
-        $message['token'] = "[PR]$my_worker_id->$worker_id:" . $this->token;
+        $message['token'] = "[PR]$my_worker_id->$worker_id:" . $this->token .":". getTickTime();
         $message['oneWay'] = $oneWay;
         if ($my_worker_id == $worker_id) {
             \swoole_event_defer(function () use (&$message) {

@@ -124,7 +124,11 @@ abstract class Actor extends CoreBase
         if ($this->saveContext["@status"] == null) {
             $this->saveContext["@status"] = [$key => $value];
         } else {
-            $this->saveContext["@status"][$key] = $value;
+            //如果存在了并且相等就pass
+            if (isset($this->saveContext["@status"][$key]) && $this->saveContext["@status"][$key] == $value) {
+                return;
+            }
+            $this->saveContext->getData()["@status"][$key] = $value;
             //二维数组需要自己手动调用save
             $this->saveContext->save();
         }
