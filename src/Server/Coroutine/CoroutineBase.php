@@ -80,6 +80,11 @@ abstract class CoroutineBase implements ICoroutineBase
         $this->delayRecv = true;
     }
 
+    public function getDelayRecv()
+    {
+        return $this->delayRecv;
+    }
+
     protected function coPush($data)
     {
         $this->result = $data;
@@ -145,7 +150,7 @@ abstract class CoroutineBase implements ICoroutineBase
         return $result;
     }
 
-    protected function getResult($result)
+    public function getResult($result)
     {
         if ($result instanceof RPCThrowable) {
             $result = $result->build();
@@ -161,7 +166,7 @@ abstract class CoroutineBase implements ICoroutineBase
                     $this->destroy();
                     throw $result;
                 } else {
-                    $this->result = $this->noExceptionReturn;
+                    $result = $this->noExceptionReturn;
                 }
             }
         }
@@ -231,6 +236,14 @@ abstract class CoroutineBase implements ICoroutineBase
     {
         $this->MAX_TIMERS = $maxtime;
         return $this;
+    }
+
+    /**
+     * @return int|mixed|null
+     */
+    public function getTimeout()
+    {
+        return $this->MAX_TIMERS;
     }
 
     /**

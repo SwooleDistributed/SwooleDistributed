@@ -8,6 +8,8 @@
 
 namespace Server\Asyn\Mysql;
 
+use Server\Memory\Pool;
+
 /**
  * A dead simple PHP class for building SQL statements. No manual string
  * concatenation necessary.
@@ -2385,14 +2387,12 @@ class Miner
 
     /**
      * @param null $sql
-     * @param int $timerOut
+     * @param callable|null $set
      * @return MysqlSyncHelp
      */
-    public function query($sql = null, $timerOut = -1)
+    public function query($sql = null, callable $set = null)
     {
-        if ($timerOut > 0) {
-            $timerOut = $timerOut / 1000;
-        }
+        $mySqlCoroutine = Pool::getInstance()->get(MySqlCoroutine::class);
         if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式
             $this->mergeInto($this->mysql_pool->getSync());
             $this->clear();
@@ -2400,16 +2400,24 @@ class Miner
             return new MysqlSyncHelp($sql, $data);
         } else {
             if ($sql != null) {
-                $result = $this->mysql_pool->query($sql, $timerOut, $this->client);
+                $mySqlCoroutine->setRequest($sql);
+                if ($set) {
+                    $set($mySqlCoroutine);
+                }
+                $result = $this->mysql_pool->query($sql, $this->client, $mySqlCoroutine);
                 $this->clear();
-                return new MysqlSyncHelp($sql, $result);
+                return $result;
             } else {
                 $statement = $this->getStatement();
                 $holder = $this->getPlaceholderValues();
                 $sql = $this->getStatement(false);
-                $result = $this->mysql_pool->prepare($sql, $statement, $holder, $this->client);
+                $mySqlCoroutine->setRequest($sql);
+                if ($set) {
+                    $set($mySqlCoroutine);
+                }
+                $result = $this->mysql_pool->prepare($sql, $statement, $holder, $this->client, $mySqlCoroutine);
                 $this->clear();
-                return new MysqlSyncHelp($sql, $result);
+                return $result;
             }
         }
     }
