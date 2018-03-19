@@ -5,6 +5,7 @@ namespace Server;
 use Gelf\Publisher;
 use Monolog\Handler\GelfHandler;
 use Monolog\Handler\RotatingFileHandler;
+use Monolog\Handler\SyslogHandler;
 use Monolog\Logger;
 use Noodlehaus\Config;
 use Server\Components\Backstage\BackstageHelp;
@@ -35,7 +36,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "3.1.4";
+    const version = "3.1.5";
 
     /**
      * server name
@@ -130,6 +131,9 @@ abstract class SwooleServer extends ProcessRPC
                 $this->log->pushHandler(new RotatingFileHandler(LOG_DIR . "/" . $this->name . '.log',
                     $this->config['log']['file']['log_max_files'],
                     $this->config['log']['log_level']));
+                break;
+            case "syslog":
+                $this->log->pushHandler(new SyslogHandler($this->config['log']['syslog']['ident']));
                 break;
         }
     }

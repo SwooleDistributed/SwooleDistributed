@@ -19,12 +19,15 @@ abstract class Process extends ProcessRPC
     protected $config;
     protected $log;
     protected $token = 0;
+    protected $params;
+
     /**
      * Process constructor.
-     * @param $name
+     * @param string $name
      * @param $worker_id
+     * @param $params
      */
-    public function __construct($name, $worker_id)
+    public function __construct($name, $worker_id, $params)
     {
         parent::__construct();
         $this->name = $name;
@@ -32,6 +35,7 @@ abstract class Process extends ProcessRPC
         get_instance()->workerId = $worker_id;
         $this->config = get_instance()->config;
         $this->log = get_instance()->log;
+        $this->params = $params;
         if (get_instance()->server != null) {
             $this->process = new \swoole_process([$this, '__start'], false, 2);
             get_instance()->server->addProcess($this->process);
@@ -41,7 +45,6 @@ abstract class Process extends ProcessRPC
     public function __start($process)
     {
         \swoole_process::signal(SIGTERM, [$this, "__shutDown"]);
-
         get_instance()->workerId = $this->worker_id;
         if (!isDarwin()) {
             $process->name($this->name);

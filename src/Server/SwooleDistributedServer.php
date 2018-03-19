@@ -613,7 +613,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if ($this->config->get('mysql.enable', true)) {
             $this->asynPools['mysqlPool'] = new MysqlAsynPool($this->config, $this->config->get('mysql.active'));
         }
-        if ($this->config->get('error.enable', true)) {
+        if ($this->config->get('error.dingding_enable', false)) {
             $this->asynPools['dingdingRest'] = new HttpClientPool($this->config, $this->config->get('error.dingding_url'));
         }
         $this->redis_pool = $this->asynPools['redisPool'] ?? null;
