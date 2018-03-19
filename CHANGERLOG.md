@@ -426,3 +426,12 @@ try {
     ,
 ```
 通过传递给index一个数组即可路由到TestController的test方法，记住这里方法不需要加前缀
+
+# 2.8.1
+1.新增syslog，可以接入阿里云日志系统
+
+2.新增错误收集系统需要连接Redis，配置：error.php
+
+3.新增Whoops，查看错误
+
+4.bug修复
