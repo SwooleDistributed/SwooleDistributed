@@ -6,7 +6,7 @@
  * Time: 下午5:58
  */
 //node的名字，每一个都必须不一样
-$config['log']['active'] = 'file';
+$config['log']['active'] = 'syslog';
 $config['log']['log_level'] = \Monolog\Logger::DEBUG;
 $config['log']['log_name'] = 'SD';
 
@@ -19,4 +19,7 @@ $config['log']['graylog']['efficiency_monitor_enable'] = true;
 
 $config['log']['file']['log_max_files'] = 15;
 $config['log']['file']['efficiency_monitor_enable'] = false;
+
+$config['log']['syslog']['ident'] = "app";
+$config['log']['syslog']['efficiency_monitor_enable'] = true;
 return $config;

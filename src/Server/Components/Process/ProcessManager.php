@@ -24,6 +24,7 @@ class ProcessManager
     protected $atomic;
     protected $map = [];
     public $oneWayFucName = [];
+
     /**
      * ProcessManager constructor.
      */
@@ -35,15 +36,16 @@ class ProcessManager
     /**
      * @param $class_name
      * @param string $name
+     * @param array $params
      * @return Process
      * @throws \Exception
      */
-    public function addProcess($class_name, $name = '')
+    public function addProcess($class_name, $name = '', $params = [])
     {
         $worker_id = get_instance()->worker_num + get_instance()->task_num + $this->atomic->get();
         $this->atomic->add();
         $names = explode("\\", $class_name);
-        $process = new $class_name(getServerName() . "-" . $names[count($names) - 1], $worker_id);
+        $process = new $class_name(getServerName() . "-" . $names[count($names) - 1], $worker_id, $params);
         if (array_key_exists($class_name . $name, $this->map)) {
             throw new \Exception('存在相同类型的进程，需要设置别名');
         }

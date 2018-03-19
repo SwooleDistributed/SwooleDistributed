@@ -23,6 +23,7 @@ class Error extends Model
     private $redis_prefix;
     private $redis_timeOut;
     private $url;
+    private $dingding_enable;
 
     public function __construct($proxy = ChildProxy::class)
     {
@@ -31,6 +32,7 @@ class Error extends Model
         $this->client = get_instance()->getAsynPool('dingdingRest');
         $this->redis_timeOut = $this->config->get('error.redis_timeOut', 36000);
         $this->redis_prefix = $this->config->get('error.redis_prefix', "@sd-error");
+        $this->dingding_enable = $this->config->get('error.dingding_enable', "false");
         $this->url = $this->config->get('error.url');
     }
 
@@ -41,7 +43,10 @@ class Error extends Model
         $this->redis_pool->getCoroutine()->set($key, $data, ["NX", "EX" => $this->redis_timeOut]);
         $url = $this->url . "?id=" . $id;
         secho("Error", "访问：$url 查看");
-        $this->sendLinkMessage("发生异常:$key", $url);
+        if ($this->dingding_enable) {
+            $this->sendLinkMessage("发生异常:$key", $url);
+        }
+        $this->context['error_view_url'] = $url;
     }
 
     /**
