@@ -12,6 +12,7 @@ use Noodlehaus\Config;
 use Server\Components\Backstage\BackstageHelp;
 use Server\Components\Event\EventDispatcher;
 use Server\Components\GrayLog\UdpTransport;
+use Server\Components\log\SDJsonFormatter;
 use Server\Components\Middleware\MiddlewareManager;
 use Server\Components\Process\ProcessRPC;
 use Server\CoreBase\ControllerFactory;
@@ -129,13 +130,15 @@ abstract class SwooleServer extends ProcessRPC
                     $this->config['log']['log_level'])]);
                 break;
             case "file":
-                $this->log->pushHandler(new RotatingFileHandler(LOG_DIR . "/" . $this->name . '.log',
+                $handel = new RotatingFileHandler(LOG_DIR . "/" . $this->name . '.log',
                     $this->config['log']['file']['log_max_files'],
-                    $this->config['log']['log_level']));
+                    $this->config['log']['log_level']);
+                $handel->setFormatter(new JsonFormatter());
+                $this->log->pushHandler($handel);
                 break;
             case "syslog":
                 $handel = new SyslogHandler($this->config['log']['syslog']['ident']);
-                $handel->setFormatter(new JsonFormatter());
+                $handel->setFormatter(new SDJsonFormatter());
                 $this->log->pushHandler($handel);
                 break;
         }
