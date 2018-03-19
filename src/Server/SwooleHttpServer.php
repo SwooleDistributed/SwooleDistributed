@@ -12,8 +12,10 @@ namespace Server;
 
 use League\Plates\Engine;
 use Server\Components\Consul\ConsulHelp;
+use Server\Components\Whoops\Handler\SDPageHandler;
 use Server\CoreBase\ControllerFactory;
 use Server\Coroutine\Coroutine;
+use Whoops\Run;
 
 abstract class SwooleHttpServer extends SwooleServer
 {
@@ -23,7 +25,10 @@ abstract class SwooleHttpServer extends SwooleServer
      */
     public $templateEngine;
     protected $cache404;
-
+    /**
+     * @var Run
+     */
+    public $whoops;
     public function __construct()
     {
         parent::__construct();
@@ -84,9 +89,17 @@ abstract class SwooleHttpServer extends SwooleServer
     public function onSwooleWorkerStart($serv, $workerId)
     {
         parent::onSwooleWorkerStart($serv, $workerId);
-        $this->setTemplateEngine();
-        $template = $this->loader->view('server::error_404');
-        $this->cache404 = $template->render();
+        if (!$this->isTaskWorker()) {
+            $this->whoops = new Run();
+            $this->whoops->writeToOutput(false);
+            $this->whoops->allowQuit(false);
+            $handler = new SDPageHandler();
+            $handler->setPageTitle("出现错误了");
+            $this->whoops->pushHandler($handler);
+            $this->setTemplateEngine();
+            $template = $this->loader->view('server::error_404');
+            $this->cache404 = $template->render();
+        }
     }
 
     /**
@@ -157,5 +170,8 @@ abstract class SwooleHttpServer extends SwooleServer
         });
 
     }
-
+    public function getWhoops()
+    {
+        return $this->whoops;
+    }
 }

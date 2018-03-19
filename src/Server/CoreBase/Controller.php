@@ -2,11 +2,11 @@
 
 namespace Server\CoreBase;
 
-use ArgumentCountError;
-use Monolog\Logger;
 use Server\Asyn\Mysql\Miner;
+use Server\Models\Error;
 use Server\Start;
 use Server\SwooleMarco;
+use Throwable;
 
 /**
  * Controller 控制器
@@ -85,6 +85,15 @@ class Controller extends CoreBase
      */
     public $db;
     /**
+     * @var bool
+     */
+    private $isEnableError;
+    /**
+     * @var Error
+     */
+    private $Error;
+
+    /**
      * Controller constructor.
      * @param string $proxy
      */
@@ -93,6 +102,7 @@ class Controller extends CoreBase
         parent::__construct($proxy);
         $this->http_input = new HttpInput();
         $this->http_output = new HttpOutput($this);
+        $this->isEnableError = $this->config->get('error.enable');
     }
 
     /**
@@ -164,9 +174,7 @@ class Controller extends CoreBase
             } else {
                 yield call_user_func_array([$this->getProxy(), $method_name], $params);
             }
-        } catch (\Exception $e) {
-            yield $this->getProxy()->onExceptionHandle($e);
-        } catch (ArgumentCountError $e) {
+        } catch (Throwable $e) {
             yield $this->getProxy()->onExceptionHandle($e);
         }
     }
@@ -194,6 +202,9 @@ class Controller extends CoreBase
         if ($this->mysql_pool != null) {
             $this->installMysqlPool($this->mysql_pool);
             $this->db = $this->mysql_pool->dbQueryBuilder;
+        }
+        if ($this->isEnableError) {
+            $this->Error = $this->loader->model(Error::class, $this);
         }
     }
 
@@ -226,13 +237,25 @@ class Controller extends CoreBase
             secho("EX", "异常消息：" . $e->getMessage());
             print_context($this->getContext());
             secho("EX", "--------------------------------------------------------------");
-            $this->log($e->getMessage() . "\n" . $e->getTraceAsString(), Logger::ERROR);
+        }
+        $this->context['error_message'] = $e->getMessage();
+        //如果是HTTP传递request过去
+        if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
+            $e->request = $this->request;
+        }
+        //生成错误数据页面
+        $error_data = get_instance()->getWhoops()->handleException($e);
+        if ($this->isEnableError) {
+            try {
+                yield $this->Error->push($error_data);
+            } catch (Throwable $e) {
+            }
         }
         //可以重写的代码
         if ($handle == null) {
             switch ($this->request_type) {
                 case SwooleMarco::HTTP_REQUEST:
-                    $this->http_output->end($e->getMessage());
+                    $this->http_output->end($error_data);
                     break;
                 case SwooleMarco::TCP_REQUEST:
                     $this->send($e->getMessage());

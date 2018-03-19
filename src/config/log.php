@@ -19,4 +19,7 @@ $config['log']['graylog']['efficiency_monitor_enable'] = true;
 
 $config['log']['file']['log_max_files'] = 15;
 $config['log']['file']['efficiency_monitor_enable'] = false;
+
+$config['log']['syslog']['ident'] = "app";
+$config['log']['syslog']['efficiency_monitor_enable'] = true;
 return $config;

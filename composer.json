@@ -7,6 +7,7 @@
     "league/plates": "@stable",
     "graylog2/gelf-php": "@stable",
     "php-amqplib/php-amqplib": "@stable",
+    "filp/whoops": "@stable",
     "php-ds/php-ds": "@stable",
     "symfony/console": "@stable"
   },
