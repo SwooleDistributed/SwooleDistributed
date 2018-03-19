@@ -3,6 +3,7 @@
 namespace Server;
 
 use Gelf\Publisher;
+use Monolog\Formatter\JsonFormatter;
 use Monolog\Handler\GelfHandler;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Handler\SyslogHandler;
@@ -133,7 +134,9 @@ abstract class SwooleServer extends ProcessRPC
                     $this->config['log']['log_level']));
                 break;
             case "syslog":
-                $this->log->pushHandler(new SyslogHandler($this->config['log']['syslog']['ident']));
+                $handel = new SyslogHandler($this->config['log']['syslog']['ident']);
+                $handel->setFormatter(new JsonFormatter());
+                $this->log->pushHandler($handel);
                 break;
         }
     }
