@@ -194,7 +194,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         //反序列化，出现异常断开连接
         try {
             $client_data = $pack->unPack($data);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $pack->errorHandle($e, $fd);
             return null;
         }
@@ -222,15 +222,15 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
                 } else {
                     throw new \Exception('no controller');
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $route->errorHandle($e, $fd);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
 
         }
         try {
             $this->middlewareManager->after($middlewares, $path);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
 
         }
         $this->middlewareManager->destory($middlewares);
