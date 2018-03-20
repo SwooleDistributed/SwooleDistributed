@@ -25,10 +25,7 @@ $config['server']['set'] = [
     'enable_reuse_port' => true,
     'heartbeat_idle_time' => 120,//2分钟后没消息自动释放连接
     'heartbeat_check_interval' => 60,//1分钟检测一次
-    'max_connection' => 100000,
-    'request_slowlog_timeout' => 2, //2秒
-    'request_slowlog_file' => LOG_DIR . "/trace.log",
-    'trace_event_worker' => true, //跟踪 Task 和 Worker
+    'max_connection' => 100000
 ];
 //协程超时时间
 $config['coroution']['timerOut'] = 5000;
