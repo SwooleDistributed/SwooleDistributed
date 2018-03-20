@@ -111,7 +111,7 @@ class Child extends AOP
     public function destroy()
     {
         foreach ($this->child_list as $core_child) {
-            $core_child->getProxy()->destroy();
+            $core_child->destroy();
         }
         $this->child_list = [];
         $this->parent = null;
