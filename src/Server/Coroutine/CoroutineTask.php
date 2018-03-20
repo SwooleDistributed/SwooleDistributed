@@ -23,7 +23,7 @@ class CoroutineTask
     protected $routine;
 
     /**
-     * @var \Exception
+     * @var \Throwable
      */
     protected $e;
 
@@ -87,7 +87,7 @@ class CoroutineTask
             //返回上级
             try {
                 $result = $this->routine->getReturn();
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $result = '';
             }
             if (!$this->stack->isEmpty()) {
@@ -96,7 +96,7 @@ class CoroutineTask
                 $this->run();
                 return;
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->throwEx($this->routine, $e);
         }
     }
@@ -105,14 +105,14 @@ class CoroutineTask
      * @param $routine
      * @param $e
      */
-    protected function throwEx(\Generator $routine, \Exception $e)
+    protected function throwEx(\Generator $routine, \Throwable $e)
     {
         try {
             $this->e = $e;
             $routine->throw($e);
             $this->routine = $routine;
             $this->run();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             if (!$this->stack->isEmpty()) {
                 $routine = $this->stack->pop();
                 $this->throwEx($routine, $e);
@@ -128,7 +128,7 @@ class CoroutineTask
     {
         try {
             $result = $this->stack->isEmpty() && !$this->routine->valid();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             $this->throwEx($this->routine, $e);
             $result = true;
         }
@@ -151,7 +151,7 @@ class CoroutineTask
     }
 
     /**
-     * @return \Exception
+     * @return \Throwable
      */
     public function getEx()
     {

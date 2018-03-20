@@ -6,8 +6,6 @@ use Server\Asyn\Mysql\Miner;
 use Server\Models\Error;
 use Server\Start;
 use Server\SwooleMarco;
-use Throwable;
-
 /**
  * Controller 控制器
  * 对象池模式，实例会被反复使用，成员变量缓存数据记得在销毁时清理
@@ -174,7 +172,7 @@ class Controller extends CoreBase
             } else {
                 yield call_user_func_array([$this->getProxy(), $method_name], $params);
             }
-        } catch (Throwable $e) {
+        } catch (\Throwable $e) {
             yield $this->getProxy()->onExceptionHandle($e);
         }
     }
@@ -248,7 +246,7 @@ class Controller extends CoreBase
         if ($this->isEnableError) {
             try {
                 yield $this->Error->push($error_data);
-            } catch (Throwable $e) {
+            } catch (\Throwable $e) {
             }
         }
         //可以重写的代码
