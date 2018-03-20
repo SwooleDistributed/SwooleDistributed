@@ -159,15 +159,15 @@ abstract class SwooleHttpServer extends SwooleServer
                         throw new \Exception('no controller');
                     }
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $route->errorHttpHandle($e, $request, $response);
             }
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
         }
         //after
         try {
             $this->middlewareManager->after($middlewares, $path);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
         }
         $this->middlewareManager->destory($middlewares);
         if (Start::getDebug()) {
