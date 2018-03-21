@@ -189,10 +189,9 @@ class TimerTask extends CoreBase
             $child->setContext($context);
             if (!empty($timer_task['task_name'])) {
                 $task = get_instance()->loader->task($timer_task['task_name'], $child);
-                \co::call_user_func([$task, $timer_task['method_name']]);
                 $startTime = getMillisecond();
                 $path = "[TimerTask] " . $timer_task['task_name'] . "::" . $timer_task['method_name'];
-                $task->startTask(-1, function () use (&$child, $startTime, $path) {
+                $task->startTask($timer_task['method_name'],[],-1, function () use (&$child, $startTime, $path) {
                     $child->destroy();
                     Pool::getInstance()->push($child);
                     ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->addStatistics($path, getMillisecond() - $startTime);
