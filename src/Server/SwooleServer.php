@@ -564,9 +564,6 @@ abstract class SwooleServer extends ProcessRPC
      */
     public function displayErrorHandler($error, $error_string, $filename, $line, $symbols)
     {
-        $log = "WORKER Error ";
-        $log .= "$error_string ($filename:$line)";
-        $this->log->error($log);
         throw new ErrorException($error_string, $error, 1, $filename, $line);
     }
 
