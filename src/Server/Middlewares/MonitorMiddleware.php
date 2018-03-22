@@ -46,7 +46,7 @@ class MonitorMiddleware extends Middleware
                 $this->context['RunStack'][$i] = "├".$this->context['RunStack'][$i];
             }
         }
-        $this->context['execution_time'] = ((microtime(true) - $this->start_run_time) * 1000) ." ms";
+        $this->context['execution_time'] = ((microtime(true) - $this->start_run_time) * 1000);
         ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->addStatistics($path, $this->context['execution_time']);
         if (isset($this->context['error_message'])) {
             $this->log($this->context['error_message'], Logger::ERROR);
