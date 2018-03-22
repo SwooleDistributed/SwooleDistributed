@@ -174,7 +174,6 @@ class Controller extends CoreBase
             }
         } catch (\Throwable $e) {
             yield $this->getProxy()->onExceptionHandle($e);
-            $this->getProxy()->afterCall($method_name);
         }
     }
 
