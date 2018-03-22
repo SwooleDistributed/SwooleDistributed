@@ -53,6 +53,5 @@ class MonitorMiddleware extends Middleware
         } else if (self::$efficiency_monitor_enable) {
             $this->log('Monitor');
         }
-        print_r($this->context);
     }
 }
