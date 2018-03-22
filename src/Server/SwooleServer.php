@@ -359,7 +359,7 @@ abstract class SwooleServer extends ProcessRPC
                 $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
                 if ($controller_instance != null) {
                     $controller_instance->setContext($context);
-                    $controller_instance->getProxy()->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
+                    $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
                 } else {
                     throw new \Exception('no controller');
                 }

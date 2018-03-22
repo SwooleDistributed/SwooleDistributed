@@ -14,6 +14,8 @@ use Server\Components\AOP\Proxy;
 class ChildProxy extends Proxy
 {
     protected $class_name;
+    protected $run_index;
+    protected $run_start_time;
 
     public function __construct($own)
     {
@@ -32,11 +34,21 @@ class ChildProxy extends Proxy
 
     public function beforeCall($name, $arguments = null)
     {
-        $this->own->getContext()['RunStack'][] = $this->class_name . "::" . $name;
+        if(!isset($this->own->getContext()['RunStack'])){
+            $this->own->getContext()['RunStack'] = [];
+        }
+        $this->run_index = count($this->own->getContext()['RunStack']);
+        $this->own->getContext()['RunStack'][$this->run_index] = " ".$this->class_name . "::" . $name;
+        $this->run_start_time = microtime(true);
     }
 
     public function afterCall($name, $arguments = null)
     {
-        // TODO: Implement afterCall() method.
+        $time = " -> " . ((microtime(true) - $this->run_start_time)*1000)." ms";
+        $this->own->getContext()['RunStack'][$this->run_index] = $this->own->getContext()['RunStack'][$this->run_index] . $time;
+        $count = count($this->own->getContext()['RunStack']);
+        for ($i = $this->run_index + 1; $i < $count; $i++) {
+            $this->own->getContext()['RunStack'][$i] = "─" . $this->own->getContext()['RunStack'][$i];
+        }
     }
 }

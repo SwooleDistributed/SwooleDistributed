@@ -41,7 +41,7 @@ class Loader implements ILoader
                 return AOP::getAOP($root);
             }
             if ($root->hasChild($model)) {
-                return $root->getChild($model);
+                return AOP::getAOP($root->getChild($model));
             }
             $root = $root->parent ?? null;
         }

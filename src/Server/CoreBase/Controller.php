@@ -178,9 +178,9 @@ class Controller extends CoreBase
         try {
             $this->initialization($controller_name, $method_name);
             if ($params == null) {
-                $this->$method_name($params);
+                $this->getProxy()->$method_name();
             } else {
-                \co::call_user_func_array([$this, $method_name], $params);
+                $this->getProxy()->$method_name($params);
             }
         } catch (Throwable $e) {
             $this->getProxy()->onExceptionHandle($e);
