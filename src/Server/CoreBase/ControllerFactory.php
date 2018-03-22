@@ -57,14 +57,14 @@ class ControllerFactory
         if (!$controllers->isEmpty()) {
             $controller_instance = $controllers->shift();
             $controller_instance->reUse();
-            return AOP::getAOP($controller_instance);
+            return $controller_instance;
         }
         if (class_exists($controller)) {
             $controller_instance = new $controller;
             if ($controller_instance instanceof Controller) {
                 $controller_instance->core_name = $controller;
                 $this->addNewCount($controller);
-                return AOP::getAOP($controller_instance);
+                return $controller_instance;
             }
         }
         $controller_new = str_replace('/', '\\', $controller);
@@ -73,7 +73,7 @@ class ControllerFactory
             $controller_instance = new $class_name;
             $controller_instance->core_name = $controller;
             $this->addNewCount($controller);
-            return AOP::getAOP($controller_instance);
+            return $controller_instance;
         } else {
             if (!$this->allow_ServerController) {
                 return null;
@@ -83,7 +83,7 @@ class ControllerFactory
                 $controller_instance = new $class_name;
                 $controller_instance->core_name = $controller;
                 $this->addNewCount($controller);
-                return AOP::getAOP($controller_instance);
+                return $controller_instance;
             } else {
                 return null;
             }
