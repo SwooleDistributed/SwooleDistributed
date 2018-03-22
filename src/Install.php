@@ -58,7 +58,10 @@ function read()
 function copy_dir($src, $dst, $force = false)
 {
     $dir = opendir($src);
-
+    if(!$dir) {
+        print_r("$src 权限问题或目录不合法，安装错误\n");
+        return;
+    }
     if (file_exists($dst) && $force == false) {
         print_r("$dst 目录已存在（跳过）\n");
         return;

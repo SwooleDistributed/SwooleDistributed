@@ -17,4 +17,12 @@ class Test extends Controller
     {
         throw new \Exception("test");
     }
+
+    public function http_test()
+    {
+        $test = $this->loader->model("TestModel2",$this);
+        $test->test();
+        $test->test2();
+        $this->http_output->end($this->getContext());
+    }
 }

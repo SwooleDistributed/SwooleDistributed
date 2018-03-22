@@ -218,7 +218,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
                         $controller_instance->setRequest($request);
                     }
                     $controller_instance->setContext($context);
-                    $controller_instance->getProxy()->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
+                    $controller_instance->setClientData($uid, $fd, $client_data, $controller_name, $method_name, $route->getParams());
                 } else {
                     throw new \Exception('no controller');
                 }
