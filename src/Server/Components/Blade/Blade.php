@@ -40,9 +40,6 @@ class Blade
     {
         $this->cachePath = $cachePath;
         $this->container = $container ?: new Container;
-        if (!is_dir($this->cachePath)) {
-            mkdir($this->cachePath);
-        }
         $this->setupContainer();
 
         (new ViewServiceProvider($this->container))->register();

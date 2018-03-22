@@ -229,7 +229,6 @@ class TestModule
         if ($this->asyn) {//异步完了再执行同步的测试
             $unitTestTask = get_instance()->loader->task('UnitTestTask');
             $unitTestTask->startTest($this->dir);
-            $unitTestTask->startTask(null);
         }
     }
 

@@ -27,6 +27,7 @@ abstract class SwooleHttpServer extends SwooleServer
      */
     public $whoops;
 
+    protected $cachePath;
     public function __construct()
     {
         parent::__construct();
@@ -35,6 +36,10 @@ abstract class SwooleHttpServer extends SwooleServer
         if (!is_dir($view_dir)) {
             secho("STA", "app目录下不存在Views目录，请创建。");
             exit();
+        }
+        $this->cachePath = BIN_DIR . "/bladeCache";
+        if (!is_dir($this->cachePath)) {
+            mkdir($this->cachePath);
         }
     }
 
@@ -104,7 +109,7 @@ abstract class SwooleHttpServer extends SwooleServer
      */
     public function setTemplateEngine()
     {
-        $this->templateEngine = new Blade(BIN_DIR . "/bladeCache");
+        $this->templateEngine = new Blade($this->cachePath);
         $this->templateEngine->addNamespace("server", SERVER_DIR . '/Views');
         $this->templateEngine->addNamespace("app", APP_DIR . '/Views');
     }
