@@ -36,7 +36,7 @@ class Error extends Model
         $this->url = $this->config->get('error.url');
     }
 
-    public function push($data)
+    public function push($title,$data)
     {
         $id = session_create_id();
         $key = $this->redis_prefix . $id;
@@ -44,7 +44,7 @@ class Error extends Model
         $url = $this->url . "?id=" . $id;
         secho("Error", "访问：$url 查看");
         if ($this->dingding_enable) {
-            $this->sendLinkMessage("发生异常:$key", $url);
+            $this->sendLinkMessage("$title", $url);
         }
         $this->context['error_view_url'] = $url;
     }
