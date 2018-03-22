@@ -119,7 +119,7 @@ class HttpOutput
         }
         $this->response->end($output);
         if ($destroy) {
-            $this->controller->getProxy()->destroy();
+            $this->controller->destroy();
         }
         return;
     }
@@ -150,7 +150,7 @@ class HttpOutput
     {
         $result = httpEndFile($root_file . '/' . $file_name, $this->request, $this->response);
         if ($destroy) {
-            $this->controller->getProxy()->destroy();
+            $this->controller->destroy();
         }
         return $result;
     }

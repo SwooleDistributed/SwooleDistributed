@@ -286,7 +286,7 @@ class Controller extends CoreBase
             get_instance()->send($this->fd, $data, true);
         }
         if ($destroy) {
-            $this->getProxy()->destroy();
+             $this->destroy();
         }
     }
 
@@ -350,7 +350,7 @@ class Controller extends CoreBase
             get_instance()->sendToUid($uid, $data);
         }
         if ($destroy) {
-            $this->getProxy()->destroy();
+             $this->destroy();
         }
     }
 
@@ -372,7 +372,7 @@ class Controller extends CoreBase
             get_instance()->sendToUids($uids, $data);
         }
         if ($destroy) {
-            $this->getProxy()->destroy();
+             $this->destroy();
         }
     }
 
@@ -393,7 +393,7 @@ class Controller extends CoreBase
             get_instance()->sendToAll($data);
         }
         if ($destroy) {
-            $this->getProxy()->destroy();
+             $this->destroy();
         }
     }
 
@@ -454,7 +454,7 @@ class Controller extends CoreBase
             get_instance()->close($this->fd);
         }
         if ($autoDestroy) {
-            $this->getProxy()->destroy();
+             $this->destroy();
         }
     }
 
@@ -532,7 +532,7 @@ class Controller extends CoreBase
     {
         get_instance()->pub($topic, $data);
         if ($destroy) {
-            $this->getProxy()->destroy();
+             $this->destroy();
         }
     }
 }
