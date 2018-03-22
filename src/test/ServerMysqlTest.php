@@ -24,7 +24,7 @@ class ServerMysqlTest extends TestCase
      */
     public function setUpBeforeClass()
     {
-        yield $this->mysql_pool->dbQueryBuilder->coroutineSend(null, "
+        $this->mysql_pool->dbQueryBuilder->query("
             CREATE TABLE IF NOT EXISTS `MysqlTest` (
               `peopleid` smallint(6) NOT NULL AUTO_INCREMENT,
               `firstname` char(50) NOT NULL,
@@ -43,7 +43,7 @@ class ServerMysqlTest extends TestCase
      */
     public function tearDownAfterClass()
     {
-        yield $this->mysql_pool->dbQueryBuilder->coroutineSend(null, "
+        $this->mysql_pool->dbQueryBuilder->query("
             DROP TABLE  `MysqlTest`;
         ");
     }
@@ -70,12 +70,12 @@ class ServerMysqlTest extends TestCase
      */
     public function testMysqlInsert()
     {
-        $value = yield $this->mysql_pool->dbQueryBuilder->insert('MysqlTest')
+        $value = $this->mysql_pool->dbQueryBuilder->insert('MysqlTest')
             ->option('HIGH_PRIORITY')
             ->set('firstname', 'White')
             ->set('lastname', 'Cat')
             ->set('age', '25')
-            ->set('townid', '10000')->coroutineSend();
+            ->set('townid', '10000')->query();
         $this->assertEquals($value['result'], 1, 'Insert 失败');
         $this->assertEquals($value['affected_rows'], 1, 'Insert 失败');
         $this->assertEquals($value['insert_id'], 1, 'Insert 失败');
@@ -87,11 +87,11 @@ class ServerMysqlTest extends TestCase
      */
     public function testMysqlReplace()
     {
-        $value = yield $this->mysql_pool->dbQueryBuilder->replace('MysqlTest')
+        $value = $this->mysql_pool->dbQueryBuilder->replace('MysqlTest')
             ->set('firstname', 'White')
             ->set('lastname', 'Cat')
             ->set('age', '26')
-            ->set('townid', '10000')->coroutineSend();
+            ->set('townid', '10000')->query();
         $this->assertEquals($value['result'], 1, 'Replace 失败');
         $this->assertEquals($value['affected_rows'], 2, 'Replace 失败');
         $this->assertEquals($value['insert_id'], 2, 'Replace 失败');
@@ -103,9 +103,9 @@ class ServerMysqlTest extends TestCase
      */
     public function testMysqlUpdate()
     {
-        $value = yield $this->mysql_pool->dbQueryBuilder->update('MysqlTest')
+        $value = $this->mysql_pool->dbQueryBuilder->update('MysqlTest')
             ->set('age', '20')
-            ->where('townid', 10000)->coroutineSend();
+            ->where('townid', 10000)->query();
         $this->assertEquals($value['result'], 1, 'Update 失败');
         $this->assertEquals($value['affected_rows'], 1, 'Update 失败');
         $this->assertEquals($value['insert_id'], 0, 'Update 失败');
@@ -117,9 +117,9 @@ class ServerMysqlTest extends TestCase
      */
     public function testMysqlSelect()
     {
-        $value = yield $this->mysql_pool->dbQueryBuilder->Select('*')
+        $value = $this->mysql_pool->dbQueryBuilder->Select('*')
             ->from('MysqlTest')
-            ->where('townid', 10000)->coroutineSend();
+            ->where('townid', 10000)->query();
         $this->assertEquals($value['result'][0]['age'], 20, 'Update 失败');
         $this->assertEquals($value['affected_rows'], 0, 'Select 失败');
         $this->assertEquals($value['insert_id'], 0, 'Select 失败');
@@ -131,9 +131,9 @@ class ServerMysqlTest extends TestCase
      */
     public function testMysqlDelete()
     {
-        $value = yield $this->mysql_pool->dbQueryBuilder->delete()
+        $value = $this->mysql_pool->dbQueryBuilder->delete()
             ->from('MysqlTest')
-            ->where('townid', 10000)->coroutineSend();
+            ->where('townid', 10000)->query();
         $this->assertEquals($value['result'], 1, 'Delete 失败');
         $this->assertEquals($value['affected_rows'], 1, 'Delete 失败');
         $this->assertEquals($value['insert_id'], 0, 'Delete 失败');
