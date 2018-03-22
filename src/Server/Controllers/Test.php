@@ -22,4 +22,10 @@ class Test extends Controller
         $a = [];
         $a[0];
     }
+    public function http_test()
+    {
+        $testModel=$this->loader->model("TestModel",$this);
+        $testModel->test();
+        $this->http_output->end(1);
+    }
 }
