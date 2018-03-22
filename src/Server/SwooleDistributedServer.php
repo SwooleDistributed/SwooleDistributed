@@ -2,6 +2,7 @@
 
 namespace Server;
 
+use Server\Asyn\HttpClient\HttpClientPool;
 use Server\Asyn\MQTT\Utility;
 use Server\Asyn\Mysql\Miner;
 use Server\Asyn\Mysql\MysqlAsynPool;
@@ -573,6 +574,9 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         }
         if ($this->config->get('mysql.enable', true)) {
             $this->asynPools['mysqlPool'] = new MysqlAsynPool($this->config, $this->config->get('mysql.active'));
+        }
+        if ($this->config->get('error.dingding_enable', false)) {
+            $this->asynPools['dingdingRest'] = new HttpClientPool($this->config, $this->config->get('error.dingding_url'));
         }
         $this->redis_pool = $this->asynPools['redisPool'] ?? null;
         $this->mysql_pool = $this->asynPools['mysqlPool'] ?? null;
