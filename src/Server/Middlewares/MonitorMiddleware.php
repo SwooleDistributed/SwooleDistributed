@@ -36,7 +36,17 @@ class MonitorMiddleware extends Middleware
     public function after_handle($path)
     {
         $this->context['path'] = $path;
-        $this->context['execution_time'] = (microtime(true) - $this->start_run_time) * 1000;
+        $count = count($this->context['RunStack']);
+        for ($i = 0; $i<$count; $i++){
+            if($i==0){
+                $this->context['RunStack'][$i] = "┌".$this->context['RunStack'][$i];
+            }else if ($i == $count-1){
+                $this->context['RunStack'][$i] = "└".$this->context['RunStack'][$i];
+            }else{
+                $this->context['RunStack'][$i] = "├".$this->context['RunStack'][$i];
+            }
+        }
+        $this->context['execution_time'] = ((microtime(true) - $this->start_run_time) * 1000) ." ms";
         ProcessManager::getInstance()->getRpcCall(SDHelpProcess::class, true)->addStatistics($path, $this->context['execution_time']);
         if (isset($this->context['error_message'])) {
             $this->log($this->context['error_message'], Logger::ERROR);
