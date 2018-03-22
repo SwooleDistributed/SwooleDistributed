@@ -173,7 +173,7 @@ class Controller extends CoreBase
                 yield call_user_func_array([$this->getProxy(), $method_name], $params);
             }
         } catch (\Throwable $e) {
-            yield $this->onExceptionHandle($e);
+            yield $this->getProxy()->onExceptionHandle($e);
             $this->getProxy()->afterCall($method_name);
         }
     }
