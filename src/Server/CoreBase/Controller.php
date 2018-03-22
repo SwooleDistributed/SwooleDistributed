@@ -245,7 +245,7 @@ class Controller extends CoreBase
         $error_data = get_instance()->getWhoops()->handleException($e);
         if ($this->isEnableError) {
             try {
-                yield $this->Error->push($error_data);
+                yield $this->Error->push($e->getMessage(),$error_data);
             } catch (\Throwable $e) {
             }
         }
