@@ -10,6 +10,7 @@ namespace Server\Asyn\Mysql;
 
 use Server\CoreBase\SwooleException;
 use Server\Coroutine\CoroutineBase;
+use Server\Start;
 
 class MySqlCoroutine extends CoroutineBase
 {
@@ -26,7 +27,10 @@ class MySqlCoroutine extends CoroutineBase
 
     public function setRequest($sql)
     {
-        $this->request = "[sql].$sql";
+        $this->request = "[sql]$sql";
+        if(Start::getDebug()){
+            secho("SQL",$sql);
+        }
     }
 
     public function onTimeOut()

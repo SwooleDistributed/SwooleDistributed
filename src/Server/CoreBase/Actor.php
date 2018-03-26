@@ -338,7 +338,7 @@ abstract class Actor extends CoreBase
         $data['node'] = getNodeName();
         $data['worker_id'] = get_instance()->getWorkerId();
         self::$RPCtoken++;
-        $data['token'] = 'Actor-' . get_instance()->getWorkerId() . '-' . self::$RPCtoken;
+        $data['token'] = '[Actor]'."[$actorName::$call]"."[".get_instance()->getWorkerId()."]" . "[".self::$RPCtoken."]";
         $result = null;
         if (!$oneWay) {
             $result = Pool::getInstance()->get(EventCoroutine::class)->init($data['token'], function (EventCoroutine $eventCoroutine) use ($set) {

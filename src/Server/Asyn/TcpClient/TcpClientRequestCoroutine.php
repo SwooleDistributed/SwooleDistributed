@@ -11,6 +11,7 @@ namespace Server\Asyn\TcpClient;
 use Server\CoreBase\SwooleException;
 use Server\Coroutine\CoroutineBase;
 use Server\Memory\Pool;
+use Server\Start;
 
 class TcpClientRequestCoroutine extends CoroutineBase
 {
@@ -38,7 +39,11 @@ class TcpClientRequestCoroutine extends CoroutineBase
         if (!array_key_exists('path', $data)) {
             throw new SwooleException('tcp data must has path');
         }
-        $this->request = '[tcpClient]' .$pool->connect. $data['path'];
+        $d = "[".$pool->connect."]"."[". $data['path'] ."]";
+        $this->request = "[tcpClient]$d";
+        if (Start::getDebug()){
+            secho("TCP",$d);
+        }
         unset($this->data['path']);
         $this->set($set);
         if ($this->fuse()) {//启动断路器

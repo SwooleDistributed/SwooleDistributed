@@ -10,6 +10,7 @@ namespace Server\Asyn\HttpClient;
 
 use Server\Coroutine\CoroutineBase;
 use Server\Memory\Pool;
+use Server\Start;
 
 class HttpClientRequestCoroutine extends CoroutineBase
 {
@@ -35,8 +36,12 @@ class HttpClientRequestCoroutine extends CoroutineBase
     {
         $this->pool = $pool;
         $this->data = $data;
-        $this->request = '[httpClient]' . $pool->baseUrl . $data['path'];
+        $d = "[".$pool->baseUrl . $data['path']."]";
+        $this->request = "[httpClient]$d";
         $this->set($set);
+        if (Start::getDebug()){
+            secho("HTTP",$d);
+        }
         if ($this->fuse()) {//启动断路器
             $this->send(function ($result) {
                 $this->coPush($result);

@@ -10,6 +10,7 @@ namespace Server\Components\Event;
 
 use Server\Coroutine\CoroutineBase;
 use Server\Memory\Pool;
+use Server\Start;
 
 class EventCoroutine extends CoroutineBase
 {
@@ -22,7 +23,10 @@ class EventCoroutine extends CoroutineBase
     public function init($eventType, $set)
     {
         $this->eventType = $eventType;
-        $this->request = '[Event]' . $eventType;
+        $this->request = "[Event] $eventType";
+        if(Start::getDebug()) {
+            secho("EVENT", $eventType . "\n");
+        }
         $this->set($set);
         EventDispatcher::getInstance()->add($this->eventType, [$this, 'send']);
         return $this->returnInit();

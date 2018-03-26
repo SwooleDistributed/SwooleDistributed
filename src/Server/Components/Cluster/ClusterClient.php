@@ -90,7 +90,7 @@ class ClusterClient
         }
         if ($this->client->isConnected()) {
             $this->client->send($this->pack->pack(['m' => $method_name, 'p' => $params, 't' => $this->token]));
-            return $this->token;
+            return "[$this->ip][$method_name][$this->token]";
         } else {
             return false;
         }

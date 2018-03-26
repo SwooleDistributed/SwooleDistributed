@@ -11,6 +11,7 @@ namespace Server\CoreBase;
 use Server\Coroutine\CoroutineBase;
 use Server\Coroutine\CoroutineNull;
 use Server\Memory\Pool;
+use Server\Start;
 
 class TaskCoroutine extends CoroutineBase
 {
@@ -29,6 +30,11 @@ class TaskCoroutine extends CoroutineBase
             }
             $this->coPush($data);
         });
+        $d = "[".$task_proxy_data['message']['task_name'] ."::". $task_proxy_data['message']['task_fuc_name']."]";
+        $this->request = "[Task]$d";
+        if (Start::getDebug()){
+            secho("TASK",$d);
+        }
         return $this->returnInit();
     }
 
