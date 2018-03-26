@@ -80,7 +80,8 @@ abstract class ProcessRPC extends Child
         $message['worker_id'] = $my_worker_id;
         $message['arg'] = $arguments;
         $message['func'] = $name;
-        $message['token'] = "[PR]$my_worker_id->$worker_id:" . $this->token;
+        $class = get_class($this);
+        $message['token'] = "[RPC][$class::$name][$my_worker_id->$worker_id]" ."[$this->token]";
         $message['oneWay'] = $oneWay;
         if ($my_worker_id == $worker_id) {
             $result = $this->processPpcRunHelp($message);

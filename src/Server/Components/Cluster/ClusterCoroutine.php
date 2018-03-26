@@ -10,6 +10,7 @@ namespace Server\Components\Cluster;
 
 use Server\Coroutine\CoroutineBase;
 use Server\Memory\Pool;
+use Server\Start;
 
 class ClusterCoroutine extends CoroutineBase
 {
@@ -27,7 +28,10 @@ class ClusterCoroutine extends CoroutineBase
     {
         $this->receive_call = $receive_call;
         $this->token = $token;
-        $this->request = "[ClusetRPC]$token";
+        $this->request = "[ClusterRPC]$token";
+        if (Start::getDebug()){
+            secho("CLUSTER",$token);
+        }
         $this->set($set);
         $receive_call[$token] = function ($data) {
             $this->coPush($data);

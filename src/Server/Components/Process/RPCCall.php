@@ -12,6 +12,7 @@ namespace Server\Components\Process;
 use Server\Components\Event\Event;
 use Server\Components\Event\EventDispatcher;
 use Server\Memory\Pool;
+use Server\Start;
 
 class RPCCall
 {

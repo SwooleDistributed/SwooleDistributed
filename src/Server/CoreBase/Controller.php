@@ -89,7 +89,12 @@ class Controller extends CoreBase
     /**
      * @var Miner
      */
-    public $db;
+    protected $db;
+
+    /**
+     * @var \Redis
+     */
+    protected $redis;
 
     /**
      * @var bool
@@ -212,6 +217,9 @@ class Controller extends CoreBase
         if ($this->mysql_pool != null) {
             $this->installMysqlPool($this->mysql_pool);
             $this->db = $this->mysql_pool->dbQueryBuilder;
+        }
+        if ($this->redis_pool != null) {
+            $this->redis = $this->redis_pool->getCoroutine();
         }
         if ($this->isEnableError) {
             $this->Error = $this->loader->model(Error::class, $this);

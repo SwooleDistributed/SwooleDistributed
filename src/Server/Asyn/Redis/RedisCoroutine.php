@@ -10,6 +10,7 @@ namespace Server\Asyn\Redis;
 
 use Server\Coroutine\CoroutineBase;
 use Server\Memory\Pool;
+use Server\Start;
 
 class RedisCoroutine extends CoroutineBase
 {
@@ -32,17 +33,22 @@ class RedisCoroutine extends CoroutineBase
         $this->redisAsynPool = $redisAsynPool;
         $this->name = $name;
         $this->arguments = $arguments;
-        $this->request = "#redis: $name";
         $this->set($set);
-        $this->send(function ($result) {
+        $data = $this->send(function ($result) {
             $this->coPush($result);
         });
+        $this->token = $data['token'];
+        $d = "[$name ".implode(" ",$data['arguments'])."]";
+        $this->request = "[redis]$d";
+        if (Start::getDebug()){
+            secho("REDIS",$d);
+        }
         return $this->returnInit();
     }
 
     public function send($callback)
     {
-        $this->token = $this->redisAsynPool->call($this->name, $this->arguments, $callback);
+        return $this->redisAsynPool->call($this->name, $this->arguments, $callback);
     }
 
     public function destroy()
