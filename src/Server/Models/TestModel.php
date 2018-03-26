@@ -17,4 +17,9 @@ class TestModel extends Model
     {
         $this->redis_pool->getCoroutine()->get("key");
     }
+    public function test_mysql()
+    {
+        $result = $this->db->select("*")->from("account")->limit(1)->query();
+        return $result->getResult();
+    }
 }

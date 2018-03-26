@@ -21,10 +21,11 @@ class Test extends Controller
 
     public function http_test()
     {
-        $test = $this->loader->model("TestModel2",$this);
+        $test = $this->loader->model("TestModel2", $this);
         $test->test();
         $test->test2();
         $this->http_output->end($this->getContext());
+
     }
 
     public function http_actor()
@@ -32,8 +33,17 @@ class Test extends Controller
         $a = Actor::getRpc("test");
         $a->test();
     }
+
     public function http_redis()
     {
         $this->redis->get("a");
     }
+
+    public function http_mysql()
+    {
+        $this->db->begin(function ($client){
+            $testModel = $this->loader->model("TestModel", $this);
+        });
+    }
+
 }

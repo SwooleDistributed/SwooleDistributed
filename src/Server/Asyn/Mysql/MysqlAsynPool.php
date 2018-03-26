@@ -44,6 +44,13 @@ class MysqlAsynPool implements IAsynPool
     }
 
     /**
+     * @return mixed
+     */
+    public function getActveName()
+    {
+        return $this->active;
+    }
+    /**
      * @return Miner
      */
     public function installDbBuilder()
@@ -66,11 +73,11 @@ class MysqlAsynPool implements IAsynPool
         $client->query("begin");
         try {
             $this->dbQueryBuilder->setClient($client);
-            $fuc();
+            $fuc($client);
             $client->query("commit");
         } catch (\Throwable $e) {
             $client->query("rollback");
-            if ($errorFuc != null) $errorFuc();
+            if ($errorFuc != null) $errorFuc($client);
         } finally {
             $this->dbQueryBuilder->setClient(null);
         }

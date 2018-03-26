@@ -65,7 +65,7 @@ class RedisAsynPool extends AsynPool
             'arguments' => $arguments
         ];
         $arguments = $this->help_arguments($data);
-        $data['$arguments'] = $arguments;
+        $data['arguments'] = $arguments;
         $data['token'] = $this->addTokenCallback($callback);
         $this->execute($data);
         return $data;
@@ -299,6 +299,7 @@ class RedisAsynPool extends AsynPool
                 }
                 break;
         }
+        return array_values($arguments);
     }
     /**
      * 执行redis命令
@@ -355,7 +356,7 @@ class RedisAsynPool extends AsynPool
                 //回归连接
                 $this->pushToPool($client);
             };
-            $client->__call($data['name'], array_values($arguments));
+            $client->__call($data['name'], $arguments);
         }
     }
 
