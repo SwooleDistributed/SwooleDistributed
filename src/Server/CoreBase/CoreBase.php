@@ -73,7 +73,7 @@ class CoreBase extends Child
      */
     protected function installMysqlPool(MysqlAsynPool $mysqlPool)
     {
-        $this->dbQueryBuilders[] = $mysqlPool->installDbBuilder();
+        $this->dbQueryBuilders[$mysqlPool->getActveName()] = $mysqlPool->installDbBuilder();
     }
 
     /**

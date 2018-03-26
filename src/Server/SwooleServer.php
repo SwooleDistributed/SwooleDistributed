@@ -38,7 +38,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "3.1.7";
+    const version = "3.1.8";
 
     /**
      * server name
@@ -154,7 +154,6 @@ abstract class SwooleServer extends ProcessRPC
         $this->middlewareManager = new MiddlewareManager();
         $this->user = $this->config->get('server.set.user', '');
         $this->setLogHandler();
-        register_shutdown_function(array($this, 'checkErrors'));
         set_error_handler(array($this, 'displayErrorHandler'), E_ALL | E_STRICT);
         set_exception_handler(array($this, 'displayExceptionHandler'));
         $this->portManager = new PortManager($this->config['ports']);
@@ -566,57 +565,6 @@ abstract class SwooleServer extends ProcessRPC
     {
         throw new ErrorException($error_string, $error, 1, $filename, $line);
     }
-
-    /**
-     * Check errors when current process exited.
-     *
-     * @return void
-     */
-    public function checkErrors()
-    {
-        $log = "WORKER EXIT UNEXPECTED ";
-        $error = error_get_last();
-        if (isset($error['type'])) {
-            switch ($error['type']) {
-                case E_ERROR :
-                case E_PARSE :
-                case E_CORE_ERROR :
-                case E_COMPILE_ERROR :
-                    $message = $error['message'];
-                    $file = $error['file'];
-                    $line = $error['line'];
-                    $log .= "$message ($file:$line)\nStack trace:\n";
-                    $trace = debug_backtrace();
-                    foreach ($trace as $i => $t) {
-                        if (!isset($t['file'])) {
-                            $t['file'] = 'unknown';
-                        }
-                        if (!isset($t['line'])) {
-                            $t['line'] = 0;
-                        }
-                        if (!isset($t['function'])) {
-                            $t['function'] = 'unknown';
-                        }
-                        $log .= "#$i {$t['file']}({$t['line']}): ";
-                        if (isset($t['object']) and is_object($t['object'])) {
-                            $log .= get_class($t['object']) . '->';
-                        }
-                        $log .= "{$t['function']}()\n";
-                    }
-                    if (isset($_SERVER['REQUEST_URI'])) {
-                        $log .= '[QUERY] ' . $_SERVER['REQUEST_URI'];
-                    }
-                    $this->log->error($log);
-                    if ($this->onErrorHandel != null) {
-                        \co::call_user_func($this->onErrorHandel, '服务器发生崩溃事件', $log);
-                    }
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
-
     /**
      * Get socket name.
      *
