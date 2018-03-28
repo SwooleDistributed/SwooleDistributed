@@ -115,18 +115,30 @@ class TestModule
                 if ($e->getCode() == SwooleTestException::ERROR) {
                     $this->printFail($e->getMessage());
                     $this->failCount += $count - 1;
-                    $classInstance->tearDownAfterClass();
+                    try {
+                        $classInstance->tearDownAfterClass();
+                    }catch (\Throwable $e)
+                    {
+                    }
                     continue;
                 } elseif ($e->getCode() == SwooleTestException::SKIP) {
                     $this->printIgnore($e->getMessage());
                     $this->ignoreCount += $count - 1;
-                    $classInstance->tearDownAfterClass();
+                    try {
+                        $classInstance->tearDownAfterClass();
+                    }catch (\Throwable $e)
+                    {
+                    }
                     continue;
                 }
-            } catch (\Exception $e) {
+            } catch (\Throwable $e) {
                 $this->printFail($e->getMessage());
                 $this->failCount += $count - 1;
-                $classInstance->tearDownAfterClass();
+                try {
+                    $classInstance->tearDownAfterClass();
+                }catch (\Throwable $e)
+                {
+                }
                 continue;
             }
 
@@ -157,16 +169,28 @@ class TestModule
                     } catch (SwooleTestException $e) {
                         if ($e->getCode() == SwooleTestException::ERROR) {
                             $this->printFail($e->getMessage());
-                            $classInstance->tearDown();
+                            try {
+                                $classInstance->tearDown();
+                            }catch (\Throwable $e)
+                            {
+                            }
                             continue;
                         } elseif ($e->getCode() == SwooleTestException::SKIP) {
                             $this->printIgnore($e->getMessage());
-                            $classInstance->tearDown();
+                            try {
+                                $classInstance->tearDown();
+                            }catch (\Throwable $e)
+                            {
+                            }
                             continue;
                         }
-                    } catch (\Exception $e) {
+                    } catch (\Throwable $e) {
                         $this->printFail($e->getMessage());
-                        $classInstance->tearDown();
+                        try {
+                            $classInstance->tearDown();
+                        }catch (\Throwable $e)
+                        {
+                        }
                         continue;
                     }
                     //合并参数
@@ -216,13 +240,21 @@ class TestModule
                         } elseif ($e->getCode() == SwooleTestException::SKIP) {
                             $this->printIgnore($e->getMessage());
                         }
-                    } catch (\Exception $e) {
+                    } catch (\Throwable $e) {
                         $this->printFail($e->getMessage());
                     }
-                    $classInstance->tearDown();
+                    try {
+                        $classInstance->tearDown();
+                    }catch (\Throwable $e)
+                    {
+                    }
                 } while (count($dataProviderValues) != 0);
             }
-            $classInstance->tearDownAfterClass();
+            try {
+                $classInstance->tearDownAfterClass();
+            }catch (\Throwable $e)
+            {
+            }
             unset($this->tests[$className]);
         }
         print_r("└───总共$this->totalCount,忽略$this->ignoreCount,成功$this->successCount,失败$this->failCount\n");

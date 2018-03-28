@@ -71,7 +71,7 @@ class RedisAsynPool extends AsynPool
         return $data;
     }
 
-    protected function help_arguments($data)
+    protected function help_arguments(&$data)
     {
         $arguments = $data['arguments'];
         $dataName = strtolower($data['name']);
