@@ -1,6 +1,8 @@
 <?php
 //错误收集上报系统
 $config['error']['enable'] = true;
+//是否显示在http上
+$config['error']['http_show'] = true;
 //访问地址，需自己设置ip：port
 $config['error']['url'] = "Http://localhost:8081/Error";
 $config['error']['redis_prefix'] = '@sd-error_';
