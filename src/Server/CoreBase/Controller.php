@@ -101,6 +101,10 @@ class Controller extends CoreBase
      */
     private $isEnableError;
     /**
+     * @var bool
+     */
+    private $isErrorHttpShow;
+    /**
      * @var Error
      */
     private $Error;
@@ -115,7 +119,7 @@ class Controller extends CoreBase
         $this->http_input = new HttpInput();
         $this->http_output = new HttpOutput($this);
         $this->isEnableError = $this->config->get('error.enable');
-
+        $this->isErrorHttpShow = $this->config->get('error.http_show',true);
     }
 
     /**
@@ -280,7 +284,11 @@ class Controller extends CoreBase
             switch ($this->request_type) {
                 case SwooleMarco::HTTP_REQUEST:
                     $this->http_output->setStatusHeader(500);
-                    $this->http_output->end($error_data);
+                    if($this->isErrorHttpShow) {
+                        $this->http_output->end($error_data);
+                    }else{
+                        $this->http_output->end($e->getMessage());
+                    }
                     break;
                 case SwooleMarco::TCP_REQUEST:
                     $this->send($e->getMessage());
