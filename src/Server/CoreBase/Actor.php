@@ -278,7 +278,13 @@ abstract class Actor extends CoreBase
      */
     public function tick($ms, $callback, $user_param = null)
     {
-        $id = \swoole_timer_tick($ms, $callback, $user_param);
+        $id = \swoole_timer_tick($ms, function ($user_param_one) use ($callback) {
+            try {
+                $callback($user_param_one);
+            }catch (\Throwable $e){
+                displayExceptionHandler($e);
+            }
+        }, $user_param);
         $this->timerIdArr[$id] = $id;
         return $id;
     }
@@ -293,7 +299,11 @@ abstract class Actor extends CoreBase
     {
         $id = \swoole_timer_after($ms, function ($user_param_one) use ($callback) {
             go(function () use ($callback, $user_param_one) {
-                $callback($user_param_one);
+                try {
+                    $callback($user_param_one);
+                }catch (\Throwable $e){
+                    displayExceptionHandler($e);
+                }
             });
         }, $user_param);
         $this->timerIdArr[$id] = $id;
