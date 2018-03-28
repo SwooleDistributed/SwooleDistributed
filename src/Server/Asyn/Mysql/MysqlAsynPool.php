@@ -109,7 +109,9 @@ class MysqlAsynPool implements IAsynPool
             $result = $client->connect($set);
             if (!$result) {
                 $this->pushToPool($client);
-                throw new SwooleException($client->connect_error);
+                $result = $mysqlCoroutine->getResult(new SwooleException("[err]:$client->connect_error"));
+                $mysqlCoroutine->destroy();
+                return $result;
             }
         }
         $res = $client->query($sql, $mysqlCoroutine->getTimeout() / 1000);
