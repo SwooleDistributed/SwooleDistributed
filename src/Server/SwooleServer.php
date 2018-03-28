@@ -154,8 +154,8 @@ abstract class SwooleServer extends ProcessRPC
         $this->middlewareManager = new MiddlewareManager();
         $this->user = $this->config->get('server.set.user', '');
         $this->setLogHandler();
-        set_error_handler(array($this, 'displayErrorHandler'), E_ALL | E_STRICT);
-        set_exception_handler(array($this, 'displayExceptionHandler'));
+        set_error_handler([$this, 'displayErrorHandler'], E_ALL | E_STRICT);
+        set_exception_handler('displayExceptionHandler');
         $this->portManager = new PortManager($this->config['ports']);
         if ($this->loader == null) {
             $this->loader = new Loader();
@@ -544,14 +544,6 @@ abstract class SwooleServer extends ProcessRPC
         return \co::call_user_func_array(array($this->server, $name), $arguments);
     }
 
-    /**
-     * @param \Exception $exception
-     * @throws ErrorException
-     */
-    public function displayExceptionHandler(\Exception $exception)
-    {
-        throw new ErrorException($exception->getMessage(), $exception->getCode(), 1, $exception->getFile(), $exception->getLine());
-    }
 
     /**
      * @param $error

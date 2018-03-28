@@ -185,15 +185,25 @@ function isDarwin()
         return false;
     }
 }
-
+function displayExceptionHandler(\Throwable $exception)
+{
+    get_instance()->log->error($exception->getMessage(),["trace"=>$exception->getTrace()]);
+    secho("EX","------------------发生异常：".$exception->getMessage()."-----------------------");
+    $string = $exception->getTraceAsString();
+    $arr = explode("#",$string);
+    unset($arr[0]);
+    foreach ($arr as $value){
+        secho("EX","#".$value);
+    }
+}
 /**
  * 代替sleep
- * @param $time
+ * @param $ms
  * @return mixed
  */
-function sleepCoroutine($time)
+function sleepCoroutine($ms)
 {
-    \co::sleep($time / 1000);
+    \co::sleep($ms / 1000);
 }
 
 /**
