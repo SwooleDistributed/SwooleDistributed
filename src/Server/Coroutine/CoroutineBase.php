@@ -9,6 +9,7 @@
 namespace Server\Coroutine;
 
 
+use Server\CoreBase\RPCThrowable;
 use Server\CoreBase\SwooleException;
 
 /**
@@ -81,6 +82,9 @@ abstract class CoroutineBase implements ICoroutineBase
                 $this->result = call_user_func($this->downgrade);
                 return $this->result;
             }
+        }
+        if ($this->result instanceof RPCThrowable) {
+            $this->result = $this->result->build();
         }
         //迁移操作
         if ($this->result instanceof CoroutineChangeToken) {
