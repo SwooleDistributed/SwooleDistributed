@@ -85,6 +85,14 @@ abstract class CoroutineBase implements ICoroutineBase
         }
         if ($this->result instanceof RPCThrowable) {
             $this->result = $this->result->build();
+            if (!$this->noException) {
+                $this->isFaile = true;
+                $ex = $this->result;
+                $this->destroy();
+                throw $ex;
+            } else {
+                $this->result = $this->noExceptionReturn;
+            }
         }
         //迁移操作
         if ($this->result instanceof CoroutineChangeToken) {
@@ -92,6 +100,7 @@ abstract class CoroutineBase implements ICoroutineBase
             $this->getCount = getTickTime();
             $this->result = CoroutineNull::getInstance();
         }
+
         if ((getTickTime() - $this->getCount) > $this->MAX_TIMERS && $this->result instanceof CoroutineNull) {
             $this->onTimerOutHandle();
             if (!$this->noException) {
