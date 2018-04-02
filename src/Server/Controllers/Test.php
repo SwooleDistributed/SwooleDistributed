@@ -9,6 +9,7 @@
 namespace Server\Controllers;
 
 
+use Server\CoreBase\Actor;
 use Server\CoreBase\Controller;
 
 class Test extends Controller
@@ -27,5 +28,31 @@ class Test extends Controller
         $testModel=$this->loader->model("TestModel",$this);
         $testModel->test();
         $this->http_output->end(1);
+    }
+    public function http_actor()
+    {
+        $actor = yield Actor::create(TestActor::class,"test");
+        $this->http_output->end(1);
+    }
+    public function http_a()
+    {
+        $result = yield Actor::getRpc("test")->test();
+        $this->http_output->end($result);
+    }
+}
+class TestActor extends Actor{
+
+    /**
+     * 处理注册状态
+     * @param $key
+     * @param $value
+     */
+    public function registStatusHandle($key, $value)
+    {
+        // TODO: Implement registStatusHandle() method.
+    }
+    public function test()
+    {
+        throw new \Exception(112);
     }
 }
