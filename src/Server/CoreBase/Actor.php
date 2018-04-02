@@ -154,17 +154,30 @@ abstract class Actor extends CoreBase
                 return;
             }
         }
-        $generator = call_user_func_array([$this, $function], $params);
-        if ($generator instanceof \Generator) {
-            Coroutine::startCoroutine(function () use (&$generator, $workerId, $token, $oneWay, $node) {
-                $result = yield $generator;
+        try {
+            $generator = call_user_func_array([$this, $function], $params);
+            if ($generator instanceof \Generator) {
+                Coroutine::startCoroutine(function () use (&$generator, $workerId, $token, $oneWay, $node) {
+                    try {
+                        $result = yield $generator;
+                    }catch (\Throwable $e)
+                    {
+                        $result = new RPCThrowable($e);
+                    }
+                    if (!$oneWay) {
+                        $this->rpcBack($workerId, $token, $result, $node);
+                    }
+                });
+            }else {
                 if (!$oneWay) {
-                    $this->rpcBack($workerId, $token, $result, $node);
+                    $this->rpcBack($workerId, $token, $generator, $node);
                 }
-            });
-        } else {
+            }
+        } catch (\Throwable $e)
+        {
+            $result = new RPCThrowable($e);
             if (!$oneWay) {
-                $this->rpcBack($workerId, $token, $generator, $node);
+                $this->rpcBack($workerId, $token, $result, $node);
             }
         }
     }
