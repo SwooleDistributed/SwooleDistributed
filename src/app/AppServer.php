@@ -83,15 +83,5 @@ class AppServer extends SwooleDistributedServer
     {
         return 'onConnect';
     }
-	
-	/**
-     * 设置模板引擎
-     */
-    public function setTemplateEngine()
-    {
-        $this->templateEngine = new Blade($this->cachePath);
-        $this->templateEngine->addNamespace("server", SERVER_DIR . '/Views');
-        $this->templateEngine->addNamespace("app", APP_DIR . '/Views');
-        $this->templateEngine->addExtension('tpl','blade');
-    }
+
 }
