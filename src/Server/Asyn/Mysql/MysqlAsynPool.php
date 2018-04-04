@@ -71,17 +71,19 @@ class MysqlAsynPool implements IAsynPool
             }
         }
         $client->query("begin");
+        $result = null;
         try {
             $this->dbQueryBuilder->setClient($client);
-            $fuc($client);
+            $result = $fuc($client);
             $client->query("commit");
         } catch (\Throwable $e) {
             $client->query("rollback");
-            if ($errorFuc != null) $errorFuc($client);
+            if ($errorFuc != null) $result = $errorFuc($client);
         } finally {
             $this->dbQueryBuilder->setClient(null);
         }
         $this->pushToPool($client);
+        return $result;
     }
 
     /**
