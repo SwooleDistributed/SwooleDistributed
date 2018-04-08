@@ -267,9 +267,7 @@ class ClusterProcess extends Process
         if (!isset($this->subArr[$topic])) {
             $this->subArr[$topic] = new Set();
         }
-        if(!$this->subArr[$topic]->contains($uid)){
-            $this->subArr[$topic]->add($uid);
-        }
+        $this->subArr[$topic]->add($uid);
     }
 
     /**
