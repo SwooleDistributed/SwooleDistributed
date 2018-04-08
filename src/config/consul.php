@@ -6,7 +6,7 @@
  * Time: 下午5:58
  */
 //是否启用consul
-$config['consul']['enable'] = false;
+$config['consul']['enable'] = true;
 //数据中心配置
 $config['consul']['datacenter'] = 'dc1';
 //开放给本地
@@ -22,7 +22,7 @@ $config['consul']['start_join'] = ["192.168.8.85"];
 //本地网卡设备
 $config['consul']['bind_net_dev'] = "enp2s0";
 //监控服务
-$config['consul']['watches'] = ['MathService', 'TestController'];
+$config['consul']['watches'] = [];
 //发布服务
 $config['consul']['services'] = [];
 //是否开启TCP集群,启动consul才有用
