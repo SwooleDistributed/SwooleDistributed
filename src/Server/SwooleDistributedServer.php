@@ -713,6 +713,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if(!is_string($uid)&&!is_int($uid)){
             throw new \Exception("uid必须为string或者int");
         }
+        //这里转换成string型的uid，不然ds/Set有bug
+        $uid = (string) $uid;
         if ($isKick) {
             $this->kickUid($uid, false);
         }
@@ -728,6 +730,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     /**
      * 解绑uid，链接断开自动解绑
      * @param $uid
+     * @param $fd
      */
     public function unBindUid($uid, $fd)
     {
