@@ -689,6 +689,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      */
     public function kickUid($uid, $fromDispatch = false)
     {
+        var_dump("kickuid:$uid");
         if ($this->uid_fd_table->exist($uid)) {//本机处理
             $fd = $this->uid_fd_table->get($uid)['fd'];
             $this->close($fd);
