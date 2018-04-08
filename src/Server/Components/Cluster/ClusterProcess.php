@@ -409,6 +409,7 @@ class ClusterProcess extends Process
      */
     public function th_addUid($node_name, $uid)
     {
+        var_dump("th_addUid:$uid");
         if (!isset($this->map[$node_name])) {
             $this->map[$node_name] = new Set();
         }
