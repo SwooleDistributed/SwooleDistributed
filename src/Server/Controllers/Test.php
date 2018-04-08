@@ -39,7 +39,7 @@ class Test extends Controller
     }
     public function mySub($topic)
     {
-        $this->sub($topic);
+        $this->addSub($topic);
         $this->send("ok");
     }
     public function myPub($topic)
