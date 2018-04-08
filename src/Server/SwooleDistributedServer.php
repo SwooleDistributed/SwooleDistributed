@@ -705,9 +705,13 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @param $fd
      * @param $uid
      * @param bool $isKick 是否踢掉uid上一个的链接
+     * @throws \Exception
      */
     public function bindUid($fd, $uid, $isKick = true)
     {
+        if(!is_string($uid)&&!is_int($uid)){
+            throw new \Exception("uid必须为string或者int");
+        }
         if ($isKick) {
             $this->kickUid($uid, false);
         }

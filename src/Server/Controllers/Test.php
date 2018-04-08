@@ -35,13 +35,16 @@ class Test extends Controller
     public function login($uid)
     {
         $this->bindUid($uid);
+        $this->send("ok");
     }
     public function mySub($topic)
     {
         $this->sub($topic);
+        $this->send("ok");
     }
     public function myPub($topic)
     {
         $this->sendPub($topic,"hello");
+        $this->send("ok");
     }
 }
