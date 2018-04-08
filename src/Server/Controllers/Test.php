@@ -8,7 +8,6 @@
 
 namespace Server\Controllers;
 
-
 use Server\CoreBase\Actor;
 use Server\CoreBase\Controller;
 
@@ -33,5 +32,16 @@ class Test extends Controller
         $a = Actor::getRpc("test");
         $a->test();
     }
-
+    public function login($uid)
+    {
+        $this->bindUid($uid);
+    }
+    public function mySub($topic)
+    {
+        $this->sub($topic);
+    }
+    public function myPub($topic)
+    {
+        $this->sendPub($topic,"hello");
+    }
 }
