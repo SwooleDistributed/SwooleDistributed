@@ -189,7 +189,7 @@ class Controller extends CoreBase
             if ($params == null) {
                 $this->getProxy()->$method_name();
             } else {
-                $this->getProxy()->$method_name($params);
+                $this->getProxy()->$method_name(...$params);
             }
         } catch (Throwable $e) {
             $this->getProxy()->onExceptionHandle($e);
