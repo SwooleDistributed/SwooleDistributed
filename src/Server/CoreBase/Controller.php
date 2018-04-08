@@ -529,10 +529,13 @@ class Controller extends CoreBase
 
     /**
      * @param $topic
+     * @throws \Exception
      */
     protected function addSub($topic)
     {
-        if (empty($this->uid)) return;
+        if (empty($this->uid)) {
+            throw new \Exception("必须binduid才能使用sub");
+        }
         get_instance()->addSub($topic, $this->uid);
     }
 
