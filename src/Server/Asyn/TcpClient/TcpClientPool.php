@@ -112,7 +112,7 @@ class TcpClientPool extends AsynPool
     {
         if (parent::prepareOne()) {
             $client = new \swoole_client(SWOOLE_SOCK_TCP, SWOOLE_SOCK_ASYNC);
-            $client->set($this->config->get('tcpClient.set', []));
+            $client->set($this->set);
             $client->on("connect", function ($cli) {
                 $this->pushToPool($cli);
             });
