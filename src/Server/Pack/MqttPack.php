@@ -94,7 +94,7 @@ class MqttPack implements IPack, IMqtt
         ];
     }
 
-    public function errorHandle($e, $fd)
+    public function errorHandle(\Throwable $e, $fd)
     {
         get_instance()->close($fd);
     }
