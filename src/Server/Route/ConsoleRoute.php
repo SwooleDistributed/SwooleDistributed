@@ -74,13 +74,13 @@ class ConsoleRoute implements IRoute
         return $this->client_data->p ?? null;
     }
 
-    public function errorHandle(\Exception $e, $fd)
+    public function errorHandle(\Throwable $e, $fd)
     {
         get_instance()->send($fd, "Error:" . $e->getMessage(), true);
         get_instance()->close($fd);
     }
 
-    public function errorHttpHandle(\Exception $e, $request, $response)
+    public function errorHttpHandle(\Throwable $e, $request, $response)
     {
         //重定向到404
         $response->status(302);

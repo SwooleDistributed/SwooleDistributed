@@ -66,7 +66,7 @@ class EofJsonPack implements IPack
         ];
     }
 
-    public function errorHandle($e, $fd)
+    public function errorHandle(\Throwable $e, $fd)
     {
         get_instance()->close($fd);
     }
