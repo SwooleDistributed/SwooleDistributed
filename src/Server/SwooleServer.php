@@ -38,7 +38,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "3.1.11";
+    const version = "3.1.12";
 
     /**
      * server name
