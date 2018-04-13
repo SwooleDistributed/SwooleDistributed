@@ -19,6 +19,7 @@ $config['server']['set'] = [
     'worker_num' => 4,    //worker process num
     'backlog' => 128,   //listen backlog
     'open_tcp_nodelay' => 1,
+    'socket_buffer_size' => 1024 * 1024 * 1024,
     'dispatch_mode' => 2,
     'task_worker_num' => 5,
     'task_max_request' => 5000,

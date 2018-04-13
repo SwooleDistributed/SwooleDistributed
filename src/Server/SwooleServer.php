@@ -195,7 +195,7 @@ abstract class SwooleServer extends ProcessRPC
         $set['daemonize'] = Start::getDaemonize();
         $this->server->set($set);
         swoole_async_set([
-            'socket_buffer_size' => 128 * 1024 * 1024
+            'socket_buffer_size' => 1024 * 1024 * 1024
         ]);
     }
 
