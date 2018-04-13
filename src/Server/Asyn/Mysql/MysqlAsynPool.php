@@ -59,7 +59,7 @@ class MysqlAsynPool implements IAsynPool
         return $this->dbQueryBuilder;
     }
 
-    public function begin(callable $fuc, callable $errorFuc)
+    public function begin($fuc, $errorFuc)
     {
         $client = $this->pool_chan->pop();
         if (!$client->connected) {
