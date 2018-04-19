@@ -131,7 +131,7 @@ class Controller extends CoreBase
      * @param $controller_name
      * @param $method_name
      * @param $params
-     * @return \Generator
+     * @return void
      */
     public function setClientData($uid, $fd, $client_data, $controller_name, $method_name, $params)
     {
@@ -157,7 +157,7 @@ class Controller extends CoreBase
      * @param $controller_name
      * @param $method_name
      * @param $params
-     * @return \Generator
+     * @return void
      */
     public function setRequestResponse($request, $response, $controller_name, $method_name, $params)
     {
@@ -176,7 +176,7 @@ class Controller extends CoreBase
      * @param $controller_name
      * @param $method_name
      * @param $params
-     * @return \Generator
+     * @return void
      */
     protected function execute($controller_name, $method_name, $params)
     {
@@ -242,8 +242,8 @@ class Controller extends CoreBase
 
     /**
      * 异常的回调(如果需要继承$autoSendAndDestroy传flase)
-     * @param \Throwable $e
      * @param callable $handle
+     * @throws SwooleException
      */
     public function onExceptionHandle(\Throwable $e, $handle = null)
     {
@@ -302,7 +302,6 @@ class Controller extends CoreBase
     /**
      * 向当前客户端发送消息
      * @param $data
-     * @throws SwooleException
      */
     protected function send($data)
     {
@@ -354,6 +353,7 @@ class Controller extends CoreBase
 
     /**
      * 当控制器方法不存在的时候的默认方法
+     * @throws SwooleException
      */
     public function defaultMethod()
     {
@@ -369,7 +369,6 @@ class Controller extends CoreBase
      * sendToUid
      * @param $uid
      * @param $data
-     * @throws SwooleException
      */
     protected function sendToUid($uid, $data)
     {
@@ -384,7 +383,6 @@ class Controller extends CoreBase
      * sendToUids
      * @param $uids
      * @param $data
-     * @throws SwooleException
      */
     protected function sendToUids($uids, $data)
     {
@@ -398,7 +396,6 @@ class Controller extends CoreBase
     /**
      * sendToAll
      * @param $data
-     * @throws SwooleException
      */
     protected function sendToAll($data)
     {
@@ -412,7 +409,6 @@ class Controller extends CoreBase
     /**
      * sendToAllFd
      * @param $data
-     * @throws SwooleException
      */
     protected function sendToAllFd($data)
     {
@@ -499,6 +495,8 @@ class Controller extends CoreBase
     /**
      * 重定向到404
      * @param int $code
+     * @throws SwooleException
+     * @throws SwooleRedirectException
      */
     protected function redirect404($code = 302)
     {
@@ -511,6 +509,8 @@ class Controller extends CoreBase
      * @param $controllerName
      * @param $methodName
      * @param int $code
+     * @throws SwooleException
+     * @throws SwooleRedirectException
      */
     protected function redirectController($controllerName, $methodName, $code = 302)
     {
