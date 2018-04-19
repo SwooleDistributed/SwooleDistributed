@@ -33,6 +33,7 @@ class MySqlCoroutine extends CoroutineBase
      * @param null $_bind_id
      * @param null $_sql
      * @return $this
+     * @throws SwooleException
      */
     public function init($_mysqlAsynPool, $_bind_id = null, $_sql = null)
     {
@@ -48,11 +49,19 @@ class MySqlCoroutine extends CoroutineBase
         return $this;
     }
 
+    /**
+     * @param $callback
+     * @throws SwooleException
+     */
     public function send($callback)
     {
         $this->token = $this->mysqlAsynPool->query($callback, $this->bind_id, $this->sql);
     }
 
+    /**
+     * @return mixed|\Server\Coroutine\CoroutineNull
+     * @throws SwooleException
+     */
     public function getResult()
     {
         $result = parent::getResult();

@@ -66,6 +66,7 @@ class MysqlAsynPool extends AsynPool
      * @param $object
      * @param $callback
      * @return string
+     * @throws SwooleException
      */
     public function begin($object, $callback)
     {
@@ -256,6 +257,7 @@ class MysqlAsynPool extends AsynPool
      * 提交一个事务
      * @param $callback
      * @param $id
+     * @throws SwooleException
      */
     public function commit($callback, $id)
     {
@@ -281,6 +283,7 @@ class MysqlAsynPool extends AsynPool
      * 回滚
      * @param $callback
      * @param $id
+     * @throws SwooleException
      */
     public function rollback($callback, $id)
     {
