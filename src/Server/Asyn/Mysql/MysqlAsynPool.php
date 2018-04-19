@@ -59,6 +59,12 @@ class MysqlAsynPool implements IAsynPool
         return $this->dbQueryBuilder;
     }
 
+    /**
+     * @param $fuc
+     * @param $errorFuc
+     * @return null
+     * @throws SwooleException
+     */
     public function begin($fuc, $errorFuc)
     {
         $client = $this->pool_chan->pop();
@@ -91,7 +97,7 @@ class MysqlAsynPool implements IAsynPool
      * @param null $client
      * @param MySqlCoroutine $mysqlCoroutine
      * @return mixed
-     * @throws SwooleException
+     * @throws \Throwable
      */
     public function query($sql, $client = null, MySqlCoroutine $mysqlCoroutine)
     {
@@ -157,7 +163,7 @@ class MysqlAsynPool implements IAsynPool
      * @param null $client
      * @param MySqlCoroutine $mysqlCoroutine
      * @return mixed
-     * @throws SwooleException
+     * @throws \Throwable
      */
     public function prepare($sql, $statement, $holder, $client = null, MySqlCoroutine $mysqlCoroutine)
     {
