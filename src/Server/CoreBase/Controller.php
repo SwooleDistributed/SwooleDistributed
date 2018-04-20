@@ -220,6 +220,7 @@ class Controller extends CoreBase
      * 异常的回调(如果需要继承$autoSendAndDestroy传flase)
      * @param \Throwable $e
      * @param callable $handle
+     * @throws SwooleException
      */
     public function onExceptionHandle(\Throwable $e, $handle = null)
     {
