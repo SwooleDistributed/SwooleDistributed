@@ -2380,6 +2380,7 @@ class Miner
      * @param callable $fuc
      * @param callable|null $errorFuc
      * @return null
+     * @throws \Server\CoreBase\SwooleException
      */
     public function begin($fuc, $errorFuc = null)
     {
@@ -2390,6 +2391,7 @@ class Miner
      * @param null $sql
      * @param callable|null $set
      * @return MysqlSyncHelp
+     * @throws \Throwable
      */
     public function query($sql = null, callable $set = null)
     {
