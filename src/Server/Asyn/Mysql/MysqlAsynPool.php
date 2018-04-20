@@ -76,7 +76,10 @@ class MysqlAsynPool implements IAsynPool
                 throw new SwooleException($client->connect_error);
             }
         }
-        $client->query("begin");
+        $res = $client->query("begin");
+        if($res===false){
+            throw new SwooleException($client->error);
+        }
         $result = null;
         try {
             $this->dbQueryBuilder->setClient($client);
@@ -129,6 +132,7 @@ class MysqlAsynPool implements IAsynPool
             } else {
                 $result = $mysqlCoroutine->getResult(new SwooleException("[sql]:$sql,[err]:$client->error"));
             }
+            $client->close();
             $mysqlCoroutine->destroy();
             return $result;
         }
@@ -198,6 +202,7 @@ class MysqlAsynPool implements IAsynPool
             } else {
                 $result = $mysqlCoroutine->getResult(new SwooleException("[sql]:$sql,[err]:$client->error"));
             }
+            $client->close();
             $mysqlCoroutine->destroy();
             return $result;
         }
