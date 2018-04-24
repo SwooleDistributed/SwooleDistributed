@@ -19,9 +19,9 @@ use Server\Memory\Pool;
 abstract class AMQPTaskProcess extends Process
 {
     /**
-     * @var AMQPChannel
+     * @var AMQP
      */
-    protected $channel;
+    private $connection;
 
     /**
      * @param $process
@@ -54,8 +54,7 @@ abstract class AMQPTaskProcess extends Process
         $user = $this->config['amqp'][$active]['user'];
         $password = $this->config['amqp'][$active]['password'];
         $vhost = $this->config['amqp'][$active]['vhost'];
-        $connection = new AMQP($host, $port, $user, $password, $vhost);
-        $this->channel = $connection->channel();
+        $this->connection = new AMQP($host, $port, $user, $password, $vhost);
     }
 
     /**
