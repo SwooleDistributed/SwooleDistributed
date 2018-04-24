@@ -15,7 +15,7 @@ class AMQP extends AbstractConnection
 {
     /**
      * @param string $host
-     * @param string $port
+     * @param int $port
      * @param string $user
      * @param string $password
      * @param string $vhost
@@ -23,11 +23,11 @@ class AMQP extends AbstractConnection
      * @param string $login_method
      * @param null $login_response
      * @param string $locale
-     * @param float $connection_timeout
-     * @param float $read_write_timeout
-     * @param null $context
+     * @param int $read_timeout
      * @param bool $keepalive
+     * @param int $write_timeout
      * @param int $heartbeat
+     * @throws \Exception
      */
     public function __construct(
         $host,
@@ -39,21 +39,12 @@ class AMQP extends AbstractConnection
         $login_method = 'AMQPLAIN',
         $login_response = null,
         $locale = 'en_US',
-        $connection_timeout = 3.0,
-        $read_write_timeout = 3.0,
-        $context = null,
+        $read_timeout = 3,
         $keepalive = false,
+        $write_timeout = 3,
         $heartbeat = 0
     ) {
-        $io = new StreamIO(
-            $host,
-            $port,
-            $connection_timeout,
-            $read_write_timeout,
-            $context,
-            $keepalive,
-            $heartbeat
-        );
+        $io = new SwooleIO($host, $port, $read_timeout, $keepalive, $write_timeout, $heartbeat);
 
         parent::__construct(
             $user,
@@ -68,12 +59,51 @@ class AMQP extends AbstractConnection
         );
     }
 
+    /**
+     * @throws \Exception
+     */
+    public function waitAllChannel()
+    {
+        while (true) {
+            list($frame_type, $frame_channel, $payload) = $this->wait_frame(0);
+            if ($frame_channel === 0 && $frame_type === 8) {
+                // skip heartbeat frames and reduce the timeout by the time passed
+                $this->debug->debug_msg("received server heartbeat");
+            } else {
+                // Not the channel we were looking for.  Queue this frame
+                //for later, when the other channel is looking for frames.
+                // Make sure the channel still exists, it could have been
+                // closed by a previous Exception.
+                if (isset($this->channels[$frame_channel])) {
+                    array_push($this->channels[$frame_channel]->frame_queue, array($frame_type, $payload));
+                }
+            }
+            foreach ($this->channels as $channel){
+                if($channel instanceof AMQPNonBlockChannel) {
+                    $channel->waitNonBlocking();
+                }
+            }
+        }
+    }
+
+    /**
+     * Fetches a channel object identified by the numeric channel_id, or
+     * create that object if it doesn't already exist.
+     *
+     * @param int $channel_id
+     * @return AMQPNonBlockChannel
+     * @throws \Exception
+     */
     public function channel($channel_id = null)
     {
-        $channel =  parent::channel($channel_id);
-        swoole_event_add($this->getSocket(),function ()use(&$channel){
-            $channel->wait(null,true);
-        },null,SWOOLE_EVENT_READ);
-        return $channel;
+        if (isset($this->channels[$channel_id])) {
+            return $this->channels[$channel_id];
+        }
+
+        $channel_id = $channel_id ? $channel_id : $this->get_free_channel_id();
+        $ch = new AMQPNonBlockChannel($this->connection, $channel_id);
+        $this->channels[$channel_id] = $ch;
+
+        return $ch;
     }
 }
