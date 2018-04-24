@@ -243,7 +243,6 @@ class Controller extends CoreBase
     /**
      * 异常的回调(如果需要继承$autoSendAndDestroy传flase)
      * @param callable $handle
-     * @throws SwooleException
      */
     public function onExceptionHandle(\Throwable $e, $handle = null)
     {
@@ -369,6 +368,7 @@ class Controller extends CoreBase
      * sendToUid
      * @param $uid
      * @param $data
+     * @throws \Exception
      */
     protected function sendToUid($uid, $data)
     {
@@ -383,6 +383,7 @@ class Controller extends CoreBase
      * sendToUids
      * @param $uids
      * @param $data
+     * @throws SwooleException
      */
     protected function sendToUids($uids, $data)
     {
@@ -396,6 +397,7 @@ class Controller extends CoreBase
     /**
      * sendToAll
      * @param $data
+     * @throws SwooleException
      */
     protected function sendToAll($data)
     {
@@ -409,6 +411,7 @@ class Controller extends CoreBase
     /**
      * sendToAllFd
      * @param $data
+     * @throws SwooleException
      */
     protected function sendToAllFd($data)
     {
@@ -422,6 +425,7 @@ class Controller extends CoreBase
     /**
      * 踢用户
      * @param $uid
+     * @throws \Exception
      */
     protected function kickUid($uid)
     {
@@ -453,6 +457,7 @@ class Controller extends CoreBase
 
     /**
      * unBindUid
+     * @throws \Server\Asyn\MQTT\Exception
      */
     protected function unBindUid()
     {
@@ -541,6 +546,7 @@ class Controller extends CoreBase
 
     /**
      * @param $topic
+     * @throws \Exception
      */
     protected function removeSub($topic)
     {
@@ -553,6 +559,7 @@ class Controller extends CoreBase
      * @param $topic
      * @param $data
      * @param array $excludeUids 需要排除的uids
+     * @throws \Server\Asyn\MQTT\Exception
      */
     protected function sendPub($topic, $data, $excludeUids = [])
     {
