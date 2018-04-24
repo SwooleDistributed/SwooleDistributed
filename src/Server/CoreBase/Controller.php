@@ -99,15 +99,15 @@ class Controller extends CoreBase
     /**
      * @var bool
      */
-    private $isEnableError;
+    protected $isEnableError;
     /**
      * @var bool
      */
-    private $isErrorHttpShow;
+    protected $isErrorHttpShow;
     /**
      * @var Error
      */
-    private $Error;
+    protected $Error;
 
     /**
      * Controller constructor.
