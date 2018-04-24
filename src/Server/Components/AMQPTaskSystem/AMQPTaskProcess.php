@@ -23,6 +23,10 @@ abstract class AMQPTaskProcess extends Process
      */
     protected $channel;
 
+    /**
+     * @param $process
+     * @throws \Exception
+     */
     public function start($process)
     {
         $this->initAsynPools();
@@ -31,6 +35,7 @@ abstract class AMQPTaskProcess extends Process
 
     /**
      * @param null $active
+     * @throws \Exception
      */
     protected function connectAMQP($active = null)
     {
@@ -55,13 +60,14 @@ abstract class AMQPTaskProcess extends Process
 
     /**
      * 创建完全匹配队列名称的消费者
+     * @param $channel
      * @param $queue
      * @param int $prefetch_count
      * @param bool $global
      * @param $exchange
      * @param $consumerTag
      */
-    protected function createDirectConsume($queue, $prefetch_count = 2, $global = false, $exchange = null, $consumerTag = null)
+    protected function createDirectConsume(AMQPChannel $channel, $queue, $prefetch_count = 2, $global = false, $exchange = null, $consumerTag = null)
     {
         if ($exchange == null) {
             $exchange = create_uuid('route');
@@ -69,15 +75,16 @@ abstract class AMQPTaskProcess extends Process
         if ($consumerTag == null) {
             $consumerTag = create_uuid('consumer');
         }
-        $this->channel->queue_declare($queue, true);
-        $this->channel->exchange_declare($exchange, 'direct');
-        $this->channel->queue_bind($queue, $exchange);
-        $this->channel->basic_qos(0, $prefetch_count, $global);
-        $this->channel->basic_consume($queue, $consumerTag, false, false, false, false, [$this, 'process_message']);
+        $channel->queue_declare($queue, true);
+        $channel->exchange_declare($exchange, 'direct');
+        $channel->queue_bind($queue, $exchange);
+        $channel->basic_qos(0, $prefetch_count, $global);
+        $channel->basic_consume($queue, $consumerTag, false, false, false, false, [$this, 'process_message']);
     }
 
     /**
      * 初始化各种连接池
+     * @throws \Server\CoreBase\SwooleException
      */
     protected function initAsynPools()
     {
@@ -95,12 +102,10 @@ abstract class AMQPTaskProcess extends Process
      */
     public function process_message(AMQPMessage $message)
     {
-        go(function () use ($message) {
-            $task = Pool::getInstance()->get($this->route($message->getBody()));
-            $task->reUse();
-            $task->initialization($message);
-            $task->handle($message->getBody());
-        });
+        $task = Pool::getInstance()->get($this->route($message->getBody()));
+        $task->reUse();
+        $task->initialization($message);
+        $task->handle($message->getBody());
     }
 
     /**
@@ -108,6 +113,8 @@ abstract class AMQPTaskProcess extends Process
      * @param $body
      * @return string
      */
-    protected abstract function route($body);
+    protected function route($body){
+
+    }
 
 }
