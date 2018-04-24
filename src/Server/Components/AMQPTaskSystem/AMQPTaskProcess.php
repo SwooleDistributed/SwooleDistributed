@@ -21,7 +21,7 @@ abstract class AMQPTaskProcess extends Process
     /**
      * @var AMQP
      */
-    private $connection;
+    protected $connection;
 
     /**
      * @param $process
@@ -106,7 +106,28 @@ abstract class AMQPTaskProcess extends Process
         $task->initialization($message);
         $task->handle($message->getBody());
     }
+    /**
+     * 成功应答
+     * @param $message
+     */
+    public function ack($message)
+    {
+        $channel = $message->delivery_info['channel'];
+        $delivery_tag = $message->delivery_info['delivery_tag'];
+        $channel->basic_ack($delivery_tag);
+    }
 
+    /**
+     * 拒绝（是否重新如队列）
+     * @param $message
+     * @param bool $requeue
+     */
+    public function reject($message, $requeue = true)
+    {
+        $channel = $message->delivery_info['channel'];
+        $delivery_tag = $message->delivery_info['delivery_tag'];
+        $channel->basic_reject($delivery_tag, $requeue);
+    }
     /**
      * 路由消息返回class名称
      * @param $body
