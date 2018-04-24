@@ -78,7 +78,7 @@ abstract class AMQPTaskProcess extends Process
         $channel->exchange_declare($exchange, 'direct');
         $channel->queue_bind($queue, $exchange);
         $channel->basic_qos(0, $prefetch_count, $global);
-        $channel->basic_consume($queue, $consumerTag, false, false, false, false, [$this, 'process_message']);
+        $channel->basic_consume($queue, $consumerTag, false, false, false, false, [$this, '_process_message']);
     }
 
     /**
@@ -99,6 +99,13 @@ abstract class AMQPTaskProcess extends Process
      * 处理消息
      * @param $message
      */
+    public function _process_message(AMQPMessage $message)
+    {
+        go(function ()use ($message){
+            $this->process_message($message);
+        });
+    }
+
     public function process_message(AMQPMessage $message)
     {
         $task = Pool::getInstance()->get($this->route($message->getBody()));

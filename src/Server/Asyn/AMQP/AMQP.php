@@ -65,6 +65,11 @@ class AMQP extends AbstractConnection
     public function waitAllChannel()
     {
         while (true) {
+            foreach ($this->channels as $channel){
+                if($channel instanceof AMQPNonBlockChannel) {
+                    $channel->waitNonBlocking();
+                }
+            }
             list($frame_type, $frame_channel, $payload) = $this->wait_frame(0);
             if ($frame_channel === 0 && $frame_type === 8) {
                 // skip heartbeat frames and reduce the timeout by the time passed
@@ -76,11 +81,6 @@ class AMQP extends AbstractConnection
                 // closed by a previous Exception.
                 if (isset($this->channels[$frame_channel])) {
                     array_push($this->channels[$frame_channel]->frame_queue, array($frame_type, $payload));
-                }
-            }
-            foreach ($this->channels as $channel){
-                if($channel instanceof AMQPNonBlockChannel) {
-                    $channel->waitNonBlocking();
                 }
             }
         }
