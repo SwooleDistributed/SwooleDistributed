@@ -35,7 +35,7 @@ class CatCacheRpcProxy implements \ArrayAccess
         \swoole_timer_tick(1000, function () {
             $timer_back = $this->map['timer_back'] ?? [];
             ksort($timer_back);
-            $time = time() * 1000;
+            $time = time();
             foreach ($timer_back as $key => $value) {
                 if ($key > $time) break;
                 foreach ($value as $mkey=>$mvalue) {
