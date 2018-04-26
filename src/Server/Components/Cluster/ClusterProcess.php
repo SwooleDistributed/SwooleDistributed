@@ -26,6 +26,7 @@ class ClusterProcess extends Process
     protected $node_name;
     protected $port;
     protected $subArr = [];
+    protected $node_index = 0;
     /**
      * @var HttpClient
      */
@@ -54,6 +55,14 @@ class ClusterProcess extends Process
         }
     }
 
+    /**
+     * 返回node的数量
+     * @return int
+     */
+    public function getNodeCountAndIndex()
+    {
+        return [count($this->client)+1,$this->node_index];
+    }
     /**
      *恢复注册Actor
      * @param $actor
@@ -473,14 +482,19 @@ class ClusterProcess extends Process
                 }
                 $body = json_decode($data['body'], true);
                 //寻找增加的
+                $index = 0;
                 foreach ($body as $value) {
                     $node_name = $value['Node'];
                     $ips = $value['TaggedAddresses'];
                     if (!isset($ips['lan'])) continue;
-                    if ($ips['lan'] == getBindIp()) continue;
+                    if ($ips['lan'] == getBindIp()){
+                        $this->node_index = $index;
+                        continue;
+                    }
                     if (!isset($this->client[$node_name])) {
                         $this->addNode($node_name, $ips['lan']);
                     }
+                    $index++;
                 }
                 //寻找减少的
                 foreach ($this->client as $node_name => $client) {
