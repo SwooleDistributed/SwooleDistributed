@@ -43,8 +43,6 @@ class RedisLuaManager
         $names = [];
         foreach ($files as $file_name) {
             $lua = file_get_contents($file . $file_name);//将整个文件内容读入到一个字符串中
-            $lua = str_replace("\r\n", " ", $lua);
-            $lua = str_replace("\n", " ", $lua);
             list($name, $ext) = explode('.', $file_name);
             $sha1s[] = sha1($lua);
             $luas[] = $lua;
