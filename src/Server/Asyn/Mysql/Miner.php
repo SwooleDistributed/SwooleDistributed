@@ -2386,7 +2386,32 @@ class Miner
     {
         return $this->mysql_pool->begin($fuc, $errorFuc);
     }
-
+    /**
+     * @param callable|null $set
+     * @return MysqlSyncHelp
+     * @throws \Throwable
+     */
+    public function prepareQuery(callable $set = null)
+    {
+        $mySqlCoroutine = Pool::getInstance()->get(MySqlCoroutine::class);
+        if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式
+            $this->mergeInto($this->mysql_pool->getSync());
+            $this->clear();
+            $data = $this->mysql_pool->getSync()->pdoQuery();
+            return new MysqlSyncHelp(null, $data);
+        } else {
+            $statement = $this->getStatement();
+            $holder = $this->getPlaceholderValues();
+            $sql = $this->getStatement(false);
+            $mySqlCoroutine->setRequest($sql);
+            if ($set) {
+                $set($mySqlCoroutine);
+            }
+            $result = $this->mysql_pool->prepare($sql, $statement, $holder, $this->client, $mySqlCoroutine);
+            $this->clear();
+            return $result;
+        }
+    }
     /**
      * @param null $sql
      * @param callable|null $set
@@ -2411,14 +2436,11 @@ class Miner
                 $this->clear();
                 return $result;
             } else {
-                //$statement = $this->getStatement();
-                //$holder = $this->getPlaceholderValues();
                 $sql = $this->getStatement(false);
                 $mySqlCoroutine->setRequest($sql);
                 if ($set) {
                     $set($mySqlCoroutine);
                 }
-                //$result = $this->mysql_pool->prepare($sql, $statement, $holder, $this->client, $mySqlCoroutine);
                 $result = $this->mysql_pool->query($sql, $this->client, $mySqlCoroutine);
                 $this->clear();
                 return $result;

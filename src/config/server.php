@@ -36,4 +36,6 @@ $config['auto_reload_enable'] = true;
 
 //是否允许访问Server中的Controller，如果不允许将禁止调用Server包中的Controller
 $config['allow_ServerController'] = true;
+//是否允许监控流量数据
+$config['allow_MonitorFlowData'] = true;
 return $config;

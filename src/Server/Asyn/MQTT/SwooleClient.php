@@ -54,7 +54,7 @@ class SwooleClient
      * @param $onReceive
      * @param $onError
      * @param $onClose
-     * @return bool
+     * @return void
      */
     public function connect($onConnect,$onReceive,$onError,$onClose)
     {

@@ -21,13 +21,26 @@ class Console extends Controller
 {
     /**
      * onConnect
-     * @return \Generator
+     * @return void
+     * @throws \Exception
      */
     public function back_onConnect()
     {
         $this->bindUid("#bs:" . getNodeName() . $this->fd);
         get_instance()->protect($this->fd);
-        $this->addSub('$SYS/#');
+
+
+        $type = $this->http_input->get("type");
+        $uid = $this->http_input->get("uid");
+        if($type=="channel"){
+            if(!empty($uid)) {
+                $this->addSub('$SYS_CHANNEL/' . $uid."/#");
+            }else{
+                $this->addSub('$SYS_CHANNEL/#');
+            }
+        }else{
+            $this->addSub('$SYS/#');
+        }
     }
 
     /**
@@ -42,6 +55,7 @@ class Console extends Controller
      * 设置debug
      * @param $node_name
      * @param $bool
+     * @throws \Exception
      */
     public function back_setDebug($node_name, $bool)
     {
@@ -56,6 +70,7 @@ class Console extends Controller
     /**
      * reload
      * @param $node_name
+     * @throws \Exception
      */
     public function back_reload($node_name)
     {
@@ -69,6 +84,7 @@ class Console extends Controller
 
     /**
      * 获取所有的Sub
+     * @throws \Exception
      */
     public function back_getAllSub()
     {
@@ -78,6 +94,7 @@ class Console extends Controller
 
     /**获取uid信息
      * @param $uid
+     * @throws \Exception
      */
     public function back_getUidInfo($uid)
     {
@@ -87,6 +104,7 @@ class Console extends Controller
 
     /**
      * 获取所有的uid
+     * @throws \Exception
      */
     public function back_getAllUids()
     {
@@ -97,6 +115,7 @@ class Console extends Controller
     /**
      * 获取sub的uid
      * @param $topic
+     * @throws \Exception
      */
     public function back_getSubUid($topic)
     {
@@ -107,6 +126,7 @@ class Console extends Controller
     /**
      * 获取uid所有的订阅
      * @param $uid
+     * @throws \Exception
      */
     public function back_getUidTopics($uid)
     {
@@ -119,6 +139,7 @@ class Console extends Controller
      * @param $node_name
      * @param $index
      * @param $num
+     * @throws \Exception
      */
     public function back_getStatistics($node_name, $index, $num)
     {

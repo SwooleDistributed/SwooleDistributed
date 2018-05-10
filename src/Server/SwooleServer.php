@@ -119,6 +119,11 @@ abstract class SwooleServer extends ProcessRPC
     protected $max_connection;
 
     /**
+     * @var bool
+     */
+    protected $allow_MonitorFlowData;
+
+    /**
      * 设置monolog的loghandler
      */
     public function setLogHandler()
@@ -146,6 +151,7 @@ abstract class SwooleServer extends ProcessRPC
 
     /**
      * SwooleServer constructor.
+     * @throws \Noodlehaus\Exception\EmptyDirectoryException
      */
     public function __construct()
     {
@@ -160,10 +166,12 @@ abstract class SwooleServer extends ProcessRPC
         if ($this->loader == null) {
             $this->loader = new Loader();
         }
+        $this->allow_MonitorFlowData = $this->config->get("allow_MonitorFlowData",false);
     }
 
     /**
      * 加载配置
+     * @throws \Noodlehaus\Exception\EmptyDirectoryException
      */
     protected function setConfig()
     {
@@ -341,7 +349,17 @@ abstract class SwooleServer extends ProcessRPC
             $pack->errorHandle($e, $fd);
             return;
         }
+        //是否允许流量监控
+        if($this->allow_MonitorFlowData){
+            if(!empty($uid)){
+                try {
+                    get_instance()->pub('$SYS_CHANNEL/'."$uid/recv", $client_data);
+                }catch (\Throwable $e)
+                {
 
+                }
+            }
+        }
         $middleware_names = $this->portManager->getMiddlewares($server_port);
         $context = [];
         $path = '';
@@ -452,6 +470,7 @@ abstract class SwooleServer extends ProcessRPC
      * @param $serv
      * @param $from_worker_id
      * @param $message
+     * @throws \Exception
      */
     public function onSwoolePipeMessage($serv, $from_worker_id, $message)
     {
