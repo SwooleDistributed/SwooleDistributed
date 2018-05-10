@@ -24,6 +24,11 @@ class StartCmd extends Command
 {
     protected $config;
 
+    /**
+     * StartCmd constructor.
+     * @param null $name
+     * @throws \Noodlehaus\Exception\EmptyDirectoryException
+     */
     public function __construct($name = null)
     {
         parent::__construct($name);

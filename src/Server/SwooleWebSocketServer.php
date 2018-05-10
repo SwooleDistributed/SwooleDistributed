@@ -30,6 +30,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
 
     /**
      * 启动
+     * @throws \Exception
      */
     public function start()
     {
@@ -90,6 +91,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
 
     /**
      * @param $serv
+     * @throws \Exception
      */
     public function onSwooleWorkerStart($serv, $workerId)
     {
@@ -136,6 +138,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      * @param $data
      * @param bool $ifPack
      * @param $topic
+     * @throws \Exception
      */
     public function send($fd, $data, $ifPack = false, $topic = null)
     {
@@ -146,6 +149,18 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         $fdinfo = $this->server->connection_info($fd);
         if (empty($fdinfo)) return;
         $server_port = $fdinfo['server_port'];
+        //允许数据监控的情况就pub
+        if($this->allow_MonitorFlowData){
+            $uid = $this->getUidFromFd($fd);
+            if(!empty($uid)){
+                try {
+                    get_instance()->pub('$SYS_CHANNEL/'."$uid/send", $data);
+                }catch (\Throwable $e)
+                {
+
+                }
+            }
+        }
         if ($ifPack) {
             $pack = $this->portManager->getPack($server_port);
             if ($pack != null) {
@@ -197,6 +212,17 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         } catch (\Throwable $e) {
             $pack->errorHandle($e, $fd);
             return null;
+        }
+        //是否允许流量监控
+        if($this->allow_MonitorFlowData){
+            if(!empty($uid)){
+                try {
+                    get_instance()->pub('$SYS_CHANNEL/'."$uid/recv", $client_data);
+                }catch (\Throwable $e)
+                {
+
+                }
+            }
         }
         $middleware_names = $this->portManager->getMiddlewares($server_port);
         $context = [];
