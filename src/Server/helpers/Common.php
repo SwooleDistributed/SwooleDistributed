@@ -350,3 +350,17 @@ function format_date($time)
     $se = $time - 60 * $mi - 60 * 60 * $hour - 60 * 60 * 24 * $day;
     return "$day 天 $hour 小时 $mi 分 $se 秒";
 }
+
+function sd_call_user_func($function, ...$parameter)
+{
+    if(is_callable($function)){
+        return $function(...$parameter);
+    }
+}
+
+function sd_call_user_func_array($function, $parameter)
+{
+    if(is_callable($function)){
+        return $function(...$parameter);
+    }
+}

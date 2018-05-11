@@ -112,7 +112,7 @@ abstract class CoroutineBase implements ICoroutineBase
                 //没有降级操作就直接快速失败
                 $this->result = $this->fastFail();
             } else {
-                $this->result = \co::call_user_func($this->downgrade);
+                $this->result = sd_call_user_func($this->downgrade);
             }
         }
         $this->startRecv = true;
@@ -137,7 +137,7 @@ abstract class CoroutineBase implements ICoroutineBase
             if (empty($this->downgrade)) {
                 $result = new SwooleException("[CoroutineTask]: Time Out!, [Request]: $this->request");
             } else {
-                $result = \co::call_user_func($this->downgrade);
+                $result = sd_call_user_func($this->downgrade);
                 $this->isFaile = true;
             }
             $this->onTimerOutHandle();

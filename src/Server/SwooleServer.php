@@ -504,7 +504,7 @@ abstract class SwooleServer extends ProcessRPC
         $log .= json_encode($data);
         $this->log->alert($log);
         if ($this->onErrorHandel != null) {
-            \co::call_user_func($this->onErrorHandel, '【！！！】服务器进程异常退出', $log);
+            sd_call_user_func($this->onErrorHandel, '【！！！】服务器进程异常退出', $log);
         }
     }
 
@@ -560,7 +560,7 @@ abstract class SwooleServer extends ProcessRPC
      */
     public function __call($name, $arguments)
     {
-        return \co::call_user_func_array(array($this->server, $name), $arguments);
+        return sd_call_user_func_array(array($this->server, $name), $arguments);
     }
 
 

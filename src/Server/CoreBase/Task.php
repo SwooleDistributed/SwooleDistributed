@@ -118,7 +118,7 @@ class TheTaskProxy extends Proxy
 
     public function __call($name, $arguments)
     {
-        $result = call_user_func_array([$this->own, $name], $arguments);
+        $result = sd_call_user_func_array([$this->own, $name], $arguments);
         if ($result == null) {
             $result = CoroutineNull::getInstance();
         }

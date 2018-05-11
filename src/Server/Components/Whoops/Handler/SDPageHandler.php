@@ -315,7 +315,7 @@ class SDPageHandler extends Handler
 
         $this->extraTables[$label] = function (\Whoops\Exception\Inspector $inspector = null) use ($callback) {
             try {
-                $result = call_user_func($callback, $inspector);
+                $result = sd_call_user_func($callback, $inspector);
 
                 // Only return the result if it can be iterated over by foreach().
                 return is_array($result) || $result instanceof \Traversable ? $result : [];
@@ -486,9 +486,9 @@ class SDPageHandler extends Handler
 
         if (is_callable($this->editor) || (isset($this->editors[$this->editor]) && is_callable($this->editors[$this->editor]))) {
             if (is_callable($this->editor)) {
-                $callback = call_user_func($this->editor, $filePath, $line);
+                $callback = sd_call_user_func($this->editor, $filePath, $line);
             } else {
-                $callback = call_user_func($this->editors[$this->editor], $filePath, $line);
+                $callback = sd_call_user_func($this->editors[$this->editor], $filePath, $line);
             }
 
             if (is_string($callback)) {

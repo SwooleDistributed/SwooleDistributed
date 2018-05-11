@@ -162,7 +162,7 @@ abstract class Actor extends CoreBase
             }
         }
         try {
-            $generator = \co::call_user_func_array([$this, $function], $params);
+            $generator = sd_call_user_func_array([$this, $function], $params);
         } catch (\Throwable $e) {
             $generator = new RPCThrowable($e);
         }

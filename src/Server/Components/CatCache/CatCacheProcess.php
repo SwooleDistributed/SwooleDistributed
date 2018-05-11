@@ -241,7 +241,7 @@ class CatCacheProcess extends Process
                 }
                 $this->read_buffer .= $content;
                 $this->HELP_pack(function ($one) {
-                    \co::call_user_func_array([$this->map, $one[0]], $one[1]);
+                    sd_call_user_func_array([$this->map, $one[0]], $one[1]);
                 });
                 return true;
             });

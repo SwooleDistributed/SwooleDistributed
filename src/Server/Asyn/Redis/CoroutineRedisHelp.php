@@ -26,7 +26,7 @@ class CoroutineRedisHelp
     public function __call($name, $arguments)
     {
         if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式
-            return call_user_func_array([$this->redisAsynPool->getSync(), $name], $arguments);
+            return sd_call_user_func_array([$this->redisAsynPool->getSync(), $name], $arguments);
         } else {
             return Pool::getInstance()->get(RedisCoroutine::class)->init($this->redisAsynPool, $name, $arguments, null);
         }
