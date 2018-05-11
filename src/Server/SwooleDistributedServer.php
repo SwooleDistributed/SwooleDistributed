@@ -230,7 +230,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $this->server->sendMessage($send_data, $i);
         }
         //自己的进程是收不到消息的所以这里执行下
-        \co::call_user_func($callStaticFuc, $uns_data);
+        sd_call_user_func($callStaticFuc, $uns_data);
     }
 
     /**
@@ -247,7 +247,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $this->server->sendMessage($send_data, $i);
         }
         //自己的进程是收不到消息的所以这里执行下
-        \co::call_user_func($callStaticFuc, $uns_data);
+        sd_call_user_func($callStaticFuc, $uns_data);
     }
 
     /**
@@ -262,7 +262,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $id = rand(0, get_instance()->worker_num - 1);
         if ($this->server->worker_id == $id) {
             //自己的进程是收不到消息的所以这里执行下
-            \co::call_user_func($callStaticFuc, $uns_data);
+            sd_call_user_func($callStaticFuc, $uns_data);
         } else {
             get_instance()->server->sendMessage($send_data, $id);
         }
@@ -280,7 +280,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $send_data = get_instance()->packServerMessageBody($type, $uns_data, $callStaticFuc);
         if ($this->server->worker_id == $workerId) {
             //自己的进程是收不到消息的所以这里执行下
-            \co::call_user_func($callStaticFuc, $uns_data);
+            sd_call_user_func($callStaticFuc, $uns_data);
         } else {
             get_instance()->server->sendMessage($send_data, $workerId);
         }
@@ -325,7 +325,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 if (is_callable($call)) {
                     //给task做初始化操作
                     $task->initialization($task_id, $from_id, $this->server->worker_pid, $task_name, $task_fuc_name, $task_context);
-                    $result = call_user_func_array($call, $task_data);
+                    $result = sd_call_user_func_array($call, $task_data);
                 } else {
                     throw new SwooleException("method $task_fuc_name not exist in $task_name");
                 }

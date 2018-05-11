@@ -294,7 +294,7 @@ class Controller extends CoreBase
                     break;
             }
         } else {
-            \co::call_user_func($handle, $e);
+            sd_call_user_func($handle, $e);
         }
     }
 

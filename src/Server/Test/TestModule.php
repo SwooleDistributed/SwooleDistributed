@@ -156,7 +156,7 @@ class TestModule
                 $dataProviderValues = [];
                 $dataProviderValueKeys = [];
                 if (array_key_exists('dataProvider', $methodInfo)) {//有数据供给器
-                    $dataProviderValues = call_user_func([$classInstance, $methodInfo['dataProvider']]);
+                    $dataProviderValues = sd_call_user_func([$classInstance, $methodInfo['dataProvider']]);
                     $dataProviderValueKeys = array_keys($dataProviderValues);
                 }
                 if (count($dataProviderValues) > 0) {
@@ -231,7 +231,7 @@ class TestModule
                     $parmasArray = array_merge($dataProviderValue, $parmasArray);
 
                     try {
-                        $result = \co::call_user_func_array([$classInstance, $method], $parmasArray);
+                        $result = sd_call_user_func_array([$classInstance, $method], $parmasArray);
                         $classData[$method]['result'] = $result;
                         $this->printSuccess();
                     } catch (SwooleTestException $e) {

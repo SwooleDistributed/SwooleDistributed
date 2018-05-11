@@ -122,7 +122,7 @@ class EventDispatcher
             return;
         }
         foreach ($listeners as $listener) {
-            \co::call_user_func($listener, $event);
+            sd_call_user_func($listener, $event);
         }
     }
 

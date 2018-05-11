@@ -240,7 +240,7 @@ class MQTT implements IMqtt
     {
         if(array_key_exists($name,$this->call_handlers)) {
             go(function () use ($name, $params) {
-                \co::call_user_func_array($this->call_handlers[$name], $params);
+                sd_call_user_func_array($this->call_handlers[$name], $params);
             });
         }
     }

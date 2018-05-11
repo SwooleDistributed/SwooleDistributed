@@ -62,7 +62,7 @@ abstract class AsynPool implements IAsynPool
     public function migrates($migrate)
     {
         $token = $this->addTokenCallback($migrate['callback']);
-        \co::call_user_func($migrate['callback'], new CoroutineChangeToken($token));
+        sd_call_user_func($migrate['callback'], new CoroutineChangeToken($token));
         unset($migrate['callback']);
         $migrate['token'] = $token;
         $this->execute($migrate);
@@ -109,7 +109,7 @@ abstract class AsynPool implements IAsynPool
         unset($this->callBacks[$token]);
         unset($this->clients[$token]);
         if ($callback != null) {
-            \co::call_user_func($callback, $data['result']);
+            sd_call_user_func($callback, $data['result']);
         }
     }
 

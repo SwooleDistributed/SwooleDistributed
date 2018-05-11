@@ -38,7 +38,7 @@ class MySqlCoroutine extends CoroutineBase
         if (empty($this->downgrade)) {
             $result = new SwooleException("[CoroutineTask]: Time Out!, [Request]: $this->request");
         } else {
-            $result = \co::call_user_func($this->downgrade);
+            $result = sd_call_user_func($this->downgrade);
         }
         $result = $this->getResult($result);
         return $result;

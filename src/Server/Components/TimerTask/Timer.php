@@ -69,7 +69,7 @@ class Timer
         }
         $tid = \swoole_timer_tick($ms, function () use ($callback) {
             $child = Pool::getInstance()->get(Child::class);
-            \co::call_user_func($callback, $child);
+            sd_call_user_func($callback, $child);
             $child->destroy();
             Pool::getInstance()->push($child);
         });

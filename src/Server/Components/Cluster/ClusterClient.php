@@ -37,7 +37,7 @@ class ClusterClient
                 swoole_timer_clear($this->reconnect_tick);
                 $this->reconnect_tick = null;
             }
-            \co::call_user_func($this->onConnect, $this);
+            sd_call_user_func($this->onConnect, $this);
         });
         $this->client->on("receive", function ($cli, $recdata) {
             $data = $this->pack->unPack($recdata);

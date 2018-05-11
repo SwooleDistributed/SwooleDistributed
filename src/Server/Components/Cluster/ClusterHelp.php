@@ -70,7 +70,7 @@ class ClusterHelp
             $params = $unserialize_data['p'];
             $token = $unserialize_data['t'];
             $controller = Pool::getInstance()->get(ClusterController::class);
-            $result = \co::call_user_func_array([$controller, $method], $params);
+            $result = sd_call_user_func_array([$controller, $method], $params);
             $data = [];
             $data['t'] = $token;
             $data['r'] = $result;
