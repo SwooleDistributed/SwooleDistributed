@@ -137,7 +137,7 @@ function checkExtension()
         $check = false;
     }
     if (SWOOLE_VERSION[0] == 1) {
-        secho("STA", "[版本错误]不支持1.0版本swoole，请安装2.0版本");
+        secho("STA", "[版本错误]不支持1.0版本swoole，请安装2.0以上版本");
         $check = false;
     }
 
@@ -360,7 +360,8 @@ function sd_call_user_func($function, ...$parameter)
 
 function sd_call_user_func_array($function, $parameter)
 {
-    if(is_callable($function)){
+    if (is_callable($function)) {
         return $function(...$parameter);
     }
 }
+  
