@@ -8,6 +8,7 @@
  */
 
 namespace Server\Models;
+
 use Server\Asyn\HttpClient\HttpClientPool;
 use Server\CoreBase\ChildProxy;
 use Server\CoreBase\Model;
@@ -36,7 +37,12 @@ class Error extends Model
         $this->url = $this->config->get('error.url');
     }
 
-    public function push($title,$data)
+    /**
+     * @param $title
+     * @param $data
+     * @throws \Server\CoreBase\SwooleException
+     */
+    public function push($title, $data)
     {
         $id = session_create_id();
         $key = $this->redis_prefix . $id;
@@ -53,6 +59,7 @@ class Error extends Model
      * @param $title
      * @param string $link
      * @return \Server\Asyn\HttpClient\HttpClientRequestCoroutine
+     * @throws \Server\CoreBase\SwooleException
      */
     public function sendLinkMessage($title, $link = '')
     {
@@ -68,22 +75,24 @@ class Error extends Model
             ->setHeaders(['Content-type' => 'application/json'])->setMethod('POST')->coroutineExecute($this->robot);
         return $result;
     }
+
     /**
      * @param $title
      * @param string $text
      * @return \Generator
+     * @throws \Server\CoreBase\SwooleException
      */
     public function sendMarkDownMessage($title, $text = '')
     {
         $json = json_encode([
             'msgtype' => 'markdown',
-            'markdown'=> [
+            'markdown' => [
                 'title' => $title,
                 "text" => $text
             ]
         ]);
         $result = $this->client->httpClient->setData($json)
-            ->setHeaders(['Content-type'=>'application/json'])->setMethod('POST')->coroutineExecute($this->robot);
+            ->setHeaders(['Content-type' => 'application/json'])->setMethod('POST')->coroutineExecute($this->robot);
         return $result;
     }
 }

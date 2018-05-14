@@ -25,26 +25,30 @@ class Test extends Controller
 
     public function http_createActor()
     {
-        Actor::create(TestActor::class,"test");
+        Actor::create(TestActor::class, "test");
     }
+
     public function http_actor()
     {
         $a = Actor::getRpc("test");
         $a->test();
     }
+
     public function login($uid)
     {
         $this->bindUid($uid);
         $this->send("ok");
     }
+
     public function mySub($topic)
     {
         $this->addSub($topic);
         $this->send("ok");
     }
+
     public function myPub($topic)
     {
-        $this->sendPub($topic,"hello");
+        $this->sendPub($topic, "hello");
         $this->send("ok");
     }
 }
