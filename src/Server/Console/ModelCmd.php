@@ -28,8 +28,6 @@ class ModelCmd extends Command
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         new AppServer();
-       /* $model_name = "MBreed";
-        $method_name = "helpBreadPart";*/
         go(function () use ($output, $input) {
             get_instance()->initAsynPools(0);
             $io = new SymfonyStyle($input, $output);
