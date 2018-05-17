@@ -40,6 +40,13 @@ class SdTcpRpcPool extends AsynPool
      */
     protected $pack;
 
+    /**
+     * SdTcpRpcPool constructor.
+     * @param $config
+     * @param $config_name
+     * @param $connect
+     * @throws SwooleException
+     */
     public function __construct($config, $config_name, $connect)
     {
         parent::__construct($config);
@@ -142,6 +149,7 @@ class SdTcpRpcPool extends AsynPool
             }
         });
         $client->on("error", function ($cli) {
+            $this->commands = new \SplQueue();
             if ($cli->isConnected()) {
                 $cli->close();
             } else {
