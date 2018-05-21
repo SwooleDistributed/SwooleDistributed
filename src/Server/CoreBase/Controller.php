@@ -132,6 +132,7 @@ class Controller extends CoreBase
      * @param $method_name
      * @param $params
      * @return void
+     * @throws \Exception
      */
     public function setClientData($uid, $fd, $client_data, $controller_name, $method_name, $params)
     {
@@ -158,6 +159,7 @@ class Controller extends CoreBase
      * @param $method_name
      * @param $params
      * @return void
+     * @throws \Exception
      */
     public function setRequestResponse($request, $response, $controller_name, $method_name, $params)
     {
@@ -177,6 +179,7 @@ class Controller extends CoreBase
      * @param $method_name
      * @param $params
      * @return void
+     * @throws \Exception
      */
     protected function execute($controller_name, $method_name, $params)
     {
@@ -242,6 +245,7 @@ class Controller extends CoreBase
 
     /**
      * 异常的回调(如果需要继承$autoSendAndDestroy传flase)
+     * @param Throwable $e
      * @param callable $handle
      */
     public function onExceptionHandle(\Throwable $e, $handle = null)
@@ -274,7 +278,6 @@ class Controller extends CoreBase
             try {
                 $this->Error->push($e->getMessage(),$error_data);
             } catch (Throwable $e) {
-
             }
         }
 
@@ -290,7 +293,10 @@ class Controller extends CoreBase
                     }
                     break;
                 case SwooleMarco::TCP_REQUEST:
-                    $this->send($e->getMessage());
+                    try {
+                        $this->send($e->getMessage());
+                    } catch (\Exception $e) {
+                    }
                     break;
             }
         } else {
@@ -301,6 +307,7 @@ class Controller extends CoreBase
     /**
      * 向当前客户端发送消息
      * @param $data
+     * @throws \Exception
      */
     protected function send($data)
     {
