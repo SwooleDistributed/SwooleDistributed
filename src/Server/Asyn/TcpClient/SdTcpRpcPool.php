@@ -118,6 +118,10 @@ class SdTcpRpcPool extends AsynPool
                 unset($this->command_backup[$token]);
                 $this->distribute($result);
             }
+            if (count($this->commands) > 0) {//有残留的任务
+                $command = $this->commands->shift();
+                $this->execute($command);
+            }
         }
     }
 
@@ -149,7 +153,6 @@ class SdTcpRpcPool extends AsynPool
             }
         });
         $client->on("error", function ($cli) {
-            $this->commands = new \SplQueue();
             if ($cli->isConnected()) {
                 $cli->close();
             } else {

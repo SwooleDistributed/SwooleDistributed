@@ -102,6 +102,10 @@ class TcpClientPool extends AsynPool
                 unset($client->token);
                 $this->pushToPool($client);
             }
+            if (count($this->commands) > 0) {//有残留的任务
+                $command = $this->commands->shift();
+                $this->execute($command);
+            }
         }
     }
 
