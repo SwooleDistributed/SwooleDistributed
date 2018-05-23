@@ -5,6 +5,7 @@ namespace Server\Console;
 use app\AppServer;
 use ReflectionClass;
 use ReflectionMethod;
+use Server\Asyn\Redis\RedisLuaManager;
 use Server\CoreBase\Child;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,6 +30,9 @@ class ModelCmd extends Command
         new AppServer();
         go(function () use ($output, $input) {
             get_instance()->initAsynPools(0);
+            $redis_pool = get_instance()->getAsynPool("redisPool");
+            $redisLuaManager = new RedisLuaManager($redis_pool->getSync());
+            $redisLuaManager->registerFile(LUA_DIR);
             $save_map = [];
             $io = new SymfonyStyle($input, $output);
             while (true) {
@@ -67,23 +71,46 @@ class ModelCmd extends Command
                     $class = new ReflectionClass(get_class($model));
                     $method = $class->getMethod($method_name);
                     $method->setAccessible(true);
+                    $startTime = getMillisecond();
                     if ($method->isPublic()) {
                         $result = $model->$method_name(...$params);
                     } else {
                         $io->note("注意：此函数是非Public函数，通过反射调用如果有协程切换不会返回结果");
                         $result = $method->invoke($model, ...$params);
                     }
+                    $useTime = getMillisecond()-$startTime;
                     $io->text("输出结果：");
                     print_r($result);
                     if ($result != null) {
                         while (true) {
                             $save_id = $io->ask("将保存到变量，输入变量名以" . '$开头，或者Ctrl-C结束程序');
+                            if(empty($save_id)){
+                                $io->note("跳过存储");
+                                break;
+                            }
                             if (!$this->checkSaveId($save_id)) {
                                 $io->error("无效变量名");
                             } else {
                                 $save_map[$save_id] = $result;
                                 break;
                             }
+                        }
+                        $efficiency = $io->confirm("是否进行效率测试？",true);
+                        if($efficiency){//进行效率测试
+                            $startTime = getMillisecond();
+                            $ncount = floor(10000/$useTime);
+                            $p = $io->createProgressBar($ncount);
+                            for ($i=0;$i<$ncount;$i++) {
+                                if ($method->isPublic()) {
+                                    $model->$method_name(...$params);
+                                } else {
+                                    $method->invoke($model, ...$params);
+                                }
+                                $p->setProgress($i+1);
+                            }
+                            $useTime = getMillisecond()-$startTime;
+                            echo "\n";
+                            $io->note("平均执行时间：".$useTime/$ncount*1000 ." ns");
                         }
                     }
                 } catch (\Throwable $e) {
