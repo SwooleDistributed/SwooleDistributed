@@ -2403,12 +2403,12 @@ class Miner
             $statement = $this->getStatement();
             $holder = $this->getPlaceholderValues();
             $sql = $this->getStatement(false);
+            $this->clear();
             $mySqlCoroutine->setRequest($sql);
             if ($set) {
                 $set($mySqlCoroutine);
             }
             $result = $this->mysql_pool->prepare($sql, $statement, $holder, $this->client, $mySqlCoroutine);
-            $this->clear();
             return $result;
         }
     }
@@ -2432,17 +2432,17 @@ class Miner
                 if ($set) {
                     $set($mySqlCoroutine);
                 }
-                $result = $this->mysql_pool->query($sql, $this->client, $mySqlCoroutine);
                 $this->clear();
+                $result = $this->mysql_pool->query($sql, $this->client, $mySqlCoroutine);
                 return $result;
             } else {
                 $sql = $this->getStatement(false);
+                $this->clear();
                 $mySqlCoroutine->setRequest($sql);
                 if ($set) {
                     $set($mySqlCoroutine);
                 }
                 $result = $this->mysql_pool->query($sql, $this->client, $mySqlCoroutine);
-                $this->clear();
                 return $result;
             }
         }

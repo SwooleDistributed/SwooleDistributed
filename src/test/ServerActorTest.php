@@ -59,9 +59,9 @@ class ServerActorTest extends TestCase
     {
         for ($i=0;$i<100;$i++) {
             $has = Actor::has("test_" . $i);
-            var_dump($has);
             $this->assertTrue($has);
         }
+
     }
     public function testActorRpc()
     {
