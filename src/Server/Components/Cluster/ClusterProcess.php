@@ -161,7 +161,7 @@ class ClusterProcess extends Process
      * @param $actor
      * @return bool|int|string
      */
-    protected function searchActor($actor)
+    public function searchActor($actor)
     {
         if (empty($actor)) return false;
         foreach ($this->actorMap as $node_name => $set) {
