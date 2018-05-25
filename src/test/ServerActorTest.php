@@ -55,6 +55,14 @@ class ServerActorTest extends TestCase
         // TODO: Implement tearDown() method.
     }
 
+    public function testActorHas()
+    {
+        for ($i=0;$i<100;$i++) {
+            $has = Actor::has("test_" . $i);
+            var_dump($has);
+            $this->assertTrue($has);
+        }
+    }
     public function testActorRpc()
     {
         $data = [];
