@@ -180,6 +180,7 @@ class Controller extends CoreBase
      * @param $params
      * @return void
      * @throws \Exception
+     * @throws Throwable
      */
     protected function execute($controller_name, $method_name, $params)
     {
