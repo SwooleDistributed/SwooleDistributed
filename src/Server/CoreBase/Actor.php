@@ -187,6 +187,7 @@ abstract class Actor extends CoreBase
      * 结束事务
      * @param $beginId
      * @return bool
+     * @throws \Exception
      */
     public function end($beginId)
     {
@@ -411,6 +412,7 @@ abstract class Actor extends CoreBase
     /**
      * 销毁Actor
      * @param $name
+     * @throws \Exception
      */
     public static function destroyActor($name)
     {
@@ -419,6 +421,7 @@ abstract class Actor extends CoreBase
 
     /**
      * 销毁全部
+     * @throws \Exception
      */
     public static function destroyAllActor()
     {
