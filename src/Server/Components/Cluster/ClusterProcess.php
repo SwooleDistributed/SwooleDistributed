@@ -32,6 +32,10 @@ class ClusterProcess extends Process
      */
     protected $consul;
 
+    /**
+     * @param $process
+     * @throws \Exception
+     */
     public function start($process)
     {
         $this->node_name = getNodeName();
@@ -57,7 +61,7 @@ class ClusterProcess extends Process
 
     /**
      * 返回node的数量
-     * @return int
+     * @return array
      */
     public function getNodeCountAndIndex()
     {
@@ -171,6 +175,7 @@ class ClusterProcess extends Process
     /**
      * 自身增加了一个uid
      * @param $uid
+     * @throws \Server\Asyn\MQTT\Exception
      */
     public function my_addUid($uid)
     {
@@ -186,6 +191,7 @@ class ClusterProcess extends Process
     /**
      * 自身减少了一个uid
      * @param $uid
+     * @throws \Server\Asyn\MQTT\Exception
      */
     public function my_removeUid($uid)
     {
@@ -413,6 +419,7 @@ class ClusterProcess extends Process
      * 增加一个
      * @param $node_name
      * @param $uid
+     * @throws \Server\Asyn\MQTT\Exception
      */
     public function th_addUid($node_name, $uid)
     {
@@ -429,6 +436,7 @@ class ClusterProcess extends Process
      * 减少一个
      * @param $node_name
      * @param $uid
+     * @throws \Server\Asyn\MQTT\Exception
      */
     public function th_removeUid($node_name, $uid)
     {
@@ -565,6 +573,7 @@ class ClusterProcess extends Process
     /**
      * 移除一个Node
      * @param $node_name
+     * @throws \Server\Asyn\MQTT\Exception
      */
     protected function removeNode($node_name)
     {
@@ -798,6 +807,7 @@ class ClusterProcess extends Process
 
     /**
      * 发送状态
+     * @throws \Server\Asyn\MQTT\Exception
      */
     public function my_status()
     {
@@ -809,6 +819,7 @@ class ClusterProcess extends Process
 
     /**
      * 发送状态
+     * @throws \Server\Asyn\MQTT\Exception
      */
     public function th_status()
     {
