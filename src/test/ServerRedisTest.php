@@ -948,11 +948,11 @@ class ServerRedisTest extends TestCase
         $this->redis_pool->getCoroutine()->zadd('testZset', 0, 'vol0');
         $this->redis_pool->getCoroutine()->zadd('testZset', 5, 'vol5');
         $this->redis_pool->getCoroutine()->zadd('testZset', 2, 'vol2');
-        $value = $this->redis_pool->getCoroutine()->zRangeByScore('testZset', 0, 5);
+        $value = $this->redis_pool->getCoroutine()->zRevRangeByScore('testZset', 0, 5);
         $this->assertContains('vol0', $value, 'redis zRevRangeByScore 失败');
         $this->assertContains('vol5', $value, 'redis zRevRangeByScore 失败');
         $this->assertContains('vol2', $value, 'redis zRevRangeByScore 失败');
-        $value = $this->redis_pool->getCoroutine()->zRangeByScore('testZset', 0, 5, ['withscores' => true, 'limit' => [0, 5]]);
+        $value = $this->redis_pool->getCoroutine()->zRevRangeByScore('testZset', 0, 5, ['withscores' => true, 'limit' => [0, 5]]);
         $this->assertEquals($value['vol0'], 0, 'redis zRevRangeByScore 失败');
         $this->assertEquals($value['vol2'], 2, 'redis zRevRangeByScore 失败');
         $this->assertEquals($value['vol5'], 5, 'redis zRevRangeByScore 失败');

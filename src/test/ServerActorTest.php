@@ -31,6 +31,7 @@ class ServerActorTest extends TestCase
 
     /**
      * setUpBeforeClass() 与 tearDownAfterClass() 模板方法将分别在测试用例类的第一个测试运行之前和测试用例类的最后一个测试运行之后调用。
+     * @throws \Exception
      */
     public function tearDownAfterClass()
     {
@@ -55,6 +56,10 @@ class ServerActorTest extends TestCase
         // TODO: Implement tearDown() method.
     }
 
+    /**
+     * @throws \Server\Test\SwooleTestException
+     * @throws \Exception
+     */
     public function testActorHas()
     {
         for ($i=0;$i<100;$i++) {
@@ -63,6 +68,10 @@ class ServerActorTest extends TestCase
         }
 
     }
+
+    /**
+     * @throws \Server\Test\SwooleTestException
+     */
     public function testActorRpc()
     {
         $data = [];
@@ -73,6 +82,9 @@ class ServerActorTest extends TestCase
         $this->assertCount(100,$data);
     }
 
+    /**
+     * @throws \Server\Test\SwooleTestException
+     */
     public function testActorRpcBegin()
     {
         $data = [];
@@ -101,8 +113,14 @@ class TestActor extends Actor
     {
         // TODO: Implement registStatusHandle() method.
     }
+
+    /**
+     * @return int
+     * @throws \Server\Asyn\MQTT\Exception
+     */
     public function test1()
     {
+        get_instance()->pub("test",1);
         return 1;
     }
     public function test2()

@@ -24,6 +24,11 @@ class TestModule
     private $asyn = false;
     private $dir = '';
 
+    /**
+     * TestModule constructor.
+     * @param $dir
+     * @throws \ReflectionException
+     */
     public function __construct($dir)
     {
         $this->dir = $dir;
