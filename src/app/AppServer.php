@@ -35,7 +35,7 @@ class AppServer extends SwooleDistributedServer
     /**
      * 这里可以进行额外的异步连接池，比如另一组redis/mysql连接
      * @param $workerId
-     * @return array
+     * @return void
      */
     public function initAsynPools($workerId)
     {
@@ -44,6 +44,7 @@ class AppServer extends SwooleDistributedServer
 
     /**
      * 用户进程
+     * @throws \Exception
      */
     public function startProcess()
     {

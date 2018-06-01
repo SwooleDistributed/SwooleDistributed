@@ -136,6 +136,7 @@ class EventDispatcher
      * @param null $data
      * @param bool $onlyMyWorker
      * @param bool $fromDispatch
+     * @throws \Exception
      */
     public function dispatch($type, $data = null, $onlyMyWorker = false, $fromDispatch = false)
     {

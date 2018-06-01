@@ -25,7 +25,6 @@ use Server\CoreBase\Actor;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\ModelFactory;
 use Server\CoreBase\SwooleException;
-use Server\Coroutine\Coroutine;
 use Server\Memory\Pool;
 use Server\Test\TestModule;
 

@@ -2,16 +2,24 @@
 /**
  * Created by PhpStorm.
  * User: zhangjincheng
- * Date: 17-1-5
- * Time: 上午10:46
+ * Date: 17-1-4
+ * Time: 上午11:11
  */
 
 namespace test;
 
 
+use Server\Components\Event\EventCoroutine;
+use Server\Components\Event\EventDispatcher;
+use Server\Components\TimerTask\Timer;
+use Server\CoreBase\Child;
 use Server\Test\TestCase;
 
-class ServerUnitTest extends TestCase
+/**
+ * 服务器框架Timer测试用例
+ * @package test
+ */
+class ServerEventTest extends TestCase
 {
 
     /**
@@ -19,7 +27,7 @@ class ServerUnitTest extends TestCase
      */
     public function setUpBeforeClass()
     {
-        // TODO: Implement setUpBeforeClass() method.
+
     }
 
     /**
@@ -27,7 +35,7 @@ class ServerUnitTest extends TestCase
      */
     public function tearDownAfterClass()
     {
-        // TODO: Implement tearDownAfterClass() method.
+
     }
 
     /**
@@ -47,38 +55,19 @@ class ServerUnitTest extends TestCase
     }
 
     /**
-     * 依赖的测试
-     * @return int
-     */
-    public function testDepend()
-    {
-        return 3;
-    }
-
-    /**
-     * 数据供给器
-     * @return array
-     */
-    public function dataProvider()
-    {
-        return ['test1' => [1, 2],
-            'test2' => [0, 3],
-            'test3' => [1, 2],
-            'test4' => [0, 3],
-            'test5' => [1, 2],
-            'test6' => [0, 3]];
-    }
-
-    /**
-     * 测试数据供给器与依赖
-     * @dataProvider dataProvider
-     * @depends      testDepend
-     * @param   $data1
-     * @param   $data2
      * @throws \Server\Test\SwooleTestException
+     * @throws \Exception
      */
-    public function testDataProvider($data1, $data2, $data3)
+    public function testTimerTick()
     {
-        $this->assertEquals($data1 + $data2 + $data3, 6);
+        $result = EventDispatcher::getInstance()->addOnceCoroutine("get", function (EventCoroutine $eventCoroutine) {
+            $eventCoroutine->setDelayRecv();
+        });
+        Timer::getInstance()->addTick("test", 1000, function (Child $child) {
+            EventDispatcher::getInstance()->dispatch("get", "test");
+            Timer::getInstance()->clearTick("test");
+        });
+        $data = $result->recv();
+        $this->assertEquals($data, "test");
     }
 }
