@@ -8,13 +8,14 @@
 
 namespace Server\Asyn\Mysql;
 
+use Server\CoreBase\Child;
 use Server\Memory\Pool;
 
 /**
  * A dead simple PHP class for building SQL statements. No manual string
  * concatenation necessary.
  */
-class Miner
+class Miner extends Child
 {
 
     /**
@@ -323,9 +324,11 @@ class Miner
      * @param $mysql_pool
      * @return $this
      */
-    public function setPool($mysql_pool)
+    public function setPool(MysqlAsynPool $mysql_pool)
     {
+        $this->core_name = $mysql_pool->getAsynName();
         $this->mysql_pool = $mysql_pool;
+        $this->clear();
         return $this;
     }
 
@@ -2384,7 +2387,7 @@ class Miner
      */
     public function begin($fuc, $errorFuc = null)
     {
-        return $this->mysql_pool->begin($fuc, $errorFuc);
+        return $this->mysql_pool->begin($this,$fuc, $errorFuc);
     }
     /**
      * @param callable|null $set
@@ -2655,5 +2658,13 @@ class Miner
     public function pdoInsertId()
     {
         return $this->PdoConnection->lastInsertId();
+    }
+
+    public function destroy()
+    {
+        parent::destroy();
+        $this->clear();
+        $this->client = null;
+        Pool::getInstance()->push($this);
     }
 }

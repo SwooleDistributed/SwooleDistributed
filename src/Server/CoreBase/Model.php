@@ -15,12 +15,13 @@ class Model extends CoreBase
     /**
      * @var Miner
      */
-    protected $db;
+    public $db;
 
     /**
      * @var \Redis
      */
     protected $redis;
+
     public function __construct($proxy = ChildProxy::class)
     {
         parent::__construct($proxy);
@@ -33,13 +34,8 @@ class Model extends CoreBase
     public function initialization(&$context)
     {
         $this->setContext($context);
-        if ($this->mysql_pool != null) {
-            $this->installMysqlPool($this->mysql_pool);
-            $this->db = $this->mysql_pool->dbQueryBuilder;
-        }
-        if ($this->redis_pool != null) {
-            $this->redis = $this->redis_pool->getCoroutine();
-        }
+        $this->redis = $this->loader->redis("redisPool");
+        $this->db = $this->loader->mysql("mysqlPool",$this);
     }
 
     /**

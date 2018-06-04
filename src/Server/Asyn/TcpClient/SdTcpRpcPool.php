@@ -30,6 +30,7 @@ class SdTcpRpcPool extends AsynPool
     protected $host;
     protected $set;
     protected $client;
+    protected $name;
     /**
      * 因为这里是流rpc，会一直向服务器发请求，这里需要针对返回结果验证请求是否成功
      * @var array
@@ -224,5 +225,10 @@ class SdTcpRpcPool extends AsynPool
         $this->command_backup = null;
         $this->destoryClient($this->client);
         return $migrate;
+    }
+
+    public function setName($name)
+    {
+        $this->name = $name;
     }
 }

@@ -28,6 +28,7 @@ class TcpClientPool extends AsynPool
     protected $port;
     protected $host;
     protected $set;
+    protected $name;
     /**
      * @var IPack
      */
@@ -35,6 +36,13 @@ class TcpClientPool extends AsynPool
     protected $tcpClient_max_count;
     protected $package_length_type_length;
 
+    /**
+     * TcpClientPool constructor.
+     * @param $config
+     * @param $config_name
+     * @param $connect
+     * @throws SwooleException
+     */
     public function __construct($config, $config_name, $connect)
     {
         parent::__construct($config);
@@ -176,4 +184,8 @@ class TcpClientPool extends AsynPool
         $client->close();
     }
 
+    public function setName($name)
+    {
+        $this->name = $name;
+    }
 }

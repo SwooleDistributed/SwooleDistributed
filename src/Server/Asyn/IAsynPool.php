@@ -16,4 +16,6 @@ interface IAsynPool
     function pushToPool($client);
 
     function getSync();
+
+    function setName($name);
 }
