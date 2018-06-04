@@ -59,7 +59,12 @@ abstract class Actor extends CoreBase
     /**
      * @var Miner
      */
-    protected $db;
+    public $db;
+
+    /**
+     * @var \Redis
+     */
+    protected $redis;
 
     /**
      * @param $name
@@ -92,8 +97,8 @@ abstract class Actor extends CoreBase
             $this->handle($event->data);
         });
         $this->saveContext->save();
-        $this->installMysqlPool($this->mysql_pool);
-        $this->db = $this->mysql_pool->dbQueryBuilder;
+        $this->db = $this->loader->mysql("mysqlPool",$this);
+        $this->redis = $this->loader->redis("redisPool");
         $this->execRegistHandle();
     }
 

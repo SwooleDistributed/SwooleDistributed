@@ -39,10 +39,6 @@ class CoreBase extends Child
      * @var Config
      */
     public $config;
-    /**
-     * @var RedisRoute
-     */
-    public $redis_pool;
 
     /**
      * Task constructor.
@@ -56,7 +52,6 @@ class CoreBase extends Child
             $this->logger = get_instance()->log;
             $this->server = get_instance()->server;
             $this->config = get_instance()->config;
-            $this->redis_pool = RedisRoute::getInstance();
         }
     }
 

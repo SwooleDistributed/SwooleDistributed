@@ -8,6 +8,7 @@
 
 namespace Server\Test;
 
+use Server\Asyn\Mysql\Miner;
 use Server\CoreBase\CoreBase;
 use Server\Memory\Pool;
 
@@ -22,19 +23,20 @@ use Server\Memory\Pool;
 abstract class TestCase extends CoreBase
 {
     /**
-     * @var \Server\Asyn\Redis\RedisAsynPool
+     * @var Miner
      */
-    public $redis_pool;
+    public $db;
+
     /**
-     * @var \Server\Asyn\Mysql\MysqlAsynPool
+     * @var \Redis
      */
-    public $mysql_pool;
+    protected $redis;
 
     public function __construct()
     {
         parent::__construct();
-        $this->redis_pool = get_instance()->redis_pool;
-        $this->mysql_pool = get_instance()->mysql_pool;
+        $this->redis = $this->loader->redis("redisPool");
+        $this->db = $this->loader->mysql("mysqlPool",$this);
     }
 
     /**

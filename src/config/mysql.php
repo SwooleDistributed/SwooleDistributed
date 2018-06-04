@@ -10,8 +10,8 @@ $config['mysql']['active'] = 'test';
 $config['mysql']['test']['host'] = 'localhost';
 $config['mysql']['test']['port'] = '3306';
 $config['mysql']['test']['user'] = 'root';
-$config['mysql']['test']['password'] = 'root';
-$config['mysql']['test']['database'] = 'root';
+$config['mysql']['test']['password'] = '123';
+$config['mysql']['test']['database'] = 'cat';
 $config['mysql']['test']['charset'] = 'utf8';
 $config['mysql']['asyn_max_count'] = 10;
 

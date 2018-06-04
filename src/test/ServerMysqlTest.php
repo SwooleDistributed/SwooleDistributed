@@ -24,7 +24,7 @@ class ServerMysqlTest extends TestCase
      */
     public function setUpBeforeClass()
     {
-        $this->mysql_pool->dbQueryBuilder->query("
+       $this->db->query("
             CREATE TABLE IF NOT EXISTS `MysqlTest` (
               `peopleid` smallint(6) NOT NULL AUTO_INCREMENT,
               `firstname` char(50) NOT NULL,
@@ -43,7 +43,7 @@ class ServerMysqlTest extends TestCase
      */
     public function tearDownAfterClass()
     {
-        $this->mysql_pool->dbQueryBuilder->query("
+       $this->db->query("
             DROP TABLE  `MysqlTest`;
         ");
     }
@@ -70,7 +70,7 @@ class ServerMysqlTest extends TestCase
      */
     public function testMysqlInsert()
     {
-        $value = $this->mysql_pool->dbQueryBuilder->insert('MysqlTest')
+        $value =$this->db->insert('MysqlTest')
             ->option('HIGH_PRIORITY')
             ->set('firstname', 'White')
             ->set('lastname', 'Cat')
@@ -87,7 +87,7 @@ class ServerMysqlTest extends TestCase
      */
     public function testMysqlReplace()
     {
-        $value = $this->mysql_pool->dbQueryBuilder->replace('MysqlTest')
+        $value =$this->db->replace('MysqlTest')
             ->set('firstname', 'White')
             ->set('lastname', 'Cat')
             ->set('age', '26')
@@ -103,7 +103,7 @@ class ServerMysqlTest extends TestCase
      */
     public function testMysqlUpdate()
     {
-        $value = $this->mysql_pool->dbQueryBuilder->update('MysqlTest')
+        $value =$this->db->update('MysqlTest')
             ->set('age', '20')
             ->where('townid', 10000)->query();
         $this->assertEquals($value['result'], 1, 'Update 失败');
@@ -117,7 +117,7 @@ class ServerMysqlTest extends TestCase
      */
     public function testMysqlSelect()
     {
-        $value = $this->mysql_pool->dbQueryBuilder->Select('*')
+        $value =$this->db->Select('*')
             ->from('MysqlTest')
             ->where('townid', 10000)->query();
         $this->assertEquals($value['result'][0]['age'], 20, 'Update 失败');
@@ -131,7 +131,7 @@ class ServerMysqlTest extends TestCase
      */
     public function testMysqlDelete()
     {
-        $value = $this->mysql_pool->dbQueryBuilder->delete()
+        $value =$this->db->delete()
             ->from('MysqlTest')
             ->where('townid', 10000)->query();
         $this->assertEquals($value['result'], 1, 'Delete 失败');
