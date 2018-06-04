@@ -9,6 +9,8 @@
 
 namespace Server\CoreBase;
 
+use Server\Asyn\Mysql\Miner;
+use Server\Asyn\Mysql\MysqlAsynPool;
 use Server\Components\AOP\AOP;
 use Server\Memory\Pool;
 
@@ -24,6 +26,46 @@ class Loader implements ILoader
     }
 
     /**
+     * 获取一个redis
+     * @param $name
+     * @return \Redis
+     */
+    public function redis($name)
+    {
+        $redisPool = get_instance()->getAsynPool($name);
+        if($redisPool == null){
+            return null;
+        }
+        return $redisPool->getCoroutine();
+    }
+
+    /**
+     * 获取一个mysql
+     * @param $name
+     * @param Child $parent
+     * @return Miner
+     */
+    public function mysql($name, Child $parent)
+    {
+        if (empty($name)) {
+            return null;
+        }
+        if($parent->root == null){
+            $parent->root = $parent;
+        }
+        $root = $parent->root;
+        $core_name = MysqlAsynPool::AsynName . ":" .$name;
+        if ($root->hasChild($core_name)) {
+            return $root->getChild($core_name);
+        }
+        $mysql_pool = get_instance()->getAsynPool($name);
+        if($mysql_pool == null) return null;
+        $db = $mysql_pool->installDbBuilder();
+        $root->addChild($db);
+        return $db;
+    }
+
+    /**
      * 获取一个model
      * @param $model
      * @param Child $parent
@@ -35,18 +77,16 @@ class Loader implements ILoader
         if (empty($model)) {
             return null;
         }
-        $root = $parent;
-        while (isset($root)) {
-            if ($model == $root->core_name) {
-                return AOP::getAOP($root);
-            }
-            if ($root->hasChild($model)) {
-                return AOP::getAOP($root->getChild($model));
-            }
-            $root = $root->parent ?? null;
+        if($parent->root == null){
+            $parent->root = $parent;
+        }
+        $root = $parent->root;
+        if ($root->hasChild($model)) {
+            return AOP::getAOP($root->getChild($model));
         }
         $model_instance = $this->_model_factory->getModel($model);
-        $parent->addChild($model_instance);
+        $model_instance->root = $root;
+        $root->addChild($model_instance);
         $model_instance->initialization($parent->getContext());
         return AOP::getAOP($model_instance);
     }

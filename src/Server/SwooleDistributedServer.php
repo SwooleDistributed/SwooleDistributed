@@ -3,6 +3,7 @@
 namespace Server;
 
 use Server\Asyn\HttpClient\HttpClientPool;
+use Server\Asyn\IAsynPool;
 use Server\Asyn\MQTT\Utility;
 use Server\Asyn\Mysql\Miner;
 use Server\Asyn\Mysql\MysqlAsynPool;
@@ -433,6 +434,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @param $uid
      * @param $data
      * @param $topic
+     * @throws \Exception
      */
     public function pubToUid($uid, $data, $topic)
     {
@@ -560,11 +562,12 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @param $pool
      * @throws SwooleException
      */
-    public function addAsynPool($name, $pool)
+    public function addAsynPool($name, IAsynPool $pool)
     {
         if (array_key_exists($name, $this->asynPools)) {
             throw  new SwooleException('pool key is exists!');
         }
+        $pool->setName($name);
         $this->asynPools[$name] = $pool;
     }
 
@@ -619,18 +622,19 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     /**
      * 初始化各种连接池
      * @param $workerId
+     * @throws SwooleException
      */
     public function initAsynPools($workerId)
     {
         $this->asynPools = [];
         if ($this->config->get('redis.enable', true)) {
-            $this->asynPools['redisPool'] = new RedisAsynPool($this->config, $this->config->get('redis.active'));
+            $this->addAsynPool('redisPool',new RedisAsynPool($this->config, $this->config->get('redis.active')));
         }
         if ($this->config->get('mysql.enable', true)) {
-            $this->asynPools['mysqlPool'] = new MysqlAsynPool($this->config, $this->config->get('mysql.active'));
+            $this->addAsynPool('mysqlPool',new MysqlAsynPool($this->config, $this->config->get('mysql.active')));
         }
         if ($this->config->get('error.dingding_enable', false)) {
-            $this->asynPools['dingdingRest'] = new HttpClientPool($this->config, $this->config->get('error.dingding_url'));
+            $this->addAsynPool('dingdingRest', new HttpClientPool($this->config, $this->config->get('error.dingding_url')));
         }
         $this->redis_pool = $this->asynPools['redisPool'] ?? null;
         $this->mysql_pool = $this->asynPools['mysqlPool'] ?? null;

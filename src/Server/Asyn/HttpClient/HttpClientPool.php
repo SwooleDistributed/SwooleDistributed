@@ -20,6 +20,7 @@ class HttpClientPool extends AsynPool
      */
     public $httpClient;
     public $baseUrl;
+    protected $name;
     protected $host;
     /**
      * 一直向服务器发请求，这里需要针对返回结果验证请求是否成功
@@ -50,7 +51,7 @@ class HttpClientPool extends AsynPool
      */
     public function getAsynName()
     {
-        return self::AsynName . ":" . $this->baseUrl;
+        return self::AsynName . ":" . $this->name;
     }
 
     /**
@@ -185,5 +186,10 @@ class HttpClientPool extends AsynPool
         $this->httpClient = null;
         $this->command_backup = null;
         return $migrate;
+    }
+
+    public function setName($name)
+    {
+        $this->name = $name;
     }
 }

@@ -89,7 +89,7 @@ class Controller extends CoreBase
     /**
      * @var Miner
      */
-    protected $db;
+    public $db;
 
     /**
      * @var \Redis
@@ -120,6 +120,7 @@ class Controller extends CoreBase
         $this->http_output = new HttpOutput($this);
         $this->isEnableError = $this->config->get('error.enable');
         $this->isErrorHttpShow = $this->config->get('error.http_show',true);
+        $this->root = $this;
     }
 
     /**
@@ -133,6 +134,7 @@ class Controller extends CoreBase
      * @param $params
      * @return void
      * @throws \Exception
+     * @throws Throwable
      */
     public function setClientData($uid, $fd, $client_data, $controller_name, $method_name, $params)
     {
@@ -160,6 +162,7 @@ class Controller extends CoreBase
      * @param $params
      * @return void
      * @throws \Exception
+     * @throws Throwable
      */
     public function setRequestResponse($request, $response, $controller_name, $method_name, $params)
     {
@@ -223,13 +226,8 @@ class Controller extends CoreBase
         if (!empty($this->uid)) {
             $this->context['uid'] = $this->uid;
         }
-        if ($this->mysql_pool != null) {
-            $this->installMysqlPool($this->mysql_pool);
-            $this->db = $this->mysql_pool->dbQueryBuilder;
-        }
-        if ($this->redis_pool != null) {
-            $this->redis = $this->redis_pool->getCoroutine();
-        }
+        $this->db = $this->loader->mysql("mysqlPool",$this);
+        $this->redis = $this->loader->redis("redisPool");
         if ($this->isEnableError) {
             $this->Error = $this->loader->model(Error::class, $this);
         }

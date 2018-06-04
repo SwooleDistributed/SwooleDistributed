@@ -19,14 +19,11 @@ class MysqlAsynPool implements IAsynPool
     protected $mysql_arr;
     private $active;
     protected $config;
+    protected $name;
     /**
      * @var Miner
      */
     protected $mysql_client;
-    /**
-     * @var Miner
-     */
-    public $dbQueryBuilder;
     private $client_max_count;
 
     public function __construct($config, $active)
@@ -50,22 +47,23 @@ class MysqlAsynPool implements IAsynPool
     {
         return $this->active;
     }
+
     /**
      * @return Miner
      */
     public function installDbBuilder()
     {
-        $this->dbQueryBuilder = Pool::getInstance()->get(Miner::class)->setPool($this);
-        return $this->dbQueryBuilder;
+        return Pool::getInstance()->get(Miner::class)->setPool($this);
     }
 
     /**
+     * @param $db
      * @param $fuc
      * @param $errorFuc
      * @return null
      * @throws SwooleException
      */
-    public function begin($fuc, $errorFuc)
+    public function begin(Miner $db, $fuc, $errorFuc)
     {
         $client = $this->pool_chan->pop();
         if (!$client->connected) {
@@ -77,19 +75,19 @@ class MysqlAsynPool implements IAsynPool
             }
         }
         $res = $client->query("begin");
-        if($res===false){
+        if ($res === false) {
             throw new SwooleException($client->error);
         }
         $result = null;
         try {
-            $this->dbQueryBuilder->setClient($client);
+            $db->setClient($client);
             $result = $fuc($client);
             $client->query("commit");
         } catch (\Throwable $e) {
             $client->query("rollback");
             if ($errorFuc != null) $result = $errorFuc($client);
         } finally {
-            $this->dbQueryBuilder->setClient(null);
+            $db->setClient(null);
         }
         $this->pushToPool($client);
         return $result;
@@ -232,7 +230,7 @@ class MysqlAsynPool implements IAsynPool
 
     public function getAsynName()
     {
-        return self::AsynName . ":" . $this->active;
+        return self::AsynName . ":" . $this->name;
     }
 
     public function pushToPool($client)
@@ -247,5 +245,13 @@ class MysqlAsynPool implements IAsynPool
         $this->mysql_client = new Miner();
         $this->mysql_client->pdoConnect($activeConfig);
         return $this->mysql_client;
+    }
+
+    /**
+     * @param $name
+     */
+    public function setName($name)
+    {
+        $this->name = $name;
     }
 }

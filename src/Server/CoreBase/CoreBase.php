@@ -43,12 +43,6 @@ class CoreBase extends Child
      * @var RedisRoute
      */
     public $redis_pool;
-    /**
-     * @var MysqlAsynPool
-     */
-    public $mysql_pool;
-
-    protected $dbQueryBuilders = [];
 
     /**
      * Task constructor.
@@ -63,17 +57,7 @@ class CoreBase extends Child
             $this->server = get_instance()->server;
             $this->config = get_instance()->config;
             $this->redis_pool = RedisRoute::getInstance();
-            $this->mysql_pool = get_instance()->getAsynPool('mysqlPool');
         }
-    }
-
-    /**
-     * 安装MysqlPool
-     * @param MysqlAsynPool $mysqlPool
-     */
-    protected function installMysqlPool(MysqlAsynPool $mysqlPool)
-    {
-        $this->dbQueryBuilders[$mysqlPool->getActveName()] = $mysqlPool->installDbBuilder();
     }
 
     /**
@@ -83,12 +67,6 @@ class CoreBase extends Child
     {
         parent::destroy();
         $this->is_destroy = true;
-        foreach ($this->dbQueryBuilders as $dbQueryBuilder) {
-            $dbQueryBuilder->clear();
-            $dbQueryBuilder->setClient(null);
-            Pool::getInstance()->push($dbQueryBuilder);
-        }
-        $this->dbQueryBuilders = [];
     }
 
     /**

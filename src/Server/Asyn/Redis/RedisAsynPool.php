@@ -25,7 +25,7 @@ class RedisAsynPool extends AsynPool
     private $active;
     private $coroutineRedisHelp;
     private $redis_client;
-
+    protected $name;
     public function __construct($config, $active)
     {
         parent::__construct($config);
@@ -495,7 +495,7 @@ class RedisAsynPool extends AsynPool
      */
     public function getAsynName()
     {
-        return self::AsynName . ":" . $this->active;
+        return self::AsynName . ":" . $this->name;
     }
 
     /**
@@ -505,5 +505,10 @@ class RedisAsynPool extends AsynPool
     protected function destoryClient($client)
     {
         $client->close();
+    }
+
+    public function setName($name)
+    {
+        $this->name = $name;
     }
 }
