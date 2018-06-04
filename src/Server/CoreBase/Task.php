@@ -2,6 +2,7 @@
 
 namespace Server\CoreBase;
 
+use Server\Asyn\Mysql\Miner;
 use Server\Components\AOP\Proxy;
 use Server\Coroutine\CoroutineNull;
 use Server\Memory\Pool;
@@ -19,7 +20,15 @@ class Task extends TaskProxy
 {
     protected $start_run_time;
     protected static $efficiency_monitor_enable;
+    /**
+     * @var Miner
+     */
+    public $db;
 
+    /**
+     * @var \Redis
+     */
+    protected $redis;
     public function __construct()
     {
         parent::__construct(TheTaskProxy::class);
@@ -44,9 +53,8 @@ class Task extends TaskProxy
         $this->setContext($context);
         $this->start_run_time = microtime(true);
         $this->context['task_name'] = "$task_name:$method_name";
-        if ($this->mysql_pool != null) {
-            $this->installMysqlPool($this->mysql_pool);
-        }
+        $this->redis = $this->loader->redis("redisPool");
+        $this->db = $this->loader->mysql("mysqlPool",$this);
     }
 
     public function destroy()
