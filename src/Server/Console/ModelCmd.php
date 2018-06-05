@@ -25,9 +25,17 @@ class ModelCmd extends Command
         $this->setName('model')->setDescription("Test Model");
     }
 
+    /**
+     * @param InputInterface $input
+     * @param OutputInterface $output
+     * @return int|null|void
+     * @throws \Exception
+     */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        new AppServer();
+        $server = new AppServer();
+        $server->createUidTable();
+
         go(function () use ($output, $input) {
             get_instance()->initAsynPools(0);
             $redis_pool = get_instance()->getAsynPool("redisPool");
@@ -114,6 +122,8 @@ class ModelCmd extends Command
                         }
                     }
                 } catch (\Throwable $e) {
+                    var_dump($e->getFile());
+                    var_dump($e->getLine());
                     print_r($e->getMessage() . "\n");
                 }
             }

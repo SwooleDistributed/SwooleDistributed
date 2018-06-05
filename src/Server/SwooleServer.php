@@ -263,7 +263,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 创建uid->fd共享内存表
      */
-    protected function createUidTable()
+    public function createUidTable()
     {
         $this->max_connection = $this->config['server']['set']['max_connection'] ?? 65536;
         $this->uid_fd_table = new \swoole_table($this->max_connection);
