@@ -59,16 +59,12 @@ class EventDispatcher
     public function remove($type, $listener)
     {
         if (array_key_exists($type, $this->_eventListeners)) {
-            $numListeners = count($this->_eventListeners [$type]);
-        } else {
-            $numListeners = 0;
-        }
-        if ($numListeners > 0) {
             $index = array_search($listener, $this->_eventListeners [$type]);
             if ($index !== null) {
                 unset ($this->_eventListeners [$type] [$index]);
             }
         }
+        $numListeners = count($this->_eventListeners [$type]);
         if ($numListeners == 0) {
             unset ($this->_eventListeners [$type]);
         }
@@ -136,7 +132,6 @@ class EventDispatcher
      * @param null $data
      * @param bool $onlyMyWorker
      * @param bool $fromDispatch
-     * @throws \Exception
      */
     public function dispatch($type, $data = null, $onlyMyWorker = false, $fromDispatch = false)
     {

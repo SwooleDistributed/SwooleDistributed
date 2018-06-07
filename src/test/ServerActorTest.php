@@ -24,7 +24,7 @@ class ServerActorTest extends TestCase
      */
     public function setUpBeforeClass()
     {
-        for ($i=0;$i<100;$i++) {
+        for ($i = 0; $i < 100; $i++) {
             Actor::create(TestActor::class, "test_" . $i);
         }
     }
@@ -35,7 +35,7 @@ class ServerActorTest extends TestCase
      */
     public function tearDownAfterClass()
     {
-        for ($i=0;$i<100;$i++) {
+        for ($i = 0; $i < 100; $i++) {
             Actor::destroyActor("test_" . $i);
         }
     }
@@ -62,7 +62,7 @@ class ServerActorTest extends TestCase
      */
     public function testActorHas()
     {
-        for ($i=0;$i<100;$i++) {
+        for ($i = 0; $i < 100; $i++) {
             $has = Actor::has("test_" . $i);
             $this->assertTrue($has);
         }
@@ -75,11 +75,14 @@ class ServerActorTest extends TestCase
     public function testActorRpc()
     {
         $data = [];
-        for ($i=0;$i<100;$i++) {
-            $rpc = Actor::getRpc("test_" . $i);
-            $data[] = $rpc->test1();
+        for ($j = 0; $j < 100; $j++) {
+            for ($i = 0; $i < 100; $i++) {
+                $rpc = Actor::getRpc("test_" . 1);
+                $data[] = $rpc->test1();
+                $data[] = $rpc->test2();
+            }
         }
-        $this->assertCount(100,$data);
+        $this->assertCount(20000, $data);
     }
 
     /**
@@ -88,16 +91,16 @@ class ServerActorTest extends TestCase
     public function testActorRpcBegin()
     {
         $data = [];
-        for ($i=0;$i<100;$i++) {
-            $rpc = Actor::getRpc("test_" . $i);
-            $rpc->beginCo(function ()use ($rpc,&$data)
-            {
-                $data[] = $rpc->test1();
-                $data[] = $rpc->test2();
-            });
-
+        for ($j = 0; $j < 100; $j++) {
+            for ($i = 0; $i < 100; $i++) {
+                $rpc = Actor::getRpc("test_" . $i);
+                $rpc->beginCo(function () use ($rpc, &$data) {
+                    $data[] = $rpc->test1();
+                    $data[] = $rpc->test2();
+                });
+            }
         }
-        $this->assertCount(200,$data);
+        $this->assertCount(20000, $data);
     }
 }
 
@@ -116,15 +119,20 @@ class TestActor extends Actor
 
     /**
      * @return int
-     * @throws \Server\Asyn\MQTT\Exception
      */
     public function test1()
     {
-        get_instance()->pub("test",1);
+        $this->saveContext["test"] = 1;
+        $this->redis->set("test",1);
         return 1;
     }
+
     public function test2()
     {
-        return 2;
+        $result = $this->saveContext["test"];
+        $this->after(1000,function (){
+            $this->redis->get("test");
+        });
+        return $result;
     }
 }

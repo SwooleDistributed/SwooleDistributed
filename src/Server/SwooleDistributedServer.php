@@ -112,6 +112,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
 
     /**
      * SwooleDistributedServer constructor.
+     * @throws \Noodlehaus\Exception\EmptyDirectoryException
      */
     public function __construct()
     {
@@ -294,6 +295,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
      * @param $data
      * @return mixed|null
      * @throws SwooleException
+     * @throws \Exception
      */
     public function onSwooleTask($serv, $task_id, $from_id, $data)
     {
@@ -597,6 +599,10 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             //进程启动后进行开服的初始化
             $this->onOpenServiceInitialization();
             if (Start::$testUnity) {
+                $ready = ProcessManager::getInstance()->getRpcCall(CatCacheProcess::class)->isReady();
+                if (!$ready) {
+                    EventDispatcher::getInstance()->addOnceCoroutine(CatCacheProcess::READY);
+                }
                 new TestModule(Start::$testUnityDir);
             }
             $this->initLock->lock_read();
