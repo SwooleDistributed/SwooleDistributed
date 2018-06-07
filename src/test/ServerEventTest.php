@@ -9,6 +9,7 @@
 namespace test;
 
 
+use Server\Components\CatCache\CatCacheRpcProxy;
 use Server\Components\Event\EventCoroutine;
 use Server\Components\Event\EventDispatcher;
 use Server\Components\TimerTask\Timer;
@@ -54,6 +55,17 @@ class ServerEventTest extends TestCase
         // TODO: Implement tearDown() method.
     }
 
+    /**
+     * @throws \Server\Test\SwooleTestException
+     */
+    public function testCatCache()
+    {
+        for ($i=0;$i<100000;$i++) {
+            CatCacheRpcProxy::getRpc()->offsetSet("test", $i);
+            $result = CatCacheRpcProxy::getRpc()->offsetGet("test");
+            $this->assertEquals($result, $i);
+        }
+    }
     /**
      * @throws \Server\Test\SwooleTestException
      * @throws \Exception

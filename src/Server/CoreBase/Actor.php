@@ -46,6 +46,10 @@ abstract class Actor extends CoreBase
      */
     protected $beginId = 0;
     /**
+     * @var int
+     */
+    protected $startBeginTime = 0;
+    /**
      * 当前事务ID
      * @var int
      */
@@ -97,7 +101,7 @@ abstract class Actor extends CoreBase
             $this->handle($event->data);
         });
         $this->saveContext->save();
-        $this->db = $this->loader->mysql("mysqlPool",$this);
+        $this->db = $this->loader->mysql("mysqlPool", $this);
         $this->redis = $this->loader->redis("redisPool");
         $this->execRegistHandle();
     }
@@ -161,9 +165,23 @@ abstract class Actor extends CoreBase
         $oneWay = $data['oneWay'];
         $node = $data['node'];
         $bindId = $data['bindId'];
+        if ($this->startBeginTime != null && getMillisecond() - $this->startBeginTime > 200) {//超过200ms还是没有消息过来就end
+            $this->end($this->nowAffairId);
+            return;
+        }
         if (!empty($this->nowAffairId)) {//代表有事务
             if ($bindId != $this->nowAffairId || empty($bindId)) {//不是当前的事务，或者不是事务就放进邮箱中
                 array_push($this->mailbox, $data);
+                return;
+            } else {//来了当前的事务代表没有超时那么就清除startBeginTime
+                $this->startBeginTime = null;
+            }
+        }else{//没有事务
+            if(!empty($bindId)){//处理的有事务
+                $generator = new RPCThrowable(new \Exception("不再事务中，不能执行事务"));
+                if (!$oneWay) {
+                    $this->rpcBack($workerId, $token, $generator, $node);
+                }
                 return;
             }
         }
@@ -185,6 +203,7 @@ abstract class Actor extends CoreBase
     {
         $this->beginId++;
         $this->nowAffairId = $this->beginId;
+        $this->startBeginTime = getMillisecond();
         return $this->beginId;
     }
 
@@ -294,7 +313,7 @@ abstract class Actor extends CoreBase
         $id = \swoole_timer_tick($ms, function ($user_param_one) use ($callback) {
             try {
                 $callback($user_param_one);
-            }catch (\Throwable $e){
+            } catch (\Throwable $e) {
                 displayExceptionHandler($e);
             }
         }, $user_param);
@@ -315,7 +334,7 @@ abstract class Actor extends CoreBase
             go(function () use ($callback, $user_param_one) {
                 try {
                     $callback($user_param_one);
-                }catch (\Throwable $e){
+                } catch (\Throwable $e) {
                     displayExceptionHandler($e);
                 }
             });
@@ -356,6 +375,12 @@ abstract class Actor extends CoreBase
      */
     public static function call($actorName, $call, $params = null, $oneWay = false, $bindId = null, callable $set = null)
     {
+        if($actorName!=Actor::ALL_COMMAND) {
+            $has = Actor::has($actorName);
+            if (!$has) {
+                throw new \Exception("$actorName 不存在这个actor");
+            }
+        }
         $data['call'] = $call;
         $data['params'] = $params;
         $data['bindId'] = $bindId;
@@ -363,7 +388,7 @@ abstract class Actor extends CoreBase
         $data['node'] = getNodeName();
         $data['worker_id'] = get_instance()->getWorkerId();
         self::$RPCtoken++;
-        $data['token'] = '[Actor]'."[$actorName::$call]"."[".get_instance()->getWorkerId()."]" . "[".self::$RPCtoken."]";
+        $data['token'] = '[Actor]' . "[$actorName::$call]" . "[" . get_instance()->getWorkerId() . "]" . "[" . self::$RPCtoken . "]";
         $result = null;
         if (!$oneWay) {
             $result = Pool::getInstance()->get(EventCoroutine::class)->init($data['token'], function (EventCoroutine $eventCoroutine) use ($set) {
