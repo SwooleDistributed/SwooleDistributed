@@ -98,6 +98,10 @@ abstract class Process extends ProcessRPC
                 case SwooleMarco::PROCESS_RPC_RESULT:
                     EventDispatcher::getInstance()->dispatch($message['token'], $message['result'], true);
                     break;
+                default:
+                    if (!empty($data['func'])) {
+                        $data['func']($message);
+                    }
             }
         });
     }
