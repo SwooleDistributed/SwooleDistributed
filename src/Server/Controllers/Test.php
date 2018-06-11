@@ -8,6 +8,7 @@
 
 namespace Server\Controllers;
 
+use Server\Components\Event\EventDispatcher;
 use Server\CoreBase\Actor;
 use Server\CoreBase\Controller;
 

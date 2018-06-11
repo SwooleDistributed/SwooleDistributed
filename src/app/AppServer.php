@@ -1,4 +1,5 @@
 <?php
+
 namespace app;
 
 use Server\CoreBase\HttpInput;
@@ -36,6 +37,8 @@ class AppServer extends SwooleDistributedServer
      * 这里可以进行额外的异步连接池，比如另一组redis/mysql连接
      * @param $workerId
      * @return void
+     * @throws \Server\CoreBase\SwooleException
+     * @throws \Exception
      */
     public function initAsynPools($workerId)
     {

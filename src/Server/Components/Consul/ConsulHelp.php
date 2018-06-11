@@ -23,6 +23,7 @@ class ConsulHelp
 
     /**
      * reload时获取一下
+     * @throws \Exception
      */
     public static function start()
     {

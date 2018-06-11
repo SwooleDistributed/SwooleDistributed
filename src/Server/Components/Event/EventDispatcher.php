@@ -132,6 +132,7 @@ class EventDispatcher
      * @param null $data
      * @param bool $onlyMyWorker
      * @param bool $fromDispatch
+     * @throws \Exception
      */
     public function dispatch($type, $data = null, $onlyMyWorker = false, $fromDispatch = false)
     {
@@ -183,7 +184,7 @@ class EventDispatcher
      * 协程的仅仅一次的回调
      * @param $eventType
      * @param callable $set
-     * @return
+     * @return mixed
      */
     public function addOnceCoroutine($eventType, callable $set = null)
     {

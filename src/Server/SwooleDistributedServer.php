@@ -247,6 +247,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             if ($this->server->worker_id == $i) continue;
             $this->server->sendMessage($send_data, $i);
         }
+        ProcessManager::getInstance()->sendToAllProcess($send_data);
         //自己的进程是收不到消息的所以这里执行下
         sd_call_user_func($callStaticFuc, $uns_data);
     }

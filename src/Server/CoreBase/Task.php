@@ -109,6 +109,39 @@ class Task extends TaskProxy
     {
         get_instance()->sendToAllFd($data);
     }
+
+    /**
+     * @param $uid
+     * @param $topic
+     * @throws \Exception
+     */
+    protected function addSub($uid,$topic)
+    {
+        get_instance()->addSub($topic, $uid);
+    }
+
+    /**
+     * @param $uid
+     * @param $topic
+     * @throws \Exception
+     */
+    protected function removeSub($uid,$topic)
+    {
+        get_instance()->removeSub($topic, $uid);
+    }
+
+    /**
+     * 发布
+     * @param $topic
+     * @param $data
+     * @param array $excludeUids 需要排除的uids
+     * @throws \Server\Asyn\MQTT\Exception
+     */
+    protected function sendPub($topic, $data, $excludeUids = [])
+    {
+        get_instance()->pub($topic, $data, $excludeUids);
+    }
+
 }
 
 class TheTaskProxy extends Proxy

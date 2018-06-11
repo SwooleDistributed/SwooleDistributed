@@ -22,6 +22,9 @@ class ProcessManager
      */
     protected static $instance;
     protected $atomic;
+    /**
+     * @var Process[]
+     */
     protected $map = [];
     public $oneWayFucName = [];
 
@@ -76,7 +79,7 @@ class ProcessManager
         if (!array_key_exists($class_name . $name, $this->map)) {
             throw new \Exception("不存在$class_name 进程");
         }
-        if (get_instance()->isTaskWorker()) {
+        if ($oneWay!==true&&get_instance()->isTaskWorker()) {
             throw new \Exception("$class_name::$name 不能在Task中执行");
         }
         return Pool::getInstance()->get(RPCCall::class)->init($this->map[$class_name . $name], $oneWay);
@@ -121,4 +124,14 @@ class ProcessManager
         return null;
     }
 
+    /**
+     * 向所有进程广播消息
+     * @param $data
+     */
+    public function sendToAllProcess($data)
+    {
+        foreach ($this->map as $process){
+            $process->process->write(\swoole_serialize::pack($data));
+        }
+    }
 }
