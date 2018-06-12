@@ -376,7 +376,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 $this->server->task($send_data);
             } else {
                 foreach ($this->server->connections as $fd) {
-                    $this->server->send($fd, $data, true);
+                    $this->send($fd, $data, true);
                 }
             }
         }
