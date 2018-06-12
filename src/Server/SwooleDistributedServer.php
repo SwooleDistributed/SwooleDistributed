@@ -315,7 +315,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 return null;
             case SwooleMarco::MSG_TYPE_SEND_ALL_FD;//发送广播
                 foreach ($serv->connections as $fd) {
-                    $serv->send($fd, $message['data'], true);
+                    $this->send($fd, $message['data'], true);
                 }
                 return null;
             case SwooleMarco::SERVER_TYPE_TASK://task任务
