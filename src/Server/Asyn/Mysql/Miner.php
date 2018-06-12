@@ -1588,11 +1588,11 @@ class Miner extends Child
             $autoQuote = $this->getAutoQuote($set['quote']);
 
             if ($usePlaceholders && $autoQuote) {
-                $statement .= $set['column'] . " " . self::EQUALS . " ?, ";
+                $statement .= "`".$set['column'] . "` " . self::EQUALS . " ?, ";
 
                 $this->setPlaceholderValues[] = $set['value'];
             } else {
-                $statement .= $set['column'] . " " . self::EQUALS . " " . $this->autoQuote($set['value'], $autoQuote) . ", ";
+                $statement .= "`".$set['column'] . "` " . self::EQUALS . " " . $this->autoQuote($set['value'], $autoQuote) . ", ";
             }
         }
 

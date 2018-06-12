@@ -250,7 +250,6 @@ abstract class CoroutineBase implements ICoroutineBase
      * 设置降级操作，如果没有设置断路器工作时将会进行快速失败
      * @param callable $func
      * @return $this
-     * @throws SwooleException
      */
     public function setDowngrade(callable $func)
     {
@@ -259,7 +258,7 @@ abstract class CoroutineBase implements ICoroutineBase
     }
 
     /**
-     * 断路器依赖$request
+     * 断路器
      * 使用断路器
      */
     protected function fuse()
