@@ -125,7 +125,6 @@ class ClusterClient
     public function close()
     {
         $this->isClose = true;
-        $this->client->close();
         if (!empty($this->reconnect_tick)) {
             swoole_timer_clear($this->reconnect_tick);
             $this->reconnect_tick = null;
