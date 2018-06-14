@@ -185,6 +185,14 @@ class Controller extends CoreBase
      * @throws \Exception
      * @throws Throwable
      */
+    /**
+     * @param $controller_name
+     * @param $method_name
+     * @param $params
+     * @return void
+     * @throws \Exception
+     * @throws Throwable
+     */
     protected function execute($controller_name, $method_name, $params)
     {
         if (!is_callable([$this, $method_name])) {
@@ -193,6 +201,12 @@ class Controller extends CoreBase
         }
         try {
             $this->initialization($controller_name, $method_name);
+        } catch (Throwable $e) {
+            $this->getProxy()->onExceptionHandle($e);
+            $this->destroy();
+            return;
+        }
+        try {
             if ($params == null) {
                 $this->getProxy()->$method_name();
             } else {
@@ -200,8 +214,8 @@ class Controller extends CoreBase
                 $this->getProxy()->$method_name(...$params);
             }
         } catch (Throwable $e) {
-            $this->getProxy()->onExceptionHandle($e);
             $this->getProxy()->afterCall($method_name);
+            $this->getProxy()->onExceptionHandle($e);
         }
         $this->destroy();
     }
