@@ -214,7 +214,6 @@ class Controller extends CoreBase
                 $this->getProxy()->$method_name(...$params);
             }
         } catch (Throwable $e) {
-            $this->getProxy()->afterCall($method_name);
             $this->getProxy()->onExceptionHandle($e);
         }
         $this->destroy();
