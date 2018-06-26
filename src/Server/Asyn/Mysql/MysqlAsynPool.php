@@ -118,21 +118,17 @@ class MysqlAsynPool implements IAsynPool
             $result = $client->connect($set);
             if (!$result) {
                 $this->pushToPool($client);
-                $result = $mysqlCoroutine->getResult(new SwooleException("[err]:$client->connect_error"));
-                $mysqlCoroutine->destroy();
-                return $result;
+                $mysqlCoroutine->getResult(new SwooleException("[err]:$client->connect_error"));
             }
         }
         $res = $client->query($sql, $mysqlCoroutine->getTimeout() / 1000);
         if ($res === false) {
+            $this->pushToPool($client);
             if ($client->errno == 110) {
-                $result = $mysqlCoroutine->onTimeOut();
+                $mysqlCoroutine->onTimeOut();
             } else {
-                $result = $mysqlCoroutine->getResult(new SwooleException("[sql]:$sql,[err]:$client->error"));
+                $mysqlCoroutine->getResult(new SwooleException("[sql]:$sql,[err]:$client->error"));
             }
-            $client->close();
-            $mysqlCoroutine->destroy();
-            return $result;
         }
         $mysqlCoroutine->destroy();
         if ($delayRecv)//延迟收包
@@ -195,14 +191,12 @@ class MysqlAsynPool implements IAsynPool
             $res = $res->execute($holder, $mysqlCoroutine->getTimeout() / 1000);
         }
         if ($res === false) {
+            $this->pushToPool($client);
             if ($client->errno == 110) {
-                $result = $mysqlCoroutine->onTimeOut();
+                $mysqlCoroutine->onTimeOut();
             } else {
-                $result = $mysqlCoroutine->getResult(new SwooleException("[sql]:$sql,[err]:$client->error"));
+                $mysqlCoroutine->getResult(new SwooleException("[sql]:$sql,[err]:$client->error"));
             }
-            $client->close();
-            $mysqlCoroutine->destroy();
-            return $result;
         }
         $mysqlCoroutine->destroy();
         if ($delayRecv)//延迟收包
