@@ -118,6 +118,7 @@ class CatCacheProcess extends Process
     /**
      * 设置RPC代理
      * @param $object
+     * @throws \ReflectionException
      */
     public function setRPCProxy($object)
     {
