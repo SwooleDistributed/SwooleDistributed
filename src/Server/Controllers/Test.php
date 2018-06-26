@@ -8,12 +8,17 @@
 
 namespace Server\Controllers;
 
-use Server\Components\Event\EventDispatcher;
 use Server\CoreBase\Actor;
+use Server\CoreBase\ChildProxy;
 use Server\CoreBase\Controller;
 
 class Test extends Controller
 {
+    public function __construct(string $proxy = ChildProxy::class)
+    {
+        parent::__construct($proxy);
+    }
+
     public function http_error()
     {
         throw new \Exception("test");
@@ -21,7 +26,7 @@ class Test extends Controller
 
     public function http_redis()
     {
-        $this->redis_pool->getCoroutine()->incr("test");
+        $this->redis->incr("test");
     }
 
     public function http_createActor()

@@ -584,7 +584,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $pool = $this->asynPools[$name] ?? null;
         return $pool;
     }
-
     /**
      * 重写onSwooleWorkerStart方法，添加异步redis
      * @param $serv
@@ -992,5 +991,22 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $fdInfo['node'] = getNodeName();
             return $fdInfo;
         }
+    }
+
+    /**
+     * 获取port
+     * @param $port_num
+     * @return mixed
+     */
+    public function getPort($port_num)
+    {
+        $ports = $this->server->ports;
+        foreach ($ports as $port)
+        {
+            if($port->port == $port_num){
+                return $port;
+            }
+        }
+        return null;
     }
 }

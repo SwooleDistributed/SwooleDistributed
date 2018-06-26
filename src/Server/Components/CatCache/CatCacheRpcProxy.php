@@ -22,8 +22,6 @@ class CatCacheRpcProxy implements \ArrayAccess
      * @var CatCacheHash
      */
     protected $map;
-    protected $time = 0;
-    protected $time_count = 0;
 
     public function setMap(&$map)
     {
@@ -62,12 +60,9 @@ class CatCacheRpcProxy implements \ArrayAccess
      */
     public function setTimerCallBack($time, $data)
     {
-        if ($time != $this->time) {
-            $this->time = $time;
-            $this->time_count = 0;
-        }
-        $this->time_count++;
-        $key = "timer_back.$time.$this->time_count";
+        $time_back_arr = $this->map->getContainer()["timer_back"]??[];
+        $count = count($time_back_arr[$time]??[]);
+        $key = "timer_back.$time.$count";
         $this->map[$key] = $data;
         return $key;
     }
