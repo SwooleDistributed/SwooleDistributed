@@ -301,7 +301,7 @@ class Console extends Controller
         }
         if (is_file(APP_DIR . $file)) {
             $src = file_get_contents(APP_DIR . $file);
-            $this->autoSend(['file' => $file, "text" => explode("\r\n", $src)], '$SYS_XDEBUG/DebugFile');
+            $this->autoSend(['file' => $file, "text" => explode("\n", $src)], '$SYS_XDEBUG/DebugFile');
         }
     }
 
