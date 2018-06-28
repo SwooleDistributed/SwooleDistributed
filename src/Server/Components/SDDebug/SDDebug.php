@@ -37,11 +37,11 @@ class SDDebug
             $file = APP_DIR . $fileDebug->file;
             $lines = $fileDebug->lines;
             $str = file_get_contents($file);
-            $line_srcs = explode("\r\n", $str);
+            $line_srcs = explode("\n", $str);
             foreach ($lines as $line) {
                 $line_srcs[$line-1] = "/**DEBUG*/ sd_debug(get_defined_vars());". $line_srcs[$line-1];
             }
-            $new_src = implode("\r\n", $line_srcs);
+            $new_src = implode("\n", $line_srcs);
             $newfile = str_replace("src/app", "src/app-debug", $file);
             $dir = pathinfo($newfile, PATHINFO_DIRNAME);
             is_dir($dir) OR mkdir($dir, 0777, true);
