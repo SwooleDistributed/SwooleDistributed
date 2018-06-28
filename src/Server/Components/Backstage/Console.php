@@ -14,12 +14,21 @@ use Server\Components\Process\ProcessManager;
 use Server\Components\SDDebug\SDDebug;
 use Server\Components\SDHelp\SDHelpProcess;
 use Server\CoreBase\Actor;
+use Server\CoreBase\ChildProxy;
 use Server\CoreBase\Controller;
 use Server\Start;
 use Server\SwooleMarco;
 
 class Console extends Controller
 {
+    private $enableXdebug;
+
+    public function __construct(string $proxy = ChildProxy::class)
+    {
+        parent::__construct($proxy);
+        $this->enableXdebug = $this->config->get('backstage.xdebug_enable', false);
+    }
+
     /**
      * onConnect
      * @return void
@@ -42,6 +51,10 @@ class Console extends Controller
                 }
                 break;
             case "xdebug":
+                if (!$this->enableXdebug) {
+                    $this->close();
+                    return;
+                }
                 if (Start::getXDebug()) {
                     $this->addSub('$SYS_XDEBUG/#');
                     $files = read_dir_queue(APP_DIR);
