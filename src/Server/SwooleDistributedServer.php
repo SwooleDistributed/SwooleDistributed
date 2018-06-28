@@ -942,7 +942,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         $status['pool'] = Pool::getInstance()->getStatus();
         $status['model_pool'] = ModelFactory::getInstance()->getStatus();
         $status['controller_pool'] = ControllerFactory::getInstance()->getStatus();
-        $status['coroutine_num'] = 0;
+        $status['coroutine_num'] = \Swoole\Coroutine::stats()['coroutine_num'];
         return $status;
     }
 
@@ -953,7 +953,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         $status = ['pool' => [], 'model_pool' => [], 'controller_pool' => [], 'coroutine_num' => 0];
         for ($i = 0; $i < $this->worker_num; $i++) {
-            $result = ProcessManager::getInstance()->getRpcCallWorker(self::get_instance()->workerId)->getPoolStatus();
+            $result = ProcessManager::getInstance()->getRpcCallWorker($i)->getPoolStatus();
             if (empty($result)) return;
             $this->helpMerge($status['pool'], $result['pool']);
             $this->helpMerge($status['model_pool'], $result['model_pool']);

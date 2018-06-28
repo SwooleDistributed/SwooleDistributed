@@ -38,6 +38,7 @@ class Pool
      * 获取一个
      * @param $class
      * @return mixed
+     * @throws SwooleException
      */
     public function get($class)
     {
@@ -74,6 +75,7 @@ class Pool
     /**
      * 返还一个
      * @param $classInstance
+     * @throws SwooleException
      */
     public function push($classInstance)
     {
