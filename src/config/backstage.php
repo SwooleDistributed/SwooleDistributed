@@ -7,7 +7,7 @@
  */
 
 //是否启用backstage
-$config['backstage']['enable'] = false;
+$config['backstage']['enable'] = true;
 //web页面访问端口
 $config['backstage']['port'] = 18000;
 //提供的ws端口

@@ -51,6 +51,9 @@ class ChannelCmd extends Command
      */
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        if (!$this->config->get('backstage.enable', false)) {
+            throw new \Exception("配置文件backstage.enable必须设置为true，才能使用");
+        }
         $host = $input->getOption("host");
         $port = $input->getOption("port");
         $uid = $input->getOption("uid");

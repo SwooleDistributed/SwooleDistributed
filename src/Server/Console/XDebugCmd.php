@@ -20,15 +20,10 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-class StartCmd extends Command
+class XDebugCmd extends Command
 {
     protected $config;
 
-    /**
-     * StartCmd constructor.
-     * @param null $name
-     * @throws \Noodlehaus\Exception\EmptyDirectoryException
-     */
     public function __construct($name = null)
     {
         parent::__construct($name);
@@ -37,21 +32,32 @@ class StartCmd extends Command
 
     protected function configure()
     {
-        $this->setName('start')->setDescription("Start server");
+        $this->setName('xdebug')->setDescription("Romote Debug server");
         $this->addOption('daemonize', "d", InputOption::VALUE_NONE, 'Who do you want daemonize?');
-        $this->addOption('debug', null, InputOption::VALUE_NONE, 'Who do you want debug');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        //修复debug修改的文件
+        if (!$this->config->get('backstage.enable', false)) {
+            throw new \Exception("配置文件backstage.enable必须设置为true，才能使用");
+        }
         //修改psr4目录
-        $psr4 = file_get_contents(MYROOT."/vendor/composer/autoload_psr4.php");
-        $psr4 = str_replace("'/src/app-debug'","'/src/app'",$psr4);
-        file_put_contents(MYROOT."/vendor/composer/autoload_psr4.php",$psr4);
-        $static = file_get_contents(MYROOT."/vendor/composer/autoload_static.php");
-        $static = str_replace("'/src/app-debug'","'/src/app'",$static);
-        file_put_contents(MYROOT."/vendor/composer/autoload_static.php",$static);
+        $psr4 = file_get_contents(MYROOT . "/vendor/composer/autoload_psr4.php");
+        $psr4 = str_replace("'/src/app'", "'/src/app-debug'", $psr4);
+        file_put_contents(MYROOT . "/vendor/composer/autoload_psr4.php", $psr4);
+        $static = file_get_contents(MYROOT . "/vendor/composer/autoload_static.php");
+        $static = str_replace("'/src/app'", "'/src/app-debug'", $static);
+        file_put_contents(MYROOT . "/vendor/composer/autoload_static.php", $static);
+        //修改app目录下所有的文件
+        $files = read_dir_queue(APP_DIR);
+        foreach ($files as $file) {
+            $str = file_get_contents($file);
+            $newfile = str_replace("src/app", "src/app-debug", $file);
+            $dir = pathinfo($newfile, PATHINFO_DIRNAME);
+            is_dir($dir) OR mkdir($dir, 0777, true);
+            file_put_contents($newfile, $str);
+
+        }
         //开始
         $io = new SymfonyStyle($input, $output);
         $server_name = $this->config['name'] ?? 'SWD';
@@ -106,6 +112,7 @@ class StartCmd extends Command
             ['S_TYPE', 'S_NAME', 'S_PORT', 'S_PACK', 'S_MIDD'],
             $show
         );
+        Start::setXDebug(true);
         //是否是守护进程
         if ($input->getOption('daemonize')) {
             Start::setDaemonize();
@@ -114,10 +121,7 @@ class StartCmd extends Command
             $io->note("Press Ctrl-C to quit. Start success.");
         }
         $server = new AppServer();
-        //是否Debug
-        if ($input->getOption('debug')) {
-            Start::setDebug(true);
-        }
         $server->start();
     }
+
 }
