@@ -8,6 +8,8 @@
 
 //是否启用backstage
 $config['backstage']['enable'] = true;
+//是否启用xdebug
+$config['backstage']['xdebug_enable'] = true;
 //web页面访问端口
 $config['backstage']['port'] = 18000;
 //提供的ws端口

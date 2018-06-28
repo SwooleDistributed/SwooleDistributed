@@ -41,6 +41,9 @@ class XDebugCmd extends Command
         if (!$this->config->get('backstage.enable', false)) {
             throw new \Exception("配置文件backstage.enable必须设置为true，才能使用");
         }
+        if (!$this->config->get('backstage.xdebug_enable', false)) {
+            throw new \Exception("配置文件backstage.xdebug_enable必须设置为true，才能使用");
+        }
         //修改psr4目录
         $psr4 = file_get_contents(MYROOT . "/vendor/composer/autoload_psr4.php");
         $psr4 = str_replace("'/src/app'", "'/src/app-debug'", $psr4);
