@@ -11,6 +11,7 @@ namespace Server\Components\Backstage;
 use Server\Components\CatCache\CatCacheRpcProxy;
 use Server\Components\Cluster\ClusterProcess;
 use Server\Components\Process\ProcessManager;
+use Server\Components\SDDebug\SDDebug;
 use Server\Components\SDHelp\SDHelpProcess;
 use Server\CoreBase\Actor;
 use Server\CoreBase\Controller;
@@ -32,14 +33,37 @@ class Console extends Controller
 
         $type = $this->http_input->get("type");
         $uid = $this->http_input->get("uid");
-        if($type=="channel"){
-            if(!empty($uid)) {
-                $this->addSub('$SYS_CHANNEL/' . $uid."/#");
-            }else{
-                $this->addSub('$SYS_CHANNEL/#');
-            }
-        }else{
-            $this->addSub('$SYS/#');
+        switch ($type) {
+            case "channel":
+                if (!empty($uid)) {
+                    $this->addSub('$SYS_CHANNEL/' . $uid . "/#");
+                } else {
+                    $this->addSub('$SYS_CHANNEL/#');
+                }
+                break;
+            case "xdebug":
+                if (Start::getXDebug()) {
+                    $this->addSub('$SYS_XDEBUG/#');
+                    $files = read_dir_queue(APP_DIR);
+                    $sendFiles = [];
+                    foreach ($files as $file) {
+                        $file = explode("src/app", $file)[1];
+                        $list = explode("/", $file);
+                        if (count($list) < 3) {
+                            continue;
+                        }
+                        if ($list[1] == "Process" || $list[1] == "AMQPTasks" || $list[1] == "Console" || $list[1] == "Tasks" || $list[1] == "Views") {
+                            continue;
+                        }
+                        $sendFiles[] = $file;
+                    }
+                    $this->autoSend($sendFiles, '$SYS_XDEBUG/DebugFiles');
+                } else {
+                    $this->close();
+                }
+                break;
+            default:
+                $this->addSub('$SYS/#');
         }
     }
 
@@ -154,6 +178,7 @@ class Console extends Controller
     /**
      * 获取CatCache信息
      * @param $path
+     * @throws \Exception
      */
     public function back_getCatCacheKeys($path)
     {
@@ -164,6 +189,7 @@ class Console extends Controller
     /**
      * 获取CatCache信息
      * @param $path
+     * @throws \Exception
      */
     public function back_getCatCacheValue($path)
     {
@@ -174,6 +200,7 @@ class Console extends Controller
     /**
      * 删除CatCache信息
      * @param $path
+     * @throws \Exception
      */
     public function back_delCatCache($path)
     {
@@ -184,6 +211,7 @@ class Console extends Controller
     /**
      * 获取Actor信息
      * @param $name
+     * @throws \Exception
      */
     public function back_getActorInfo($name)
     {
@@ -194,6 +222,7 @@ class Console extends Controller
     /**
      * 销毁Actor
      * @param $name
+     * @throws \Exception
      */
     public function back_destroyActor($name)
     {
@@ -203,6 +232,7 @@ class Console extends Controller
 
     /**
      * 销毁全部Actor
+     * @throws \Exception
      */
     public function back_destroyAllActor()
     {
@@ -211,20 +241,79 @@ class Console extends Controller
     }
 
     /**
-     * @param $data
+     * @param $filedebugs
+     * @throws \Exception
      */
-    protected function autoSend($data)
+    public function back_debugBreak($filedebugs)
     {
-        if (is_array($data) || is_object($data)) {
-            $output = json_encode($data, JSON_UNESCAPED_UNICODE);
-        } else {
-            $output = $data;
+        SDDebug::debugFile($filedebugs);
+        $this->autoSend("ok", '$SYS_XDEBUG/StartBreak');
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function back_nextBreak()
+    {
+        SDDebug::nextBreak();
+        $this->autoSend("ok");
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function back_rollBreak()
+    {
+        Start::cleanXDebugLock();
+        $this->autoSend("ok", '$SYS_XDEBUG/RollBreak');
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function back_stopBreak()
+    {
+        SDDebug::stopDebug();
+        $this->autoSend("ok", '$SYS_XDEBUG/StopBreak');
+    }
+
+    /**
+     * @param $file
+     * @throws \Exception
+     */
+    public function back_getAppFile($file)
+    {
+        if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
+            throw new \Exception("不允许http访问此接口");
         }
+        if (is_file(APP_DIR . $file)) {
+            $src = file_get_contents(APP_DIR . $file);
+            $this->autoSend(['file' => $file, "text" => explode("\r\n", $src)], '$SYS_XDEBUG/DebugFile');
+        }
+    }
+
+    /**
+     * @param $data
+     * @param null $topic
+     * @throws \Exception
+     */
+    protected function autoSend($data, $topic = null)
+    {
         switch ($this->request_type) {
             case SwooleMarco::TCP_REQUEST:
-                $this->send($output);
+                if (empty($topic)) {
+                    $this->send($data);
+                } else {
+                    get_instance()->send($this->fd, $data, true, $topic);
+                }
                 break;
             case SwooleMarco::HTTP_REQUEST:
+                if (is_array($data) || is_object($data)) {
+                    $output = json_encode($data, JSON_UNESCAPED_UNICODE);
+                } else {
+                    $output = $data;
+                }
+                $this->http_output->setHeader("Content-Type", "text/html;charset=utf-8");
                 $this->http_output->setHeader("Access-Control-Allow-Origin", "*");
                 $this->http_output->end($output);
                 break;

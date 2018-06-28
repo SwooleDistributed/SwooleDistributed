@@ -207,7 +207,17 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             ProcessManager::getInstance()->addProcess(ConsulProcess::class);
         }
         if ($this->config->get('backstage.enable', false)) {
-            ProcessManager::getInstance()->addProcess(BackstageProcess::class);
+            $path = $this->config->get("backstage.bin_path", false);
+            if ($path == false) {
+                $path = BIN_DIR . "/exec/backstage";
+            } else {
+                $path = MYROOT . $path;
+            }
+            if (!is_file($path)) {
+                secho("Backstage", "后台监控没有安装,如需要请联系白猫获取（需VIP客户）,或者将backstage.php配置中enable关闭\n");
+            }else {
+                ProcessManager::getInstance()->addProcess(BackstageProcess::class);
+            }
         }
         //Cluster进程
         ProcessManager::getInstance()->addProcess(ClusterProcess::class);

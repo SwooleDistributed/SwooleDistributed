@@ -364,4 +364,36 @@ function sd_call_user_func_array($function, $parameter)
         return $function(...$parameter);
     }
 }
-  
+
+/**
+ * @param $arr
+ * @throws \Server\Asyn\MQTT\Exception
+ */
+function sd_debug($arr)
+{
+    Server\Components\SDDebug\SDDebug::debug($arr);
+}
+
+function read_dir_queue($dir)
+{
+    $files = array();
+    $queue = array($dir);
+    while ($data = each($queue)) {
+        $path = $data['value'];
+        if (is_dir($path) && $handle = opendir($path)) {
+            while ($file = readdir($handle)) {
+                if ($file == '.' || $file == '..') continue;
+                $files[] = $real_path = realpath($path . '/' . $file);
+                if (is_dir($real_path)) $queue[] = $real_path;
+            }
+        }
+        closedir($handle);
+    }
+    $result = [];
+    foreach ($files as $file) {
+        if (pathinfo($file, PATHINFO_EXTENSION) == "php") {
+            $result[] = $file;
+        }
+    }
+    return $result;
+}
