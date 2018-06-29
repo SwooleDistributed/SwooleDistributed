@@ -3,6 +3,7 @@
 今年年底历时2年多的迭代，这是SD框架硕果满满的一年，通过不断的迭代和改进SD框架已经在圈内有良好的口碑，不少新生的框架借鉴了SD的设计思想，SD框架也被不少创业型公司和大型企业使用。
 ## SDHelp
 SDHELP是SD专属的开发者工具，可以实现断点调试，代码覆盖率报告等功能。
+https://github.com/SwooleDistributed/SDHelper-Bin
  ![](https://box.kancloud.cn/e72f48d067f38325e8bce143ae03263c_965x705.png)
  ![](https://box.kancloud.cn/f1c6d430270cb6aecd669ca5c65424c5_962x672.png)
  ![](https://box.kancloud.cn/460cc43f50afe029e6dcb424d1dd3f64_963x672.png)
