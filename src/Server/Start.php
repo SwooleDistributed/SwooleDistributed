@@ -38,6 +38,10 @@ class Start
      */
     protected static $xdebug;
     /**
+     * @var
+     */
+    protected static $coverage;
+    /**
      * @var string
      */
     protected static $startTime;
@@ -81,7 +85,8 @@ class Start
     public static function run()
     {
         self::$debug = new \swoole_atomic(0);
-        self::$xdebug = new \swoole_atomic(0);
+        self::$xdebug = false;
+        self::$coverage = false;
         self::$leader = new \swoole_atomic(0);
         self::$xdebug_table = new \swoole_table(1);
         self::$xdebug_table->column('wid', \swoole_table::TYPE_INT, 8);
@@ -169,14 +174,23 @@ class Start
             secho("SYS", "DEBUG关闭");
         }
     }
+    public static function getCoverage()
+    {
+        return self::$coverage;
+    }
+
+    public static function setCoverage($coverage)
+    {
+        self::$coverage = $coverage;
+    }
     public static function getXDebug()
     {
-        return self::$xdebug->get() == 1 ? true : false;
+        return self::$xdebug;
     }
 
     public static function setXDebug($debug)
     {
-        self::$xdebug->set($debug ? 1 : 0);
+        self::$xdebug = $debug;
     }
     public static function isLeader()
     {

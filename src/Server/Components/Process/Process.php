@@ -10,6 +10,7 @@ namespace Server\Components\Process;
 
 
 use Server\Components\Event\EventDispatcher;
+use Server\Start;
 use Server\SwooleMarco;
 
 abstract class Process extends ProcessRPC
@@ -55,8 +56,25 @@ abstract class Process extends ProcessRPC
         go(function () use ($process) {
             $this->start($process);
         });
+        //Code coverage
+        register_tick_function([$this, 'onPhpTick']);
     }
 
+    /**
+     * Code coverage onPhpTick
+     */
+    public function onPhpTick()
+    {
+        if(!Start::getCoverage()) return;
+        $redis_pool = get_instance()->getAsynPool("redisPool");
+        if ($redis_pool != null) {
+            $dump = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+            $file = explode("app-debug", $dump[0]['file'])[1]??null;
+            if(!empty($file)) {
+                $redis_pool->getSync()->zIncrBy(SwooleMarco::CodeCoverage, 1, $file . ":" . $dump[0]['line']);
+            }
+        }
+    }
 
     /**
      * @param $process

@@ -202,6 +202,7 @@ class Controller extends CoreBase
         try {
             $this->initialization($controller_name, $method_name);
         } catch (Throwable $e) {
+            get_instance()->onPhpTick($e);
             $this->getProxy()->onExceptionHandle($e);
             $this->destroy();
             return;
@@ -214,6 +215,7 @@ class Controller extends CoreBase
                 $this->getProxy()->$method_name(...$params);
             }
         } catch (Throwable $e) {
+            get_instance()->onPhpTick($e);
             $this->getProxy()->onExceptionHandle($e);
         }
         $this->destroy();

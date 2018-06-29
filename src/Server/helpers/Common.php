@@ -136,8 +136,8 @@ function checkExtension()
         secho("STA", "[版本错误]PHP版本必须大于7.0.0\n");
         $check = false;
     }
-    if (SWOOLE_VERSION[0] == 1) {
-        secho("STA", "[版本错误]不支持1.0版本swoole，请安装2.0以上版本");
+    if (version_compare(SWOOLE_VERSION, '4.0.1', '<')) {
+        secho("STA", "[版本错误]Swoole版本必须大于4.0.1\n");
         $check = false;
     }
 

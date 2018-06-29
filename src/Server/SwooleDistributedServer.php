@@ -633,6 +633,8 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
                 Actor::recovery($workerId);
             }
         }
+        //Code coverage
+        register_tick_function([$this,'onPhpTick']);
     }
 
     /**
@@ -664,6 +666,42 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
     {
         if ($this->mysql_pool != null) {
             $this->mysql_pool->installDbBuilder();
+        }
+    }
+
+    /**
+     * Code coverage onPhpTick
+     * @param \Throwable|null $e
+     * @throws SwooleException
+     */
+    public function onPhpTick(\Throwable $e=null)
+    {
+        if(!Start::getCoverage()) return;
+        if(empty($e)) {
+            $dump = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
+            $file = $dump[0]['file'];
+            $line = $dump[0]['line'];
+            $file = explode("app-debug", $file)[1]??null;
+            if(!empty($file)) {
+                $this->getRedis()->zIncrBy(SwooleMarco::CodeCoverage, 1, $file . ":" . $line);
+            }
+        }else{
+            $file = explode("app-debug", $e->getFile())[1]??null;
+            if(!empty($file)) {
+                $this->getRedis()->zIncrBy(SwooleMarco::CodeCoverage, 1, $file . ":" . $e->getLine());
+            }
+            $dump = $e->getTrace();
+            foreach ($dump as $one){
+                $file = $one['file'];
+                $line = $one['line'];
+                $files = explode("app-debug", $file);
+                if(count($files)>1) {
+                    $file = $files[1];
+                    $this->getRedis()->zIncrBy(SwooleMarco::CodeCoverage,1,$file.":".$line);
+                }else{
+                    break;
+                }
+            }
         }
     }
 

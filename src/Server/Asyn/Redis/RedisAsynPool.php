@@ -26,6 +26,7 @@ class RedisAsynPool extends AsynPool
     private $coroutineRedisHelp;
     private $redis_client;
     protected $name;
+
     public function __construct($config, $active)
     {
         parent::__construct($config);
@@ -298,9 +299,27 @@ class RedisAsynPool extends AsynPool
                     $arguments[] = $value;
                 }
                 break;
+            case 'scan':
+            case 'sscan':
+            case 'hscan':
+            case 'zscan':
+                $match = $arguments[2] ?? null;
+                $count = $arguments[3] ?? null;
+                unset($arguments[2]);
+                unset($arguments[3]);
+                if (!empty($match)) {
+                    $arguments[] = "match";
+                    $arguments[] = $match;
+                }
+                if (!empty($count)) {
+                    $arguments[] = "count";
+                    $arguments[] = $count;
+                }
+                break;
         }
         return array_values($arguments);
     }
+
     /**
      * 执行redis命令
      * @param $data
@@ -343,6 +362,21 @@ class RedisAsynPool extends AsynPool
                             }
                         } else {
                             $data['result'] = $result;
+                        }
+                        break;
+                    case 'scan':
+                        $data['result'] = [];
+                        $data['result']['cursor'] = $result[0];
+                        $data['result']['data'] = $result[1];
+                        break;
+                    case 'hscan':
+                    case 'zscan':
+                        $data['result'] = [];
+                        $data['result']['cursor'] = $result[0];
+                        $count = count($result[1]);
+                        $data['result']['data']=[];
+                        for ($i = 0; $i < $count; $i = $i + 2) {
+                            $data['result']['data'][$result[1][$i]] = $result[1][$i + 1];
                         }
                         break;
                     default:
@@ -430,6 +464,7 @@ class RedisAsynPool extends AsynPool
      * @param array ...$arg
      * @param callable $set
      * @return RedisCoroutine
+     * @throws SwooleException
      */
     public function coroutineSend($name, $arg, callable $set = null)
     {
