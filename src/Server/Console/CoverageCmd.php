@@ -8,11 +8,12 @@
 
 namespace Server\Console;
 
-
 use app\AppServer;
 use Noodlehaus\Config;
+use Server\Asyn\Redis\RedisAsynPool;
 use Server\CoreBase\PortManager;
 use Server\Start;
+use Server\SwooleMarco;
 use Server\SwooleServer;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -20,7 +21,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-class XDebugCmd extends Command
+class CoverageCmd extends Command
 {
     protected $config;
 
@@ -32,12 +33,16 @@ class XDebugCmd extends Command
 
     protected function configure()
     {
-        $this->setName('xdebug')->setDescription("Romote Debug server");
+        $this->setName('coverage')->setDescription("Code Coverage");
         $this->addOption('daemonize', "d", InputOption::VALUE_NONE, 'Who do you want daemonize?');
+        $this->addOption('clean', "c", InputOption::VALUE_NONE, 'Who do you want clean code coverage data?');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
+        if(!$this->config->get('redis.enable',false)){
+            throw new \Exception("Code Coverage 需要配置redis才可以使用");
+        }
         if (!$this->config->get('backstage.enable', false)) {
             throw new \Exception("配置文件backstage.enable必须设置为true，才能使用");
         }
@@ -55,6 +60,7 @@ class XDebugCmd extends Command
         $files = read_dir_queue(APP_DIR);
         foreach ($files as $file) {
             $str = file_get_contents($file);
+            $str = str_replace("<?php", "<?php declare(ticks=1);", $str);
             $newfile = str_replace("src/app", "src/app-debug", $file);
             $dir = pathinfo($newfile, PATHINFO_DIRNAME);
             is_dir($dir) OR mkdir($dir, 0777, true);
@@ -115,7 +121,7 @@ class XDebugCmd extends Command
             ['S_TYPE', 'S_NAME', 'S_PORT', 'S_PACK', 'S_MIDD'],
             $show
         );
-        Start::setXDebug(true);
+        Start::setCoverage(true);
         //是否是守护进程
         if ($input->getOption('daemonize')) {
             Start::setDaemonize();
@@ -123,7 +129,12 @@ class XDebugCmd extends Command
         } else {
             $io->note("Press Ctrl-C to quit. Start success.");
         }
-        $io->warning("正处于远程断点联调环境中");
+        $io->warning("正处于代码覆盖率测试环境中，性能会有所影响");
+        //是否清除数据
+        if ($input->getOption('clean')) {
+            $redis_pool = new RedisAsynPool($this->config, $this->config->get('redis.active'));
+            $redis_pool->getSync()->del(SwooleMarco::CodeCoverage);
+        }
         $server = new AppServer();
         $server->start();
     }

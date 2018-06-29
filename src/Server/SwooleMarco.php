@@ -106,4 +106,9 @@ class SwooleMarco
      * HTTP请求
      */
     const HTTP_REQUEST = 'http_request';
+
+    /**
+     * CodeCoverage
+     */
+    const CodeCoverage = '@SD-CodeCoverage';
 }

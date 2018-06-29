@@ -75,6 +75,20 @@ class Console extends Controller
                     $this->close();
                 }
                 break;
+            case "coverage":
+                if (Start::getCoverage()) {
+                    $this->addSub('$SYS_COVERAGE/#');
+                    $files = read_dir_queue(APP_DIR);
+                    $sendFiles = [];
+                    foreach ($files as $file) {
+                        $file = explode("src/app", $file)[1];
+                        $sendFiles[] = $file;
+                    }
+                    $this->autoSend($sendFiles, '$SYS_COVERAGE/Files');
+                } else {
+                    $this->close();
+                }
+                break;
             default:
                 $this->addSub('$SYS/#');
         }
@@ -303,6 +317,44 @@ class Console extends Controller
             $src = file_get_contents(APP_DIR . $file);
             $this->autoSend(['file' => $file, "text" => explode("\n", $src)], '$SYS_XDEBUG/DebugFile');
         }
+    }
+
+    /**
+     * @param $file
+     * @throws \Exception
+     */
+    public function back_getFileCoverage($file)
+    {
+        if ($this->request_type == SwooleMarco::HTTP_REQUEST) {
+            throw new \Exception("不允许http访问此接口");
+        }
+        if (is_file(APP_DIR . $file)) {
+            $src = file_get_contents(APP_DIR . $file);
+            $result = $this->redis->zScan(SwooleMarco::CodeCoverage, 0, "$file:*", 10000000)['data'];
+            $data['file'] = $file;
+            $data['lines'] = [];
+            $line_srcs = explode("\n", $src);
+            foreach ($line_srcs as $key => $value) {
+                $line['text'] = $value;
+                $_line = $key+1;
+                $line['count'] = $result["$file:$_line"] ?? 0;
+                $data['lines'][] = $line;
+            }
+            $this->autoSend($data, '$SYS_COVERAGE/File');
+        }
+    }
+
+    /**
+     * @throws \Exception
+     */
+    public function back_getCoverageScore()
+    {
+        $result = $this->redis->zRevRangeByScore(SwooleMarco::CodeCoverage, "+inf", "-inf", ['withscores' => true, 'limit' => [0,2000]]);
+        $data = [];
+        foreach ($result as $key=>$value){
+            $data[] = ['text'=>$key,'count'=>$value];
+        }
+        $this->autoSend($data, '$SYS_COVERAGE/Score');
     }
 
     /**
