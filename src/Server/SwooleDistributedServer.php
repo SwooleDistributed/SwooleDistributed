@@ -799,7 +799,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if ($this->isCluster()) {
             ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_addUid($uid);
         } else {
-            get_instance()->pub('$SYS/uidcount', count($this->uid_fd_table));
+            get_instance()->pub('$SYS/uidcount', $this->uid_fd_table->count());
         }
     }
 
@@ -818,7 +818,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         //这里无论是不是集群都需要调用
         ProcessManager::getInstance()->getRpcCall(ClusterProcess::class, true)->my_removeUid($uid);
         if (!$this->isCluster()) {
-            get_instance()->pub('$SYS/uidcount', count($this->uid_fd_table));
+            get_instance()->pub('$SYS/uidcount', $this->uid_fd_table->count());
         }
     }
 
@@ -848,7 +848,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         if ($this->isCluster()) {
             return ProcessManager::getInstance()->getRpcCall(ClusterProcess::class)->countOnline();
         } else {
-            return count($this->uid_fd_table);
+            return $this->uid_fd_table->count();
         }
     }
 

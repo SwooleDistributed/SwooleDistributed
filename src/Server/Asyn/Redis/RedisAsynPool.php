@@ -338,6 +338,7 @@ class RedisAsynPool extends AsynPool
                 switch (strtolower($data['name'])) {
                     case 'hmget':
                         $data['result'] = [];
+                        if (empty($result)) break;
                         $count = count($result);
                         for ($i = 0; $i < $count; $i++) {
                             $data['result'][$data['M'][$i]] = $result[$i];
@@ -345,6 +346,7 @@ class RedisAsynPool extends AsynPool
                         break;
                     case 'hgetall':
                         $data['result'] = [];
+                        if (empty($result)) break;
                         $count = count($result);
                         for ($i = 0; $i < $count; $i = $i + 2) {
                             $data['result'][$result[$i]] = $result[$i + 1];
@@ -356,6 +358,7 @@ class RedisAsynPool extends AsynPool
                     case 'zrange':
                         if ($data['withscores'] ?? false) {
                             $data['result'] = [];
+                            if (empty($result)) break;
                             $count = count($result);
                             for ($i = 0; $i < $count; $i = $i + 2) {
                                 $data['result'][$result[$i]] = $result[$i + 1];
@@ -366,15 +369,17 @@ class RedisAsynPool extends AsynPool
                         break;
                     case 'scan':
                         $data['result'] = [];
+                        if (empty($result)) break;
                         $data['result']['cursor'] = $result[0];
                         $data['result']['data'] = $result[1];
                         break;
                     case 'hscan':
                     case 'zscan':
                         $data['result'] = [];
+                        if (empty($result)) break;
                         $data['result']['cursor'] = $result[0];
                         $count = count($result[1]);
-                        $data['result']['data']=[];
+                        $data['result']['data'] = [];
                         for ($i = 0; $i < $count; $i = $i + 2) {
                             $data['result']['data'][$result[1][$i]] = $result[1][$i + 1];
                         }
