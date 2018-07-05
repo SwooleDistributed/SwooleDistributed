@@ -1,7 +1,14 @@
 # SwooleDistributed
 官网：http://sd.youwoxing.net
 今年年底历时2年多的迭代，这是SD框架硕果满满的一年，通过不断的迭代和改进SD框架已经在圈内有良好的口碑，不少新生的框架借鉴了SD的设计思想，SD框架也被不少创业型公司和大型企业使用。
-
+## SDHelp
+SDHELP是SD专属的开发者工具，可以实现断点调试，代码覆盖率报告等功能。
+https://github.com/SwooleDistributed/SDHelper-Bin
+ ![](https://box.kancloud.cn/e72f48d067f38325e8bce143ae03263c_965x705.png)
+ ![](https://box.kancloud.cn/f1c6d430270cb6aecd669ca5c65424c5_962x672.png)
+ ![](https://box.kancloud.cn/460cc43f50afe029e6dcb424d1dd3f64_963x672.png)
+ ![](https://box.kancloud.cn/2bbd1490cb947b29cc566c1d07f26989_966x690.png)
+ ![](https://box.kancloud.cn/aab4cb457dae925226a59a71c8a3d819_964x690.png)
 ## SD框架到底是什么技术
 SD框架全称SwooleDistributed，从名称上看一个是Swoole一个是Distributed，他是基于Swoole扩展的可以分布式部署的应用服务器框架。
 借助于PHP的高效开发环境，Swoole的高性能异步网络通信引擎，以及其他的高可用的扩展和工具，SD框架提供给广大开发者一个稳定的高效的而且功能强大的应用服务器框架。
