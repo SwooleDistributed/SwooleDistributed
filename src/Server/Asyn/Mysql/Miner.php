@@ -1589,8 +1589,13 @@ class Miner extends Child
 
             if ($usePlaceholders && $autoQuote) {
                 $statement .= "`".$set['column'] . "` " . self::EQUALS . " ?, ";
-
-                $this->setPlaceholderValues[] = $set['value'];
+                if($set['value']===false){
+                    $this->setPlaceholderValues[] = 0;
+                }elseif($set['value']===true){
+                    $this->setPlaceholderValues[] = 1;
+                }else {
+                    $this->setPlaceholderValues[] = $set['value'];
+                }
             } else {
                 $statement .= "`".$set['column'] . "` " . self::EQUALS . " " . $this->autoQuote($set['value'], $autoQuote) . ", ";
             }
@@ -2620,9 +2625,10 @@ class Miner extends Child
      */
     public function getPlaceholderValues()
     {
-        return array_merge($this->getSetPlaceholderValues(),
+        $array = array_merge($this->getSetPlaceholderValues(),
             $this->getWherePlaceholderValues(),
             $this->getHavingPlaceholderValues());
+        return $array;
     }
 
     /**
