@@ -400,6 +400,7 @@ class ClusterProcess extends Process
      * @param $topic
      * @param $data
      * @param $excludeUids
+     * @throws \Exception
      */
     public function th_pub($topic, $data, $excludeUids = [])
     {

@@ -9,7 +9,7 @@
 namespace Server\Asyn\AMQP;
 
 use PhpAmqpLib\Connection\AbstractConnection;
-use PhpAmqpLib\Wire\IO\StreamIO;
+use PhpAmqpLib\Exception\AMQPTimeoutException;
 
 class AMQP extends AbstractConnection
 {
@@ -23,9 +23,9 @@ class AMQP extends AbstractConnection
      * @param string $login_method
      * @param null $login_response
      * @param string $locale
-     * @param int $read_timeout
+     * @param int $connection_timeout
      * @param bool $keepalive
-     * @param int $write_timeout
+     * @param int $read_write_timeout
      * @param int $heartbeat
      * @throws \Exception
      */
@@ -39,12 +39,13 @@ class AMQP extends AbstractConnection
         $login_method = 'AMQPLAIN',
         $login_response = null,
         $locale = 'en_US',
-        $read_timeout = 3,
+        $connection_timeout = 3,
         $keepalive = false,
-        $write_timeout = 3,
+        $read_write_timeout = -1,
         $heartbeat = 0
-    ) {
-        $io = new SwooleIO($host, $port, $read_timeout, $keepalive, $write_timeout, $heartbeat);
+    )
+    {
+        $io = new SwooleIO($host, $port, $connection_timeout, $read_write_timeout, null, $keepalive, $heartbeat);
 
         parent::__construct(
             $user,
@@ -65,23 +66,27 @@ class AMQP extends AbstractConnection
     public function waitAllChannel()
     {
         while (true) {
-            foreach ($this->channels as $channel){
-                if($channel instanceof AMQPNonBlockChannel) {
+            foreach ($this->channels as $channel) {
+                if ($channel instanceof AMQPNonBlockChannel) {
                     $channel->waitNonBlocking();
                 }
             }
-            list($frame_type, $frame_channel, $payload) = $this->wait_frame(0);
-            if ($frame_channel === 0 && $frame_type === 8) {
-                // skip heartbeat frames and reduce the timeout by the time passed
-                $this->debug->debug_msg("received server heartbeat");
-            } else {
-                // Not the channel we were looking for.  Queue this frame
-                //for later, when the other channel is looking for frames.
-                // Make sure the channel still exists, it could have been
-                // closed by a previous Exception.
-                if (isset($this->channels[$frame_channel])) {
-                    array_push($this->channels[$frame_channel]->frame_queue, array($frame_type, $payload));
+            try {
+                list($frame_type, $frame_channel, $payload) = $this->wait_frame(0);
+                if ($frame_channel === 0 && $frame_type === 8) {
+                    // skip heartbeat frames and reduce the timeout by the time passed
+                    $this->debug->debug_msg("received server heartbeat");
+                } else {
+                    // Not the channel we were looking for.  Queue this frame
+                    //for later, when the other channel is looking for frames.
+                    // Make sure the channel still exists, it could have been
+                    // closed by a previous Exception.
+                    if (isset($this->channels[$frame_channel])) {
+                        array_push($this->channels[$frame_channel]->frame_queue, array($frame_type, $payload));
+                    }
                 }
+            } catch (AMQPTimeoutException $e) {
+
             }
         }
     }
