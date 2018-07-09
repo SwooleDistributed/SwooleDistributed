@@ -146,7 +146,6 @@ class SwooleIO extends AbstractIO
     public function read($len)
     {
         $this->check_heartbeat();
-
         do
         {
             if ($len <= strlen($this->buffer))
@@ -210,6 +209,11 @@ class SwooleIO extends AbstractIO
      */
     public function check_heartbeat()
     {
+        if (!$this->sock->connected)
+        {
+            $this->reconnect();
+            return;
+        }
         // ignore unless heartbeat interval is set
         if ($this->heartbeat !== 0 && $this->last_read && $this->last_write) {
             $t = microtime(true);
