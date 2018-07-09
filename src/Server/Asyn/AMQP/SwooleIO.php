@@ -9,6 +9,7 @@
 namespace Server\Asyn\AMQP;
 
 use PhpAmqpLib\Exception\AMQPRuntimeException;
+use PhpAmqpLib\Exception\AMQPTimeoutException;
 use PhpAmqpLib\Wire\AMQPWriter;
 use PhpAmqpLib\Wire\IO\AbstractIO;
 use Swoole;
@@ -165,7 +166,7 @@ class SwooleIO extends AbstractIO
             $read_buffer = $this->sock->recv($this->read_write_timeout ? $this->read_write_timeout : -1);
             if ($read_buffer === false)
             {
-                throw new AMQPRuntimeException('Error receiving data, errno=' . $this->sock->errCode);
+                throw new AMQPTimeoutException('Error receiving data, errno=' . $this->sock->errCode);
             }
 
             if ($read_buffer === '')

@@ -126,7 +126,7 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         if (empty($fdinfo)) {
             throw new \Exception('fd not exist');
         }
-        if (array_key_exists('websocket_status', $fdinfo)) {
+        if (array_key_exists('websocket_status', $fdinfo) && $fdinfo['websocket_status'] == WEBSOCKET_STATUS_FRAME) {
             return $fdinfo['server_port'];
         }
         return false;
@@ -138,16 +138,16 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
      * @param $data
      * @param bool $ifPack
      * @param $topic
+     * @return bool
      * @throws \Exception
      */
     public function send($fd, $data, $ifPack = false, $topic = null)
     {
         if (!$this->portManager->websocket_enable) {
-            parent::send($fd, $data, $ifPack, $topic);
-            return;
+            return parent::send($fd, $data, $ifPack, $topic);
         }
         $fdinfo = $this->server->connection_info($fd);
-        if (empty($fdinfo)) return;
+        if (empty($fdinfo)) return false;
         $server_port = $fdinfo['server_port'];
         //允许数据监控的情况就pub
         if($this->allow_MonitorFlowData){
@@ -168,9 +168,9 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             }
         }
         if ($this->isWebSocket($fdinfo)) {
-            $this->server->push($fd, $data, $this->portManager->getOpCode($server_port));
+            return $this->server->push($fd, $data, $this->portManager->getOpCode($server_port));
         } else {
-            $this->server->send($fd, $data);
+            return $this->server->send($fd, $data);
         }
     }
 

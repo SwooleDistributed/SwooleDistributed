@@ -637,11 +637,12 @@ abstract class SwooleServer extends ProcessRPC
      * @param $data
      * @param bool $ifPack
      * @param null $topic
+     * @return bool
      */
     public function send($fd, $data, $ifPack = false, $topic = null)
     {
         if (!$this->server->exist($fd)) {
-            return;
+            return false;
         }
         if ($ifPack) {
             $pack = $this->portManager->getPackFromFd($fd);
@@ -649,7 +650,7 @@ abstract class SwooleServer extends ProcessRPC
                 $data = $pack->pack($data, $topic);
             }
         }
-        $this->server->send($fd, $data);
+        return $this->server->send($fd, $data);
     }
 
     /**
