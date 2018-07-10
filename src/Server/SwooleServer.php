@@ -202,9 +202,6 @@ abstract class SwooleServer extends ProcessRPC
         $this->task_num = $set['task_worker_num'];
         $set['daemonize'] = Start::getDaemonize();
         $this->server->set($set);
-        swoole_async_set([
-            'socket_buffer_size' => 1024 * 1024 * 1024
-        ]);
     }
 
     /**
