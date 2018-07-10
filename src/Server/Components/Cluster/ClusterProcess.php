@@ -123,6 +123,7 @@ class ClusterProcess extends Process
      * 与Actor通讯
      * @param $actor
      * @param $data
+     * @throws \Exception
      */
     public function callActor($actor, $data)
     {

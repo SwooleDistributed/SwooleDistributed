@@ -127,11 +127,12 @@ class ProcessManager
     /**
      * 向所有进程广播消息
      * @param $data
+     * @throws \Exception
      */
     public function sendToAllProcess($data)
     {
         foreach ($this->map as $process){
-            $process->process->write(\swoole_serialize::pack($data));
+            $process->sendMessage($data,$process->worker_id);
         }
     }
 }
