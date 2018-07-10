@@ -21,6 +21,7 @@ abstract class Process extends ProcessRPC
     protected $log;
     protected $token = 0;
     protected $params;
+    protected $socketBuff = "";
 
     /**
      * Process constructor.
@@ -98,8 +99,19 @@ abstract class Process extends ProcessRPC
      */
     public function onRead()
     {
-        $recv = \swoole_serialize::unpack($this->process->read(64 * 1024));
-        $this->readData($recv);
+        $recv = $this->process->read();
+        $this->socketBuff .= $recv;
+        while (strlen($this->socketBuff)>0){
+            $len = unpack("N",$this->socketBuff)[1];
+            if(strlen($this->socketBuff)>=$len){//满足完整一个包
+                $data = substr($this->socketBuff,4,$len);
+                $recv_data = \swoole_serialize::unpack($data);
+                $this->readData($recv_data);
+                $this->socketBuff = substr($this->socketBuff,$len);
+            }else{
+                break;
+            }
+        }
     }
 
     /**
