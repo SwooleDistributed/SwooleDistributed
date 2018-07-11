@@ -99,7 +99,7 @@ abstract class Process extends ProcessRPC
      */
     public function onRead()
     {
-        $recv = $this->process->read();
+        $recv = $this->process->read(64 * 1024);
         $this->socketBuff .= $recv;
         while (strlen($this->socketBuff)>0){
             $len = unpack("N",$this->socketBuff)[1];
