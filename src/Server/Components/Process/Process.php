@@ -39,7 +39,7 @@ abstract class Process extends ProcessRPC
         $this->log = get_instance()->log;
         $this->params = $params;
         if (get_instance()->server != null) {
-            $this->process = new \swoole_process([$this, '__start'], false, 2);
+            $this->process = new \swoole_process([$this, '__start'], false, 1);
             get_instance()->server->addProcess($this->process);
         }
     }
@@ -99,17 +99,23 @@ abstract class Process extends ProcessRPC
      */
     public function onRead()
     {
-        $recv = $this->process->read(64 * 1024);
-        $this->socketBuff .= $recv;
-        while (strlen($this->socketBuff)>4){
-            $len = unpack("N",$this->socketBuff)[1];
-            if(strlen($this->socketBuff)>=$len){//满足完整一个包
-                $data = substr($this->socketBuff,4,$len);
-                $recv_data = \swoole_serialize::unpack($data);
-                $this->readData($recv_data);
-                $this->socketBuff = substr($this->socketBuff,$len);
-            }else{
-                break;
+        while (true) {
+            try {
+                $recv = $this->process->read();
+            }catch (\Throwable $e){
+                return;
+            }
+            $this->socketBuff .= $recv;
+            while (strlen($this->socketBuff) > 4) {
+                $len = unpack("N", $this->socketBuff)[1];
+                if (strlen($this->socketBuff) >= $len) {//满足完整一个包
+                    $data = substr($this->socketBuff, 4, $len);
+                    $recv_data = \swoole_serialize::unpack($data);
+                    $this->readData($recv_data);
+                    $this->socketBuff = substr($this->socketBuff, $len);
+                } else {
+                    break;
+                }
             }
         }
     }
