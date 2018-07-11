@@ -101,7 +101,7 @@ abstract class Process extends ProcessRPC
     {
         $recv = $this->process->read(64 * 1024);
         $this->socketBuff .= $recv;
-        while (strlen($this->socketBuff)>0){
+        while (strlen($this->socketBuff)>4){
             $len = unpack("N",$this->socketBuff)[1];
             if(strlen($this->socketBuff)>=$len){//满足完整一个包
                 $data = substr($this->socketBuff,4,$len);
