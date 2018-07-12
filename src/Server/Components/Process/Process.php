@@ -109,8 +109,8 @@ abstract class Process extends ProcessRPC
             while (strlen($this->socketBuff) > 4) {
                 $len = unpack("N", $this->socketBuff)[1];
                 if (strlen($this->socketBuff) >= $len) {//满足完整一个包
-                    $data = substr($this->socketBuff, 4, $len);
-                    $recv_data = unserialize($data);
+                    $data = substr($this->socketBuff, 4, $len-4);
+                    $recv_data = \swoole_serialize::unpack($data);
                     $this->readData($recv_data);
                     $this->socketBuff = substr($this->socketBuff, $len);
                 } else {
