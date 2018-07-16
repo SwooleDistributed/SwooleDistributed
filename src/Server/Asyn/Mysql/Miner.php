@@ -2592,6 +2592,17 @@ class Miner extends Child
                     $this->pdoRollBackTrans();
                     throw $e;
                 }
+            } catch (\Throwable $e) {
+                $this->setPdoConnection(null);
+                $this->pdoConnect($this->activeConfig);
+                try {
+                    $PdoConnection = $this->getPdoConnection();
+                    $PdoStatement = $PdoConnection->prepare($statement);
+                    $PdoStatement->execute($this->getPlaceholderValues());
+                } catch (\PDOException $ex) {
+                    $this->pdoRollBackTrans();
+                    throw $ex;
+                }
             }
             return $PdoStatement;
         } else {
