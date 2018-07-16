@@ -321,13 +321,15 @@ class PortManager
      */
     public function getMethodPrefix($server_port)
     {
-        $config = $this->portConfig[$server_port];
+        $config = $this->portConfig[$server_port] ?? null;
+        if ($config == null) return '';
         $method_name = $config['method_prefix'] ?? '';
         return $method_name;
     }
 
     /**
      * @param $fd
+     * @throws \Throwable
      */
     public function eventClose($fd)
     {
@@ -341,7 +343,8 @@ class PortManager
         if ($type == self::SOCK_HTTP) {
             return;
         }
-        $config = $this->portConfig[$server_port];
+        $config = $this->portConfig[$server_port] ?? null;
+        if ($config == null) return;
         $controller_name = $config['event_controller_name'] ?? get_instance()->getEventControllerName();
         $method_name = ($config['method_prefix'] ?? '') . ($config['close_method_name'] ?? get_instance()->getCloseMethodName());
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);
@@ -354,11 +357,13 @@ class PortManager
     /**
      * @param $fd
      * @param null $request
+     * @throws \Throwable
      */
     public function eventConnect($fd, $request = null)
     {
         $server_port = get_instance()->getServerPort($fd);
-        $config = $this->portConfig[$server_port];
+        $config = $this->portConfig[$server_port] ?? null;
+        if ($config == null) return;
         $controller_name = $config['event_controller_name'] ?? get_instance()->getEventControllerName();
         $method_name = ($config['method_prefix'] ?? '') . ($config['connect_method_name'] ?? get_instance()->getConnectMethodName());
         $controller_instance = ControllerFactory::getInstance()->getController($controller_name);

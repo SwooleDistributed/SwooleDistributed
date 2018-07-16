@@ -63,10 +63,10 @@ class EventDispatcher
             if ($index !== null) {
                 unset ($this->_eventListeners [$type] [$index]);
             }
-        }
-        $numListeners = count($this->_eventListeners [$type]);
-        if ($numListeners == 0) {
-            unset ($this->_eventListeners [$type]);
+            $numListeners = count($this->_eventListeners [$type]);
+            if ($numListeners == 0) {
+                unset ($this->_eventListeners [$type]);
+            }
         }
     }
 
