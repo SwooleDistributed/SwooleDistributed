@@ -23,6 +23,7 @@ $config['server']['set'] = [
     'task_worker_num' => 5,
     'task_max_request' => 5000,
     'enable_reuse_port' => true,
+    'enable_coroutine' => false,
     'heartbeat_idle_time' => 120,//2分钟后没消息自动释放连接
     'heartbeat_check_interval' => 60,//1分钟检测一次
     'max_connection' => 100000
