@@ -10,6 +10,7 @@ namespace Server\Asyn\Mysql;
 
 use Server\CoreBase\SwooleException;
 use Server\Coroutine\CoroutineBase;
+use Server\Memory\Pool;
 use Server\Start;
 
 class MySqlCoroutine extends CoroutineBase
@@ -42,5 +43,14 @@ class MySqlCoroutine extends CoroutineBase
         }
         $result = $this->getResult($result);
         return $result;
+    }
+
+    /**
+     * @throws SwooleException
+     */
+    public function destroy()
+    {
+        parent::destroy();
+        Pool::getInstance()->push($this);
     }
 }
