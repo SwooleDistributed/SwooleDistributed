@@ -50,6 +50,7 @@ class MysqlAsynPool implements IAsynPool
 
     /**
      * @return Miner
+     * @throws SwooleException
      */
     public function installDbBuilder()
     {
