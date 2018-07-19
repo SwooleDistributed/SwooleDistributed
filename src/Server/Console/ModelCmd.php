@@ -88,7 +88,7 @@ class ModelCmd extends Command
                     }
                     $useTime = getMillisecond()-$startTime;
                     $io->text("输出结果：");
-                    print_r($result);
+                    var_dump($result);
                     if ($result != null) {
                         while (true) {
                             $save_id = $io->ask("将保存到变量，输入变量名以" . '$开头，或者Ctrl-C结束程序');
