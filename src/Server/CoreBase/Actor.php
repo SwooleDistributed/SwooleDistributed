@@ -331,13 +331,11 @@ abstract class Actor extends CoreBase
     public function after($ms, $callback, $user_param = null)
     {
         $id = \swoole_timer_after($ms, function ($user_param_one) use ($callback) {
-            go(function () use ($callback, $user_param_one) {
-                try {
-                    $callback($user_param_one);
-                } catch (\Throwable $e) {
-                    displayExceptionHandler($e);
-                }
-            });
+            try {
+                $callback($user_param_one);
+            } catch (\Throwable $e) {
+                displayExceptionHandler($e);
+            }
         }, $user_param);
         $this->timerIdArr[$id] = $id;
         return $id;
@@ -356,6 +354,7 @@ abstract class Actor extends CoreBase
     /**
      * @param $actorName
      * @return ActorRpc
+     * @throws SwooleException
      */
     public static function getRpc($actorName)
     {
