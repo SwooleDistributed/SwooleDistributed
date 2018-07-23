@@ -461,6 +461,7 @@ abstract class Actor extends CoreBase
      * 恢复Actor
      * @param $worker_id
      * @return void
+     * @throws SwooleException
      */
     public static function recovery($worker_id)
     {
