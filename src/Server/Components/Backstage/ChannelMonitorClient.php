@@ -27,6 +27,7 @@ class ChannelMonitorClient
     public function __construct($ip, $port, $uid, $filters = null)
     {
         $this->client = new \Co\http\Client($ip, $port);
+        $this->client->set(['timeout' => -1]);
         $result = $this->client->upgrade("/?type=channel&uid=$uid");
         if (!$result) {
             throw new \Exception("连接不上服务器");
