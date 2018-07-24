@@ -126,7 +126,7 @@ abstract class CoroutineBase implements ICoroutineBase
         } else {
             $this->chan = new \chan();
         }
-        $result = $this->chan->pop($this->MAX_TIMERS);
+        $result = $this->chan->pop($this->MAX_TIMERS/1000);
         //没有错误码就是正常的
         if($this->chan->errCode==0){
             $result = $this->getResult($result);
