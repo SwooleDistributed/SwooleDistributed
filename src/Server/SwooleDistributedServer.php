@@ -9,6 +9,7 @@ use Server\Asyn\Mysql\Miner;
 use Server\Asyn\Mysql\MysqlAsynPool;
 use Server\Asyn\Redis\RedisAsynPool;
 use Server\Asyn\Redis\RedisLuaManager;
+use Server\Components\AOP\AOPManager;
 use Server\Components\Backstage\BackstageProcess;
 use Server\Components\CatCache\CatCacheProcess;
 use Server\Components\CatCache\TimerCallBack;
@@ -644,6 +645,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $isReload = $this->isReload();
             ConsulHelp::start();
             TimerTask::start();
+            AOPManager::start();
             if ($this->config->get('catCache.enable', false)) {
                 TimerCallBack::init();
                 if (!$isReload) {
