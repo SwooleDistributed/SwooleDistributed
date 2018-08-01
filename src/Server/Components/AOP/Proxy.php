@@ -9,32 +9,62 @@
 namespace Server\Components\AOP;
 
 
-abstract class Proxy implements IProxy
+use Server\Memory\Pool;
+
+abstract class Proxy
 {
     /**
      * @var mixed
      */
     protected $own;
-
+    protected $class_name;
     public function __construct($own)
     {
         $this->own = $own;
+        $this->class_name = get_class($own);
     }
-
-    public abstract function beforeCall($name, $arguments = null);
-
-    public abstract function afterCall($name, $arguments = null);
-
+    /**
+     * @param $name
+     * @param $arguments
+     * @return mixed
+     * @throws \Server\CoreBase\SwooleException
+     * @throws \Throwable
+     */
     public function __call($name, $arguments)
     {
-        $this->beforeCall($name, $arguments);
+        $isThrow = false;
+        $aspects = AOPManager::getInstance()->getAspects($this->class_name,$name);
+        foreach ($aspects as &$aspect){
+            $aspect['instance'] = Pool::getInstance()->get($aspect['aspect_class']);
+            $aspect['instance']->init($this->own, $this->class_name,$name, $arguments);
+            $instance = $aspect['instance'];
+            $before = $aspect['before_method'];
+            if(!empty($before)) {
+                $instance->$before();
+            }
+        }
         try {
             $result = sd_call_user_func_array([$this->own, $name], $arguments);
             return $result;
         }catch (\Throwable $e){
+            $isThrow = true;
+            foreach ($aspects as $aspect){
+                $instance = $aspect['instance'];
+                $throw = $aspect['throw_method'];
+                if(!empty($throw)) {
+                    $instance->$throw($e);
+                }
+            }
             throw  $e;
         }finally{
-            $this->afterCall($name, $arguments);
+            foreach ($aspects as $aspect){
+                $instance = $aspect['instance'];
+                $after = $aspect['after_method'];
+                if(!empty($after)) {
+                    $instance->$after($isThrow);
+                }
+                Pool::getInstance()->push($instance);
+            }
         }
     }
 
