@@ -38,7 +38,7 @@ abstract class Proxy
             $aspect['instance'] = Pool::getInstance()->get($aspect['aspect_class']);
             $aspect['instance']->init($this->own, $this->class_name,$name, $arguments);
             $instance = $aspect['instance'];
-            $before = $aspect['before_method'];
+            $before = $aspect['before_method']??null;
             if(!empty($before)) {
                 $instance->$before();
             }
@@ -50,7 +50,7 @@ abstract class Proxy
             $isThrow = true;
             foreach ($aspects as $aspect){
                 $instance = $aspect['instance'];
-                $throw = $aspect['throw_method'];
+                $throw = $aspect['throw_method']??null;
                 if(!empty($throw)) {
                     $instance->$throw($e);
                 }
@@ -59,7 +59,7 @@ abstract class Proxy
         }finally{
             foreach ($aspects as $aspect){
                 $instance = $aspect['instance'];
-                $after = $aspect['after_method'];
+                $after = $aspect['after_method']??null;
                 if(!empty($after)) {
                     $instance->$after($isThrow);
                 }
