@@ -645,7 +645,6 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
             $isReload = $this->isReload();
             ConsulHelp::start();
             TimerTask::start();
-            AOPManager::start();
             if ($this->config->get('catCache.enable', false)) {
                 TimerCallBack::init();
                 if (!$isReload) {

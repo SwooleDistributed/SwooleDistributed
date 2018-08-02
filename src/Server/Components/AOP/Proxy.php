@@ -18,11 +18,13 @@ abstract class Proxy
      */
     protected $own;
     protected $class_name;
+
     public function __construct($own)
     {
         $this->own = $own;
         $this->class_name = get_class($own);
     }
+
     /**
      * @param $name
      * @param $arguments
@@ -33,37 +35,35 @@ abstract class Proxy
     public function __call($name, $arguments)
     {
         $isThrow = false;
-        $aspects = AOPManager::getInstance()->getAspects($this->class_name,$name);
-        foreach ($aspects as &$aspect){
-            $aspect['instance'] = Pool::getInstance()->get($aspect['aspect_class']);
-            $aspect['instance']->init($this->own, $this->class_name,$name, $arguments);
-            $instance = $aspect['instance'];
-            $before = $aspect['before_method']??null;
-            if(!empty($before)) {
-                $instance->$before();
+        $aspects = AOPManager::getInstance()->getAspects($this->class_name, $name);
+        $count = count($aspects);
+        for ($i = 0; $i < $count; $i++) {
+            $aspects[$i]['instance'] = Pool::getInstance()->get($aspects[$i]['aspect_class']);
+            $aspects[$i]['instance']->init($this->own, $this->class_name, $name, $arguments);
+            $before = $aspects[$i]['before_method'] ?? null;
+            if (!empty($before)) {
+                $aspects[$i]['instance']->$before();
             }
         }
         try {
             $result = sd_call_user_func_array([$this->own, $name], $arguments);
             return $result;
-        }catch (\Throwable $e){
+        } catch (\Throwable $e) {
             $isThrow = true;
-            foreach ($aspects as $aspect){
-                $instance = $aspect['instance'];
-                $throw = $aspect['throw_method']??null;
-                if(!empty($throw)) {
-                    $instance->$throw($e);
+            for ($i = $count-1; $i >= 0; $i--) {
+                $throw = $aspects[$i]['throw_method'] ?? null;
+                if (!empty($throw)) {
+                    $aspects[$i]['instance']->$throw();
                 }
             }
             throw  $e;
-        }finally{
-            foreach ($aspects as $aspect){
-                $instance = $aspect['instance'];
-                $after = $aspect['after_method']??null;
-                if(!empty($after)) {
-                    $instance->$after($isThrow);
+        } finally {
+            for ($i = $count-1; $i >= 0; $i--) {
+                $after = $aspects[$i]['after_method'] ?? null;
+                if (!empty($before)) {
+                    $aspects[$i]['instance']->$after($isThrow);
                 }
-                Pool::getInstance()->push($instance);
+                Pool::getInstance()->push($aspects[$i]['instance']);
             }
         }
     }

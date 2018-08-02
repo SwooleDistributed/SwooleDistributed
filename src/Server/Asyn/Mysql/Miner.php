@@ -1325,10 +1325,10 @@ class Miner extends Child
     public function quote($value)
     {
         $PdoConnection = $this->getPdoConnection();
-        if($value === true){
+        if ($value === true) {
             return 1;
         }
-        if($value === false){
+        if ($value === false) {
             return 0;
         }
         // If a PDO database connection is set, use it to quote the value using
@@ -1588,16 +1588,16 @@ class Miner extends Child
             $autoQuote = $this->getAutoQuote($set['quote']);
 
             if ($usePlaceholders && $autoQuote) {
-                $statement .= "`".$set['column'] . "` " . self::EQUALS . " ?, ";
-                if($set['value']===false){
+                $statement .= "`" . $set['column'] . "` " . self::EQUALS . " ?, ";
+                if ($set['value'] === false) {
                     $this->setPlaceholderValues[] = 0;
-                }elseif($set['value']===true){
+                } elseif ($set['value'] === true) {
                     $this->setPlaceholderValues[] = 1;
-                }else {
+                } else {
                     $this->setPlaceholderValues[] = $set['value'];
                 }
             } else {
-                $statement .= "`".$set['column'] . "` " . self::EQUALS . " " . $this->autoQuote($set['value'], $autoQuote) . ", ";
+                $statement .= "`" . $set['column'] . "` " . self::EQUALS . " " . $this->autoQuote($set['value'], $autoQuote) . ", ";
             }
         }
 
@@ -2399,19 +2399,20 @@ class Miner extends Child
     {
         if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式
             $result = null;
-            $this->pdoBeginTrans();
-            try{
+            $this->mysql_pool->getSync()->pdoBeginTrans();
+            try {
                 $result = $fuc(null);
-                $this->pdoCommitTrans();
-            }catch (\Throwable $e){
-                $this->pdoRollBackTrans();
-                if ($errorFuc != null) $result = $errorFuc(null,$e);
+                $this->mysql_pool->getSync()->pdoCommitTrans();
+            } catch (\Throwable $e) {
+                $this->mysql_pool->getSync()->pdoRollBackTrans();
+                if ($errorFuc != null) $result = $errorFuc(null, $e);
             }
             return $result;
-        }else {
+        } else {
             return $this->mysql_pool->begin($this, $fuc, $errorFuc);
         }
     }
+
     /**
      * @param callable|null $set
      * @return MysqlSyncHelp
@@ -2438,6 +2439,7 @@ class Miner extends Child
             return $result;
         }
     }
+
     /**
      * @param null $sql
      * @param callable|null $set
