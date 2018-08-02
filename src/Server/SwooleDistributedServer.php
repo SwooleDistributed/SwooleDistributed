@@ -173,7 +173,7 @@ abstract class SwooleDistributedServer extends SwooleWebSocketServer
         //创建task用的id->pid共享内存表不至于同时超过1024个任务吧
         $this->tid_pid_table = new \swoole_table(1024);
         $this->tid_pid_table->column('pid', \swoole_table::TYPE_INT, 8);
-        $this->tid_pid_table->column('des', \swoole_table::TYPE_STRING, 50);
+        $this->tid_pid_table->column('des', \swoole_table::TYPE_STRING, 100);
         $this->tid_pid_table->column('start_time', \swoole_table::TYPE_INT, 8);
         $this->tid_pid_table->create();
         //创建task用的锁

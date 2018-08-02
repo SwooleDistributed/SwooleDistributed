@@ -14,7 +14,7 @@ use Noodlehaus\Config;
 class AOPManager
 {
     private static $instance;
-    private $aopConfig;
+    private $aopConfig = [];
     private $cache = [];
 
     public function __construct(Config $config)
