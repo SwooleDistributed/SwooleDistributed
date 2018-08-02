@@ -56,7 +56,9 @@ class AOPManager
 
     public static function start()
     {
-        self::$instance = new AOPManager(get_instance()->config);
+        if(empty(self::$instance)){
+            self::$instance = new AOPManager(get_instance()->config);
+        }
     }
 
     /**
