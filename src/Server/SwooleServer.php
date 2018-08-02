@@ -38,7 +38,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "3.5.0.1";
+    const version = "3.5.0.2";
 
     /**
      * server name
@@ -271,7 +271,7 @@ abstract class SwooleServer extends ProcessRPC
         $this->uid_fd_table->create();
 
         $this->fd_uid_table = new \swoole_table($this->max_connection);
-        $this->fd_uid_table->column('uid', \swoole_table::TYPE_STRING, 32);
+        $this->fd_uid_table->column('uid', \swoole_table::TYPE_STRING, 50);
         $this->fd_uid_table->create();
     }
 
