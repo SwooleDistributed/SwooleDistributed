@@ -86,7 +86,7 @@ class MysqlAsynPool implements IAsynPool
             $client->query("commit");
         } catch (\Throwable $e) {
             $client->query("rollback");
-            if ($errorFuc != null) $result = $errorFuc($client);
+            if ($errorFuc != null) $result = $errorFuc($client,$e);
         } finally {
             $db->setClient(null);
         }

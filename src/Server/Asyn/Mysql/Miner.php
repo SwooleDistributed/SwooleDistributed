@@ -2397,7 +2397,20 @@ class Miner extends Child
      */
     public function begin($fuc, $errorFuc = null)
     {
-        return $this->mysql_pool->begin($this,$fuc, $errorFuc);
+        if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式
+            $result = null;
+            $this->pdoBeginTrans();
+            try{
+                $result = $fuc(null);
+                $this->pdoCommitTrans();
+            }catch (\Throwable $e){
+                $this->pdoRollBackTrans();
+                if ($errorFuc != null) $result = $errorFuc(null,$e);
+            }
+            return $result;
+        }else {
+            return $this->mysql_pool->begin($this, $fuc, $errorFuc);
+        }
     }
     /**
      * @param callable|null $set
