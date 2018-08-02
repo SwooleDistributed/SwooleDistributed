@@ -242,7 +242,7 @@ class Controller extends CoreBase
             $this->context['uid'] = $this->uid;
         }
         $this->db = $this->loader->mysql("mysqlPool",$this);
-        $this->redis = $this->loader->redis("redisPool");
+        $this->redis = $this->loader->redis("redisPool",$this);
         if ($this->isEnableError) {
             $this->Error = $this->loader->model(Error::class, $this);
         }

@@ -34,7 +34,7 @@ class Model extends CoreBase
     public function initialization(&$context)
     {
         $this->setContext($context);
-        $this->redis = $this->loader->redis("redisPool");
+        $this->redis = $this->loader->redis("redisPool",$this);
         $this->db = $this->loader->mysql("mysqlPool",$this);
     }
 

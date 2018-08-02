@@ -23,7 +23,6 @@ class RedisAsynPool extends AsynPool
      */
     public $connect;
     private $active;
-    private $coroutineRedisHelp;
     private $redis_client;
     protected $name;
 
@@ -31,7 +30,6 @@ class RedisAsynPool extends AsynPool
     {
         parent::__construct($config);
         $this->active = $active;
-        $this->coroutineRedisHelp = new CoroutineRedisHelp($this);
         $this->client_max_count = $this->config->get('redis.asyn_max_count', 10);
     }
 
@@ -515,10 +513,11 @@ class RedisAsynPool extends AsynPool
     /**
      * 协程模式 更加便捷
      * @return \Redis
+     * @throws SwooleException
      */
     public function getCoroutine()
     {
-        return $this->coroutineRedisHelp;
+        return Pool::getInstance()->get(CoroutineRedisHelp::class)->init($this);
     }
 
     /**
