@@ -32,6 +32,9 @@ class RunAspect extends Aspect
     public function after()
     {
         $run_index = array_pop($this->own->getContext()['run_index_arr']);
+        if(empty($this->own->getContext()['run_index_arr'])){
+            unset($this->own->getContext()['run_index_arr']);
+        }
         $time = " -> " . ((microtime(true) - $this->run_start_time) * 1000) . " ms";
         $this->own->getContext()['RunStack'][$run_index] = $this->own->getContext()['RunStack'][$run_index] . $time;
         $count = count($this->own->getContext()['RunStack']);

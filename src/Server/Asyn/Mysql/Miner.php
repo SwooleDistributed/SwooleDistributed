@@ -298,6 +298,7 @@ class Miner extends Child
      */
     public function __construct($mysql_pool = null)
     {
+        parent::__construct();
         $this->option = array();
         $this->select = array();
         $this->delete = array();
@@ -2414,11 +2415,23 @@ class Miner extends Child
     }
 
     /**
+     * @param null $sql
+     * @param callable|null $set
+     * @return MysqlSyncHelp
+     * @throws \Server\CoreBase\SwooleException
+     * @throws \Throwable
+     */
+    public function prepareQuery($sql = null, callable $set = null)
+    {
+        return $this->getProxy()->_prepareQuery($sql, $set);
+    }
+
+    /**
      * @param callable|null $set
      * @return MysqlSyncHelp
      * @throws \Throwable
      */
-    public function prepareQuery(callable $set = null)
+    public function _prepareQuery(callable $set = null)
     {
         $mySqlCoroutine = Pool::getInstance()->get(MySqlCoroutine::class);
         if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式
@@ -2444,9 +2457,21 @@ class Miner extends Child
      * @param null $sql
      * @param callable|null $set
      * @return MysqlSyncHelp
+     * @throws \Server\CoreBase\SwooleException
      * @throws \Throwable
      */
     public function query($sql = null, callable $set = null)
+    {
+        return $this->getProxy()->_query($sql, $set);
+    }
+
+    /**
+     * @param null $sql
+     * @param callable|null $set
+     * @return MysqlSyncHelp
+     * @throws \Throwable
+     */
+    public function _query($sql = null, callable $set = null)
     {
         $mySqlCoroutine = Pool::getInstance()->get(MySqlCoroutine::class);
         if (get_instance()->isTaskWorker()) {//如果是task进程自动转换为同步模式

@@ -53,7 +53,7 @@ class Task extends TaskProxy
         $this->setContext($context);
         $this->start_run_time = microtime(true);
         $this->context['task_name'] = "$task_name:$method_name";
-        $this->redis = $this->loader->redis("redisPool");
+        $this->redis = $this->loader->redis("redisPool",$this);
         $this->db = $this->loader->mysql("mysqlPool",$this);
     }
 

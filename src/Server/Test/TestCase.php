@@ -35,7 +35,7 @@ abstract class TestCase extends CoreBase
     public function __construct()
     {
         parent::__construct();
-        $this->redis = $this->loader->redis("redisPool");
+        $this->redis = $this->loader->redis("redisPool",$this);
         $this->db = $this->loader->mysql("mysqlPool",$this);
     }
 

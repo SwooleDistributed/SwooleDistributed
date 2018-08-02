@@ -9,18 +9,22 @@
 namespace Server\Asyn\Redis;
 
 
+use Server\CoreBase\Child;
+
 use Server\Memory\Pool;
 
-class CoroutineRedisHelp
+class CoroutineRedisHelp extends Child
 {
     /**
      * @var RedisAsynPool
      */
     private $redisAsynPool;
 
-    public function __construct($redisAsynPool)
+    public function init(RedisAsynPool $redisAsynPool)
     {
         $this->redisAsynPool = $redisAsynPool;
+        $this->core_name = $redisAsynPool->getAsynName();
+        return $this;
     }
 
     public function __call($name, $arguments)
