@@ -24,7 +24,8 @@ class AOPManager
             $key = str_replace("\\", "\.", $one['pointcut']);
             $key = str_replace("*", ".*", $key);
             $key = "#" . $key . "#";
-            $this->aopConfig[$key] = $one;
+            $one['pointcut'] = $key;
+            $this->aopConfig[] = $one;
         }
     }
 
@@ -40,8 +41,8 @@ class AOPManager
             return $this->cache[$class_name . "::" . $method_name];
         }
         $pointcut = str_replace("\\", ".", $class_name . "::" . $method_name);
-        foreach ($this->aopConfig as $key => $value) {
-            if ($this->match($pointcut, $key)) {//匹配了
+        foreach ($this->aopConfig as $value) {
+            if ($this->match($pointcut, $value['pointcut'])) {//匹配了
                 $aspects[] = $value;
             }
         }
