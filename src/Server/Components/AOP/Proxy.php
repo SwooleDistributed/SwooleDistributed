@@ -61,7 +61,7 @@ abstract class Proxy
         } finally {
             for ($i = $count-1; $i >= 0; $i--) {
                 $after = $aspects[$i]['after_method'] ?? null;
-                if (!empty($before)) {
+                if (!empty($after)) {
                     $aspects[$i]['instance']->$after($isThrow);
                 }
                 Pool::getInstance()->push($aspects[$i]['instance']);
