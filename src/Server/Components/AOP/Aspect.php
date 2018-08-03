@@ -9,9 +9,11 @@
 namespace Server\Components\AOP;
 
 
+use Server\Asyn\Mysql\Miner;
 use Server\CoreBase\Child;
+use Server\CoreBase\CoreBase;
 
-class Aspect
+class Aspect extends CoreBase
 {
     /**
      * @var Child
@@ -20,11 +22,22 @@ class Aspect
     protected $name;
     protected $args;
     protected $class_name;
+    /**
+     * @var Miner
+     */
+    protected $db;
+    /**
+     * @var \Redis
+     */
+    protected $redis;
     public function init($own,$class_name,$name,$args)
     {
         $this->own = $own;
         $this->name = $name;
         $this->args = $args;
         $this->class_name = $class_name;
+        $this->db = $this->loader->mysql("mysqlPool",$own);
+        $this->redis = $this->loader->redis("redisPool",$own);
+        $this->setContext($own->getContext());
     }
 }

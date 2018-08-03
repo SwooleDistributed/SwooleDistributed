@@ -18,8 +18,8 @@ use Server\Components\Process\ProcessRPC;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\ILoader;
 use Server\CoreBase\Loader;
-use Server\CoreBase\PackException;
 use Server\CoreBase\PortManager;
+use Server\CoreBase\SwooleInterruptException;
 use Whoops\Exception\ErrorException;
 
 /**
@@ -38,7 +38,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "3.5.0.5";
+    const version = "3.5.0.6";
 
     /**
      * server name
@@ -166,7 +166,7 @@ abstract class SwooleServer extends ProcessRPC
         if ($this->loader == null) {
             $this->loader = new Loader();
         }
-        $this->allow_MonitorFlowData = $this->config->get("allow_MonitorFlowData",false);
+        $this->allow_MonitorFlowData = $this->config->get("allow_MonitorFlowData", false);
     }
 
     /**
@@ -317,6 +317,7 @@ abstract class SwooleServer extends ProcessRPC
      * onSwooleConnect
      * @param $serv
      * @param $fd
+     * @throws \Throwable
      */
     public function onSwooleConnect($serv, $fd)
     {
@@ -350,12 +351,11 @@ abstract class SwooleServer extends ProcessRPC
             return;
         }
         //是否允许流量监控
-        if($this->allow_MonitorFlowData){
-            if(!empty($uid)){
+        if ($this->allow_MonitorFlowData) {
+            if (!empty($uid)) {
                 try {
-                    get_instance()->pub('$SYS_CHANNEL/'."$uid/recv", $client_data);
-                }catch (\Throwable $e)
-                {
+                    get_instance()->pub('$SYS_CHANNEL/' . "$uid/recv", $client_data);
+                } catch (\Throwable $e) {
 
                 }
             }
@@ -383,12 +383,13 @@ abstract class SwooleServer extends ProcessRPC
             } catch (\Throwable $e) {
                 $route->errorHandle($e, $fd);
             }
-        } catch (\Throwable $e) {
+        } catch (SwooleInterruptException $e) {
+            //被中断
         }
         try {
             $this->middlewareManager->after($middlewares, $path);
-        } catch (\Throwable $e) {
-
+        }catch (SwooleInterruptException $e) {
+            //被中断
         }
         $this->middlewareManager->destory($middlewares);
         if (Start::getDebug()) {
@@ -416,6 +417,7 @@ abstract class SwooleServer extends ProcessRPC
      * onSwooleClose
      * @param $serv
      * @param $fd
+     * @throws \Throwable
      */
     public function onSwooleClose($serv, $fd)
     {
@@ -576,6 +578,7 @@ abstract class SwooleServer extends ProcessRPC
     {
         throw new ErrorException($error_string, $error, 1, $filename, $line);
     }
+
     /**
      * Get socket name.
      *

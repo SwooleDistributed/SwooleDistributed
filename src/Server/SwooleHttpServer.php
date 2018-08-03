@@ -13,6 +13,7 @@ use Server\Components\Blade\Blade;
 use Server\Components\Consul\ConsulHelp;
 use Server\Components\Whoops\Handler\SDPageHandler;
 use Server\CoreBase\ControllerFactory;
+use Server\CoreBase\SwooleInterruptException;
 use Whoops\Run;
 
 abstract class SwooleHttpServer extends SwooleServer
@@ -45,6 +46,7 @@ abstract class SwooleHttpServer extends SwooleServer
 
     /**
      * 启动
+     * @throws \Exception
      */
     public function start()
     {
@@ -168,12 +170,14 @@ abstract class SwooleHttpServer extends SwooleServer
             } catch (\Throwable $e) {
                 $route->errorHttpHandle($e, $request, $response);
             }
-        } catch (\Throwable $e) {
+        } catch (SwooleInterruptException $e) {
+            //被中断
         }
         //after
         try {
             $this->middlewareManager->after($middlewares, $path);
-        } catch (\Throwable $e) {
+        } catch (SwooleInterruptException $e) {
+            //被中断
         }
         $this->middlewareManager->destory($middlewares);
         if (Start::getDebug()) {
