@@ -17,29 +17,29 @@ class RunAspect extends Aspect
 
     public function before()
     {
-        if (!isset($this->own->getContext()['RunStack'])) {
-            $this->own->getContext()['RunStack'] = [];
+        if (!isset($this->context['RunStack'])) {
+            $this->context['RunStack'] = [];
         }
-        if (!isset($this->own->getContext()['run_index_arr'])) {
-            $this->own->getContext()['run_index_arr'] = [];
+        if (!isset($this->context['run_index_arr'])) {
+            $this->context['run_index_arr'] = [];
         }
-        $run_index = count($this->own->getContext()['RunStack']);
-        $this->own->getContext()['run_index_arr'][] = $run_index;
-        $this->own->getContext()['RunStack'][$run_index] = " " . $this->class_name . "::" . $this->name;
+        $run_index = count($this->context['RunStack']);
+        $this->context['run_index_arr'][] = $run_index;
+        $this->context['RunStack'][$run_index] = " " . $this->class_name . "::" . $this->name;
         $this->run_start_time = microtime(true);
     }
 
     public function after()
     {
-        $run_index = array_pop($this->own->getContext()['run_index_arr']);
-        if(empty($this->own->getContext()['run_index_arr'])){
-            unset($this->own->getContext()['run_index_arr']);
+        $run_index = array_pop($this->context['run_index_arr']);
+        if(empty($this->context['run_index_arr'])){
+            unset($this->context['run_index_arr']);
         }
         $time = " -> " . ((microtime(true) - $this->run_start_time) * 1000) . " ms";
-        $this->own->getContext()['RunStack'][$run_index] = $this->own->getContext()['RunStack'][$run_index] . $time;
-        $count = count($this->own->getContext()['RunStack']);
+        $this->context['RunStack'][$run_index] = $this->context['RunStack'][$run_index] . $time;
+        $count = count($this->context['RunStack']);
         for ($i = $run_index + 1; $i < $count; $i++) {
-            $this->own->getContext()['RunStack'][$i] = "─" . $this->own->getContext()['RunStack'][$i];
+            $this->context['RunStack'][$i] = "─" . $this->context['RunStack'][$i];
         }
     }
 }

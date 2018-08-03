@@ -27,12 +27,17 @@ class MonitorMiddleware extends Middleware
         }
     }
 
+
     public function before_handle()
     {
         $this->start_run_time = microtime(true);
         $this->context['start_time'] = date('Y-m-d H:i:s');
     }
 
+    /**
+     * @param $path
+     * @throws \Exception
+     */
     public function after_handle($path)
     {
         $this->context['path'] = $path;
