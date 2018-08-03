@@ -38,8 +38,9 @@ abstract class Proxy
         $aspects = AOPManager::getInstance()->getAspects($this->class_name, $name);
         $count = count($aspects);
         for ($i = 0; $i < $count; $i++) {
-            $aspects[$i]['instance'] = Pool::getInstance()->get($aspects[$i]['aspect_class']);
-            $aspects[$i]['instance']->init($this->own, $this->class_name, $name, $arguments);
+            $instance = Pool::getInstance()->get($aspects[$i]['aspect_class']);
+            $instance->init($aspects[$i],$this->own, $this->class_name, $name, $arguments);
+            $aspects[$i]['instance'] = $instance;
             $before = $aspects[$i]['before_method'] ?? null;
             if (!empty($before)) {
                 $aspects[$i]['instance']->$before();

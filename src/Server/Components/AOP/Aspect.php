@@ -21,6 +21,7 @@ class Aspect extends CoreBase
     protected $own;
     protected $name;
     protected $args;
+    protected $aspect_config;
     protected $class_name;
     /**
      * @var Miner
@@ -30,14 +31,24 @@ class Aspect extends CoreBase
      * @var \Redis
      */
     protected $redis;
-    public function init($own,$class_name,$name,$args)
+    public function init($aspect_config,$own,$class_name,$name,$args)
     {
         $this->own = $own;
         $this->name = $name;
         $this->args = $args;
+        $this->aspect_config = $aspect_config;
         $this->class_name = $class_name;
         $this->db = $this->loader->mysql("mysqlPool",$own);
         $this->redis = $this->loader->redis("redisPool",$own);
         $this->setContext($own->getContext());
+    }
+
+    /**
+     * @param $key
+     * @return null
+     */
+    protected function getAspectConfig($key)
+    {
+        return $this->aspect_config[$key]??null;
     }
 }
