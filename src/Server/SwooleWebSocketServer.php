@@ -14,7 +14,6 @@ use Server\Components\Process\ProcessManager;
 use Server\Components\SDHelp\SDHelpProcess;
 use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\HttpInput;
-use Server\CoreBase\SwooleInterruptException;
 
 abstract class SwooleWebSocketServer extends SwooleHttpServer
 {
@@ -151,13 +150,12 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
         if (empty($fdinfo)) return false;
         $server_port = $fdinfo['server_port'];
         //允许数据监控的情况就pub
-        if($this->allow_MonitorFlowData){
+        if ($this->allow_MonitorFlowData) {
             $uid = $this->getUidFromFd($fd);
-            if(!empty($uid)){
+            if (!empty($uid)) {
                 try {
-                    get_instance()->pub('$SYS_CHANNEL/'."$uid/send", $data);
-                }catch (\Throwable $e)
-                {
+                    get_instance()->pub('$SYS_CHANNEL/' . "$uid/send", $data);
+                } catch (\Throwable $e) {
 
                 }
             }
@@ -216,12 +214,11 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             return null;
         }
         //是否允许流量监控
-        if($this->allow_MonitorFlowData){
-            if(!empty($uid)){
+        if ($this->allow_MonitorFlowData) {
+            if (!empty($uid)) {
                 try {
-                    get_instance()->pub('$SYS_CHANNEL/'."$uid/recv", $client_data);
-                }catch (\Throwable $e)
-                {
+                    get_instance()->pub('$SYS_CHANNEL/' . "$uid/recv", $client_data);
+                } catch (\Throwable $e) {
                 }
             }
         }
@@ -252,12 +249,12 @@ abstract class SwooleWebSocketServer extends SwooleHttpServer
             } catch (\Throwable $e) {
                 $route->errorHandle($e, $fd);
             }
-        } catch (SwooleInterruptException $e) {
+        } catch (\Exception $e) {
             //被中断
         }
         try {
             $this->middlewareManager->after($middlewares, $path);
-        } catch (SwooleInterruptException $e) {
+        } catch (\Exception $e) {
             //被中断
         }
         $this->middlewareManager->destory($middlewares);

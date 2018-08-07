@@ -19,7 +19,6 @@ use Server\CoreBase\ControllerFactory;
 use Server\CoreBase\ILoader;
 use Server\CoreBase\Loader;
 use Server\CoreBase\PortManager;
-use Server\CoreBase\SwooleInterruptException;
 use Whoops\Exception\ErrorException;
 
 /**
@@ -38,7 +37,7 @@ abstract class SwooleServer extends ProcessRPC
     /**
      * 版本
      */
-    const version = "3.5.0.8";
+    const version = "3.5.0.9";
 
     /**
      * server name
@@ -383,12 +382,12 @@ abstract class SwooleServer extends ProcessRPC
             } catch (\Throwable $e) {
                 $route->errorHandle($e, $fd);
             }
-        } catch (SwooleInterruptException $e) {
+        } catch (\Exception $e) {
             //被中断
         }
         try {
             $this->middlewareManager->after($middlewares, $path);
-        }catch (SwooleInterruptException $e) {
+        } catch (\Exception $e) {
             //被中断
         }
         $this->middlewareManager->destory($middlewares);
