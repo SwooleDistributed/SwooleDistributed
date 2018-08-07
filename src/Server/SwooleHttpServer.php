@@ -13,7 +13,6 @@ use Server\Components\Blade\Blade;
 use Server\Components\Consul\ConsulHelp;
 use Server\Components\Whoops\Handler\SDPageHandler;
 use Server\CoreBase\ControllerFactory;
-use Server\CoreBase\SwooleInterruptException;
 use Whoops\Run;
 
 abstract class SwooleHttpServer extends SwooleServer
@@ -29,6 +28,7 @@ abstract class SwooleHttpServer extends SwooleServer
     public $whoops;
 
     protected $cachePath;
+
     public function __construct()
     {
         parent::__construct();
@@ -170,13 +170,13 @@ abstract class SwooleHttpServer extends SwooleServer
             } catch (\Throwable $e) {
                 $route->errorHttpHandle($e, $request, $response);
             }
-        } catch (SwooleInterruptException $e) {
+        } catch (\Exception $e) {
             //被中断
         }
         //after
         try {
             $this->middlewareManager->after($middlewares, $path);
-        } catch (SwooleInterruptException $e) {
+        } catch (\Exception $e) {
             //被中断
         }
         $this->middlewareManager->destory($middlewares);
