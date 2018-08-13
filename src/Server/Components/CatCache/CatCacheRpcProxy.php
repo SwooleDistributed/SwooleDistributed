@@ -22,8 +22,6 @@ class CatCacheRpcProxy implements \ArrayAccess
      * @var CatCacheHash
      */
     protected $map;
-    protected $time = 0;
-    protected $time_count = 0;
 
     public function setMap(&$map)
     {
@@ -35,18 +33,15 @@ class CatCacheRpcProxy implements \ArrayAccess
         \swoole_timer_tick(1000, function () {
             $timer_back = $this->map['timer_back'] ?? [];
             ksort($timer_back);
-            $time = time() * 1000;
+            $time = time();
             foreach ($timer_back as $key => $value) {
                 if ($key > $time) break;
-                $value['param_arr'][] = "timer_back.$key";
-                EventDispatcher::getInstance()->randomDispatch(TimerCallBack::KEY, $value);
+                foreach ($value as $mkey=>$mvalue) {
+                    $mvalue['param_arr'][] = "timer_back.$key.$mkey";
+                    EventDispatcher::getInstance()->randomDispatch(TimerCallBack::KEY, $mvalue);
+                }
             }
         });
-    }
-
-    public function __call($name, $arguments)
-    {
-        return call_user_func_array([$this, $name], $arguments);
     }
 
     /**
@@ -65,13 +60,9 @@ class CatCacheRpcProxy implements \ArrayAccess
      */
     public function setTimerCallBack($time, $data)
     {
-        if ($time != $this->time) {
-            $this->time = $time;
-            $this->time_count = 0;
-        }
-        $this->time_count++;
-        $time = $time * 1000 + $this->time_count;
-        $key = "timer_back.$time";
+        $time_back_arr = $this->map->getContainer()["timer_back"]??[];
+        $count = count($time_back_arr[$time]??[]);
+        $key = "timer_back.$time.$count";
         $this->map[$key] = $data;
         return $key;
     }
@@ -141,7 +132,7 @@ class CatCacheRpcProxy implements \ArrayAccess
     }
 
     /**
-     * @return CatCacheRpcProxy
+     * @return CatCacheRpc
      */
     public static function getRpc()
     {
