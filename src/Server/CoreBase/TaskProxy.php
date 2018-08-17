@@ -49,9 +49,6 @@ class TaskProxy extends CoreBase
                         'task_context' => $this->getContext(),
                     ]
             ];
-
-        list($c, $d) = explode("::", array_pop($this->getContext()['RunStack']));
-        $this->getContext()['RunStack'][] = $this->core_name . "::" . $d;
     }
 
     /**
