@@ -1,0 +1,43 @@
+/**
+ * %class_des
+*/
+function %class1_%class2_%cmd(json) {
+    /**
+     * 请求
+     * @type {%reqvar_type_des}
+     */
+    this.req = build.build%reqvar_type_build(json&&json.req?json.req:null);
+    /**
+     * 回复
+     * @type {%repvar_type_des}
+     */
+    this.rep = build.build%repvar_type_build(json&&json.rep?json.rep:null);
+    /**
+     * token
+     * @type {Number}
+     */
+    this.token =  build.buildint(json&&json.token?json.token:0);
+    /**
+     * cmd
+     * @type {Number}
+     */
+    this.cmd = %cmd;
+    /**
+     * 状态码
+     * @type {Number}
+     */
+    this.code =  build.buildint(json&&json.code?json.code:0);
+    /**
+     * 信息
+     * @type {String}
+     */
+    this.msg =  build.buildstring(json&&json.msg?json.msg:"");
+    this.buildSendData = function()
+    {
+        var temp = this.rep;
+        this.rep = undefined;
+        var result = JSON.parse(JSON.stringify(this));
+        this.rep = temp;
+        return result;
+    }
+}

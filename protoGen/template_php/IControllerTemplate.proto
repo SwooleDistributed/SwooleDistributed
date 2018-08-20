@@ -1,0 +1,21 @@
+<?php
+/**
+ * 代码生成器自动生成，不要手动修改
+ */
+
+namespace proto\ic;
+[[use]]
+
+interface I%class1
+{
+    [[var]]
+}
+[[[use]]]
+use proto\rpc\%class1_%class2_%cmd;
+[[[var]]]
+    /**
+     * @param %class1_%class2_%cmd $data
+     * %class_des
+     * @return mixed
+     */
+    public function %class2(%class1_%class2_%cmd $data);

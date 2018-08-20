@@ -1,0 +1,86 @@
+var build = new Build();
+function Build() {
+    /**
+     * @param json
+     * @returns {boolean}
+     */
+    this.buildbool=function (json) {
+        if(json==null) return false;
+        if(json=='1'||json=='true'||json==1||json==true) return true;
+        return false;
+    };
+    /**
+     * @param json
+     * @returns {Array.<boolean>}
+     */
+    this.buildbool_array=function (json) {
+        var result = [];
+        if(json==null) return $result;
+        for (var k = 0, length = json.length; k < length; k++) {
+            result[k] = this.buildbool(json[k]);
+        }
+        return result;
+    };
+    /**
+     * @param json
+     * @returns {int}
+     */
+    this.buildint=function (json) {
+        if(json==null) return false;
+        return parseInt(json)
+    };
+    /**
+     * @param json
+     * @returns {Array.<int>}
+     */
+    this.buildint_array=function (json) {
+        var result = [];
+        if(json==null) return false;
+        for (var k = 0, length = json.length; k < length; k++) {
+            result[k] = this.buildint(json[k]);
+        }
+        return result;
+    };
+    /**
+     * @param json
+     * @returns {string}
+     */
+    this.buildstring=function(json) {
+        if(json==null) return "";
+        return String(json);
+    };
+    /**
+     * @param json
+     * @returns {Array.<string>}
+     */
+    this.buildstring_array=function (json) {
+        var result = [];
+        if(json==null) return result;
+        for (var k = 0, length = json.length; k < length; k++) {
+            result[k] = this.buildstring(json[k]);
+        }
+        return result;
+    };
+    [[build]]
+}
+[[[build]]]
+    /**
+     * @param json
+     * @returns {%class}
+     */
+    this.build%class=function (json) {
+        if(json==null) return null;
+        return new %class(json);
+    };
+    /**
+     * @param json
+     * @returns {Array.<%class>}
+     */
+    this.build%class_array=function (json) {
+        var result = [];
+        if(json==null) return result;
+        for (var k = 0, length = json.length; k < length; k++) {
+            result[k] = this.build%class(json[k]);
+        }
+        return result;
+    };
