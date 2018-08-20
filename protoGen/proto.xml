@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v5 rel. 2 U (http://www.xmlspy.com) by 123 (456) -->
+<proto>
+	<controller name="CAccount" cmd="1">
+		<method name="Login" cmd="1" req="EmptyData" rep="AccountRep" des="用户信息请求"/>
+	</controller>
+	<struct class="UserInfo" des="用户信息">
+		<bean name="uid" type="int" des="uid"/>
+	</struct>
+	<struct class="EmptyData" des="空结构"/>
+	<marco name="SEX_MALE" type="int" value="1" des="公猫"/>
+	<marco name="SEX_FEMALE" type="int" value="2" des="母猫"/>
+</proto>

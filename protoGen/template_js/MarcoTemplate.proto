@@ -1,0 +1,9 @@
+var morco = {
+    [[var]]
+};
+[[[var]]]
+    /**
+     * %var_des
+     * @type {%var_type_des}
+     */
+    %var:%var_value,

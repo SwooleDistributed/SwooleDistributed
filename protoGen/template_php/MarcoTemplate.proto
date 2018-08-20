@@ -1,0 +1,18 @@
+<?php
+/**
+ * Class %class
+ * %class_des
+ * 代码生成器自动生成，不要手动修改
+ */
+namespace proto;
+class ProtoMarco
+{
+    [[var]]
+}
+
+[[[var]]]
+    /**
+     * @var %var_type
+     * %var_des
+     */
+    const %var = %var_value;

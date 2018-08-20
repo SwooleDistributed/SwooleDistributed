@@ -1,0 +1,104 @@
+<?php
+/**
+ * Class %class
+ * %class_des
+ * 代码生成器自动生成，不要手动修改
+ */
+namespace proto\rpc;
+use proto\ProtoMarco;
+use proto\ProtoBuild;
+%use
+class %class1_%class2_%cmd implements IRpc
+{
+    /**
+     * @var %reqvar_type
+     */
+    public $req;
+    /**
+     * @var %repvar_type
+     */
+    public $rep;
+
+    /**
+     * @var int
+     */
+    public $token;
+
+    /**
+     * cmd
+     */
+    const cmd = %cmd;
+
+    /**
+     * @var int
+     */
+    public $code;
+
+    /**
+     * @var string
+     */
+    public $msg;
+
+    public function __construct()
+    {
+        $this->req = %reqbuilder::buildFrom_%reqvar_type_build(null);
+        $this->rep = %repbuilder::buildFrom_%repvar_type_build(null);
+    }
+    /**
+     * 成功的返回
+     * @return array
+     */
+    public function buildSuccessRep()
+    {
+        $build = ["cmd"=>self::cmd,
+            "token"=>$this->token,
+            "code"=>ProtoMarco::CODE_SUCCESS,
+            "rep"=>%repbuilder::build_%repvar_type_build($this->rep)];
+        return $build;
+    }
+    /**
+     * 失败的返回
+     * @param $msg
+     * @param $code
+     * @return array
+     */
+    public function buildErrorRep($msg,$code=ProtoMarco::CODE_ERROR)
+    {
+        $build = ["cmd"=>self::cmd,
+            "token"=>$this->token,
+            "code"=>$code,
+            "msg"=>$msg];
+        return $build;
+    }
+    /**
+     * @return array
+     */
+    public function buildReq()
+    {
+        $build = ["cmd"=>self::cmd,
+            "token"=>$this->token,
+            "rep"=>%reqbuilder::build_%reqvar_type_build($this->req)];
+        return $build;
+    }
+
+    /**
+     * @param $json
+     */
+    public function buildFrom($json)
+    {
+        $this->token = $json['token']??0;
+        if(array_key_exists("req",$json)) {
+            $this->req = %reqbuilder::buildFrom_%reqvar_type_build($json["req"]??null);
+        }
+        if(array_key_exists("rep",$json)) {
+            $this->rep = %repbuilder::buildFrom_%repvar_type_build($json["rep"]??null);
+        }
+        if(array_key_exists("code",$json)) {
+            $this->code = $json['code']??0;
+        }
+        if(array_key_exists("msg",$json)) {
+            $this->msg = $json['msg']??"";
+        }
+    }
+}
+

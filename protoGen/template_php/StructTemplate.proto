@@ -1,0 +1,101 @@
+<?php
+/**
+ * Class %class
+ * %class_des
+ * 代码生成器自动生成，不要手动修改
+ */
+namespace proto\struct;
+use proto\ProtoBuild;
+class %class %extends
+{
+    [[var]]
+
+    /**
+     * @param $jsonObject
+     * @return null
+     */
+    public function buildFrom($jsonObject)
+    {
+        if($jsonObject == null) return null;
+        [[buildFrom]]
+    }
+
+    /**
+     * @return array
+     */
+    public function build()
+    {
+        $build = [];
+        [[build]]
+        return $build;
+    }
+
+    /**
+     * @param $data
+     * @return mixed
+     */
+    public static function build_%class($data)
+    {
+        if($data == null) return null;
+        return $data->build();
+    }
+
+    /**
+     * @param $data
+     * @return array
+     */
+    public static function build_%class_array($data)
+    {
+        if($data == null) return null;
+        $result = [];
+        if(!is_array($data)){
+            return $result;
+        }
+        foreach ($data as $value)
+        {
+            $result[] = %class::build_%class($value);
+        }
+        return $result;
+    }
+
+    /**
+     * @param $data
+     * @return %class
+     */
+    public static function buildFrom_%class($data)
+    {
+        $result = new %class();
+        $result->buildFrom($data);
+        return $result;
+    }
+
+    /**
+     * @param $data
+     * @return %class[]
+     */
+    public static function buildFrom_%class_array($data)
+    {
+        $result = [];
+        if(!is_array($data)){
+            return $result;
+        }
+        foreach ($data as $value)
+        {
+            $result[] = %class::buildFrom_%class($value);
+        }
+        return $result;
+    }
+}
+
+[[[var]]]
+    /**
+     * @var %var_type_des
+     * %var_des
+     */
+    public $%var;
+[[[buildFrom]]]
+        if(array_key_exists("%var",$jsonObject)) {
+            $this->%var = %builder::buildFrom_%var_type_build($jsonObject['%var']??null);
+        }
+[[[build]]]
+        $build["%var"] = %builder::build_%var_type_build($this->%var);

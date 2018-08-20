@@ -1,0 +1,17 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: Administrator
+ * Date: 2018/4/26
+ * Time: 11:44
+ */
+
+namespace proto\rpc;
+
+
+interface IRpc
+{
+    function buildSuccessRep();
+    function buildErrorRep($msg,$code);
+    function buildReq();
+}

@@ -1,0 +1,52 @@
+<?php
+/**
+ * 代码生成器自动生成，不要手动修改
+ */
+
+namespace proto;
+[[use]]
+
+class ProtoRegister
+{
+    private static $map;
+    public $controllerName;
+    public $methodName;
+    public $cmdClassName;
+
+    /**
+     * regist
+     */
+    public static function regist()
+    {
+        [[regist]]
+    }
+
+    /**
+     * ProtoRegister constructor.
+     * @param $controllerName
+     * @param $methodName
+     * @param $cmdClassName
+     */
+    public function __construct($controllerName,$methodName,$cmdClassName)
+    {
+        $this->controllerName = $controllerName;
+        $this->methodName = $methodName;
+        $this->cmdClassName = $cmdClassName;
+    }
+
+    /**
+     * @param $cmd
+     * @return ProtoRegister
+     */
+    public static function get($cmd)
+    {
+        if(self::$map==null){
+            ProtoRegister::regist();
+        }
+        return self::$map[$cmd]??null;
+    }
+}
+[[[use]]]
+use proto\rpc\%class1_%class2_%cmd;
+[[[regist]]]
+        self::$map[%cmd] = new ProtoRegister("%class1","%class2",%class1_%class2_%cmd::class);

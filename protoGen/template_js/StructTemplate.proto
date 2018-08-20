@@ -1,0 +1,11 @@
+/** 用户信息 **/
+function %class(json){
+    %extends
+    [[var]]
+}
+[[[var]]]
+    /**
+     * %var
+     * @type {%var_type_des}
+     */
+    this.%var = build.build%var_type_build(json&&(json.%var!=null)?json.%var:null);

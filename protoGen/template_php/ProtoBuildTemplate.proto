@@ -1,0 +1,181 @@
+<?php
+/**
+ * 代码生成器自动生成，不要手动修改
+ */
+
+namespace proto;
+class ProtoBuild
+{
+    /**
+     * 构建bool
+     * @param $data
+     * @return bool
+     */
+    public static function build_bool($data)
+    {
+        if ($data == null) return false;
+        return $data;
+    }
+
+    /**
+     * 构建bool[]
+     * @param $data
+     * @return bool[]
+     */
+    public static function build_bool_array($data)
+    {
+        if (!is_array($data)) {
+            return [];
+        }
+        return $data;
+    }
+
+    /**
+     * 解析bool
+     * @param $data
+     * @return bool
+     */
+    public static function buildFrom_bool($data)
+    {
+        if ($data == null) return false;
+        if ($data=="1"||$data==1||$data==true||$data=="true"){
+            return true;
+        }
+        return $data;
+    }
+
+    /**
+     * 解析bool[]
+     * @param $data
+     * @return bool[]
+     */
+    public static function buildFrom_bool_array($data)
+    {
+        $result = [];
+        if (!is_array($data)) {
+            return $result;
+        }
+        foreach ($data as $value) {
+            $result[] = ProtoBuild::buildFrom_bool($value);
+        }
+        return $result;
+    }
+
+    /**
+     * 构建int
+     * @param $data
+     * @return int
+     */
+    public static function build_int($data)
+    {
+        if ($data == null) return 0;
+        return (int)$data;
+    }
+
+    /**
+     * 构建int[]
+     * @param $data
+     * @return mixed
+     */
+    public static function build_int_array($data)
+    {
+        if (!is_array($data)) {
+            return [];
+        }
+        return $data;
+    }
+
+    /**
+     * 解析int
+     * @param $data
+     * @return int
+     */
+    public static function buildFrom_int($data)
+    {
+        if ($data == null) return 0;
+        return (int)$data;
+    }
+
+    /**
+     * 解析int[]
+     * @param $data
+     * @return int[]
+     */
+    public static function buildFrom_int_array($data)
+    {
+        $result = [];
+        if (!is_array($data)) {
+            return $result;
+        }
+        foreach ($data as $value) {
+            $result[] = ProtoBuild::buildFrom_int($value);
+        }
+        return $result;
+    }
+
+    /**
+     * 构建string
+     * @param $data
+     * @return string
+     */
+    public static function build_string($data)
+    {
+        if ($data == null) return "";
+        return (string)$data;
+    }
+
+    /**
+     * 构建string[]
+     * @param $data
+     * @return string[]
+     */
+    public static function build_string_array($data)
+    {
+        if (!is_array($data)) {
+            return [];
+        }
+        return $data;
+    }
+
+    /**
+     * 解析string
+     * @param $data
+     * @return string
+     */
+    public static function buildFrom_string($data)
+    {
+        if ($data == null) return "";
+        return (string)$data;
+    }
+
+    /**
+     * 解析string[]
+     * @param $data
+     * @return string[]
+     */
+    public static function buildFrom_string_array($data)
+    {
+        $result = [];
+        if (!is_array($data)) {
+            return $result;
+        }
+        foreach ($data as $value) {
+            $result[] = ProtoBuild::buildFrom_string($value);
+        }
+        return $result;
+    }
+
+    /**
+     * new一个Struct
+     * @param $name
+     * @return null
+     */
+    public static function newStruct($name)
+    {
+        if ($name != "null") {
+            $class_name = "proto\\struct\\" . $name;
+            return new $class_name;
+        }
+        return null;
+    }
+}
