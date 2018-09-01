@@ -1875,9 +1875,13 @@ class Miner extends Child
         } elseif ($this->isInsert()) {
             $this->mergeInsertInto($Miner);
             $this->mergeSetInto($Miner);
+            $this->mergeIntoColumns($Miner);
+            $this->mergeIntoValues($Miner);
         } elseif ($this->isReplace()) {
             $this->mergeReplaceInto($Miner);
             $this->mergeSetInto($Miner);
+            $this->mergeIntoColumns($Miner);
+            $this->mergeIntoValues($Miner);
         } elseif ($this->isUpdate()) {
             $this->mergeUpdateInto($Miner);
             $this->mergeJoinInto($Miner);
@@ -2266,6 +2270,36 @@ class Miner extends Child
     }
 
     /**
+     * Merge this Miner's INTOCOLUMS into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeIntoColumns(Miner $Miner)
+    {
+        if ($this->intoColums) {
+            $Miner->intoColumns($this->intoColums);
+        }
+
+        return $Miner;
+    }
+
+    /**
+     * Merge this Miner's INTOVALUES into the given Miner.
+     *
+     * @param  Miner $Miner to merge into
+     * @return Miner
+     */
+    public function mergeIntoValues(Miner $Miner)
+    {
+        if ($this->intoValues) {
+            $Miner->intoValues($this->intoValues);
+        }
+
+        return $Miner;
+    }
+
+    /**
      * Merge this Miner's INSERT into the given Miner.
      *
      * @param  Miner $Miner to merge into
@@ -2276,7 +2310,11 @@ class Miner extends Child
         $this->mergeOptionsInto($Miner);
 
         if ($this->insert) {
-            $Miner->insert($this->getInsert());
+            if ($this->isInto) {
+                $Miner->insertInto($this->getInsert());
+            } else {
+                $Miner->insert($this->getInsert());
+            }
         }
 
         return $Miner;
@@ -2308,7 +2346,11 @@ class Miner extends Child
         $this->mergeOptionsInto($Miner);
 
         if ($this->replace) {
-            $Miner->replace($this->getReplace());
+            if ($this->isInto) {
+                $Miner->replaceInto($this->getReplace());
+            } else {
+                $Miner->replace($this->getReplace());
+            }
         }
 
         return $Miner;
