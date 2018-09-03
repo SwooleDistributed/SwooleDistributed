@@ -6,9 +6,6 @@
  * Time: 下午1:58
  */
 
-//强制关闭gzip
-$config['http']['gzip_off'] = false;
-
 //默认访问的页面
 $config['http']['index'] = 'index.html';
 
