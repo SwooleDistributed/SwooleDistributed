@@ -66,12 +66,12 @@ abstract class Process extends ProcessRPC
      */
     public function onPhpTick()
     {
-        if(!Start::getCoverage()) return;
+        if (!Start::getCoverage()) return;
         $redis_pool = get_instance()->getAsynPool("redisPool");
         if ($redis_pool != null) {
             $dump = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-            $file = explode("app-debug", $dump[0]['file'])[1]??null;
-            if(!empty($file)) {
+            $file = explode("app-debug", $dump[0]['file'])[1] ?? null;
+            if (!empty($file)) {
                 $redis_pool->getSync()->zIncrBy(SwooleMarco::CodeCoverage, 1, $file . ":" . $dump[0]['line']);
             }
         }
@@ -89,7 +89,11 @@ abstract class Process extends ProcessRPC
     {
         $this->onShutDown();
         secho("Process:$this->worker_id", get_class($this) . "关闭成功");
-        exit();
+        try {
+            exit();
+        } catch (\Throwable $e) {
+
+        }
     }
 
     abstract protected function onShutDown();
@@ -102,14 +106,14 @@ abstract class Process extends ProcessRPC
         while (true) {
             try {
                 $recv = $this->process->read();
-            }catch (\Throwable $e){
+            } catch (\Throwable $e) {
                 return;
             }
             $this->socketBuff .= $recv;
             while (strlen($this->socketBuff) > 4) {
                 $len = unpack("N", $this->socketBuff)[1];
                 if (strlen($this->socketBuff) >= $len) {//满足完整一个包
-                    $data = substr($this->socketBuff, 4, $len-4);
+                    $data = substr($this->socketBuff, 4, $len - 4);
                     $recv_data = \swoole_serialize::unpack($data);
                     $this->readData($recv_data);
                     $this->socketBuff = substr($this->socketBuff, $len);
