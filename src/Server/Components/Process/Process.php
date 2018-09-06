@@ -89,11 +89,7 @@ abstract class Process extends ProcessRPC
     {
         $this->onShutDown();
         secho("Process:$this->worker_id", get_class($this) . "关闭成功");
-        try {
-            exit();
-        } catch (\Throwable $e) {
-
-        }
+        exit();
     }
 
     abstract protected function onShutDown();
