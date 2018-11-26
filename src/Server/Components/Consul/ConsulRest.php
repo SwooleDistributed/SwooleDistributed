@@ -8,7 +8,6 @@
 
 namespace Server\Components\Consul;
 
-
 use Server\Asyn\HttpClient\HttpClientPool;
 
 class ConsulRest extends HttpClientPool
@@ -42,9 +41,9 @@ class ConsulRest extends HttpClientPool
      * @param $value
      * @return $this
      */
-    public function addHeader($key,$value)
+    public function addHeader($key, $value)
     {
-        $this->httpClient->addHeader($key,$value);
+        $this->httpClient->addHeader($key, $value);
         return $this;
     }
 
@@ -86,19 +85,7 @@ class ConsulRest extends HttpClientPool
      */
     public function __call($name, $arguments)
     {
-        $this->httpClient->addHeader('rpc_request_id',$this->context['request_id']);
-        return $this->httpClient->coroutineExecute("/$this->service/$name");
-    }
-
-    /**
-     * @param $name
-     * @param $arguments
-     * @param callable|null $set
-     * @return mixed
-     */
-    public function call($name, $arguments, callable $set = null)
-    {
         $this->httpClient->addHeader('rpc_request_id', $this->context['request_id']);
-        return $this->httpClient->coroutineExecute("/$this->service/$name", $set);
+        return $this->httpClient->coroutineExecute("/$this->service/$name");
     }
 }
