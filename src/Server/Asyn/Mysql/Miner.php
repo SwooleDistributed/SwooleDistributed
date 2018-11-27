@@ -1549,7 +1549,15 @@ class Miner extends Child
         $this->setPlaceholderValues = array();
 
         foreach ($this->intoColums as $colum) {
-            $statement .= "`$colum`" . ", ";
+            if (strpos($colum, '.') !== false) {
+                $colum = explode(".", $colum);
+                foreach ($colum as $key => $value) {
+                    $colum[$key] = "`$value`";
+                }
+                $statement .= implode(".", $colum);
+            } else {
+                $statement .= "`$colum`" . ", ";
+            }
         }
         $statement = substr($statement, 0, -2);
         $statement .= ') VALUES ';
@@ -1589,7 +1597,16 @@ class Miner extends Child
             $autoQuote = $this->getAutoQuote($set['quote']);
 
             if ($usePlaceholders && $autoQuote) {
-                $statement .= "`" . $set['column'] . "` " . self::EQUALS . " ?, ";
+                if (strpos($set['column'], '.') !== false) {
+                    $colum = explode(".", $set['column']);
+                    foreach ($colum as $key => $value) {
+                        $colum[$key] = "`$value`";
+                    }
+                    $statement .= implode(".", $colum) . " " . self::EQUALS . " ?, ";
+                } else {
+                    $statement .= "`" . $set['column'] . "` " . self::EQUALS . " ?, ";
+                }
+
                 if ($set['value'] === false) {
                     $this->setPlaceholderValues[] = 0;
                 } elseif ($set['value'] === true) {
@@ -1598,7 +1615,15 @@ class Miner extends Child
                     $this->setPlaceholderValues[] = $set['value'];
                 }
             } else {
-                $statement .= "`" . $set['column'] . "` " . self::EQUALS . " " . $this->autoQuote($set['value'], $autoQuote) . ", ";
+                if (strpos($set['column'], '.') !== false) {
+                    $colum = explode(".", $set['column']);
+                    foreach ($colum as $key => $value) {
+                        $colum[$key] = "`$value`";
+                    }
+                    $statement .= implode(".", $colum) . " " . self::EQUALS . " " . $this->autoQuote($set['value'], $autoQuote) . ", ";
+                } else {
+                    $statement .= "`" . $set['column'] . "` " . self::EQUALS . " " . $this->autoQuote($set['value'], $autoQuote) . ", ";
+                }
             }
         }
 
@@ -2406,7 +2431,9 @@ class Miner extends Child
                 $this->mysql_pool->getSync()->pdoCommitTrans();
             } catch (\Throwable $e) {
                 $this->mysql_pool->getSync()->pdoRollBackTrans();
-                if ($errorFuc != null) $result = $errorFuc(null, $e);
+                if ($errorFuc != null) {
+                    $result = $errorFuc(null, $e);
+                }
             }
             return $result;
         } else {
