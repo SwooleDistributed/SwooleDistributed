@@ -50,7 +50,8 @@ class ConsulProcess extends Process
         if (array_key_exists('services', $config)) {
             foreach ($config['services'] as $service) {
                 // list($service_name, $service_port) = explode(":", $service);
-                //解决consul配置文件为空时数组下标越界
+
+                //解决consul配置文件为空时数组下标越界--
                 $services = explode(':', $service);
 
                 $service_name = isset($services[0]) ? $services[0] : '';
