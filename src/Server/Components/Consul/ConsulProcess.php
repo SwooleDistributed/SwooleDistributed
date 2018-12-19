@@ -3,7 +3,7 @@
  * Created by PhpStorm.
  * User: zhangjincheng
  * Date: 17-8-14
- * Time: 下午2:55
+ * Time: 下午2:55.
  */
 
 namespace Server\Components\Consul;
@@ -16,22 +16,23 @@ class ConsulProcess extends Process
 {
     /**
      * @param $process
+     *
      * @throws SwooleException
      */
     public function start($process)
     {
         $this->jsonFormatHandler();
-        if (!is_file(BIN_DIR . "/exec/consul")) {
-            secho("[CONSUL]", "consul没有安装,请下载最新的consul安装至bin/exec目录,或者在config/consul.php中取消使能");
+        if (!is_file(BIN_DIR.'/exec/consul')) {
+            secho('[CONSUL]', 'consul没有安装,请下载最新的consul安装至bin/exec目录,或者在config/consul.php中取消使能');
             get_instance()->server->shutdown();
             exit();
         }
 
-        $this->exec(BIN_DIR . "/exec/consul", ['agent', '-ui', '-config-dir', BIN_DIR . '/exec/consul.d']);
+        $this->exec(BIN_DIR.'/exec/consul', ['agent', '-ui', '-config-dir', BIN_DIR.'/exec/consul.d']);
     }
 
     /**
-     * 格式化consul模板，输出配置文件
+     * 格式化consul模板，输出配置文件.
      */
     public function jsonFormatHandler()
     {
@@ -48,8 +49,16 @@ class ConsulProcess extends Process
         $newConfig['bind_addr'] = getBindIp();
         if (array_key_exists('services', $config)) {
             foreach ($config['services'] as $service) {
-                list($service_name, $service_port) = explode(":", $service);
-                $service_port = (int)$service_port;
+                // list($service_name, $service_port) = explode(":", $service);
+
+                //解决consul配置文件为空时数组下标越界--
+                $services = explode(':', $service);
+
+                $service_name = isset($services[0]) ? $services[0] : '';
+
+                $service_port = isset($services[1]) ? $services[1] : '';
+
+                $service_port = (int) $service_port;
                 try {
                     $port_type = get_instance()->portManager->getPortType($service_port);
                 } catch (\Exception $e) {
@@ -67,9 +76,9 @@ class ConsulProcess extends Process
                             'check' => [
                                 'name' => 'status',
                                 'tcp' => "localhost:$service_port",
-                                'interval' => "10s",
-                                'timeout' => "1s"
-                            ]];
+                                'interval' => '10s',
+                                'timeout' => '1s',
+                            ], ];
                         break;
                     case PortManager::SOCK_HTTP:
                         $newConfig['services'][] = [
@@ -80,15 +89,15 @@ class ConsulProcess extends Process
                             'tags' => ['http'],
                             'check' => [
                                 'name' => 'status',
-                                'http' => "http://localhost:$service_port/$service_name/" . ConsulHelp::HEALTH,
-                                'interval' => "10s",
-                                'timeout' => "1s"
-                            ]];
+                                'http' => "http://localhost:$service_port/$service_name/".ConsulHelp::HEALTH,
+                                'interval' => '10s',
+                                'timeout' => '1s',
+                            ], ];
                         break;
                 }
             }
         }
-        file_put_contents(BIN_DIR . "/exec/consul.d/consul_config.json", json_encode($newConfig));
+        file_put_contents(BIN_DIR.'/exec/consul.d/consul_config.json', json_encode($newConfig));
     }
 
     protected function onShutDown()

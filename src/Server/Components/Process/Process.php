@@ -3,11 +3,10 @@
  * Created by PhpStorm.
  * User: zhangjincheng
  * Date: 17-8-15
- * Time: 上午9:41
+ * Time: 上午9:41.
  */
 
 namespace Server\Components\Process;
-
 
 use Server\Components\Event\EventDispatcher;
 use Server\Start;
@@ -21,10 +20,11 @@ abstract class Process extends ProcessRPC
     protected $log;
     protected $token = 0;
     protected $params;
-    protected $socketBuff = "";
+    protected $socketBuff = '';
 
     /**
      * Process constructor.
+     *
      * @param string $name
      * @param $worker_id
      * @param $params
@@ -46,7 +46,7 @@ abstract class Process extends ProcessRPC
 
     public function __start($process)
     {
-        \swoole_process::signal(SIGTERM, [$this, "__shutDown"]);
+        \swoole_process::signal(SIGTERM, [$this, '__shutDown']);
         get_instance()->workerId = $this->worker_id;
         if (!isDarwin()) {
             $process->name($this->name);
@@ -62,17 +62,19 @@ abstract class Process extends ProcessRPC
     }
 
     /**
-     * Code coverage onPhpTick
+     * Code coverage onPhpTick.
      */
     public function onPhpTick()
     {
-        if (!Start::getCoverage()) return;
-        $redis_pool = get_instance()->getAsynPool("redisPool");
+        if (!Start::getCoverage()) {
+            return;
+        }
+        $redis_pool = get_instance()->getAsynPool('redisPool');
         if ($redis_pool != null) {
             $dump = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
-            $file = explode("app-debug", $dump[0]['file'])[1] ?? null;
+            $file = explode('app-debug', $dump[0]['file'])[1] ?? null;
             if (!empty($file)) {
-                $redis_pool->getSync()->zIncrBy(SwooleMarco::CodeCoverage, 1, $file . ":" . $dump[0]['line']);
+                $redis_pool->getSync()->zIncrBy(SwooleMarco::CodeCoverage, 1, $file.':'.$dump[0]['line']);
             }
         }
     }
@@ -80,22 +82,23 @@ abstract class Process extends ProcessRPC
     /**
      * @param $process
      */
-    public abstract function start($process);
+    abstract public function start($process);
 
     /**
-     * 关服处理
+     * 关服处理.
      */
     public function __shutDown()
     {
         $this->onShutDown();
-        secho("Process:$this->worker_id", get_class($this) . "关闭成功");
-        exit();
+        secho("Process:$this->worker_id", get_class($this).'关闭成功');
+        //更新退出方式为swoole的exit，防止报错以及内存释放不净
+        $this->process->exit(0);
     }
 
     abstract protected function onShutDown();
 
     /**
-     * onRead
+     * onRead.
      */
     public function onRead()
     {
@@ -107,7 +110,7 @@ abstract class Process extends ProcessRPC
             }
             $this->socketBuff .= $recv;
             while (strlen($this->socketBuff) > 4) {
-                $len = unpack("N", $this->socketBuff)[1];
+                $len = unpack('N', $this->socketBuff)[1];
                 if (strlen($this->socketBuff) >= $len) {//满足完整一个包
                     $data = substr($this->socketBuff, 4, $len - 4);
                     $recv_data = \swoole_serialize::unpack($data);
@@ -143,7 +146,8 @@ abstract class Process extends ProcessRPC
     }
 
     /**
-     * 执行外部命令
+     * 执行外部命令.
+     *
      * @param $path
      * @param $params
      */
