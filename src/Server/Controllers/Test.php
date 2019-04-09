@@ -14,11 +14,6 @@ use Server\CoreBase\Controller;
 
 class Test extends Controller
 {
-    public function __construct(string $proxy = ChildProxy::class)
-    {
-        parent::__construct($proxy);
-    }
-
     public function http_error()
     {
         throw new \Exception("test");
@@ -28,7 +23,16 @@ class Test extends Controller
     {
         $this->redis->incr("test");
     }
+    public function http_redis2()
+    {
+        $this->redis->set("test",1);
+        $this->http_output->end($this->redis->get("test"));
+    }
 
+    public function http_mysql()
+    {
+        $this->http_output->end($this->db->select('count(*)')->from('t_patient')->query()->getResult());
+    }
     public function http_createActor()
     {
         Actor::create(TestActor::class, "test");

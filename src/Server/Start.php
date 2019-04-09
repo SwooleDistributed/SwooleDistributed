@@ -84,6 +84,7 @@ class Start
      */
     public static function run()
     {
+        \Swoole\Runtime::enableCoroutine();
         self::$debug = new \swoole_atomic(0);
         self::$xdebug = false;
         self::$coverage = false;
