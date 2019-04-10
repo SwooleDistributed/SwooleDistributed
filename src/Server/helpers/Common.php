@@ -140,11 +140,6 @@ function checkExtension()
         secho("STA", "[版本错误]Swoole版本必须大于4.0.3\n");
         $check = false;
     }
-
-    if (!class_exists('swoole_redis')) {
-        secho("STA", "[编译错误]swoole编译缺少--enable-async-redis,具体参见文档http://docs.sder.xin/%E7%8E%AF%E5%A2%83%E8%A6%81%E6%B1%82.html");
-        $check = false;
-    }
     if (!extension_loaded('redis')) {
         secho("STA", "[扩展依赖]缺少redis扩展");
         $check = false;

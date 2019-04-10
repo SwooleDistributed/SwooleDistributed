@@ -26,7 +26,7 @@ class RedisCoroutine extends CoroutineBase
      * @param $name
      * @param $arguments
      * @param $set
-     * @return $this
+     * @return int
      */
     public function init($redisAsynPool, $name, $arguments, $set)
     {
@@ -34,37 +34,26 @@ class RedisCoroutine extends CoroutineBase
         $this->name = $name;
         $this->arguments = $arguments;
         $this->set($set);
-        $data = $this->send(function ($result) {
-            $this->coPush($result);
-        });
-        $this->token = $data['token'];
-        $d = "[$name ".implode(" ",$data['arguments'])."]";
+        $d = "[$name ".implode(" ",$arguments)."]";
         $this->request = "[redis]$d";
         if (Start::getDebug()){
             secho("REDIS",$d);
         }
-        return $this->returnInit();
+        return $this->send(null);
     }
 
     public function send($callback)
     {
-        return $this->redisAsynPool->call($this->name, $this->arguments, $callback);
+        return $this->redisAsynPool->__call($this->name, $this->arguments);
     }
 
     public function destroy()
     {
         parent::destroy();
-        $this->redisAsynPool->removeTokenCallback($this->token);
         $this->token = null;
         $this->redisAsynPool = null;
         $this->name = null;
         $this->arguments = null;
         Pool::getInstance()->push($this);
-    }
-
-    protected function onTimerOutHandle()
-    {
-        parent::onTimerOutHandle();
-        $this->redisAsynPool->destoryGarbage($this->token);
     }
 }

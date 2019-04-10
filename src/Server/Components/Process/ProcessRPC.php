@@ -151,7 +151,7 @@ abstract class ProcessRPC extends Child
                 $process->readData($data);
             } else {
                 //封装下协议
-                $data = \swoole_serialize::pack($data);
+                $data = serialize($data);
                 $data = pack("N",strlen($data)+4).$data;
                 $process->process->write($data);
             }

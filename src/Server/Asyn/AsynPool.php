@@ -115,7 +115,7 @@ abstract class AsynPool implements IAsynPool
 
     /**
      * @param $data
-     * @return bool
+     * @return \Redis
      */
     public function shiftFromPool($data)
     {

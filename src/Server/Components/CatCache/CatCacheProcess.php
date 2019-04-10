@@ -138,7 +138,7 @@ class CatCacheProcess extends Process
         }
         $one[0] = $method;
         $one[1] = $params;
-        $buffer = \swoole_serialize::pack($one);
+        $buffer = serialize($one);
         $total_length = 4 + strlen($buffer);
         $data = pack('N', $total_length) . $buffer;
         swoole_async_write($this->save_log_file, $data);
@@ -156,7 +156,7 @@ class CatCacheProcess extends Process
         foreach ($this->map->getContainer() as $key => $value) {
             $one = [];
             $one[$key] = $value;
-            $buffer = \swoole_serialize::pack($one);
+            $buffer = serialize($one);
             $total_length = 4 + strlen($buffer);
             $data = pack('N', $total_length) . $buffer;
             file_put_contents($this->save_temp_file, $data, FILE_APPEND);
@@ -175,26 +175,17 @@ class CatCacheProcess extends Process
     {
         $this->lock->lock();
         if (is_file($this->save_file)) {
-            $count = 0;
-            swoole_async_read($this->save_file, function ($filename, $content) use (&$count) {
-                $count++;
-                if ($count == 1) {
-                    $content = $this->checkFileHeader($content, self::DB_HEADER, self::DB_HEADER);
+            $fileResource = fopen($this->save_file,"r");
+            $content = \Swoole\Coroutine::fread($fileResource);
+            $this->read_buffer = $this->checkFileHeader($content, self::DB_HEADER, self::DB_HEADER);
+            $this->HELP_pack(function ($one) {
+                foreach ($one as $key => $value) {
+                    $this->map->getContainer()[$key] = $value;
                 }
-                if (empty($content)) {
-                    $this->read_buffer = '';
-                    //读取结束
-                    $this->readFromDbLog();
-                    return false;
-                }
-                $this->read_buffer .= $content;
-                $this->HELP_pack(function ($one) {
-                    foreach ($one as $key => $value) {
-                        $this->map->getContainer()[$key] = $value;
-                    }
-                });
-                return true;
             });
+            $this->read_buffer = '';
+            //读取结束
+            $this->readFromDbLog();
         } else {
             $this->readFromDbLog();
         }
@@ -226,25 +217,17 @@ class CatCacheProcess extends Process
     {
         //看看有没有日志
         if (is_file($this->save_log_file)) {
-            $count = 0;
-            swoole_async_read($this->save_log_file, function ($filename, $content) use (&$count) {
-                $count++;
-                if ($count == 1) {
-                    $content = $this->checkFileHeader($content, self::DB_LOG_HEADER, self::DB_LOG_HEADER);
-                }
-                if (empty($content)) {
-                    $this->autoSave();
-                    EventDispatcher::getInstance()->dispatch(self::READY, null, false, true);
-                    secho("CatCache", "已完成加载缓存文件");
-                    $this->lock->unlock();
-                    $this->ready = true;
-                    return false;
-                }
-                $this->read_buffer .= $content;
-                $this->HELP_pack(function ($one) {
-                    sd_call_user_func_array([$this->map, $one[0]], $one[1]);
-                });
-                return true;
+            $fileResource = fopen($this->save_log_file,"r");
+            $content = \Swoole\Coroutine::fread($fileResource);
+            $content = $this->checkFileHeader($content, self::DB_LOG_HEADER, self::DB_LOG_HEADER);
+            $this->autoSave();
+            EventDispatcher::getInstance()->dispatch(self::READY, null, false, true);
+            secho("CatCache", "已完成加载缓存文件");
+            $this->lock->unlock();
+            $this->ready = true;
+            $this->read_buffer .= $content;
+            $this->HELP_pack(function ($one) {
+                sd_call_user_func_array([$this->map, $one[0]], $one[1]);
             });
         }
     }
@@ -272,7 +255,7 @@ class CatCacheProcess extends Process
             {
                 $data = substr($this->read_buffer, 4, $head_len - 4);
                 $this->read_buffer = substr($this->read_buffer, $head_len);
-                $one = \swoole_serialize::unpack($data);
+                $one = unserialize($data);
                 $func($one);
             } else {
                 break;
