@@ -35,11 +35,10 @@ class HttpClientPool extends AsynPool
     {
         parent::__construct($config);
         if (get_instance()->isTaskWorker()) return;
+        $this->baseUrl = $baseUrl;
         if (empty($this->baseUrl)) {
             throw new SwooleException('httpClient not set baseUrl!');
         }
-
-        $this->baseUrl = $baseUrl;
         $this->client_max_count = $this->config->get('httpClient.asyn_max_count', 10);
         $this->data = [];
         $arr = parse_url($this->baseUrl);
