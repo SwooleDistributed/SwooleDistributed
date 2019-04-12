@@ -395,6 +395,29 @@ function read_dir_queue($dir)
     return $result;
 }
 
+if (!function_exists("swoole_async_read")) {
+    function swoole_async_read($file_path, $callback, $size = 8192, $offset = 0)
+    {
+        go(function () use ($file_path, $callback, $size, $offset) {
+            $fp = fopen($file_path, "r");
+            while (!feof($fp)) {//循环读取，直至读取完整个文件
+                $data = fread($fp, $size);
+                $callback($file_path, $data);
+            }
+            $callback($file_path, '');
+            fclose($fp);
+        });
+    }
+}
+if (!function_exists("swoole_async_write")) {
+    function swoole_async_write($file_path, $data)
+    {
+        go(function () use ($file_path, $data) {
+            file_put_contents($file_path, $data, FILE_APPEND);
+        });
+    }
+}
+
 if (!function_exists("swoole_async_dns_lookup")) {
     function swoole_async_dns_lookup($host, $callback)
     {

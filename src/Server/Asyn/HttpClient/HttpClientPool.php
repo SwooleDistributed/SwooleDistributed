@@ -9,10 +9,10 @@
 namespace Server\Asyn\HttpClient;
 
 
-use Server\Asyn\IAsynPool;
+use Server\Asyn\AsynPool;
 use Server\CoreBase\SwooleException;
 
-class HttpClientPool implements IAsynPool
+class HttpClientPool extends AsynPool
 {
     const AsynName = 'http_client';
     /**
@@ -35,6 +35,10 @@ class HttpClientPool implements IAsynPool
     {
         parent::__construct($config);
         if (get_instance()->isTaskWorker()) return;
+        if (empty($this->baseUrl)) {
+            throw new SwooleException('httpClient not set baseUrl!');
+        }
+
         $this->baseUrl = $baseUrl;
         $this->client_max_count = $this->config->get('httpClient.asyn_max_count', 10);
         $this->data = [];

@@ -9,6 +9,7 @@
 namespace Server\Controllers;
 
 use Server\Asyn\HttpClient\HttpClientPool;
+use Server\Components\CatCache\CatCacheRpcProxy;
 use Server\CoreBase\Actor;
 use Server\CoreBase\ChildProxy;
 use Server\CoreBase\Controller;
@@ -52,6 +53,18 @@ class Test extends Controller
             ->setQuery(['format' => 'json', 'ip' => $ip])
             ->coroutineExecute('/iplookup/iplookup.php');
         $this->http_output->end($response);
+    }
+
+    public function http_catcache()
+    {
+        CatCacheRpcProxy::getRpc()['test.a'] = ['a' => 'a', 'b' => [1, 2, 3]];
+        $this->http_output->end(1, false);
+    }
+    public function http_catcache2()
+    {
+        //$result = CatCacheRpcProxy::getRpc()['test'];协程不支持这样
+        $result = CatCacheRpcProxy::getRpc()->offsetGet('test');
+        $this->http_output->end($result, false);
     }
     public function http_createActor()
     {
