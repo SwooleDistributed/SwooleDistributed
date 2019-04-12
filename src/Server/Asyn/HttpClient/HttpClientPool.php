@@ -9,10 +9,10 @@
 namespace Server\Asyn\HttpClient;
 
 
-use Server\Asyn\AsynPool;
+use Server\Asyn\IAsynPool;
 use Server\CoreBase\SwooleException;
 
-class HttpClientPool extends AsynPool
+class HttpClientPool implements IAsynPool
 {
     const AsynName = 'http_client';
     /**

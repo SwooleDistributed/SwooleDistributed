@@ -405,6 +405,58 @@ function swoole_async_dns_lookup($host, $callback)
     });
 }
 
+class swoole_client
+{
+    private $client;
+    private $map = [];
+
+    function __construct($ip, $port)
+    {
+        if (get_instance()->isTaskWorker()) return;
+        $this->client = new Swoole\Coroutine\Client($ip, $port);
+    }
+
+    function set($data)
+    {
+        $this->client->set($data);
+    }
+
+    public function on($name, $callback)
+    {
+        $this->map[$name] = $callback;
+    }
+
+    public function connect($host, $port)
+    {
+        go(function () use ($host, $port) {
+            if (!$this->client->connect($host, $port, 0.5)) {
+                $this->map["error"]($this);
+            } else {
+                $this->map['connect']($this);
+                while (true) {
+                    $data = $this->client->recv();
+                    if($data==false){
+                        $this->map['close']($this);
+                        break;
+                    }else {
+                        $this->map['receive']($this, $data);
+                    }
+                }
+            }
+        });
+    }
+
+    public function close()
+    {
+        return $this->client->close();
+    }
+
+    public function __get($name)
+    {
+        return $this->client->$name;
+    }
+}
+
 class swoole_http_client
 {
     private $client;
