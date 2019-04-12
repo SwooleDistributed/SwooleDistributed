@@ -395,132 +395,136 @@ function read_dir_queue($dir)
     return $result;
 }
 
-
-function swoole_async_dns_lookup($host, $callback)
-{
-    if (get_instance()->isTaskWorker()) return;
-    go(function () use ($host, $callback) {
-        $ip = Swoole\Coroutine::gethostbyname($host);
-        $callback($host, $ip);
-    });
-}
-
-class swoole_client
-{
-    private $client;
-    private $map = [];
-
-    function __construct($ip, $port)
+if (!function_exists("swoole_async_dns_lookup")) {
+    function swoole_async_dns_lookup($host, $callback)
     {
         if (get_instance()->isTaskWorker()) return;
-        $this->client = new Swoole\Coroutine\Client($ip, $port);
+        go(function () use ($host, $callback) {
+            $ip = Swoole\Coroutine::gethostbyname($host);
+            $callback($host, $ip);
+        });
     }
+}
 
-    function set($data)
+if (!class_exists("swoole_client")) {
+    class swoole_client
     {
-        $this->client->set($data);
-    }
+        private $client;
+        private $map = [];
 
-    public function on($name, $callback)
-    {
-        $this->map[$name] = $callback;
-    }
+        function __construct($ip, $port)
+        {
+            if (get_instance()->isTaskWorker()) return;
+            $this->client = new Swoole\Coroutine\Client($ip, $port);
+        }
 
-    public function connect($host, $port)
-    {
-        go(function () use ($host, $port) {
-            if (!$this->client->connect($host, $port, 0.5)) {
-                $this->map["error"]($this);
-            } else {
-                $this->map['connect']($this);
-                while (true) {
-                    $data = $this->client->recv();
-                    if($data==false){
-                        $this->map['close']($this);
-                        break;
-                    }else {
-                        $this->map['receive']($this, $data);
+        function set($data)
+        {
+            $this->client->set($data);
+        }
+
+        public function on($name, $callback)
+        {
+            $this->map[$name] = $callback;
+        }
+
+        public function connect($host, $port)
+        {
+            go(function () use ($host, $port) {
+                if (!$this->client->connect($host, $port, 0.5)) {
+                    $this->map["error"]($this);
+                } else {
+                    $this->map['connect']($this);
+                    while (true) {
+                        $data = $this->client->recv();
+                        if ($data == false) {
+                            $this->map['close']($this);
+                            break;
+                        } else {
+                            $this->map['receive']($this, $data);
+                        }
                     }
                 }
-            }
-        });
-    }
+            });
+        }
 
-    public function close()
-    {
-        return $this->client->close();
-    }
+        public function close()
+        {
+            return $this->client->close();
+        }
 
-    public function __get($name)
-    {
-        return $this->client->$name;
+        public function __get($name)
+        {
+            return $this->client->$name;
+        }
     }
 }
-
-class swoole_http_client
-{
-    private $client;
-    private $map = [];
-
-    function __construct($ip, $port, $ssl)
+if (!class_exists("swoole_http_client")) {
+    class swoole_http_client
     {
-        if (get_instance()->isTaskWorker()) return;
-        $this->client = new Swoole\Coroutine\Http\Client($ip, $port, $ssl);
-    }
+        private $client;
+        private $map = [];
 
-    function set($data)
-    {
-        $this->client->set($data);
-    }
+        function __construct($ip, $port, $ssl)
+        {
+            if (get_instance()->isTaskWorker()) return;
+            $this->client = new Swoole\Coroutine\Http\Client($ip, $port, $ssl);
+        }
 
-    function setMethod($method)
-    {
-        $this->client->setMethod($method);
-    }
+        function set($data)
+        {
+            $this->client->set($data);
+        }
 
-    function setHeaders($headers)
-    {
-        $this->client->setHeaders($headers);
-    }
+        function setMethod($method)
+        {
+            $this->client->setMethod($method);
+        }
 
-    function setCookies($cookies)
-    {
-        $this->client->setCookies($cookies);
-    }
+        function setHeaders($headers)
+        {
+            $this->client->setHeaders($headers);
+        }
 
-    function setData($data)
-    {
-        $this->client->setData($data);
-    }
+        function setCookies($cookies)
+        {
+            $this->client->setCookies($cookies);
+        }
 
-    function addFile(...$file)
-    {
-        $this->client->addFile(...$file);
-    }
+        function setData($data)
+        {
+            $this->client->setData($data);
+        }
 
-    function execute($path, $callback)
-    {
-        go(function () use ($path, $callback) {
-            $this->client->execute($path);
-            $callback($this);
-        });
-    }
+        function addFile(...$file)
+        {
+            $this->client->addFile(...$file);
+        }
 
-    function download($path, $filename, $callback, $offset)
-    {
-        go(function () use ($path, $filename, $callback, $offset) {
-            $this->client->download($path, $filename, $offset);
-            $callback($this);
-        });
-    }
+        function execute($path, $callback)
+        {
+            go(function () use ($path, $callback) {
+                $this->client->execute($path);
+                $callback($this);
+            });
+        }
 
-    public function __get($name)
-    {
-        return $this->client->$name;
-    }
+        function download($path, $filename, $callback, $offset)
+        {
+            go(function () use ($path, $filename, $callback, $offset) {
+                $this->client->download($path, $filename, $offset);
+                $callback($this);
+            });
+        }
 
-    public function on($name, $callback)
-    {
-        $this->map[$name] = $callback;
+        public function __get($name)
+        {
+            return $this->client->$name;
+        }
+
+        public function on($name, $callback)
+        {
+            $this->map[$name] = $callback;
+        }
     }
 }
