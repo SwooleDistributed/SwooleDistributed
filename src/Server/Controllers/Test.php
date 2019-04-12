@@ -8,12 +8,23 @@
 
 namespace Server\Controllers;
 
+use Server\Asyn\HttpClient\HttpClientPool;
 use Server\CoreBase\Actor;
 use Server\CoreBase\ChildProxy;
 use Server\CoreBase\Controller;
 
 class Test extends Controller
 {
+    /**
+     * @var HttpClientPool
+     */
+    protected $GetIPAddressHttpClient;
+    public function initialization($controller_name, $method_name)
+    {
+        parent::initialization($controller_name, $method_name);
+        $this->GetIPAddressHttpClient = get_instance()->getAsynPool('GetIPAddress');
+    }
+
     public function http_error()
     {
         throw new \Exception("test");
@@ -32,6 +43,15 @@ class Test extends Controller
     public function http_mysql()
     {
         $this->http_output->end($this->db->select('count(*)')->from('t_patient')->query()->getResult());
+    }
+
+    public function http_httpclient()
+    {
+        $ip = $this->http_input->server('remote_addr');
+        $response = $this->GetIPAddressHttpClient->httpClient
+            ->setQuery(['format' => 'json', 'ip' => $ip])
+            ->coroutineExecute('/iplookup/iplookup.php');
+        $this->http_output->end($response);
     }
     public function http_createActor()
     {

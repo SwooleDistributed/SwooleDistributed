@@ -9,7 +9,7 @@
 /**
  * 选择数据库环境
  */
-$config['redis']['enable'] = true;
+$config['redis']['enable'] = false;
 $config['redis']['active'] = 'local';
 
 /**

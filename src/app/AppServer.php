@@ -43,6 +43,7 @@ class AppServer extends SwooleDistributedServer
     public function initAsynPools($workerId)
     {
         parent::initAsynPools($workerId);
+        //$this->addAsynPool('GetIPAddress',new HttpClientPool($this->config,'http://www.baidu.com'));
     }
 
     /**
