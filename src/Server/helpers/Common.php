@@ -180,17 +180,19 @@ function isDarwin()
         return false;
     }
 }
+
 function displayExceptionHandler(\Throwable $exception)
 {
-    get_instance()->log->error($exception->getMessage(),["trace"=>$exception->getTrace()]);
-    secho("EX","------------------发生异常：".$exception->getMessage()."-----------------------");
+    get_instance()->log->error($exception->getMessage(), ["trace" => $exception->getTrace()]);
+    secho("EX", "------------------发生异常：" . $exception->getMessage() . "-----------------------");
     $string = $exception->getTraceAsString();
-    $arr = explode("#",$string);
+    $arr = explode("#", $string);
     unset($arr[0]);
-    foreach ($arr as $value){
-        secho("EX","#".$value);
+    foreach ($arr as $value) {
+        secho("EX", "#" . $value);
     }
 }
+
 /**
  * 代替sleep
  * @param $ms
@@ -348,7 +350,7 @@ function format_date($time)
 
 function sd_call_user_func($function, ...$parameter)
 {
-    if(is_callable($function)){
+    if (is_callable($function)) {
         return $function(...$parameter);
     }
 }
@@ -391,4 +393,82 @@ function read_dir_queue($dir)
         }
     }
     return $result;
+}
+
+
+function swoole_async_dns_lookup($host, $callback)
+{
+    if (get_instance()->isTaskWorker()) return;
+    go(function () use ($host, $callback) {
+        $ip = Swoole\Coroutine::gethostbyname($host);
+        $callback($host, $ip);
+    });
+}
+
+class swoole_http_client
+{
+    private $client;
+    private $map = [];
+
+    function __construct($ip, $port, $ssl)
+    {
+        if (get_instance()->isTaskWorker()) return;
+        $this->client = new Swoole\Coroutine\Http\Client($ip, $port, $ssl);
+    }
+
+    function set($data)
+    {
+        $this->client->set($data);
+    }
+
+    function setMethod($method)
+    {
+        $this->client->setMethod($method);
+    }
+
+    function setHeaders($headers)
+    {
+        $this->client->setHeaders($headers);
+    }
+
+    function setCookies($cookies)
+    {
+        $this->client->setCookies($cookies);
+    }
+
+    function setData($data)
+    {
+        $this->client->setData($data);
+    }
+
+    function addFile(...$file)
+    {
+        $this->client->addFile(...$file);
+    }
+
+    function execute($path, $callback)
+    {
+        go(function () use ($path, $callback) {
+            $this->client->execute($path);
+            $callback($this);
+        });
+    }
+
+    function download($path, $filename, $callback, $offset)
+    {
+        go(function () use ($path, $filename, $callback, $offset) {
+            $this->client->download($path, $filename, $offset);
+            $callback($this);
+        });
+    }
+
+    public function __get($name)
+    {
+        return $this->client->$name;
+    }
+
+    public function on($name, $callback)
+    {
+        $this->map[$name] = $callback;
+    }
 }

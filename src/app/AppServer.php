@@ -2,6 +2,7 @@
 
 namespace app;
 
+use Server\Asyn\HttpClient\HttpClientPool;
 use Server\CoreBase\HttpInput;
 use Server\CoreBase\Loader;
 use Server\SwooleDistributedServer;
@@ -43,6 +44,7 @@ class AppServer extends SwooleDistributedServer
     public function initAsynPools($workerId)
     {
         parent::initAsynPools($workerId);
+        $this->addAsynPool('GetIPAddress',new HttpClientPool($this->config,'http://www.baidu.com'));
     }
 
     /**

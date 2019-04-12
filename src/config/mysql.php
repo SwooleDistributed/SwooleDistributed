@@ -5,7 +5,7 @@
  * Date: 16-7-15
  * Time: 下午4:49
  */
-$config['mysql']['enable'] = true;
+$config['mysql']['enable'] = false;
 $config['mysql']['active'] = 'test';
 $config['mysql']['test']['host'] = 'localhost';
 $config['mysql']['test']['port'] = '3306';
