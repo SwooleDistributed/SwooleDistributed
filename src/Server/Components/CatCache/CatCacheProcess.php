@@ -149,23 +149,25 @@ class CatCacheProcess extends Process
      */
     public function autoSave()
     {
-        $this->save_temp_file = $this->save_dir . "catCache.catdb." . time();
-        if (!file_exists($this->save_temp_file)) {
-            file_put_contents($this->save_temp_file, self::DB_HEADER);
-        }
-        foreach ($this->map->getContainer() as $key => $value) {
-            $one = [];
-            $one[$key] = $value;
-            $buffer = serialize($one);
-            $total_length = 4 + strlen($buffer);
-            $data = pack('N', $total_length) . $buffer;
-            file_put_contents($this->save_temp_file, $data, FILE_APPEND);
-        }
-        //写完
-        rename($this->save_temp_file, $this->save_file);
-        if (file_exists($this->save_log_file)) {
-            file_put_contents($this->save_log_file, self::DB_LOG_HEADER);
-        }
+        go(function (){
+            $this->save_temp_file = $this->save_dir . "catCache.catdb." . time();
+            if (!file_exists($this->save_temp_file)) {
+                file_put_contents($this->save_temp_file, self::DB_HEADER);
+            }
+            foreach ($this->map->getContainer() as $key => $value) {
+                $one = [];
+                $one[$key] = $value;
+                $buffer = serialize($one);
+                $total_length = 4 + strlen($buffer);
+                $data = pack('N', $total_length) . $buffer;
+                file_put_contents($this->save_temp_file, $data, FILE_APPEND);
+            }
+            //写完
+            rename($this->save_temp_file, $this->save_file);
+            if (file_exists($this->save_log_file)) {
+                file_put_contents($this->save_log_file, self::DB_LOG_HEADER);
+            }
+        });
     }
 
     /**
@@ -175,17 +177,26 @@ class CatCacheProcess extends Process
     {
         $this->lock->lock();
         if (is_file($this->save_file)) {
-            $fileResource = fopen($this->save_file,"r");
-            $content = \Swoole\Coroutine::fread($fileResource);
-            $this->read_buffer = $this->checkFileHeader($content, self::DB_HEADER, self::DB_HEADER);
-            $this->HELP_pack(function ($one) {
-                foreach ($one as $key => $value) {
-                    $this->map->getContainer()[$key] = $value;
+            $count = 0;
+            swoole_async_read($this->save_file, function ($filename, $content) use (&$count) {
+                $count++;
+                if ($count == 1) {
+                    $content = $this->checkFileHeader($content, self::DB_HEADER, self::DB_HEADER);
                 }
+                if (empty($content)) {
+                    $this->read_buffer = '';
+                    //读取结束
+                    $this->readFromDbLog();
+                    return false;
+                }
+                $this->read_buffer .= $content;
+                $this->HELP_pack(function ($one) {
+                    foreach ($one as $key => $value) {
+                        $this->map->getContainer()[$key] = $value;
+                    }
+                });
+                return true;
             });
-            $this->read_buffer = '';
-            //读取结束
-            $this->readFromDbLog();
         } else {
             $this->readFromDbLog();
         }
@@ -217,17 +228,25 @@ class CatCacheProcess extends Process
     {
         //看看有没有日志
         if (is_file($this->save_log_file)) {
-            $fileResource = fopen($this->save_log_file,"r");
-            $content = \Swoole\Coroutine::fread($fileResource);
-            $content = $this->checkFileHeader($content, self::DB_LOG_HEADER, self::DB_LOG_HEADER);
-            $this->autoSave();
-            EventDispatcher::getInstance()->dispatch(self::READY, null, false, true);
-            secho("CatCache", "已完成加载缓存文件");
-            $this->lock->unlock();
-            $this->ready = true;
-            $this->read_buffer .= $content;
-            $this->HELP_pack(function ($one) {
-                sd_call_user_func_array([$this->map, $one[0]], $one[1]);
+            $count = 0;
+            swoole_async_read($this->save_log_file, function ($filename, $content) use (&$count) {
+                $count++;
+                if ($count == 1) {
+                    $content = $this->checkFileHeader($content, self::DB_LOG_HEADER, self::DB_LOG_HEADER);
+                }
+                if (empty($content)&&!$this->ready) {
+                    $this->autoSave();
+                    EventDispatcher::getInstance()->dispatch(self::READY, null, false, true);
+                    secho("CatCache", "已完成加载缓存文件");
+                    $this->lock->unlock();
+                    $this->ready = true;
+                    return false;
+                }
+                $this->read_buffer .= $content;
+                $this->HELP_pack(function ($one) {
+                    sd_call_user_func_array([$this->map, $one[0]], $one[1]);
+                });
+                return true;
             });
         }
     }
