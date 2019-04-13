@@ -9,7 +9,6 @@
 
 namespace Server\Asyn\Redis;
 
-
 use Server\Asyn\IAsynPool;
 use Server\CoreBase\SwooleException;
 use Server\Memory\Pool;
@@ -34,7 +33,9 @@ class RedisAsynPool implements IAsynPool
         $this->config = $config;
         $this->active = $active;
         $this->client_max_count = $this->config->get('redis.asyn_max_count', 10);
-        if (get_instance()->isTaskWorker()) return;
+        if (get_instance()->isTaskWorker()) {
+            return;
+        }
         $this->pool_chan = new \chan($this->client_max_count);
         for ($i = 0; $i < $this->client_max_count; $i++) {
             $client = new \Redis();
@@ -56,8 +57,8 @@ class RedisAsynPool implements IAsynPool
 
     /**
      * 映射redis方法
-     * @param $name
-     * @param $arguments
+     * @param string $name
+     * @param array $arguments
      * @return int
      */
     public function __call($name, $arguments)
@@ -71,7 +72,7 @@ class RedisAsynPool implements IAsynPool
 
     /**
      * 执行redis命令
-     * @param $data
+     * @param array $data
      * @return mixed
      * @throws SwooleException
      */
@@ -83,7 +84,8 @@ class RedisAsynPool implements IAsynPool
             $data['result'] = call_user_func_array([$client, $data['name']], $arguments);
         } catch (\RedisException $e) {
             $this->reconnect($client);
-            $this->commands->push($data);
+            $this->execute($data);
+            // $this->commands->push($data);
         }
         //回归连接
         $this->pushToPool($client);
@@ -97,7 +99,7 @@ class RedisAsynPool implements IAsynPool
 
     /**
      * 重连或者连接
-     * @param null $client
+     * @param \Redis $client
      * @throws SwooleException
      */
     public function reconnect($client = null)
@@ -120,7 +122,7 @@ class RedisAsynPool implements IAsynPool
 
     /**
      * 协程模式
-     * @param $name
+     * @param string $name
      * @param array ...$arg
      * @param callable $set
      * @return RedisCoroutine
@@ -148,7 +150,9 @@ class RedisAsynPool implements IAsynPool
      */
     public function getSync()
     {
-        if ($this->redis_client != null) return $this->redis_client;
+        if ($this->redis_client != null) {
+            return $this->redis_client;
+        }
         //同步redis连接，给task使用
         $this->redis_client = new \Redis();
         if ($this->redis_client->connect($this->config['redis'][$this->active]['ip'], $this->config['redis'][$this->active]['port']) == false) {

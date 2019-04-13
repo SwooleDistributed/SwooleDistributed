@@ -8,9 +8,9 @@
 
 namespace Server\Asyn\Redis;
 
-use Server\Coroutine\CoroutineBase;
-use Server\Memory\Pool;
 use Server\Start;
+use Server\Memory\Pool;
+use Server\Coroutine\CoroutineBase;
 
 class RedisCoroutine extends CoroutineBase
 {
@@ -22,10 +22,10 @@ class RedisCoroutine extends CoroutineBase
     public $arguments;
     /**
      * 对象池模式用来代替__construct
-     * @param $redisAsynPool
-     * @param $name
-     * @param $arguments
-     * @param $set
+     * @param RedisAsynPool $redisAsynPool
+     * @param string $name
+     * @param array $arguments
+     * @param callable $set
      * @return int
      */
     public function init($redisAsynPool, $name, $arguments, $set)
@@ -34,10 +34,10 @@ class RedisCoroutine extends CoroutineBase
         $this->name = $name;
         $this->arguments = $arguments;
         $this->set($set);
-        $d = "[$name ".implode(" ",$arguments)."]";
+        $d = "[$name ".json_encode($arguments)."]";
         $this->request = "[redis]$d";
-        if (Start::getDebug()){
-            secho("REDIS",$d);
+        if (Start::getDebug()) {
+            secho("REDIS", $d);
         }
         return $this->send(null);
     }
