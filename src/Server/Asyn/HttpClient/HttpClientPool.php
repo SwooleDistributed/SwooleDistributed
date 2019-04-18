@@ -8,7 +8,6 @@
 
 namespace Server\Asyn\HttpClient;
 
-
 use Server\Asyn\AsynPool;
 use Server\CoreBase\SwooleException;
 
@@ -34,7 +33,9 @@ class HttpClientPool extends AsynPool
     public function __construct($config, $baseUrl)
     {
         parent::__construct($config);
-        if (get_instance()->isTaskWorker()) return;
+        if (get_instance()->isTaskWorker()) {
+            return;
+        }
         $this->baseUrl = $baseUrl;
         if (empty($this->baseUrl)) {
             throw new SwooleException('httpClient not set baseUrl!');
@@ -55,14 +56,14 @@ class HttpClientPool extends AsynPool
             $this->data['port'] = $arr['port'];
         }
         $this->pool_chan = new \chan($this->client_max_count);
-        $this->data['ip'] = \Swoole\Coroutine::gethostbyname($this->host);
+        // $this->data['ip'] = \Swoole\Coroutine::gethostbyname($this->host);
         for ($i = 0; $i < $this->client_max_count; $i++) {
-            $client = new \Swoole\Coroutine\Http\Client($this->data['ip'], $this->data['port'], $this->data['ssl']);
+            $client = new \Swoole\Coroutine\Http\Client($this->host, $this->data['port'], $this->data['ssl']);
             $client->id = $i;
             $this->pushToPool($client);
         }
         $this->httpClient = new HttpClient($this, $baseUrl);
-        secho("HttpClientPool", "已初始化完HttpClientPool[$baseUrl]");
+        // secho("HttpClientPool", "已初始化完HttpClientPool[$baseUrl]");
     }
 
     /**
@@ -149,7 +150,6 @@ class HttpClientPool extends AsynPool
                 $this->pushToPool($client);
                 break;
         }
-
     }
 
     public function pushToPool($client)
