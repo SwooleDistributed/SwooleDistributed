@@ -330,7 +330,6 @@ function secho($tile, $message)
             get_instance()->pub('$SYS/' . getNodeName() . "/echo", $send);
         }
     } catch (Exception $e) {
-
     }
 }
 
@@ -371,17 +370,37 @@ function sd_debug($arr)
     Server\Components\SDDebug\SDDebug::debug($arr);
 }
 
+if (!function_exists("func_new_each")) {
+    function func_new_each(&$array)
+    {
+        $res = array();
+        $key = key($array);
+        if ($key !== null) {
+            next($array);
+            $res[1] = $res['value'] = $array[$key];
+            $res[0] = $res['key'] = $key;
+        } else {
+            $res = false;
+        }
+        return $res;
+    }
+}
+
 function read_dir_queue($dir)
 {
     $files = array();
     $queue = array($dir);
-    while ($data = each($queue)) {
+    while ($data = func_new_each($queue)) {
         $path = $data['value'];
         if (is_dir($path) && $handle = opendir($path)) {
             while ($file = readdir($handle)) {
-                if ($file == '.' || $file == '..') continue;
+                if ($file == '.' || $file == '..') {
+                    continue;
+                }
                 $files[] = $real_path = realpath($path . '/' . $file);
-                if (is_dir($real_path)) $queue[] = $real_path;
+                if (is_dir($real_path)) {
+                    $queue[] = $real_path;
+                }
             }
         }
         closedir($handle);
@@ -421,7 +440,9 @@ if (!function_exists("swoole_async_write")) {
 if (!function_exists("swoole_async_dns_lookup")) {
     function swoole_async_dns_lookup($host, $callback)
     {
-        if (get_instance()->isTaskWorker()) return;
+        if (get_instance()->isTaskWorker()) {
+            return;
+        }
         go(function () use ($host, $callback) {
             $ip = Swoole\Coroutine::gethostbyname($host);
             $callback($host, $ip);
@@ -435,13 +456,15 @@ if (!class_exists("swoole_client")) {
         private $client;
         private $map = [];
 
-        function __construct($ip, $port)
+        public function __construct($ip, $port)
         {
-            if (get_instance()->isTaskWorker()) return;
+            if (get_instance()->isTaskWorker()) {
+                return;
+            }
             $this->client = new Swoole\Coroutine\Client($ip, $port);
         }
 
-        function set($data)
+        public function set($data)
         {
             $this->client->set($data);
         }
@@ -488,43 +511,45 @@ if (!class_exists("swoole_http_client")) {
         private $client;
         private $map = [];
 
-        function __construct($ip, $port, $ssl)
+        public function __construct($host, $port, $ssl)
         {
-            if (get_instance()->isTaskWorker()) return;
-            $this->client = new Swoole\Coroutine\Http\Client($ip, $port, $ssl);
+            if (get_instance()->isTaskWorker()) {
+                return;
+            }
+            $this->client = new Swoole\Coroutine\Http\Client($host, $port, $ssl);
         }
 
-        function set($data)
+        public function set($data)
         {
             $this->client->set($data);
         }
 
-        function setMethod($method)
+        public function setMethod($method)
         {
             $this->client->setMethod($method);
         }
 
-        function setHeaders($headers)
+        public function setHeaders($headers)
         {
             $this->client->setHeaders($headers);
         }
 
-        function setCookies($cookies)
+        public function setCookies($cookies)
         {
             $this->client->setCookies($cookies);
         }
 
-        function setData($data)
+        public function setData($data)
         {
             $this->client->setData($data);
         }
 
-        function addFile(...$file)
+        public function addFile(...$file)
         {
             $this->client->addFile(...$file);
         }
 
-        function execute($path, $callback)
+        public function execute($path, $callback)
         {
             go(function () use ($path, $callback) {
                 $this->client->execute($path);
@@ -532,7 +557,7 @@ if (!class_exists("swoole_http_client")) {
             });
         }
 
-        function download($path, $filename, $callback, $offset)
+        public function download($path, $filename, $callback, $offset)
         {
             go(function () use ($path, $filename, $callback, $offset) {
                 $this->client->download($path, $filename, $offset);
