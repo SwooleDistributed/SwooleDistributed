@@ -118,8 +118,21 @@ class MysqlAsynPool implements IAsynPool
             $set = $this->config['mysql'][$this->active];
             $result = $client->connect($set);
             if (!$result) {
+                //重建客户端再连
+                $clientId = $client->id;
+                unset($client);
+                $client = new \Swoole\Coroutine\MySQL();
+                $client->id = $clientId;
+                $result = $client->connect($set);
+                if ($result) {
+                    //$this->pushToPool($client);  //这里不要放回去
+                    $client->setDefer($delayRecv);
+                }
+            }
+            if (!$result) {
                 $this->pushToPool($client);
-                $mysqlCoroutine->getResult(new SwooleException("[err]:$client->connect_error"));
+                $errcode = $client->errno ?? '';
+                $mysqlCoroutine->getResult(new SwooleException(sprintf("[%s]%s", $errcode, $client->connect_error)));
             }
         }
         $res = $client->query($sql, $mysqlCoroutine->getTimeout() / 1000);
@@ -150,7 +163,11 @@ class MysqlAsynPool implements IAsynPool
         $data['insert_id'] = $client->insert_id;
         $data['client_id'] = $client->id;
         if (!$notPush) {
-            $this->pushToPool($client);
+            $chanLen = $this->pool_chan->length();
+            if ($chanLen < $this->client_max_count){
+                //确保通道还有位置，否则导致阻塞
+                $this->pushToPool($client);
+            }
         }
         return new MysqlSyncHelp($sql, $data);
     }
